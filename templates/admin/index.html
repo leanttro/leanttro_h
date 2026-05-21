@@ -349,6 +349,33 @@ body {
 }
 .bulk-bar.visible { display: flex; }
 
+/* ── Hub picker (bulk) ── */
+.hub-picker-overlay {
+  position: fixed; inset: 0;
+  background: rgba(26,24,22,0.4);
+  backdrop-filter: blur(2px);
+  z-index: 300;
+  display: none; align-items: center; justify-content: center;
+}
+.hub-picker-overlay.open { display: flex; }
+.hub-picker {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow-md);
+  padding: 24px;
+  width: 360px; max-width: 95vw;
+}
+.hub-picker h4 { font-size: 14px; font-weight: 600; margin-bottom: 14px; color: var(--text); }
+.hub-picker select {
+  width: 100%; padding: 9px 12px;
+  border: 1px solid var(--border2); border-radius: var(--radius-sm);
+  background: var(--surface); color: var(--text);
+  font-family: var(--font); font-size: 13.5px; outline: none; margin-bottom: 14px;
+}
+.hub-picker select:focus { border-color: var(--accent); }
+.hub-picker-actions { display: flex; gap: 8px; justify-content: flex-end; }
+
 /* ── Table ── */
 .table-wrap { overflow-x: auto; }
 table { width: 100%; border-collapse: collapse; }
@@ -726,6 +753,8 @@ tbody td {
           <span id="negociosBulkCount">0 selecionados</span>
           <button class="btn btn-secondary btn-sm" onclick="bulkNegocio('ativar')">Ativar</button>
           <button class="btn btn-secondary btn-sm" onclick="bulkNegocio('desativar')">Desativar</button>
+          <button class="btn btn-secondary btn-sm" onclick="openHubPicker('vincular')">+ Vincular ao Hub</button>
+          <button class="btn btn-secondary btn-sm" onclick="openHubPicker('desvincular')">− Desvincular do Hub</button>
           <button class="btn btn-danger btn-sm" onclick="bulkNegocio('excluir')">Excluir</button>
         </div>
         <div class="table-wrap">
@@ -815,6 +844,20 @@ tbody td {
 
 <!-- Toast container -->
 <div class="toast-wrap" id="toastWrap"></div>
+
+<!-- Hub picker modal (bulk) -->
+<div class="hub-picker-overlay" id="hubPickerOverlay">
+  <div class="hub-picker">
+    <h4 id="hubPickerTitle">Vincular ao Hub</h4>
+    <select id="hubPickerSelect">
+      <option value="">— Selecione um hub —</option>
+    </select>
+    <div class="hub-picker-actions">
+      <button class="btn btn-secondary btn-sm" onclick="closeHubPicker()">Cancelar</button>
+      <button class="btn btn-primary btn-sm" onclick="confirmHubPicker()">Confirmar</button>
+    </div>
+  </div>
+</div>
 
 <script>
 // ── State ────────────────────────────────────────────────────
@@ -1419,6 +1462,44 @@ async function bulkNegocio(action) {
       await loadSection('negocios');
     } else {
       showToast('Erro ao executar ação em massa', 'error');
+    }
+  } catch(e) { showToast('Erro de conexão', 'error'); }
+}
+
+let _hubPickerAction = 'vincular';
+function openHubPicker(action) {
+  const ids = [...document.querySelectorAll('#negociosBody .negocio-cb:checked')];
+  if (!ids.length) return;
+  _hubPickerAction = action;
+  // Popula select com hubs disponíveis
+  const sel = document.getElementById('hubPickerSelect');
+  sel.innerHTML = '<option value="">— Selecione um hub —</option>' +
+    state.data.hubs.map(h => `<option value="${h.id}">${esc(h.nome)}</option>`).join('');
+  document.getElementById('hubPickerTitle').textContent =
+    action === 'vincular' ? '+ Vincular ao Hub' : '− Desvincular do Hub';
+  document.getElementById('hubPickerOverlay').classList.add('open');
+}
+function closeHubPicker() {
+  document.getElementById('hubPickerOverlay').classList.remove('open');
+}
+async function confirmHubPicker() {
+  const hub_id = document.getElementById('hubPickerSelect').value;
+  if (!hub_id) { showToast('Selecione um hub', ''); return; }
+  const ids = [...document.querySelectorAll('#negociosBody .negocio-cb:checked')].map(cb => cb.value);
+  closeHubPicker();
+  try {
+    const r = await fetch('/admin/negocios/bulk', {
+      method: 'POST',
+      body: JSON.stringify({ ids, action: _hubPickerAction, hub_id }),
+      headers: { 'Content-Type': 'application/json' }
+    });
+    if (r.ok || r.redirected) {
+      showToast(`${_hubPickerAction === 'vincular' ? 'Vinculado' : 'Desvinculado'}: ${ids.length} negócio(s)`, 'success');
+      state.loaded.delete('negocios');
+      state.loaded.delete('dashboard');
+      await loadSection('negocios');
+    } else {
+      showToast('Erro ao executar ação', 'error');
     }
   } catch(e) { showToast('Erro de conexão', 'error'); }
 }
