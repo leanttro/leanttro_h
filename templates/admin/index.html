@@ -1076,15 +1076,39 @@ async function editItem(type, id) {
   openDrawer(type, id);
   try {
     const r = await fetch(urls[type]);
-    const html = await r.text();
-    const doc = new DOMParser().parseFromString(html, 'text/html');
-    const form = doc.querySelector('form');
-    if (form) {
-      document.getElementById('drawerTitle').textContent = { hub:'Editar hub', negocio:'Editar negócio', categoria:'Editar categoria', usuario:'Editar usuário', assinatura:'Editar assinatura' }[type];
-      form.setAttribute('id', 'drawerForm');
-      wrapFormForDrawer(form, urls[type]);
-      document.getElementById('drawerBody').innerHTML = '';
-      document.getElementById('drawerBody').appendChild(form);
+    const data = await r.json();
+    if (type === 'hub') {
+      // Hub retorna JSON — monta o form de criação e preenche os campos
+      document.getElementById('drawerTitle').textContent = 'Editar hub';
+      document.getElementById('drawerBody').innerHTML = formHub();
+      const form = document.getElementById('drawerForm');
+      form.action = urls[type];
+      // Preenche campos
+      for (const [key, val] of Object.entries(data)) {
+        const el = form.elements[key];
+        if (!el || val == null) continue;
+        if (el.type === 'checkbox') { el.checked = val === true || val === 'true' || val === 't'; }
+        else if (el.type === 'color') { el.value = val || '#7943e2'; }
+        else { el.value = val; }
+      }
+      await populateTemplateSelects({
+        template_index:   data.template_index,
+        template_filtro:  data.template_filtro,
+        template_negocio: data.template_negocio,
+      });
+      setupFormSubmit(form);
+    } else {
+      // Outros tipos: tenta parsear como HTML (legado)
+      const html = await fetch(urls[type]).then(x => x.text()).catch(() => '');
+      const doc = new DOMParser().parseFromString(html, 'text/html');
+      const form = doc.querySelector('form');
+      if (form) {
+        document.getElementById('drawerTitle').textContent = { negocio:'Editar negócio', categoria:'Editar categoria', usuario:'Editar usuário', assinatura:'Editar assinatura' }[type];
+        form.setAttribute('id', 'drawerForm');
+        wrapFormForDrawer(form, urls[type]);
+        document.getElementById('drawerBody').innerHTML = '';
+        document.getElementById('drawerBody').appendChild(form);
+      }
     }
   } catch(e) { showToast('Erro ao carregar formulário', 'error'); }
 }
@@ -1096,6 +1120,7 @@ function buildForm(type, id) {
   document.getElementById('drawerBody').innerHTML = forms[type]();
   const form = document.getElementById('drawerForm');
   if (form) setupFormSubmit(form);
+  if (type === 'hub') populateTemplateSelects();
 }
 
 function wrapFormForDrawer(form, action) {
@@ -1182,22 +1207,13 @@ function formHub() {
       <div class="field"><label>GA4 ID</label><input name="ga4_id" placeholder="G-XXXXXXX"></div>
       <div class="field"><label>Pixel ID</label><input name="pixel_id"></div>
       <div class="field"><label>Template index</label>
-        <select name="template_index">
-          <option value="index_padrao">Padrão</option>
-          <option value="index_moderno">Moderno</option>
-        </select>
+        <select name="template_index" id="sel_template_index"><option value="">Carregando...</option></select>
       </div>
       <div class="field"><label>Template filtro</label>
-        <select name="template_filtro">
-          <option value="filtro_padrao">Padrão</option>
-          <option value="filtro_moderno">Moderno</option>
-        </select>
+        <select name="template_filtro" id="sel_template_filtro"><option value="">Carregando...</option></select>
       </div>
       <div class="field"><label>Template negócio</label>
-        <select name="template_negocio">
-          <option value="negocio_padrao">Padrão</option>
-          <option value="negocio_moderno">Moderno</option>
-        </select>
+        <select name="template_negocio" id="sel_template_negocio"><option value="">Carregando...</option></select>
       </div>
       <div class="field form-full"><label>Título</label><input name="titulo"></div>
       <div class="field form-full"><label>Descrição</label><textarea name="descricao"></textarea></div>
@@ -1347,6 +1363,28 @@ function showToast(msg, type = '') {
   t.textContent = msg;
   wrap.appendChild(t);
   setTimeout(() => t.remove(), 3000);
+}
+
+// ── Templates dinâmicos ──────────────────────────────────────
+async function populateTemplateSelects(currentValues = {}) {
+  if (!state.templates) {
+    try {
+      const r = await fetch('/admin/templates');
+      state.templates = await r.json();
+    } catch(e) {
+      state.templates = { index: ['index_padrao'], filtro: ['filtro_padrao'], negocio: ['negocio_padrao'] };
+    }
+  }
+  const map = { index: 'sel_template_index', filtro: 'sel_template_filtro', negocio: 'sel_template_negocio' };
+  for (const [tipo, selId] of Object.entries(map)) {
+    const sel = document.getElementById(selId);
+    if (!sel) continue;
+    const current = currentValues[`template_${tipo}`] || state.templates[tipo]?.[0] || '';
+    sel.innerHTML = state.templates[tipo].map(t => {
+      const label = t.replace(`${tipo}_`, '').replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
+      return `<option value="${t}"${t === current ? ' selected' : ''}>${label}</option>`;
+    }).join('');
+  }
 }
 
 // ── Init ─────────────────────────────────────────────────────
