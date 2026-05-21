@@ -125,6 +125,18 @@ nav.desktop-nav{flex:1;min-width:0;overflow:hidden}
 @media(max-width:768px){.cats-carousel-outer{padding:0 38px}.carousel-btn{width:34px;height:34px;font-size:1.2rem}}
 @media(max-width:480px){.cats-carousel-outer{padding:0 30px}.cats-carousel .cat-card{min-width:160px;max-width:160px}}
 
+/* BOTÃO PRÓXIMO A MIM */
+.btn-localizar-hub{
+  display:inline-flex;align-items:center;gap:8px;
+  background:var(--primary);color:#fff;
+  padding:10px 22px;border-radius:50px;font-size:.88rem;font-weight:700;
+  border:none;cursor:pointer;transition:all .2s;font-family:var(--sans);
+  box-shadow:0 4px 16px rgba(121,67,226,.25);
+}
+.btn-localizar-hub:hover{background:var(--primary-d);transform:translateY(-1px)}
+.btn-localizar-hub:disabled{opacity:.6;cursor:not-allowed;transform:none}
+@keyframes spin{to{transform:rotate(360deg)}}
+
 /* GRID NEGÓCIOS */
 .section{padding:56px 0}
 .section-alt{background:var(--bg2)}
@@ -181,33 +193,6 @@ footer{background:#0d0d0d;border-top:1px solid #1e1e1e;padding:40px 0 28px;font-
 .footer-bottom{max-width:1200px;margin:28px auto 0;padding:18px 20px 0;border-top:1px solid #1a1a1a;text-align:center;color:#3a3a3a;font-size:11.5px}
 .footer-bottom a{color:#555;text-decoration:none}
 .footer-bottom a:hover{color:#888;text-decoration:underline}
-
-/* LEANTTRO FOOTER SECTION */
-.leanttro-footer{background:#080808;border-top:1px solid #1a1a1a;padding:36px 20px 24px}
-.leanttro-footer-inner{max-width:1200px;margin:0 auto;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:28px}
-.leanttro-footer-brand{display:flex;align-items:center;gap:14px}
-.leanttro-footer-brand img{height:36px;width:auto}
-.leanttro-footer-brand-text strong{display:block;color:#fff;font-size:13px;font-weight:700;font-family:var(--display);margin-bottom:2px}
-.leanttro-footer-brand-text span{color:#555;font-size:11.5px}
-.leanttro-footer-services{display:flex;gap:10px;flex-wrap:wrap}
-.leanttro-service-tag{padding:4px 12px;border-radius:14px;border:1px solid #2a2a2a;color:#666;font-size:11px;font-weight:500;white-space:nowrap}
-.leanttro-footer-cta a{display:inline-flex;align-items:center;gap:7px;background:var(--primary);color:#fff;padding:9px 18px;border-radius:8px;font-size:12.5px;font-weight:600;transition:background .2s}
-.leanttro-footer-cta a:hover{background:var(--primary-d)}
-.leanttro-footer-copy{max-width:1200px;margin:16px auto 0;padding:14px 20px 0;border-top:1px solid #111;text-align:center;color:#333;font-size:11px}
-.leanttro-footer-copy a{color:#444}
-@media(max-width:640px){
-  .leanttro-footer-inner{flex-direction:column;align-items:flex-start;gap:18px}
-  .leanttro-footer-cta{width:100%}
-  .leanttro-footer-cta a{width:100%;justify-content:center}
-}
-
-/* BOTÃO PRÓXIMO A MIM */
-.btn-proximo{display:inline-flex;align-items:center;gap:7px;padding:9px 16px;border-radius:10px;border:1.5px solid var(--primary);background:#fff;color:var(--primary);font-family:var(--sans);font-size:.88rem;font-weight:600;cursor:pointer;transition:all .18s;white-space:nowrap}
-.btn-proximo:hover,.btn-proximo.active{background:var(--primary);color:#fff}
-.btn-proximo svg{width:15px;height:15px;flex-shrink:0}
-@keyframes spin-loc{to{transform:rotate(360deg)}}
-.btn-proximo.loading svg{animation:spin-loc 1s linear infinite}
-.dist-badge{font-size:.75rem;color:var(--primary);font-weight:600;margin-top:2px}
 @media(max-width:640px){
   .footer-inner{flex-direction:column;align-items:center;text-align:center;gap:14px}
   .footer-divider{display:none}
@@ -287,8 +272,8 @@ footer{background:#0d0d0d;border-top:1px solid #1e1e1e;padding:40px 0 28px;font-
 <!-- HERO -->
 <section class="hero" aria-label="{{ hub.nome }}">
   <div class="container">
-    <div class="hero-badge">📍 {{ hub.nome }}</div>
-    <h1>{{ hub.titulo or hub.nome }}<br><em>{{ hub.descricao and hub.descricao[:50] or 'Guia local de negócios' }}</em></h1>
+    <div class="hero-badge">Guia local de negócios</div>
+    <h1 style="font-size:3.6rem;letter-spacing:-.8px">{{ hub.nome }}<br><em style="font-size:2rem;opacity:.8;font-weight:600;letter-spacing:-.2px">{{ hub.titulo and hub.titulo != hub.nome and hub.titulo or (hub.descricao and hub.descricao[:60] or 'Encontre os melhores negócios') }}</em></h1>
     <p>{{ hub.descricao or 'Encontre os melhores negócios locais. Tudo organizado por categoria e bairro.' }}</p>
     <div class="hero-stats">
       <div class="hero-stat"><strong>{{ negocios | length }}</strong><span>negócios cadastrados</span></div>
@@ -344,6 +329,14 @@ footer{background:#0d0d0d;border-top:1px solid #1e1e1e;padding:40px 0 28px;font-
     <div class="section-header">
       <h2 class="section-title">Todos os negócios</h2>
       <p class="section-subtitle">{{ negocios | length }} negócio(s) cadastrado(s)</p>
+    </div>
+
+    <!-- BOTÃO PRÓXIMO A MIM -->
+    <div style="text-align:center;margin-bottom:16px">
+      <button id="btnLocalizacao" class="btn-localizar-hub">
+        <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" style="flex-shrink:0"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
+        Próximo a mim
+      </button>
     </div>
 
     <!-- FILTRO POR CATEGORIA -->
@@ -431,7 +424,21 @@ footer{background:#0d0d0d;border-top:1px solid #1e1e1e;padding:40px 0 28px;font-
     </nav>
   </div>
   <div class="footer-bottom">
-    <p>© {{ hub.nome }} · Desenvolvido por <a href="https://www.leanttro.com" target="_blank" rel="noopener">Leanttro</a></p>
+    <div style="display:flex;flex-direction:column;align-items:center;gap:16px;padding-bottom:8px">
+      <a href="https://www.leanttro.com" target="_blank" rel="noopener" style="display:inline-block">
+        <img src="https://res.cloudinary.com/dzcaxmbjn/image/upload/v1779203844/logo_claro_rtbddh.png" alt="Leanttro" style="height:36px;width:auto;display:block;opacity:.9">
+      </a>
+      <div style="display:flex;gap:24px;flex-wrap:wrap;justify-content:center;font-size:11.5px;color:#555">
+        <span>🌐 Sites profissionais a partir de R$499</span>
+        <span>📈 Hubs de tráfego orgânico</span>
+        <span>⚡ Automações com n8n</span>
+        <span>📊 Painel de métricas gratuito</span>
+      </div>
+      <p style="font-size:11px;color:#3a3a3a;margin:0">
+        © {{ hub.nome }} · Desenvolvido por <a href="https://www.leanttro.com" target="_blank" rel="noopener" style="color:#666;text-decoration:underline">Leanttro</a>
+        — tecnologia e presença digital para pequenas empresas em São Paulo
+      </p>
+    </div>
   </div>
 </footer>
 
@@ -442,6 +449,80 @@ footer{background:#0d0d0d;border-top:1px solid #1e1e1e;padding:40px 0 28px;font-
 {% endif %}
 
 <script>
+// ── PRÓXIMO A MIM ──────────────────────────────────────────
+(function initLocalizacao() {
+  const btnLoc = document.getElementById('btnLocalizacao');
+  if (!btnLoc) return;
+
+  let userLat = null, userLng = null;
+
+  function haversine(lat1, lng1, lat2, lng2) {
+    const R = 6371, toRad = d => d * Math.PI / 180;
+    const dLat = toRad(lat2 - lat1), dLng = toRad(lng2 - lng1);
+    const a = Math.sin(dLat/2)**2 + Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) * Math.sin(dLng/2)**2;
+    return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+  }
+
+  function ordenarPorDistancia(lat, lng) {
+    userLat = lat; userLng = lng;
+    const cards = Array.from(document.querySelectorAll('.negocio-card'));
+    if (!cards.length) return;
+    const grid = document.getElementById('negociosGrid');
+    if (!grid) return;
+
+    const cardsComDist = cards.map(card => {
+      const cardLat = parseFloat(card.dataset.lat);
+      const cardLng = parseFloat(card.dataset.lng);
+      let dist = 9999;
+      if (!isNaN(cardLat) && !isNaN(cardLng)) {
+        dist = haversine(lat, lng, cardLat, cardLng);
+      }
+      return { el: card, dist };
+    }).sort((a, b) => a.dist - b.dist);
+
+    // Adicionar badge de distância e reordenar
+    cardsComDist.forEach(({ el, dist }) => {
+      let distBadge = el.querySelector('.dist-badge');
+      if (!distBadge) {
+        distBadge = document.createElement('p');
+        distBadge.className = 'dist-badge';
+        distBadge.style.cssText = 'font-size:.78rem;color:var(--primary);font-weight:600;margin-top:2px';
+        const footer = el.querySelector('.negocio-card-footer');
+        if (footer) footer.before(distBadge);
+      }
+      if (dist < 9999) {
+        distBadge.textContent = '📍 ' + dist.toFixed(1) + ' km de você';
+      }
+      grid.appendChild(el);
+    });
+
+    btnLoc.innerHTML = '<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" style="flex-shrink:0"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg> Localização obtida ✓';
+    btnLoc.disabled = true;
+  }
+
+  // Tenta silenciosamente ao carregar
+  if (navigator.geolocation) {
+    navigator.geolocation.getCurrentPosition(
+      pos => ordenarPorDistancia(pos.coords.latitude, pos.coords.longitude),
+      () => {}
+    );
+  }
+
+  btnLoc.addEventListener('click', function() {
+    if (!navigator.geolocation) { alert('Geolocalização não suportada neste navegador.'); return; }
+    btnLoc.innerHTML = '<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" style="flex-shrink:0;animation:spin 1s linear infinite"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg> Localizando...';
+    btnLoc.disabled = true;
+    navigator.geolocation.getCurrentPosition(
+      pos => ordenarPorDistancia(pos.coords.latitude, pos.coords.longitude),
+      () => {
+        btnLoc.innerHTML = '<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" style="flex-shrink:0"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg> Próximo a mim';
+        btnLoc.disabled = false;
+        alert('Não foi possível obter sua localização. Verifique as permissões do navegador.');
+      }
+    );
+  });
+})();
+
 // ── Mobile nav ──────────────────────────────────────────────
 document.getElementById('hamburger').addEventListener('click',()=>document.getElementById('mobileNav').classList.add('active'));
 document.getElementById('navClose').addEventListener('click',()=>closeNav());
