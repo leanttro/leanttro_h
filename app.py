@@ -6,6 +6,7 @@ from datetime import datetime
 import psycopg2
 import psycopg2.extras
 import os
+import glob
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -16,6 +17,14 @@ app.wsgi_app = ProxyFix(app.wsgi_app, x_for=1, x_proto=1, x_host=1, x_prefix=1)
 app.url_map.strict_slashes = False
 
 DOMINIO_BASE = os.getenv("DOMINIO_BASE", "leanttro.com")
+
+# ── Templates dinâmicos ───────────────────────────────────────
+
+def listar_templates(tipo):
+    """Retorna os slugs dos templates disponíveis para index/filtro/negocio"""
+    pasta = os.path.join(app.root_path, "templates", "hub")
+    arquivos = glob.glob(os.path.join(pasta, f"{tipo}_*.html"))
+    return [os.path.basename(f).replace(".html", "") for f in sorted(arquivos)]
 
 # ── Banco ─────────────────────────────────────────────────────
 
@@ -199,6 +208,16 @@ def admin_dashboard():
                            total_negocios=total_negocios,
                            total_categorias=total_categorias,
                            total_usuarios=total_usuarios)
+
+
+@app.route("/admin/templates")
+@login_required
+def admin_templates():
+    return jsonify({
+        "index":   listar_templates("index"),
+        "filtro":  listar_templates("filtro"),
+        "negocio": listar_templates("negocio"),
+    })
 
 
 # ════════════════════════════════════════════════════════════
