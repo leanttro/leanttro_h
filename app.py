@@ -414,6 +414,57 @@ def admin_negocio_deletar(negocio_id):
     return jsonify({"ok": True})
 
 
+@app.route("/admin/negocios/bulk", methods=["POST"])
+@login_required
+def admin_negocios_bulk():
+    data = request.get_json(force=True)
+    ids     = [int(i) for i in data.get("ids", []) if str(i).isdigit()]
+    action  = data.get("action", "")
+    hub_id  = data.get("hub_id")
+
+    if not ids:
+        return jsonify({"error": "Nenhum negócio selecionado"}), 400
+
+    if action == "ativar":
+        query(
+            f"UPDATE hub_negocios SET ativo = TRUE WHERE id = ANY(%s)",
+            (ids,), commit=True
+        )
+
+    elif action == "desativar":
+        query(
+            f"UPDATE hub_negocios SET ativo = FALSE WHERE id = ANY(%s)",
+            (ids,), commit=True
+        )
+
+    elif action == "excluir":
+        query("DELETE FROM hub_negocio_hubs WHERE negocio_id = ANY(%s)", (ids,), commit=True)
+        query("DELETE FROM hub_negocios WHERE id = ANY(%s)", (ids,), commit=True)
+
+    elif action == "vincular" and hub_id:
+        hub_id = int(hub_id)
+        for nid in ids:
+            # INSERT OR IGNORE — evita duplicata
+            query(
+                """INSERT INTO hub_negocio_hubs (negocio_id, hub_id)
+                   VALUES (%s, %s)
+                   ON CONFLICT (negocio_id, hub_id) DO NOTHING""",
+                (nid, hub_id), commit=True
+            )
+
+    elif action == "desvincular" and hub_id:
+        hub_id = int(hub_id)
+        query(
+            "DELETE FROM hub_negocio_hubs WHERE negocio_id = ANY(%s) AND hub_id = %s",
+            (ids, hub_id), commit=True
+        )
+
+    else:
+        return jsonify({"error": "Ação inválida"}), 400
+
+    return jsonify({"ok": True, "affected": len(ids)})
+
+
 # ════════════════════════════════════════════════════════════
 #  ADMIN — CATEGORIAS
 # ════════════════════════════════════════════════════════════
