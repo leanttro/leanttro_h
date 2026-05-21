@@ -54,9 +54,12 @@ header{background:#fff;border-bottom:1px solid var(--border);position:sticky;top
 .logo-hub{display:flex;align-items:center;gap:10px;font-family:var(--display);font-weight:800;font-size:1.15rem;color:var(--text)}
 .logo-hub img{height:38px;width:auto}
 .logo-hub-mark{width:36px;height:36px;background:var(--primary);border-radius:8px;display:flex;align-items:center;justify-content:center;color:#fff;font-size:1rem;font-weight:800;flex-shrink:0}
-nav.desktop-nav ul{list-style:none;display:flex;gap:4px}
-nav.desktop-nav ul li a{padding:8px 14px;border-radius:8px;font-size:.9rem;font-weight:500;color:var(--muted);transition:all .15s;white-space:nowrap}
-nav.desktop-nav ul li a:hover{color:var(--primary);background:rgba(121,67,226,.07)}
+nav.desktop-nav{flex:1;min-width:0;overflow:hidden}
+.nav-slicer{display:flex;gap:6px;overflow-x:auto;scrollbar-width:none;-webkit-overflow-scrolling:touch;padding:4px 0;align-items:center}
+.nav-slicer::-webkit-scrollbar{display:none}
+.nav-slicer-item{display:inline-flex;align-items:center;padding:6px 15px;border-radius:20px;font-size:.85rem;font-weight:500;color:var(--muted);transition:all .15s;white-space:nowrap;flex-shrink:0;border:1.5px solid var(--border);background:#fff}
+.nav-slicer-item:hover{border-color:var(--primary);color:var(--primary);background:rgba(121,67,226,.06)}
+.nav-slicer-item.inicio{font-weight:700}
 .header-cta{display:flex;align-items:center;gap:10px;flex-shrink:0}
 .btn-wpp-header{display:inline-flex;align-items:center;gap:7px;background:#25D366;color:#fff;padding:9px 18px;border-radius:8px;font-size:.875rem;font-weight:600;transition:all .2s;white-space:nowrap}
 .btn-wpp-header:hover{background:#1da850;transform:translateY(-1px)}
@@ -99,16 +102,28 @@ nav.desktop-nav ul li a:hover{color:var(--primary);background:rgba(121,67,226,.0
 .busca-input-wrap input{border:none;outline:none;background:none;font-family:var(--sans);font-size:.9rem;color:var(--text);width:100%}
 .busca-input-wrap input::placeholder{color:var(--muted)}
 
-/* CHIPS DE CATEGORIA */
-.cats-filter{display:flex;gap:8px;flex-wrap:wrap;justify-content:center;padding:24px 0 8px}
-.cat-chip{padding:8px 18px;border-radius:20px;border:1.5px solid var(--border);background:#fff;font-family:var(--sans);font-size:.88rem;font-weight:500;color:var(--text);cursor:pointer;transition:all .18s;display:inline-flex;align-items:center;gap:6px}
+/* CHIPS DE CATEGORIA / SLICER */
+.cats-filter{display:flex;gap:8px;overflow-x:auto;scrollbar-width:none;-webkit-overflow-scrolling:touch;padding:8px 0 16px;justify-content:flex-start}
+.cats-filter::-webkit-scrollbar{display:none}
+.cat-chip{padding:8px 18px;border-radius:20px;border:1.5px solid var(--border);background:#fff;font-family:var(--sans);font-size:.88rem;font-weight:500;color:var(--text);cursor:pointer;transition:all .18s;display:inline-flex;align-items:center;gap:6px;white-space:nowrap;flex-shrink:0}
 .cat-chip:hover{border-color:var(--primary);color:var(--primary)}
 .cat-chip.active{background:var(--primary);border-color:var(--primary);color:#fff}
-@media(max-width:600px){
-  .cats-filter{flex-wrap:nowrap;overflow-x:auto;justify-content:flex-start;-webkit-overflow-scrolling:touch;scrollbar-width:none;padding-bottom:4px;padding-left:20px;padding-right:20px}
-  .cats-filter::-webkit-scrollbar{display:none}
-  .cat-chip{flex-shrink:0}
-}
+
+/* CAROUSEL CATEGORIAS + AZ FILTER */
+.az-filter{display:flex;gap:6px;justify-content:center;flex-wrap:wrap;margin-bottom:24px}
+.az-btn{width:34px;height:34px;border-radius:50%;border:1.5px solid var(--border);background:#fff;font-family:var(--display);font-size:.8rem;font-weight:700;color:var(--muted);cursor:pointer;transition:all .18s;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.az-btn:hover,.az-btn.active{background:var(--primary);border-color:var(--primary);color:#fff}
+@media(max-width:600px){.az-filter{flex-wrap:nowrap;overflow-x:auto;justify-content:flex-start;scrollbar-width:none;padding-bottom:4px}.az-filter::-webkit-scrollbar{display:none}}
+.cats-carousel-outer{position:relative;padding:0 52px}
+.cats-carousel{display:flex;gap:20px;overflow-x:auto;scroll-behavior:smooth;scrollbar-width:none;-webkit-overflow-scrolling:touch;padding-bottom:8px;align-items:stretch}
+.cats-carousel::-webkit-scrollbar{display:none}
+.cats-carousel .cat-card{min-width:190px;max-width:190px;flex-shrink:0}
+.carousel-btn{position:absolute;top:50%;transform:translateY(-50%);background:#fff;border:1.5px solid var(--border);border-radius:50%;width:40px;height:40px;display:flex;align-items:center;justify-content:center;font-size:1.5rem;line-height:1;cursor:pointer;color:var(--text);transition:all .2s;z-index:2;box-shadow:var(--shadow)}
+.carousel-btn:hover{border-color:var(--primary);color:var(--primary)}
+.carousel-prev{left:0}
+.carousel-next{right:0}
+@media(max-width:768px){.cats-carousel-outer{padding:0 38px}.carousel-btn{width:34px;height:34px;font-size:1.2rem}}
+@media(max-width:480px){.cats-carousel-outer{padding:0 30px}.cats-carousel .cat-card{min-width:160px;max-width:160px}}
 
 /* GRID NEGÓCIOS */
 .section{padding:56px 0}
@@ -180,7 +195,7 @@ footer{background:#0d0d0d;border-top:1px solid #1e1e1e;padding:40px 0 28px;font-
 
 /* RESPONSIVO */
 @media(max-width:768px){
-  nav.desktop-nav{display:none}
+  nav.desktop-nav{display:flex;flex:1;min-width:0;overflow:hidden}
   .hamburger{display:block}
   .hero h1{font-size:2rem}
   .hero-stats{gap:24px}
@@ -208,13 +223,13 @@ footer{background:#0d0d0d;border-top:1px solid #1e1e1e;padding:40px 0 28px;font-
       {% endif %}
     </a>
     <nav class="desktop-nav" aria-label="Navegação principal">
-      <ul>
-        <li><a href="/">Início</a></li>
+      <div class="nav-slicer">
+        <a href="/" class="nav-slicer-item inicio">Início</a>
         {% for cat in categorias %}
-        <li><a href="/{{ cat.slug }}/">{{ cat.nome }}</a></li>
+        <a href="/{{ cat.slug }}/" class="nav-slicer-item">{{ cat.nome }}</a>
         {% endfor %}
-        {% if hub.whatsapp %}<li><a href="https://wa.me/55{{ hub.whatsapp | replace(' ','') | replace('-','') | replace('(','') | replace(')','') }}" target="_blank" rel="noopener">Contato</a></li>{% endif %}
-      </ul>
+        {% if hub.whatsapp %}<a href="https://wa.me/55{{ hub.whatsapp | replace(' ','') | replace('-','') | replace('(','') | replace(')','') }}" target="_blank" rel="noopener" class="nav-slicer-item">Contato</a>{% endif %}
+      </div>
     </nav>
     <div class="header-cta">
       {% if hub.whatsapp %}
@@ -269,21 +284,28 @@ footer{background:#0d0d0d;border-top:1px solid #1e1e1e;padding:40px 0 28px;font-
       <h2 class="section-title">Categorias</h2>
       <p class="section-subtitle">Escolha uma categoria para explorar</p>
     </div>
-    <div class="cats-grid">
-      {% for cat in categorias %}
-      <a href="/{{ cat.slug }}/" class="cat-card">
-        <div class="cat-card-icon">
-          {% if cat.icone_url %}
-            <img src="{{ cat.icone_url }}" alt="{{ cat.nome }}" style="height:64px;width:auto">
-          {% else %}
-            🏪
-          {% endif %}
-        </div>
-        <h3>{{ cat.nome }}</h3>
-        <p>{{ negocios | selectattr('categoria_slug','equalto',cat.slug) | list | length }} negócio(s)</p>
-        <span class="cat-card-btn">Explorar →</span>
-      </a>
-      {% endfor %}
+    <!-- Filtro A-Z (populado por JS) -->
+    <div class="az-filter" id="azFilter"></div>
+    <!-- Carrossel -->
+    <div class="cats-carousel-outer">
+      <button class="carousel-btn carousel-prev" onclick="carouselScroll(-1)" aria-label="Anterior">&#8249;</button>
+      <div class="cats-carousel" id="catsCarousel">
+        {% for cat in categorias %}
+        <a href="/{{ cat.slug }}/" class="cat-card" data-letra="{{ cat.nome[0] | upper }}">
+          <div class="cat-card-icon">
+            {% if cat.icone_url %}
+              <img src="{{ cat.icone_url }}" alt="{{ cat.nome }}" style="height:64px;width:auto">
+            {% else %}
+              🏪
+            {% endif %}
+          </div>
+          <h3>{{ cat.nome }}</h3>
+          <p>{{ negocios | selectattr('categoria_slug','equalto',cat.slug) | list | length }} negócio(s)</p>
+          <span class="cat-card-btn">Explorar →</span>
+        </a>
+        {% endfor %}
+      </div>
+      <button class="carousel-btn carousel-next" onclick="carouselScroll(1)" aria-label="Próximo">&#8250;</button>
     </div>
   </div>
 </section>
@@ -393,10 +415,12 @@ footer{background:#0d0d0d;border-top:1px solid #1e1e1e;padding:40px 0 28px;font-
 {% endif %}
 
 <script>
+// ── Mobile nav ──────────────────────────────────────────────
 document.getElementById('hamburger').addEventListener('click',()=>document.getElementById('mobileNav').classList.add('active'));
 document.getElementById('navClose').addEventListener('click',()=>closeNav());
 function closeNav(){document.getElementById('mobileNav').classList.remove('active')}
 
+// ── Filtros de negócios ──────────────────────────────────────
 let catAtiva = '';
 let buscaAtiva = '';
 
@@ -423,6 +447,53 @@ function aplicarFiltros() {
     if (show) visivel++;
   });
   document.getElementById('emptyMsg').style.display = visivel === 0 ? 'block' : 'none';
+}
+
+// ── Carrossel de categorias ──────────────────────────────────
+function carouselScroll(dir) {
+  const c = document.getElementById('catsCarousel');
+  if (!c) return;
+  c.scrollBy({ left: dir * 620, behavior: 'smooth' });
+}
+
+// ── Filtro A-Z de categorias ─────────────────────────────────
+(function initAZ() {
+  const carousel = document.getElementById('catsCarousel');
+  const azContainer = document.getElementById('azFilter');
+  if (!carousel || !azContainer) return;
+
+  const cards = Array.from(carousel.querySelectorAll('.cat-card'));
+  // Coleta letras únicas presentes
+  const letras = [...new Set(cards.map(c => c.dataset.letra).filter(Boolean))].sort();
+
+  if (letras.length <= 1) { azContainer.style.display = 'none'; return; }
+
+  // Botão "Todos"
+  const btnTodos = document.createElement('button');
+  btnTodos.className = 'az-btn active';
+  btnTodos.textContent = '✦';
+  btnTodos.title = 'Todas';
+  btnTodos.onclick = () => filtrarAZ(null, btnTodos);
+  azContainer.appendChild(btnTodos);
+
+  letras.forEach(l => {
+    const btn = document.createElement('button');
+    btn.className = 'az-btn';
+    btn.textContent = l;
+    btn.onclick = () => filtrarAZ(l, btn);
+    azContainer.appendChild(btn);
+  });
+})();
+
+function filtrarAZ(letra, activeBtn) {
+  document.querySelectorAll('.az-btn').forEach(b => b.classList.remove('active'));
+  activeBtn.classList.add('active');
+  const carousel = document.getElementById('catsCarousel');
+  if (!carousel) return;
+  carousel.querySelectorAll('.cat-card').forEach(card => {
+    card.style.display = (!letra || card.dataset.letra === letra) ? '' : 'none';
+  });
+  carousel.scrollTo({ left: 0, behavior: 'smooth' });
 }
 </script>
 </body>
