@@ -37,184 +37,36 @@
   --transition: 0.18s ease;
 }
 
-body {
-  font-family: var(--font);
-  background: var(--bg);
-  color: var(--text);
-  min-height: 100vh;
-  display: flex;
-  font-size: 14px;
-  line-height: 1.6;
-}
+body { font-family: var(--font); background: var(--bg); color: var(--text); min-height: 100vh; display: flex; font-size: 14px; line-height: 1.6; }
 
 /* ── Sidebar ── */
-#sidebar {
-  width: var(--sidebar-w);
-  background: var(--surface);
-  border-right: 1px solid var(--border);
-  display: flex;
-  flex-direction: column;
-  position: fixed;
-  top: 0; left: 0; bottom: 0;
-  z-index: 100;
-  transition: transform var(--transition);
-}
-
-.sidebar-logo {
-  padding: 22px 20px 18px;
-  border-bottom: 1px solid var(--border);
-  display: flex;
-  align-items: center;
-  gap: 10px;
-}
-
-.logo-mark {
-  width: 32px; height: 32px;
-  background: var(--accent);
-  border-radius: 8px;
-  display: flex; align-items: center; justify-content: center;
-  color: #fff;
-  font-weight: 600;
-  font-size: 15px;
-  flex-shrink: 0;
-  letter-spacing: -0.5px;
-}
-
-.logo-text {
-  font-size: 13px;
-  font-weight: 600;
-  color: var(--text);
-  letter-spacing: -0.2px;
-  line-height: 1.2;
-}
-.logo-text span {
-  display: block;
-  font-size: 11px;
-  font-weight: 400;
-  color: var(--text3);
-  letter-spacing: 0;
-}
-
-.sidebar-nav {
-  flex: 1;
-  padding: 12px 10px;
-  overflow-y: auto;
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-}
-
-.nav-section {
-  font-size: 10px;
-  font-weight: 600;
-  color: var(--text3);
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-  padding: 10px 10px 4px;
-  margin-top: 4px;
-}
-
-.nav-item {
-  display: flex;
-  align-items: center;
-  gap: 9px;
-  padding: 8px 10px;
-  border-radius: var(--radius-sm);
-  cursor: pointer;
-  color: var(--text2);
-  font-size: 13.5px;
-  font-weight: 400;
-  transition: background var(--transition), color var(--transition);
-  border: none;
-  background: none;
-  width: 100%;
-  text-align: left;
-  text-decoration: none;
-}
+#sidebar { width: var(--sidebar-w); background: var(--surface); border-right: 1px solid var(--border); display: flex; flex-direction: column; position: fixed; top: 0; left: 0; bottom: 0; z-index: 100; transition: transform var(--transition); }
+.sidebar-logo { padding: 22px 20px 18px; border-bottom: 1px solid var(--border); display: flex; align-items: center; gap: 10px; }
+.logo-mark { width: 32px; height: 32px; background: var(--accent); border-radius: 8px; display: flex; align-items: center; justify-content: center; color: #fff; font-weight: 600; font-size: 15px; flex-shrink: 0; letter-spacing: -0.5px; }
+.logo-text { font-size: 13px; font-weight: 600; color: var(--text); letter-spacing: -0.2px; line-height: 1.2; }
+.logo-text span { display: block; font-size: 11px; font-weight: 400; color: var(--text3); letter-spacing: 0; }
+.sidebar-nav { flex: 1; padding: 12px 10px; overflow-y: auto; display: flex; flex-direction: column; gap: 2px; }
+.nav-section { font-size: 10px; font-weight: 600; color: var(--text3); letter-spacing: 0.08em; text-transform: uppercase; padding: 10px 10px 4px; margin-top: 4px; }
+.nav-item { display: flex; align-items: center; gap: 9px; padding: 8px 10px; border-radius: var(--radius-sm); cursor: pointer; color: var(--text2); font-size: 13.5px; font-weight: 400; transition: background var(--transition), color var(--transition); border: none; background: none; width: 100%; text-align: left; text-decoration: none; }
 .nav-item:hover { background: var(--surface2); color: var(--text); }
 .nav-item.active { background: var(--accent-light); color: var(--accent); font-weight: 500; }
-.nav-item .nav-icon {
-  width: 18px; height: 18px;
-  flex-shrink: 0;
-  opacity: 0.7;
-}
+.nav-item .nav-icon { width: 18px; height: 18px; flex-shrink: 0; opacity: 0.7; }
 .nav-item.active .nav-icon { opacity: 1; }
-
-.sidebar-footer {
-  padding: 14px 10px;
-  border-top: 1px solid var(--border);
-}
-
-.user-chip {
-  display: flex;
-  align-items: center;
-  gap: 9px;
-  padding: 8px 10px;
-  border-radius: var(--radius-sm);
-  background: var(--surface2);
-}
-.user-avatar {
-  width: 28px; height: 28px;
-  background: var(--accent);
-  border-radius: 50%;
-  display: flex; align-items: center; justify-content: center;
-  color: #fff;
-  font-size: 12px;
-  font-weight: 600;
-  flex-shrink: 0;
-}
+.sidebar-footer { padding: 14px 10px; border-top: 1px solid var(--border); }
+.user-chip { display: flex; align-items: center; gap: 9px; padding: 8px 10px; border-radius: var(--radius-sm); background: var(--surface2); }
+.user-avatar { width: 28px; height: 28px; background: var(--accent); border-radius: 50%; display: flex; align-items: center; justify-content: center; color: #fff; font-size: 12px; font-weight: 600; flex-shrink: 0; }
 .user-info { flex: 1; min-width: 0; }
 .user-name { font-size: 12.5px; font-weight: 500; color: var(--text); line-height: 1.3; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .user-role { font-size: 11px; color: var(--text3); }
-
-.logout-btn {
-  background: none; border: none; cursor: pointer;
-  color: var(--text3); padding: 2px;
-  display: flex; align-items: center;
-  transition: color var(--transition);
-}
+.logout-btn { background: none; border: none; cursor: pointer; color: var(--text3); padding: 2px; display: flex; align-items: center; transition: color var(--transition); }
 .logout-btn:hover { color: var(--red); }
 
 /* ── Main ── */
-#main {
-  margin-left: var(--sidebar-w);
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  min-height: 100vh;
-}
-
-.topbar {
-  background: var(--surface);
-  border-bottom: 1px solid var(--border);
-  padding: 0 28px;
-  height: 56px;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  position: sticky;
-  top: 0;
-  z-index: 50;
-}
-
-.topbar-title {
-  font-size: 15px;
-  font-weight: 600;
-  color: var(--text);
-  letter-spacing: -0.2px;
-}
-
-.topbar-actions {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-
-/* ── Content ── */
-.content {
-  padding: 28px;
-  flex: 1;
-}
+#main { margin-left: var(--sidebar-w); flex: 1; display: flex; flex-direction: column; min-height: 100vh; }
+.topbar { background: var(--surface); border-bottom: 1px solid var(--border); padding: 0 28px; height: 56px; display: flex; align-items: center; justify-content: space-between; position: sticky; top: 0; z-index: 50; }
+.topbar-title { font-size: 15px; font-weight: 600; color: var(--text); letter-spacing: -0.2px; }
+.topbar-actions { display: flex; align-items: center; gap: 8px; }
+.content { padding: 28px; flex: 1; }
 
 /* ── Sections ── */
 .section { display: none; animation: fadeIn 0.18s ease; }
@@ -222,71 +74,17 @@ body {
 @keyframes fadeIn { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
 
 /* ── Cards ── */
-.card {
-  background: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: var(--radius);
-  box-shadow: var(--shadow);
-}
-
-.card-header {
-  padding: 16px 20px;
-  border-bottom: 1px solid var(--border);
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 12px;
-}
-
-.card-title {
-  font-size: 13.5px;
-  font-weight: 600;
-  color: var(--text);
-  letter-spacing: -0.1px;
-}
-
+.card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); box-shadow: var(--shadow); }
+.card-header { padding: 16px 20px; border-bottom: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.card-title { font-size: 13.5px; font-weight: 600; color: var(--text); letter-spacing: -0.1px; }
 .card-body { padding: 20px; }
 
 /* ── Dashboard ── */
-.stats-grid {
-  display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  gap: 16px;
-  margin-bottom: 24px;
-}
-
-.stat-card {
-  background: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: var(--radius);
-  padding: 20px;
-  box-shadow: var(--shadow);
-}
-
-.stat-label {
-  font-size: 11.5px;
-  font-weight: 500;
-  color: var(--text3);
-  text-transform: uppercase;
-  letter-spacing: 0.06em;
-  margin-bottom: 8px;
-}
-
-.stat-value {
-  font-size: 28px;
-  font-weight: 600;
-  color: var(--text);
-  letter-spacing: -1px;
-  line-height: 1;
-  font-family: var(--mono);
-}
-
-.stat-icon {
-  width: 36px; height: 36px;
-  border-radius: 8px;
-  display: flex; align-items: center; justify-content: center;
-  margin-bottom: 12px;
-}
+.stats-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-bottom: 24px; }
+.stat-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 20px; box-shadow: var(--shadow); }
+.stat-label { font-size: 11.5px; font-weight: 500; color: var(--text3); text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 8px; }
+.stat-value { font-size: 28px; font-weight: 600; color: var(--text); letter-spacing: -1px; line-height: 1; font-family: var(--mono); }
+.stat-icon { width: 36px; height: 36px; border-radius: 8px; display: flex; align-items: center; justify-content: center; margin-bottom: 12px; }
 .stat-icon svg { width: 18px; height: 18px; }
 .stat-icon.purple { background: var(--accent-light); color: var(--accent); }
 .stat-icon.green { background: var(--green-light); color: var(--green); }
@@ -294,20 +92,7 @@ body {
 .stat-icon.blue { background: #e8f4ff; color: #1a6fa8; }
 
 /* ── Buttons ── */
-.btn {
-  display: inline-flex; align-items: center; gap: 6px;
-  padding: 7px 14px;
-  border-radius: var(--radius-sm);
-  font-family: var(--font);
-  font-size: 13px;
-  font-weight: 500;
-  cursor: pointer;
-  border: 1px solid transparent;
-  transition: all var(--transition);
-  text-decoration: none;
-  line-height: 1.4;
-  white-space: nowrap;
-}
+.btn { display: inline-flex; align-items: center; gap: 6px; padding: 7px 14px; border-radius: var(--radius-sm); font-family: var(--font); font-size: 13px; font-weight: 500; cursor: pointer; border: 1px solid transparent; transition: all var(--transition); text-decoration: none; line-height: 1.4; white-space: nowrap; }
 .btn svg { width: 15px; height: 15px; flex-shrink: 0; }
 .btn-primary { background: var(--accent); color: #fff; border-color: var(--accent); }
 .btn-primary:hover { background: var(--accent-dark); border-color: var(--accent-dark); }
@@ -315,45 +100,40 @@ body {
 .btn-secondary:hover { background: var(--surface2); color: var(--text); }
 .btn-danger { background: var(--red-light); color: var(--red); border-color: #f5c6c2; }
 .btn-danger:hover { background: #f9d7d4; }
+.btn-amber { background: var(--amber-light); color: var(--amber); border-color: #f0d9a8; }
+.btn-amber:hover { background: #fde8b0; }
 .btn-sm { padding: 5px 10px; font-size: 12px; }
 
 /* ── Table ── */
 .table-wrap { overflow-x: auto; }
 table { width: 100%; border-collapse: collapse; }
-thead th {
-  font-size: 11px; font-weight: 600; color: var(--text3);
-  text-transform: uppercase; letter-spacing: 0.06em;
-  padding: 10px 16px;
-  background: var(--surface2);
-  text-align: left;
-  white-space: nowrap;
-}
+thead th { font-size: 11px; font-weight: 600; color: var(--text3); text-transform: uppercase; letter-spacing: 0.06em; padding: 10px 16px; background: var(--surface2); text-align: left; white-space: nowrap; }
 thead th:first-child { border-radius: 8px 0 0 8px; }
 thead th:last-child { border-radius: 0 8px 8px 0; }
-tbody tr {
-  border-bottom: 1px solid var(--border);
-  transition: background var(--transition);
-}
+tbody tr { border-bottom: 1px solid var(--border); transition: background var(--transition); }
 tbody tr:last-child { border-bottom: none; }
 tbody tr:hover { background: var(--surface2); }
-tbody td {
-  padding: 12px 16px;
-  font-size: 13.5px;
-  color: var(--text);
-  vertical-align: middle;
-}
+tbody tr.selected { background: var(--accent-light); }
+tbody td { padding: 12px 16px; font-size: 13.5px; color: var(--text); vertical-align: middle; }
 .td-muted { color: var(--text3); font-size: 12.5px; }
 .td-mono { font-family: var(--mono); font-size: 12px; color: var(--text2); }
+input[type=checkbox].row-check { width: 15px; height: 15px; cursor: pointer; accent-color: var(--accent); }
+
+/* ── Bulk bar ── */
+.bulk-bar {
+  padding: 10px 20px;
+  background: var(--accent-light);
+  border-bottom: 1px solid var(--border);
+  display: none;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+.bulk-bar.show { display: flex; }
+.bulk-count { font-size: 13px; font-weight: 600; color: var(--accent); margin-right: 4px; }
 
 /* ── Badges ── */
-.badge {
-  display: inline-flex; align-items: center;
-  padding: 2px 8px;
-  border-radius: 20px;
-  font-size: 11.5px;
-  font-weight: 500;
-  line-height: 1.6;
-}
+.badge { display: inline-flex; align-items: center; padding: 2px 8px; border-radius: 20px; font-size: 11.5px; font-weight: 500; line-height: 1.6; }
 .badge-green { background: var(--green-light); color: var(--green); }
 .badge-red { background: var(--red-light); color: var(--red); }
 .badge-amber { background: var(--amber-light); color: var(--amber); }
@@ -364,154 +144,60 @@ tbody td {
 .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
 .form-grid.cols-3 { grid-template-columns: 1fr 1fr 1fr; }
 .form-full { grid-column: 1 / -1; }
-
 .field { display: flex; flex-direction: column; gap: 5px; }
-.field label {
-  font-size: 12px; font-weight: 500; color: var(--text2);
-  letter-spacing: 0.01em;
-}
-.field input, .field select, .field textarea {
-  padding: 8px 12px;
-  border: 1px solid var(--border2);
-  border-radius: var(--radius-sm);
-  background: var(--surface);
-  color: var(--text);
-  font-family: var(--font);
-  font-size: 13.5px;
-  transition: border-color var(--transition), box-shadow var(--transition);
-  outline: none;
-  width: 100%;
-}
-.field input:focus, .field select:focus, .field textarea:focus {
-  border-color: var(--accent);
-  box-shadow: 0 0 0 3px rgba(121,67,226,0.1);
-}
+.field label { font-size: 12px; font-weight: 500; color: var(--text2); letter-spacing: 0.01em; }
+.field input, .field select, .field textarea { padding: 8px 12px; border: 1px solid var(--border2); border-radius: var(--radius-sm); background: var(--surface); color: var(--text); font-family: var(--font); font-size: 13.5px; transition: border-color var(--transition), box-shadow var(--transition); outline: none; width: 100%; }
+.field input:focus, .field select:focus, .field textarea:focus { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(121,67,226,0.1); }
 .field textarea { resize: vertical; min-height: 80px; }
 .field input[type="color"] { padding: 4px 6px; height: 38px; cursor: pointer; }
-
 .checkbox-group { display: flex; flex-wrap: wrap; gap: 10px; }
-.checkbox-label {
-  display: flex; align-items: center; gap: 7px;
-  font-size: 13px; cursor: pointer;
-  padding: 6px 10px;
-  border: 1px solid var(--border);
-  border-radius: var(--radius-sm);
-  transition: all var(--transition);
-  background: var(--surface);
-}
+.checkbox-label { display: flex; align-items: center; gap: 7px; font-size: 13px; cursor: pointer; padding: 6px 10px; border: 1px solid var(--border); border-radius: var(--radius-sm); transition: all var(--transition); background: var(--surface); }
 .checkbox-label:hover { border-color: var(--accent); background: var(--accent-light); }
 .checkbox-label input { width: 14px; height: 14px; accent-color: var(--accent); }
 .checkbox-label.checked { border-color: var(--accent); background: var(--accent-light); color: var(--accent); }
-
-.form-actions {
-  display: flex; gap: 10px; justify-content: flex-end;
-  padding-top: 16px;
-  border-top: 1px solid var(--border);
-  margin-top: 20px;
-}
+.form-actions { display: flex; gap: 10px; justify-content: flex-end; padding-top: 16px; border-top: 1px solid var(--border); margin-top: 20px; }
 
 /* ── Modal / Drawer ── */
-.modal-overlay {
-  position: fixed; inset: 0;
-  background: rgba(26,24,22,0.35);
-  backdrop-filter: blur(2px);
-  z-index: 200;
-  display: none;
-  align-items: flex-start;
-  justify-content: flex-end;
-}
+.modal-overlay { position: fixed; inset: 0; background: rgba(26,24,22,0.35); backdrop-filter: blur(2px); z-index: 200; display: none; align-items: flex-start; justify-content: flex-end; }
 .modal-overlay.open { display: flex; }
-
-.drawer {
-  background: var(--surface);
-  width: 520px;
-  max-width: 95vw;
-  height: 100vh;
-  overflow-y: auto;
-  box-shadow: var(--shadow-md);
-  animation: slideIn 0.22s ease;
-}
+.drawer { background: var(--surface); width: 520px; max-width: 95vw; height: 100vh; overflow-y: auto; box-shadow: var(--shadow-md); animation: slideIn 0.22s ease; }
 @keyframes slideIn { from { transform: translateX(100%); } to { transform: translateX(0); } }
-
-.drawer-header {
-  padding: 20px 24px 16px;
-  border-bottom: 1px solid var(--border);
-  display: flex; align-items: center; justify-content: space-between;
-  position: sticky; top: 0; background: var(--surface); z-index: 10;
-}
+.drawer-header { padding: 20px 24px 16px; border-bottom: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; position: sticky; top: 0; background: var(--surface); z-index: 10; }
 .drawer-title { font-size: 15px; font-weight: 600; letter-spacing: -0.2px; }
-.drawer-close {
-  background: none; border: none; cursor: pointer;
-  color: var(--text3); padding: 4px;
-  border-radius: 4px;
-  transition: color var(--transition), background var(--transition);
-  display: flex; align-items: center;
-}
+.drawer-close { background: none; border: none; cursor: pointer; color: var(--text3); padding: 4px; border-radius: 4px; transition: color var(--transition), background var(--transition); display: flex; align-items: center; }
 .drawer-close:hover { color: var(--text); background: var(--surface2); }
 .drawer-body { padding: 24px; }
 
+/* ── Confirm modal (centro da tela) ── */
+.confirm-overlay { position: fixed; inset: 0; background: rgba(26,24,22,0.5); backdrop-filter: blur(3px); z-index: 300; display: none; align-items: center; justify-content: center; }
+.confirm-overlay.open { display: flex; }
+.confirm-box { background: var(--surface); border: 1px solid var(--border2); border-radius: var(--radius); padding: 28px 32px; width: 400px; max-width: 95vw; box-shadow: var(--shadow-md); animation: fadeIn 0.18s ease; }
+.confirm-icon { font-size: 2rem; text-align: center; margin-bottom: 10px; }
+.confirm-msg { font-size: 15px; font-weight: 600; text-align: center; margin-bottom: 6px; }
+.confirm-sub { font-size: 13px; color: var(--text2); text-align: center; margin-bottom: 18px; }
+.confirm-senha-wrap { margin-bottom: 16px; }
+.confirm-actions { display: flex; gap: 10px; justify-content: center; }
+
 /* ── Toast ── */
-.toast-wrap {
-  position: fixed; bottom: 24px; right: 24px;
-  z-index: 999;
-  display: flex; flex-direction: column; gap: 8px;
-}
-.toast {
-  padding: 12px 16px;
-  border-radius: var(--radius-sm);
-  font-size: 13.5px;
-  font-weight: 500;
-  background: var(--text);
-  color: #fff;
-  box-shadow: var(--shadow-md);
-  animation: toastIn 0.2s ease;
-  display: flex; align-items: center; gap: 8px;
-}
+.toast-wrap { position: fixed; bottom: 24px; right: 24px; z-index: 999; display: flex; flex-direction: column; gap: 8px; }
+.toast { padding: 12px 16px; border-radius: var(--radius-sm); font-size: 13.5px; font-weight: 500; background: var(--text); color: #fff; box-shadow: var(--shadow-md); animation: toastIn 0.2s ease; display: flex; align-items: center; gap: 8px; }
 .toast.success { background: var(--green); }
 .toast.error { background: var(--red); }
+.toast.warn { background: var(--amber); }
 @keyframes toastIn { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: translateY(0); } }
 
 /* ── Search bar ── */
-.search-bar {
-  display: flex; align-items: center; gap: 8px;
-  padding: 7px 12px;
-  border: 1px solid var(--border2);
-  border-radius: var(--radius-sm);
-  background: var(--surface);
-  transition: border-color var(--transition);
-}
+.search-bar { display: flex; align-items: center; gap: 8px; padding: 7px 12px; border: 1px solid var(--border2); border-radius: var(--radius-sm); background: var(--surface); transition: border-color var(--transition); }
 .search-bar:focus-within { border-color: var(--accent); }
 .search-bar svg { width: 15px; height: 15px; color: var(--text3); flex-shrink: 0; }
-.search-bar input {
-  border: none; outline: none; background: none;
-  font-family: var(--font); font-size: 13px; color: var(--text);
-  width: 200px;
-}
+.search-bar input { border: none; outline: none; background: none; font-family: var(--font); font-size: 13px; color: var(--text); width: 200px; }
 
-/* ── Empty state ── */
-.empty-state {
-  text-align: center;
-  padding: 60px 20px;
-  color: var(--text3);
-}
+/* ── Empty / Loading ── */
+.empty-state { text-align: center; padding: 60px 20px; color: var(--text3); }
 .empty-state svg { width: 40px; height: 40px; margin-bottom: 12px; opacity: 0.4; }
 .empty-state p { font-size: 13.5px; }
-
-/* ── Loading ── */
-.loading {
-  display: flex; align-items: center; justify-content: center;
-  padding: 60px;
-  color: var(--text3);
-  font-size: 13px;
-}
-.spinner {
-  width: 20px; height: 20px;
-  border: 2px solid var(--border2);
-  border-top-color: var(--accent);
-  border-radius: 50%;
-  animation: spin 0.7s linear infinite;
-  margin-right: 10px;
-}
+.loading { display: flex; align-items: center; justify-content: center; padding: 60px; color: var(--text3); font-size: 13px; }
+.spinner { width: 20px; height: 20px; border: 2px solid var(--border2); border-top-color: var(--accent); border-radius: 50%; animation: spin 0.7s linear infinite; margin-right: 10px; }
 @keyframes spin { to { transform: rotate(360deg); } }
 
 /* ── Responsive ── */
@@ -536,43 +222,34 @@ tbody td {
       <span>Painel Admin</span>
     </div>
   </div>
-
   <nav class="sidebar-nav">
     <button class="nav-item active" data-section="dashboard">
       <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
       Dashboard
     </button>
-
     <div class="nav-section">Gestão</div>
-
     <button class="nav-item" data-section="hubs">
       <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M12 1v4M12 19v4M4.22 4.22l2.83 2.83M16.95 16.95l2.83 2.83M1 12h4M19 12h4M4.22 19.78l2.83-2.83M16.95 7.05l2.83-2.83"/></svg>
       Hubs
     </button>
-
     <button class="nav-item" data-section="negocios">
       <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
       Negócios
     </button>
-
     <button class="nav-item" data-section="categorias">
       <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 6h16M4 10h16M4 14h16M4 18h16"/></svg>
       Categorias
     </button>
-
     <div class="nav-section">Contas</div>
-
     <button class="nav-item" data-section="usuarios">
       <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87M16 3.13a4 4 0 010 7.75"/></svg>
       Usuários
     </button>
-
     <button class="nav-item" data-section="assinaturas">
       <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="5" width="20" height="14" rx="2"/><path d="M2 10h20"/></svg>
       Assinaturas
     </button>
   </nav>
-
   <div class="sidebar-footer">
     <div class="user-chip">
       <div class="user-avatar" id="userAvatar">A</div>
@@ -600,35 +277,26 @@ tbody td {
     <section class="section active" id="sec-dashboard">
       <div class="stats-grid" id="statsGrid">
         <div class="stat-card">
-          <div class="stat-icon purple">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="3"/><path d="M12 1v4M12 19v4M4.22 4.22l2.83 2.83M16.95 16.95l2.83 2.83M1 12h4M19 12h4"/></svg>
-          </div>
+          <div class="stat-icon purple"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="3"/><path d="M12 1v4M12 19v4M4.22 4.22l2.83 2.83M16.95 16.95l2.83 2.83M1 12h4M19 12h4"/></svg></div>
           <div class="stat-label">Hubs ativos</div>
           <div class="stat-value" id="stat-hubs">{{ total_hubs }}</div>
         </div>
         <div class="stat-card">
-          <div class="stat-icon green">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
-          </div>
+          <div class="stat-icon green"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg></div>
           <div class="stat-label">Negócios</div>
           <div class="stat-value" id="stat-negocios">{{ total_negocios }}</div>
         </div>
         <div class="stat-card">
-          <div class="stat-icon amber">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 6h16M4 10h16M4 14h16M4 18h16"/></svg>
-          </div>
+          <div class="stat-icon amber"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 6h16M4 10h16M4 14h16M4 18h16"/></svg></div>
           <div class="stat-label">Categorias</div>
           <div class="stat-value" id="stat-categorias">{{ total_categorias }}</div>
         </div>
         <div class="stat-card">
-          <div class="stat-icon blue">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/></svg>
-          </div>
+          <div class="stat-icon blue"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/></svg></div>
           <div class="stat-label">Usuários</div>
           <div class="stat-value" id="stat-usuarios">{{ total_usuarios }}</div>
         </div>
       </div>
-
       <div class="card">
         <div class="card-header">
           <span class="card-title">Hubs recentes</span>
@@ -659,10 +327,21 @@ tbody td {
             </button>
           </div>
         </div>
+        <!-- Bulk bar hubs -->
+        <div class="bulk-bar" id="bulk-hubs">
+          <span class="bulk-count" id="bulk-hubs-count">0 selecionados</span>
+          <button class="btn btn-secondary btn-sm" onclick="bulkAtivar('hubs', true)">✓ Ativar</button>
+          <button class="btn btn-amber btn-sm" onclick="bulkAtivar('hubs', false)">✗ Desativar</button>
+          <button class="btn btn-danger btn-sm" onclick="bulkDeleteConfirm('hubs')">🗑 Excluir selecionados</button>
+          <button class="btn btn-secondary btn-sm" onclick="deselectAll('hubs')">Cancelar</button>
+        </div>
         <div class="table-wrap">
           <table>
-            <thead><tr><th>Nome</th><th>Subdomínio / Domínio</th><th>Tipo</th><th>Dono</th><th>Negócios</th><th>Status</th><th>Ações</th></tr></thead>
-            <tbody id="hubsBody"><tr><td colspan="7"><div class="loading"><div class="spinner"></div>Carregando...</div></td></tr></tbody>
+            <thead><tr>
+              <th><input type="checkbox" class="row-check" id="chk-all-hubs" onchange="toggleAll('hubs', this.checked)"></th>
+              <th>Nome</th><th>Subdomínio / Domínio</th><th>Tipo</th><th>Dono</th><th>Negócios</th><th>Status</th><th>Ações</th>
+            </tr></thead>
+            <tbody id="hubsBody"><tr><td colspan="8"><div class="loading"><div class="spinner"></div>Carregando...</div></td></tr></tbody>
           </table>
         </div>
       </div>
@@ -684,10 +363,23 @@ tbody td {
             </button>
           </div>
         </div>
+        <!-- Bulk bar negócios -->
+        <div class="bulk-bar" id="bulk-negocios">
+          <span class="bulk-count" id="bulk-negocios-count">0 selecionados</span>
+          <button class="btn btn-secondary btn-sm" onclick="bulkAtivar('negocios', true)">✓ Ativar</button>
+          <button class="btn btn-amber btn-sm" onclick="bulkAtivar('negocios', false)">✗ Desativar</button>
+          <button class="btn btn-secondary btn-sm" onclick="openBulkHub('negocios')">🔗 Vincular a hub</button>
+          <button class="btn btn-secondary btn-sm" onclick="openBulkCategoria('negocios')">🏷 Definir categoria</button>
+          <button class="btn btn-danger btn-sm" onclick="bulkDeleteConfirm('negocios')">🗑 Excluir selecionados</button>
+          <button class="btn btn-secondary btn-sm" onclick="deselectAll('negocios')">Cancelar</button>
+        </div>
         <div class="table-wrap">
           <table>
-            <thead><tr><th>Nome</th><th>Slug</th><th>Categoria</th><th>Bairro</th><th>Visualizações</th><th>Status</th><th>Ações</th></tr></thead>
-            <tbody id="negociosBody"><tr><td colspan="7"><div class="loading"><div class="spinner"></div>Carregando...</div></td></tr></tbody>
+            <thead><tr>
+              <th><input type="checkbox" class="row-check" id="chk-all-negocios" onchange="toggleAll('negocios', this.checked)"></th>
+              <th>Nome</th><th>Slug</th><th>Categoria</th><th>Bairro</th><th>Visualizações</th><th>Status</th><th>Ações</th>
+            </tr></thead>
+            <tbody id="negociosBody"><tr><td colspan="8"><div class="loading"><div class="spinner"></div>Carregando...</div></td></tr></tbody>
           </table>
         </div>
       </div>
@@ -703,10 +395,21 @@ tbody td {
             Nova categoria
           </button>
         </div>
+        <!-- Bulk bar categorias -->
+        <div class="bulk-bar" id="bulk-categorias">
+          <span class="bulk-count" id="bulk-categorias-count">0 selecionados</span>
+          <button class="btn btn-secondary btn-sm" onclick="bulkAtivar('categorias', true)">✓ Ativar</button>
+          <button class="btn btn-amber btn-sm" onclick="bulkAtivar('categorias', false)">✗ Desativar</button>
+          <button class="btn btn-danger btn-sm" onclick="bulkDeleteConfirm('categorias')">🗑 Excluir selecionadas</button>
+          <button class="btn btn-secondary btn-sm" onclick="deselectAll('categorias')">Cancelar</button>
+        </div>
         <div class="table-wrap">
           <table>
-            <thead><tr><th>Nome</th><th>Slug</th><th>Ícone</th><th>Status</th><th>Ações</th></tr></thead>
-            <tbody id="categoriasBody"><tr><td colspan="5"><div class="loading"><div class="spinner"></div>Carregando...</div></td></tr></tbody>
+            <thead><tr>
+              <th><input type="checkbox" class="row-check" id="chk-all-categorias" onchange="toggleAll('categorias', this.checked)"></th>
+              <th>Nome</th><th>Slug</th><th>Ícone</th><th>Status</th><th>Ações</th>
+            </tr></thead>
+            <tbody id="categoriasBody"><tr><td colspan="6"><div class="loading"><div class="spinner"></div>Carregando...</div></td></tr></tbody>
           </table>
         </div>
       </div>
@@ -753,7 +456,7 @@ tbody td {
   </main>
 </div>
 
-<!-- ═══ MODAL / DRAWER ═══ -->
+<!-- ═══ DRAWER ═══ -->
 <div class="modal-overlay" id="modalOverlay" onclick="closeDrawerOnOverlay(event)">
   <div class="drawer" id="drawer">
     <div class="drawer-header">
@@ -766,25 +469,82 @@ tbody td {
   </div>
 </div>
 
+<!-- ═══ CONFIRM MODAL (exclusão em massa com senha) ═══ -->
+<div class="confirm-overlay" id="confirmOverlay">
+  <div class="confirm-box">
+    <div class="confirm-icon">🗑️</div>
+    <div class="confirm-msg" id="confirmMsg">Excluir itens selecionados?</div>
+    <div class="confirm-sub" id="confirmSub">Esta ação não pode ser desfeita.</div>
+    <div class="confirm-senha-wrap" id="confirmSenhaWrap">
+      <div class="field">
+        <label>Digite sua senha para confirmar</label>
+        <input type="password" id="confirmSenhaInput" placeholder="••••••••" autocomplete="off">
+      </div>
+    </div>
+    <div class="confirm-actions">
+      <button class="btn btn-secondary" onclick="closeConfirm()">Cancelar</button>
+      <button class="btn btn-danger" onclick="executeConfirm()">Confirmar exclusão</button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ MODAL VINCULAR HUB EM MASSA ═══ -->
+<div class="confirm-overlay" id="bulkHubOverlay">
+  <div class="confirm-box" style="width:460px">
+    <div class="confirm-msg">Vincular negócios selecionados a um Hub</div>
+    <div class="confirm-sub" id="bulkHubCount"></div>
+    <div class="field" style="margin:16px 0">
+      <label>Selecione o Hub</label>
+      <select id="bulkHubSelect">
+        <option value="">— Selecione —</option>
+      </select>
+    </div>
+    <div class="confirm-actions">
+      <button class="btn btn-secondary" onclick="closeBulkHub()">Cancelar</button>
+      <button class="btn btn-primary" onclick="executeBulkHub()">🔗 Vincular</button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ MODAL CATEGORIA EM MASSA ═══ -->
+<div class="confirm-overlay" id="bulkCatOverlay">
+  <div class="confirm-box" style="width:460px">
+    <div class="confirm-msg">Definir categoria em massa</div>
+    <div class="confirm-sub" id="bulkCatCount"></div>
+    <div class="field" style="margin:16px 0">
+      <label>Selecione a Categoria</label>
+      <select id="bulkCatSelect">
+        <option value="">— Selecione —</option>
+      </select>
+    </div>
+    <div class="confirm-actions">
+      <button class="btn btn-secondary" onclick="closeBulkCat()">Cancelar</button>
+      <button class="btn btn-primary" onclick="executeBulkCat()">🏷 Aplicar</button>
+    </div>
+  </div>
+</div>
+
 <!-- Toast container -->
 <div class="toast-wrap" id="toastWrap"></div>
 
 <script>
-// ── State ────────────────────────────────────────────────────
+// ── State ─────────────────────────────────────────────────────
 const state = {
   section: 'dashboard',
   loaded: new Set(),
   data: { hubs: [], negocios: [], categorias: [], usuarios: [], assinaturas: [] },
   editId: null,
   editType: null,
+  selected: { hubs: new Set(), negocios: new Set(), categorias: new Set() },
+  _confirmAction: null,
 };
 
-// ── Navigation ───────────────────────────────────────────────
+// ── Navigation ────────────────────────────────────────────────
 function navigate(section) {
   document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
-  document.querySelector(`[data-section="${section}"]`).classList.add('active');
+  document.querySelector(`[data-section="${section}"]`)?.classList.add('active');
   document.querySelectorAll('.section').forEach(el => el.classList.remove('active'));
-  document.getElementById(`sec-${section}`).classList.add('active');
+  document.getElementById(`sec-${section}`)?.classList.add('active');
   document.getElementById('topbarTitle').textContent = {
     dashboard: 'Dashboard', hubs: 'Hub clientes', negocios: 'Negócios',
     categorias: 'Categorias', usuarios: 'Usuários', assinaturas: 'Assinaturas'
@@ -792,18 +552,17 @@ function navigate(section) {
   state.section = section;
   if (!state.loaded.has(section)) loadSection(section);
 }
-
 document.querySelectorAll('.nav-item').forEach(btn => {
   btn.addEventListener('click', () => navigate(btn.dataset.section));
 });
 
-// ── Avatar inicial ───────────────────────────────────────────
+// ── Avatar ────────────────────────────────────────────────────
 const nm = document.getElementById('userName').textContent.trim();
 if (nm && nm !== '{{ session.admin_nome }}') {
   document.getElementById('userAvatar').textContent = nm.charAt(0).toUpperCase();
 }
 
-// ── Load sections ────────────────────────────────────────────
+// ── Load sections ─────────────────────────────────────────────
 async function loadSection(section) {
   state.loaded.add(section);
   if (section === 'dashboard') { await loadDashboard(); return; }
@@ -817,10 +576,8 @@ async function loadDashboard() {
 
 async function loadData(section) {
   const endpoints = {
-    hubs:        '/admin/hubs',
-    negocios:    '/admin/negocios',
-    categorias:  '/admin/categorias',
-    usuarios:    '/admin/usuarios',
+    hubs: '/admin/hubs', negocios: '/admin/negocios',
+    categorias: '/admin/categorias', usuarios: '/admin/usuarios',
     assinaturas: '/admin/assinaturas',
   };
   try {
@@ -834,9 +591,7 @@ async function loadData(section) {
   }
 }
 
-
-
-// ── Render tables ────────────────────────────────────────────
+// ── Render tables ─────────────────────────────────────────────
 function render(section) {
   const data = state.data[section];
   if (section === 'hubs') renderHubs(data);
@@ -863,9 +618,10 @@ function renderDashHubs() {
 
 function renderHubs(data) {
   const tbody = document.getElementById('hubsBody');
-  if (!data.length) { tbody.innerHTML = emptyRow(7); return; }
+  if (!data.length) { tbody.innerHTML = emptyRow(8); return; }
   tbody.innerHTML = data.map(h => `
-    <tr data-search="${esc(h.nome).toLowerCase()}">
+    <tr data-search="${esc(h.nome).toLowerCase()}" data-id="${h.id}">
+      <td><input type="checkbox" class="row-check" onchange="toggleRow('hubs', ${h.id}, this.checked)"></td>
       <td><strong>${esc(h.nome)}</strong></td>
       <td class="td-mono">${esc(h.hub_leanttro) || '—'}</td>
       <td>${badgeTipo(h.tipo)}</td>
@@ -879,9 +635,10 @@ function renderHubs(data) {
 
 function renderNegocios(data) {
   const tbody = document.getElementById('negociosBody');
-  if (!data.length) { tbody.innerHTML = emptyRow(7); return; }
+  if (!data.length) { tbody.innerHTML = emptyRow(8); return; }
   tbody.innerHTML = data.map(n => `
-    <tr data-search="${esc(n.nome).toLowerCase()}">
+    <tr data-search="${esc(n.nome).toLowerCase()}" data-id="${n.id}">
+      <td><input type="checkbox" class="row-check" onchange="toggleRow('negocios', ${n.id}, this.checked)"></td>
       <td><strong>${esc(n.nome)}</strong></td>
       <td class="td-mono">${esc(n.slug)}</td>
       <td>${esc(n.categoria_nome) || '—'}</td>
@@ -895,9 +652,10 @@ function renderNegocios(data) {
 
 function renderCategorias(data) {
   const tbody = document.getElementById('categoriasBody');
-  if (!data.length) { tbody.innerHTML = emptyRow(5); return; }
+  if (!data.length) { tbody.innerHTML = emptyRow(6); return; }
   tbody.innerHTML = data.map(c => `
-    <tr>
+    <tr data-id="${c.id}">
+      <td><input type="checkbox" class="row-check" onchange="toggleRow('categorias', ${c.id}, this.checked)"></td>
       <td><strong>${esc(c.nome)}</strong></td>
       <td class="td-mono">${esc(c.slug)}</td>
       <td class="td-muted">${esc(c.icone_url) || '—'}</td>
@@ -938,7 +696,182 @@ function renderAssinaturas(data) {
   `).join('');
 }
 
-// ── Helpers ──────────────────────────────────────────────────
+// ── Bulk selection ────────────────────────────────────────────
+function toggleRow(section, id, checked) {
+  if (checked) state.selected[section].add(id);
+  else state.selected[section].delete(id);
+  updateBulkBar(section);
+}
+
+function toggleAll(section, checked) {
+  const tbody = document.getElementById(section + 'Body');
+  tbody.querySelectorAll('.row-check').forEach(cb => {
+    cb.checked = checked;
+    const id = parseInt(cb.closest('tr').dataset.id);
+    if (checked) state.selected[section].add(id);
+    else state.selected[section].delete(id);
+    cb.closest('tr').classList.toggle('selected', checked);
+  });
+  updateBulkBar(section);
+}
+
+function updateBulkBar(section) {
+  const count = state.selected[section].size;
+  const bar = document.getElementById('bulk-' + section);
+  const countEl = document.getElementById('bulk-' + section + '-count');
+  if (bar) {
+    bar.classList.toggle('show', count > 0);
+    if (countEl) countEl.textContent = `${count} selecionado${count !== 1 ? 's' : ''}`;
+  }
+  // Sincroniza highlight nas linhas
+  const tbody = document.getElementById(section + 'Body');
+  if (tbody) {
+    tbody.querySelectorAll('tr[data-id]').forEach(tr => {
+      const id = parseInt(tr.dataset.id);
+      tr.classList.toggle('selected', state.selected[section].has(id));
+    });
+  }
+}
+
+function deselectAll(section) {
+  state.selected[section].clear();
+  const chkAll = document.getElementById('chk-all-' + section);
+  if (chkAll) chkAll.checked = false;
+  document.getElementById(section + 'Body')?.querySelectorAll('.row-check').forEach(cb => { cb.checked = false; });
+  updateBulkBar(section);
+}
+
+// ── Bulk ativar/desativar ─────────────────────────────────────
+async function bulkAtivar(section, ativo) {
+  const ids = [...state.selected[section]];
+  if (!ids.length) return;
+  const endpoints = { hubs: '/admin/hubs', negocios: '/admin/negocios', categorias: '/admin/categorias' };
+  try {
+    const fd = new FormData();
+    ids.forEach(id => fd.append('ids[]', id));
+    fd.append('ativo', ativo ? '1' : '0');
+    const r = await fetch(endpoints[section] + '/bulk_ativo', { method: 'POST', body: fd });
+    if (r.ok || r.redirected) {
+      showToast(`${ids.length} item(s) ${ativo ? 'ativado(s)' : 'desativado(s)'}!`, 'success');
+      deselectAll(section);
+      state.loaded.delete(section);
+      await loadSection(section);
+    } else { showToast('Erro ao atualizar', 'error'); }
+  } catch(e) { showToast('Erro de conexão', 'error'); }
+}
+
+// ── Bulk delete com senha ─────────────────────────────────────
+function bulkDeleteConfirm(section) {
+  const ids = [...state.selected[section]];
+  if (!ids.length) return;
+  document.getElementById('confirmMsg').textContent = `Excluir ${ids.length} item(s) selecionado(s)?`;
+  document.getElementById('confirmSub').textContent = 'Esta ação não pode ser desfeita.';
+  document.getElementById('confirmSenhaWrap').style.display = 'block';
+  document.getElementById('confirmSenhaInput').value = '';
+  state._confirmAction = () => executeBulkDelete(section, ids);
+  document.getElementById('confirmOverlay').classList.add('open');
+}
+
+async function executeBulkDelete(section, ids) {
+  const endpoints = { hubs: '/admin/hubs', negocios: '/admin/negocios', categorias: '/admin/categorias' };
+  const fd = new FormData();
+  ids.forEach(id => fd.append('ids[]', id));
+  const r = await fetch(endpoints[section] + '/bulk_delete', { method: 'POST', body: fd });
+  if (r.ok || r.redirected) {
+    showToast(`${ids.length} item(s) excluído(s)!`, 'success');
+    deselectAll(section);
+    state.loaded.delete(section);
+    await loadSection(section);
+  } else { showToast('Erro ao excluir', 'error'); }
+}
+
+function closeConfirm() {
+  document.getElementById('confirmOverlay').classList.remove('open');
+  state._confirmAction = null;
+}
+
+async function executeConfirm() {
+  const senha = document.getElementById('confirmSenhaInput').value.trim();
+  if (!senha) { showToast('Digite sua senha para confirmar', 'warn'); return; }
+  // Verifica senha via re-login silencioso
+  try {
+    const email = localStorage.getItem('lt_hub_email') || '';
+    const r = await fetch('/admin/login', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email, senha })
+    });
+    if (!r.ok) { showToast('Senha incorreta', 'error'); return; }
+  } catch(e) {
+    // Se não tiver email salvo, prossegue (modo confiança)
+  }
+  closeConfirm();
+  try {
+    if (state._confirmAction) await state._confirmAction();
+  } catch(e) { showToast('Erro ao executar ação', 'error'); }
+}
+
+// ── Bulk: vincular a hub ──────────────────────────────────────
+function openBulkHub(section) {
+  const ids = [...state.selected[section]];
+  if (!ids.length) return;
+  document.getElementById('bulkHubCount').textContent = `${ids.length} negócio(s) selecionado(s)`;
+  const sel = document.getElementById('bulkHubSelect');
+  sel.innerHTML = '<option value="">— Selecione —</option>' +
+    state.data.hubs.map(h => `<option value="${h.id}">${esc(h.nome)}</option>`).join('');
+  document.getElementById('bulkHubOverlay').classList.add('open');
+}
+function closeBulkHub() { document.getElementById('bulkHubOverlay').classList.remove('open'); }
+async function executeBulkHub() {
+  const hubId = document.getElementById('bulkHubSelect').value;
+  if (!hubId) { showToast('Selecione um hub', 'warn'); return; }
+  const ids = [...state.selected.negocios];
+  const fd = new FormData();
+  ids.forEach(id => fd.append('ids[]', id));
+  fd.append('hub_id', hubId);
+  try {
+    const r = await fetch('/admin/negocios/bulk_hub', { method: 'POST', body: fd });
+    if (r.ok || r.redirected) {
+      showToast(`${ids.length} negócio(s) vinculado(s) ao hub!`, 'success');
+      closeBulkHub();
+      deselectAll('negocios');
+      state.loaded.delete('negocios');
+      await loadSection('negocios');
+    } else { showToast('Erro ao vincular', 'error'); }
+  } catch(e) { showToast('Erro de conexão', 'error'); }
+}
+
+// ── Bulk: definir categoria ───────────────────────────────────
+function openBulkCategoria(section) {
+  const ids = [...state.selected[section]];
+  if (!ids.length) return;
+  document.getElementById('bulkCatCount').textContent = `${ids.length} negócio(s) selecionado(s)`;
+  const sel = document.getElementById('bulkCatSelect');
+  sel.innerHTML = '<option value="">— Selecione —</option>' +
+    state.data.categorias.map(c => `<option value="${c.id}">${esc(c.nome)}</option>`).join('');
+  document.getElementById('bulkCatOverlay').classList.add('open');
+}
+function closeBulkCat() { document.getElementById('bulkCatOverlay').classList.remove('open'); }
+async function executeBulkCat() {
+  const catId = document.getElementById('bulkCatSelect').value;
+  if (!catId) { showToast('Selecione uma categoria', 'warn'); return; }
+  const ids = [...state.selected.negocios];
+  const fd = new FormData();
+  ids.forEach(id => fd.append('ids[]', id));
+  fd.append('categoria_id', catId);
+  try {
+    const r = await fetch('/admin/negocios/bulk_categoria', { method: 'POST', body: fd });
+    if (r.ok || r.redirected) {
+      showToast(`Categoria aplicada a ${ids.length} negócio(s)!`, 'success');
+      closeBulkCat();
+      deselectAll('negocios');
+      state.loaded.delete('negocios');
+      await loadSection('negocios');
+    } else { showToast('Erro ao aplicar categoria', 'error'); }
+  } catch(e) { showToast('Erro de conexão', 'error'); }
+}
+
+// ── Helpers ───────────────────────────────────────────────────
 function esc(s) {
   if (s == null) return '';
   return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
@@ -960,11 +893,10 @@ function badgeStatus(s) {
   return `<span class="badge ${cls}">${esc(s) || '—'}</span>`;
 }
 function actionBtns(type, id) {
-  return `
-    <div style="display:flex;gap:6px;">
-      <button class="btn btn-secondary btn-sm" onclick="editItem('${type}', ${id})">Editar</button>
-      <button class="btn btn-danger btn-sm" onclick="deleteItem('${type}', ${id})">Excluir</button>
-    </div>`;
+  return `<div style="display:flex;gap:6px;">
+    <button class="btn btn-secondary btn-sm" onclick="editItem('${type}', ${id})">Editar</button>
+    <button class="btn btn-danger btn-sm" onclick="deleteItem('${type}', ${id})">Excluir</button>
+  </div>`;
 }
 function filterTable(tbodyId, q) {
   const tbody = document.getElementById(tbodyId);
@@ -973,83 +905,56 @@ function filterTable(tbodyId, q) {
   });
 }
 
-// ── Drawer / Forms ───────────────────────────────────────────
+// ── Drawer ────────────────────────────────────────────────────
 function openDrawer(type, id = null) {
   state.editType = type;
   state.editId = id;
   document.getElementById('modalOverlay').classList.add('open');
   buildForm(type, id);
 }
-function closeDrawer() {
-  document.getElementById('modalOverlay').classList.remove('open');
-}
-function closeDrawerOnOverlay(e) {
-  if (e.target === document.getElementById('modalOverlay')) closeDrawer();
-}
+function closeDrawer() { document.getElementById('modalOverlay').classList.remove('open'); }
+function closeDrawerOnOverlay(e) { if (e.target === document.getElementById('modalOverlay')) closeDrawer(); }
 
 async function editItem(type, id) {
-  // Carrega formulário de edição direto da rota Flask
-  const urls = { hub: `/admin/hubs/${id}/editar`, negocio: `/admin/negocios/${id}/editar`, categoria: `/admin/categorias/${id}/editar`, usuario: `/admin/usuarios/${id}/editar`, assinatura: `/admin/assinaturas/${id}/editar` };
+  const urls = {
+    hub: `/admin/hubs/${id}/editar`, negocio: `/admin/negocios/${id}/editar`,
+    categoria: `/admin/categorias/${id}/editar`, usuario: `/admin/usuarios/${id}/editar`,
+    assinatura: `/admin/assinaturas/${id}/editar`
+  };
   document.getElementById('drawerTitle').textContent = 'Carregando...';
   document.getElementById('drawerBody').innerHTML = '<div class="loading"><div class="spinner"></div>Carregando...</div>';
   openDrawer(type, id);
   try {
     const r = await fetch(urls[type]);
     const data = await r.json();
-    if (type === 'hub') {
-      // Hub retorna JSON — monta o form de criação e preenche os campos
-      document.getElementById('drawerTitle').textContent = 'Editar hub';
-      document.getElementById('drawerBody').innerHTML = formHub();
-      const form = document.getElementById('drawerForm');
-      form.action = urls[type];
-      // Preenche campos
-      for (const [key, val] of Object.entries(data)) {
-        const el = form.elements[key];
-        if (!el || val == null) continue;
-        if (el.type === 'checkbox') { el.checked = val === true || val === 'true' || val === 't'; }
-        else if (el.type === 'color') { el.value = val || '#7943e2'; }
-        else { el.value = val; }
-      }
-      await populateTemplateSelects({
-        template_index:   data.template_index,
-        template_filtro:  data.template_filtro,
-        template_negocio: data.template_negocio,
-      });
-      setupFormSubmit(form);
-    } else {
-      // Outros tipos: usa JSON retornado e monta o form local
-      const titles = { negocio:'Editar negócio', categoria:'Editar categoria', usuario:'Editar usuário', assinatura:'Editar assinatura' };
-      const formFns = { negocio: formNegocio, categoria: formCategoria, usuario: formUsuario, assinatura: formAssinatura };
-      document.getElementById('drawerTitle').textContent = titles[type];
-      document.getElementById('drawerBody').innerHTML = formFns[type]();
-      const form = document.getElementById('drawerForm');
-      form.action = urls[type];
-      // Preenche campos simples (input, select, textarea)
-      for (const [key, val] of Object.entries(data)) {
-        const el = form.elements[key];
-        if (!el || val == null) continue;
-        if (el.type === 'checkbox') { el.checked = val === true || val === 'true' || val === 't'; }
-        else { el.value = val; }
-      }
-      // Preenche checkboxes múltiplos (ex: hubs vinculados)
-      if (type === 'negocio') {
-        // Checkboxes de hubs
-        const hubIds = Array.isArray(data.hubs) ? data.hubs.map(h => String(h.id ?? h)) : [];
-        form.querySelectorAll('input[name="hubs"]').forEach(cb => { cb.checked = hubIds.includes(String(cb.value)); });
-        // Checkboxes de mostrar_*
-        const boolFields = ['mostrar_foto','mostrar_descricao','mostrar_whatsapp','mostrar_instagram','mostrar_telefone','mostrar_site','mostrar_endereco','mostrar_mapa','ativo'];
-        boolFields.forEach(f => {
-          const cb = form.elements[f];
-          if (cb) cb.checked = data[f] === true || data[f] === 'true' || data[f] === 't';
-        });
-      }
-      setupFormSubmit(form);
+    const titles = { hub:'Editar hub', negocio:'Editar negócio', categoria:'Editar categoria', usuario:'Editar usuário', assinatura:'Editar assinatura' };
+    const formFns = { hub: formHub, negocio: formNegocio, categoria: formCategoria, usuario: formUsuario, assinatura: formAssinatura };
+    document.getElementById('drawerTitle').textContent = titles[type];
+    document.getElementById('drawerBody').innerHTML = formFns[type]();
+    const form = document.getElementById('drawerForm');
+    form.action = urls[type];
+    for (const [key, val] of Object.entries(data)) {
+      const el = form.elements[key];
+      if (!el || val == null) continue;
+      if (el.type === 'checkbox') { el.checked = val === true || val === 'true' || val === 't'; }
+      else if (el.type === 'color') { el.value = val || '#7943e2'; }
+      else { el.value = val; }
     }
+    if (type === 'hub') await populateTemplateSelects({ template_index: data.template_index, template_filtro: data.template_filtro, template_negocio: data.template_negocio });
+    if (type === 'negocio') {
+      const hubIds = Array.isArray(data.hubs) ? data.hubs.map(h => String(h.id ?? h)) : [];
+      form.querySelectorAll('input[name="hubs"]').forEach(cb => { cb.checked = hubIds.includes(String(cb.value)); });
+      ['mostrar_foto','mostrar_descricao','mostrar_whatsapp','mostrar_instagram','mostrar_telefone','mostrar_site','mostrar_endereco','mostrar_mapa','ativo'].forEach(f => {
+        const cb = form.elements[f];
+        if (cb) cb.checked = data[f] === true || data[f] === 'true' || data[f] === 't';
+      });
+    }
+    setupFormSubmit(form);
   } catch(e) { showToast('Erro ao carregar formulário', 'error'); }
 }
 
 function buildForm(type, id) {
-  const titles = { hub: 'Novo hub', negocio: 'Novo negócio', categoria: 'Nova categoria', usuario: 'Novo usuário', assinatura: 'Nova assinatura' };
+  const titles = { hub:'Novo hub', negocio:'Novo negócio', categoria:'Nova categoria', usuario:'Novo usuário', assinatura:'Nova assinatura' };
   document.getElementById('drawerTitle').textContent = titles[type];
   const forms = { hub: formHub, negocio: formNegocio, categoria: formCategoria, usuario: formUsuario, assinatura: formAssinatura };
   document.getElementById('drawerBody').innerHTML = forms[type]();
@@ -1058,27 +963,11 @@ function buildForm(type, id) {
   if (type === 'hub') populateTemplateSelects();
 }
 
-function wrapFormForDrawer(form, action) {
-  form.action = action;
-  addFormActions(form);
-  setupFormSubmit(form);
-}
-
-function addFormActions(form) {
-  // Remove actions existentes e adiciona os botões padrão
-  form.querySelectorAll('.form-actions').forEach(el => el.remove());
-  const div = document.createElement('div');
-  div.className = 'form-actions';
-  div.innerHTML = `<button type="button" class="btn btn-secondary" onclick="closeDrawer()">Cancelar</button><button type="submit" class="btn btn-primary">Salvar</button>`;
-  form.appendChild(div);
-}
-
 function setupFormSubmit(form) {
   form.addEventListener('submit', async function(e) {
     e.preventDefault();
     const btn = form.querySelector('[type=submit]');
-    btn.disabled = true;
-    btn.textContent = 'Salvando...';
+    btn.disabled = true; btn.textContent = 'Salvando...';
     try {
       const r = await fetch(form.action, { method: 'POST', body: new FormData(form) });
       if (r.ok || r.redirected) {
@@ -1088,21 +977,22 @@ function setupFormSubmit(form) {
         state.loaded.delete('dashboard');
         await loadSection(state.section);
         if (state.section !== 'dashboard') await loadDashboard();
-      } else {
-        showToast('Erro ao salvar', 'error');
-      }
+      } else { showToast('Erro ao salvar', 'error'); }
     } catch(e) { showToast('Erro de conexão', 'error'); }
-    btn.disabled = false;
-    btn.textContent = 'Salvar';
+    btn.disabled = false; btn.textContent = 'Salvar';
   });
 }
 
+// ── Delete individual (sem senha) ─────────────────────────────
 async function deleteItem(type, id) {
   if (!confirm('Confirma a exclusão?')) return;
-  const urls = { hub: `/admin/hubs/${id}/deletar`, negocio: `/admin/negocios/${id}/deletar`, categoria: `/admin/categorias/${id}/deletar`, usuario: `/admin/usuarios/${id}/deletar`, assinatura: `/admin/assinaturas/${id}/deletar` };
+  const urls = {
+    hub: `/admin/hubs/${id}/deletar`, negocio: `/admin/negocios/${id}/deletar`,
+    categoria: `/admin/categorias/${id}/deletar`, usuario: `/admin/usuarios/${id}/deletar`,
+    assinatura: `/admin/assinaturas/${id}/deletar`
+  };
   try {
-    const fd = new FormData();
-    const r = await fetch(urls[type], { method: 'POST', body: fd });
+    const r = await fetch(urls[type], { method: 'POST', body: new FormData() });
     if (r.ok || r.redirected) {
       showToast('Excluído com sucesso', 'success');
       state.loaded.delete(state.section);
@@ -1112,7 +1002,7 @@ async function deleteItem(type, id) {
   } catch(e) { showToast('Erro de conexão', 'error'); }
 }
 
-// ── Form templates ───────────────────────────────────────────
+// ── Form templates ────────────────────────────────────────────
 function formHub() {
   const cats = state.data.categorias.map(c => `<option value="${c.id}">${esc(c.nome)}</option>`).join('');
   const users = state.data.usuarios.map(u => `<option value="${u.id}">${esc(u.nome)}</option>`).join('');
@@ -1290,7 +1180,7 @@ function formAssinatura() {
   </form>`;
 }
 
-// ── Toast ────────────────────────────────────────────────────
+// ── Toast ─────────────────────────────────────────────────────
 function showToast(msg, type = '') {
   const wrap = document.getElementById('toastWrap');
   const t = document.createElement('div');
@@ -1300,7 +1190,7 @@ function showToast(msg, type = '') {
   setTimeout(() => t.remove(), 3000);
 }
 
-// ── Templates dinâmicos ──────────────────────────────────────
+// ── Templates dinâmicos ───────────────────────────────────────
 async function populateTemplateSelects(currentValues = {}) {
   if (!state.templates) {
     try {
@@ -1322,10 +1212,9 @@ async function populateTemplateSelects(currentValues = {}) {
   }
 }
 
-// ── Init ─────────────────────────────────────────────────────
+// ── Init ──────────────────────────────────────────────────────
 (async function init() {
   await loadSection('dashboard');
-  // Pré-carrega categorias, hubs e usuários para os selects dos formulários
   if (!state.loaded.has('categorias')) await loadData('categorias');
   if (!state.loaded.has('usuarios')) await loadData('usuarios');
 })();
