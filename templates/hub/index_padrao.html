@@ -162,7 +162,7 @@ nav.desktop-nav{flex:1;min-width:0;overflow:hidden}
 /* FOOTER */
 footer{background:#0d0d0d;border-top:1px solid #1e1e1e;padding:40px 0 28px;font-family:var(--sans)}
 .footer-inner{max-width:1200px;margin:0 auto;padding:0 20px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:24px}
-.footer-logo img{height:44px;width:auto;display:block;filter:brightness(0) invert(1)}
+.footer-logo img{height:44px;width:auto;display:block}
 .footer-logo-mark{display:flex;align-items:center;gap:10px}
 .footer-logo-mark .mark{width:36px;height:36px;background:var(--primary);border-radius:8px;display:flex;align-items:center;justify-content:center;color:#fff;font-family:var(--display);font-weight:800;font-size:.95rem;flex-shrink:0}
 .footer-logo-mark .mark-text strong{display:block;color:#fff;font-family:var(--display);font-size:.9rem;font-weight:700}
@@ -181,6 +181,33 @@ footer{background:#0d0d0d;border-top:1px solid #1e1e1e;padding:40px 0 28px;font-
 .footer-bottom{max-width:1200px;margin:28px auto 0;padding:18px 20px 0;border-top:1px solid #1a1a1a;text-align:center;color:#3a3a3a;font-size:11.5px}
 .footer-bottom a{color:#555;text-decoration:none}
 .footer-bottom a:hover{color:#888;text-decoration:underline}
+
+/* LEANTTRO FOOTER SECTION */
+.leanttro-footer{background:#080808;border-top:1px solid #1a1a1a;padding:36px 20px 24px}
+.leanttro-footer-inner{max-width:1200px;margin:0 auto;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:28px}
+.leanttro-footer-brand{display:flex;align-items:center;gap:14px}
+.leanttro-footer-brand img{height:36px;width:auto}
+.leanttro-footer-brand-text strong{display:block;color:#fff;font-size:13px;font-weight:700;font-family:var(--display);margin-bottom:2px}
+.leanttro-footer-brand-text span{color:#555;font-size:11.5px}
+.leanttro-footer-services{display:flex;gap:10px;flex-wrap:wrap}
+.leanttro-service-tag{padding:4px 12px;border-radius:14px;border:1px solid #2a2a2a;color:#666;font-size:11px;font-weight:500;white-space:nowrap}
+.leanttro-footer-cta a{display:inline-flex;align-items:center;gap:7px;background:var(--primary);color:#fff;padding:9px 18px;border-radius:8px;font-size:12.5px;font-weight:600;transition:background .2s}
+.leanttro-footer-cta a:hover{background:var(--primary-d)}
+.leanttro-footer-copy{max-width:1200px;margin:16px auto 0;padding:14px 20px 0;border-top:1px solid #111;text-align:center;color:#333;font-size:11px}
+.leanttro-footer-copy a{color:#444}
+@media(max-width:640px){
+  .leanttro-footer-inner{flex-direction:column;align-items:flex-start;gap:18px}
+  .leanttro-footer-cta{width:100%}
+  .leanttro-footer-cta a{width:100%;justify-content:center}
+}
+
+/* BOTÃO PRÓXIMO A MIM */
+.btn-proximo{display:inline-flex;align-items:center;gap:7px;padding:9px 16px;border-radius:10px;border:1.5px solid var(--primary);background:#fff;color:var(--primary);font-family:var(--sans);font-size:.88rem;font-weight:600;cursor:pointer;transition:all .18s;white-space:nowrap}
+.btn-proximo:hover,.btn-proximo.active{background:var(--primary);color:#fff}
+.btn-proximo svg{width:15px;height:15px;flex-shrink:0}
+@keyframes spin-loc{to{transform:rotate(360deg)}}
+.btn-proximo.loading svg{animation:spin-loc 1s linear infinite}
+.dist-badge{font-size:.75rem;color:var(--primary);font-weight:600;margin-top:2px}
 @media(max-width:640px){
   .footer-inner{flex-direction:column;align-items:center;text-align:center;gap:14px}
   .footer-divider{display:none}
