@@ -825,11 +825,8 @@ async function loadData(section) {
   };
   try {
     const r = await fetch(endpoints[section], { headers: { 'X-Requested-With': 'XMLHttpRequest' } });
-    const html = await r.text();
-    const parser = new DOMParser();
-    const doc = parser.parseFromString(html, 'text/html');
-    const rows = extractRows(doc, section);
-    state.data[section] = rows;
+    const data = await r.json();
+    state.data[section] = data;
     render(section);
   } catch(e) {
     console.error(e);
@@ -837,85 +834,7 @@ async function loadData(section) {
   }
 }
 
-// ── Extract rows from server HTML ────────────────────────────
-function extractRows(doc, section) {
-  // Pega tbody da página retornada pelo Flask
-  const tbody = doc.querySelector('tbody');
-  if (!tbody) return [];
-  const rows = [];
-  tbody.querySelectorAll('tr').forEach(tr => {
-    const cells = tr.querySelectorAll('td');
-    if (!cells.length) return;
-    if (section === 'hubs') {
-      rows.push({
-        id: getIdFromLinks(tr),
-        nome: cells[0]?.textContent.trim(),
-        hub_leanttro: cells[1]?.textContent.trim(),
-        tipo: cells[2]?.textContent.trim(),
-        usuario_nome: cells[3]?.textContent.trim(),
-        total_negocios: cells[4]?.textContent.trim(),
-        ativo: cells[5]?.textContent.trim().toLowerCase().includes('ativ'),
-        _editUrl: tr.querySelector('a[href*="editar"]')?.href,
-        _delUrl: tr.querySelector('form[action*="deletar"]')?.action,
-      });
-    } else if (section === 'negocios') {
-      rows.push({
-        id: getIdFromLinks(tr),
-        nome: cells[0]?.textContent.trim(),
-        slug: cells[1]?.textContent.trim(),
-        categoria_nome: cells[2]?.textContent.trim(),
-        bairro: cells[3]?.textContent.trim(),
-        visualizacoes: cells[4]?.textContent.trim(),
-        ativo: cells[5]?.textContent.trim().toLowerCase().includes('ativ'),
-        _editUrl: tr.querySelector('a[href*="editar"]')?.href,
-        _delUrl: tr.querySelector('form[action*="deletar"]')?.action,
-      });
-    } else if (section === 'categorias') {
-      rows.push({
-        id: getIdFromLinks(tr),
-        nome: cells[0]?.textContent.trim(),
-        slug: cells[1]?.textContent.trim(),
-        icone_url: cells[2]?.textContent.trim(),
-        ativo: cells[3]?.textContent.trim().toLowerCase().includes('ativ'),
-        _editUrl: tr.querySelector('a[href*="editar"]')?.href,
-        _delUrl: tr.querySelector('form[action*="deletar"]')?.action,
-      });
-    } else if (section === 'usuarios') {
-      rows.push({
-        id: getIdFromLinks(tr),
-        nome: cells[0]?.textContent.trim(),
-        email: cells[1]?.textContent.trim(),
-        whatsapp: cells[2]?.textContent.trim(),
-        admin_nivel: cells[3]?.textContent.trim(),
-        criado_em: cells[4]?.textContent.trim(),
-        _editUrl: tr.querySelector('a[href*="editar"]')?.href,
-        _delUrl: tr.querySelector('form[action*="deletar"]')?.action,
-      });
-    } else if (section === 'assinaturas') {
-      rows.push({
-        id: getIdFromLinks(tr),
-        usuario_nome: cells[0]?.textContent.trim(),
-        plano: cells[1]?.textContent.trim(),
-        status: cells[2]?.textContent.trim(),
-        valido_ate: cells[3]?.textContent.trim(),
-        mp_sub_id: cells[4]?.textContent.trim(),
-        criado_em: cells[5]?.textContent.trim(),
-        _editUrl: tr.querySelector('a[href*="editar"]')?.href,
-        _delUrl: tr.querySelector('form[action*="deletar"]')?.action,
-      });
-    }
-  });
-  return rows;
-}
 
-function getIdFromLinks(tr) {
-  const a = tr.querySelector('a[href*="editar"]');
-  if (a) {
-    const m = a.href.match(/\/(\d+)\//);
-    return m ? parseInt(m[1]) : null;
-  }
-  return null;
-}
 
 // ── Render tables ────────────────────────────────────────────
 function render(section) {
