@@ -78,11 +78,24 @@ nav.desktop-nav{flex:1;min-width:0;overflow:hidden}
   background:linear-gradient(135deg,var(--primary) 0%,var(--primary-d) 100%);
   padding:72px 20px 0;position:relative;overflow:hidden;text-align:center;
 }
+.hero-bg-img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:center;z-index:0;opacity:.35}
 .hero::before{
   content:'';position:absolute;inset:0;
   background:url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='%23ffffff' fill-opacity='0.04'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/svg%3E");
+  z-index:1;
 }
-.hero .container{position:relative;z-index:1}
+
+/* BANNERS CLICÁVEIS */
+.banners-section{padding:32px 0 8px;background:var(--bg2)}
+.banners-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+.banner-link{display:block;border-radius:var(--radius);overflow:hidden;box-shadow:var(--shadow);transition:transform .2s,box-shadow .2s}
+.banner-link:hover{transform:translateY(-4px);box-shadow:var(--shadow-md)}
+.banner-link img{width:100%;height:180px;object-fit:cover;display:block}
+@media(max-width:600px){
+  .banners-grid{grid-template-columns:1fr}
+  .banner-link img{height:140px}
+}
+.hero .container{position:relative;z-index:2}
 .hero-badge{display:inline-block;background:rgba(255,255,255,.15);backdrop-filter:blur(4px);color:#fff;padding:5px 16px;border-radius:20px;font-size:.82rem;font-weight:600;margin-bottom:20px;border:1px solid rgba(255,255,255,.25)}
 .hero h1{font-family:var(--display);font-size:3rem;font-weight:800;color:#fff;line-height:1.12;letter-spacing:-.5px;margin-bottom:16px}
 .hero h1 em{color:rgba(255,255,255,.75);font-style:normal}
@@ -327,6 +340,9 @@ footer{background:#1c1c24;border-top:1px solid #2a2a38;padding:40px 0 28px;font-
 
 <!-- HERO -->
 <section class="hero" aria-label="{{ hub.nome }}">
+  {% if hub.banner_fundo_url %}
+  <img src="{{ hub.banner_fundo_url }}" alt="" class="hero-bg-img" aria-hidden="true">
+  {% endif %}
   <div class="container">
     <div class="hero-badge">Guia local de negócios</div>
     <h1 style="font-size:3.6rem;letter-spacing:-.8px">{{ hub.nome }}<br><em style="font-size:2rem;opacity:.8;font-weight:600;letter-spacing:-.2px">{{ hub.titulo and hub.titulo != hub.nome and hub.titulo or (hub.descricao and hub.descricao[:60] or 'Encontre os melhores negócios') }}</em></h1>
@@ -374,6 +390,26 @@ footer{background:#1c1c24;border-top:1px solid #2a2a38;padding:40px 0 28px;font-
         {% endfor %}
       </div>
       <button class="carousel-btn carousel-next" onclick="carouselScroll(1)" aria-label="Próximo">&#8250;</button>
+    </div>
+  </div>
+</section>
+{% endif %}
+
+<!-- BANNERS CLICÁVEIS -->
+{% if hub.banner1_foto_url or hub.banner2_foto_url %}
+<section class="banners-section" aria-label="Banners">
+  <div class="container">
+    <div class="banners-grid">
+      {% if hub.banner1_foto_url %}
+      <a href="{{ hub.banner1_link or '#' }}" class="banner-link" {% if hub.banner1_link %}target="_blank" rel="noopener"{% endif %}>
+        <img src="{{ hub.banner1_foto_url }}" alt="Banner 1" loading="lazy">
+      </a>
+      {% endif %}
+      {% if hub.banner2_foto_url %}
+      <a href="{{ hub.banner2_link or '#' }}" class="banner-link" {% if hub.banner2_link %}target="_blank" rel="noopener"{% endif %}>
+        <img src="{{ hub.banner2_foto_url }}" alt="Banner 2" loading="lazy">
+      </a>
+      {% endif %}
     </div>
   </div>
 </section>
