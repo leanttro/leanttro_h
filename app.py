@@ -246,8 +246,10 @@ def admin_hub_novo():
         (user_id, nome, slug, dominio_proprio, hub_leanttro, tipo,
          bairro_fixo, categoria_fixa, logo_url, cor_primaria, cor_secundaria,
          titulo, descricao, ga4_id, pixel_id, instagram_url, whatsapp,
-         template_index, template_filtro, template_negocio, ativo)
-        VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)
+         template_index, template_filtro, template_negocio,
+         banner_fundo_url, banner1_foto_url, banner1_link, banner2_foto_url, banner2_link,
+         ativo)
+        VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)
     """, (
         d.get("user_id") or None, d["nome"], d["slug"],
         d.get("dominio_proprio") or None, d.get("hub_leanttro") or None,
@@ -260,6 +262,9 @@ def admin_hub_novo():
         d.get("template_index", "index_padrao"),
         d.get("template_filtro", "filtro_padrao"),
         d.get("template_negocio", "negocio_padrao"),
+        d.get("banner_fundo_url") or None,
+        d.get("banner1_foto_url") or None, d.get("banner1_link") or None,
+        d.get("banner2_foto_url") or None, d.get("banner2_link") or None,
         "ativo" in d
     ), commit=True)
     return jsonify({"ok": True})
@@ -279,7 +284,9 @@ def admin_hub_editar(hub_id):
             tipo=%s, bairro_fixo=%s, categoria_fixa=%s, logo_url=%s,
             cor_primaria=%s, cor_secundaria=%s, titulo=%s, descricao=%s,
             ga4_id=%s, pixel_id=%s, instagram_url=%s, whatsapp=%s,
-            template_index=%s, template_filtro=%s, template_negocio=%s, ativo=%s
+            template_index=%s, template_filtro=%s, template_negocio=%s,
+            banner_fundo_url=%s, banner1_foto_url=%s, banner1_link=%s,
+            banner2_foto_url=%s, banner2_link=%s, ativo=%s
             WHERE id=%s
         """, (
             d.get("user_id") or None, d["nome"], d["slug"],
@@ -293,6 +300,9 @@ def admin_hub_editar(hub_id):
             d.get("template_index", "index_padrao"),
             d.get("template_filtro", "filtro_padrao"),
             d.get("template_negocio", "negocio_padrao"),
+            d.get("banner_fundo_url") or None,
+            d.get("banner1_foto_url") or None, d.get("banner1_link") or None,
+            d.get("banner2_foto_url") or None, d.get("banner2_link") or None,
             "ativo" in d, hub_id
         ), commit=True)
         return jsonify({"ok": True})
