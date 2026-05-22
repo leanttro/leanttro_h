@@ -1245,6 +1245,16 @@ function formHub() {
       </div>
       <div class="field form-full"><label>Título</label><input name="titulo"></div>
       <div class="field form-full"><label>Descrição</label><textarea name="descricao"></textarea></div>
+      <div class="field form-full" style="border-top:1px solid var(--border);padding-top:16px;margin-top:4px">
+        <label style="font-weight:600;color:var(--text);margin-bottom:12px;display:block">🖼️ Banners</label>
+        <div class="form-grid" style="margin:0">
+          <div class="field form-full"><label>Banner de fundo (hero) — URL da imagem</label><input name="banner_fundo_url" placeholder="https://...jpg"></div>
+          <div class="field"><label>Banner 1 — URL da foto</label><input name="banner1_foto_url" placeholder="https://...jpg"></div>
+          <div class="field"><label>Banner 1 — Link ao clicar</label><input name="banner1_link" placeholder="https://..."></div>
+          <div class="field"><label>Banner 2 — URL da foto</label><input name="banner2_foto_url" placeholder="https://...jpg"></div>
+          <div class="field"><label>Banner 2 — Link ao clicar</label><input name="banner2_link" placeholder="https://..."></div>
+        </div>
+      </div>
       <div class="field form-full">
         <label>Status</label>
         <label class="checkbox-label"><input type="checkbox" name="ativo" checked> Ativo</label>
