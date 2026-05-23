@@ -1,0 +1,905 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>{{ hub.titulo or hub.nome }}</title>
+<meta name="description" content="{{ hub.descricao or 'Guia local de negócios — ' + hub.nome }}">
+<meta name="robots" content="index, follow">
+<meta name="theme-color" content="#ffffff">
+<link rel="canonical" href="https://{{ request.host }}/">
+{% if hub.logo_url %}<link rel="icon" type="image/png" href="{{ hub.logo_url }}">{% endif %}
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="{{ hub.nome }}">
+<meta property="og:url" content="https://{{ request.host }}/">
+<meta property="og:title" content="{{ hub.titulo or hub.nome }}">
+<meta property="og:description" content="{{ hub.descricao or hub.nome }}">
+{% if hub.logo_url %}<meta property="og:image" content="{{ hub.logo_url }}">{% endif %}
+<meta name="twitter:card" content="summary_large_image">
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "WebSite",
+  "name": "{{ hub.nome }}",
+  "url": "https://{{ request.host }}/",
+  "description": "{{ hub.descricao or hub.nome }}"
+}
+</script>
+{% if hub.ga4_id %}
+<script async src="https://www.googletagmanager.com/gtag/js?id={{ hub.ga4_id }}"></script>
+<script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag('js',new Date());gtag('config','{{ hub.ga4_id }}');</script>
+{% endif %}
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --primary:{{ hub.cor_primaria or '#0071e3' }};
+  --primary-d:{{ hub.cor_secundaria or '#0051a2' }};
+  --bg:#ffffff;
+  --bg2:#f5f5f7;
+  --bg3:#fafafa;
+  --surface:#ffffff;
+  --border:#d2d2d7;
+  --border-light:#e8e8ed;
+  --text:#1d1d1f;
+  --text-soft:#6e6e73;
+  --muted:#86868b;
+  --radius:12px;
+  --radius-lg:18px;
+  --sans:'Inter',sans-serif;
+  --shadow:0 2px 12px rgba(0,0,0,.06);
+  --shadow-md:0 4px 24px rgba(0,0,0,.1);
+  --shadow-lg:0 8px 40px rgba(0,0,0,.12);
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth}
+body{font-family:var(--sans);background:var(--bg);color:var(--text);line-height:1.6;overflow-x:hidden;-webkit-font-smoothing:antialiased}
+.container{max-width:1200px;margin:0 auto;padding:0 24px}
+a{text-decoration:none;color:inherit}
+img{max-width:100%;display:block}
+
+/* ── HEADER ── */
+header{
+  background:rgba(255,255,255,.85);
+  backdrop-filter:saturate(180%) blur(20px);
+  -webkit-backdrop-filter:saturate(180%) blur(20px);
+  border-bottom:1px solid rgba(0,0,0,.08);
+  position:sticky;top:0;z-index:200;
+}
+.header-inner{max-width:1200px;margin:0 auto;padding:0 24px;display:flex;align-items:center;justify-content:space-between;height:52px;gap:16px}
+.logo-hub{display:flex;align-items:center;gap:9px;font-family:var(--sans);font-weight:700;font-size:1rem;color:var(--text);letter-spacing:-.2px}
+.logo-hub img{height:32px;width:auto}
+.logo-hub-mark{width:30px;height:30px;background:var(--primary);border-radius:8px;display:flex;align-items:center;justify-content:center;color:#fff;font-size:.85rem;font-weight:700;flex-shrink:0}
+nav.desktop-nav{flex:1;min-width:0;overflow:hidden}
+.nav-slicer{display:flex;gap:2px;overflow-x:auto;scrollbar-width:none;-webkit-overflow-scrolling:touch;padding:2px 0;align-items:center}
+.nav-slicer::-webkit-scrollbar{display:none}
+.nav-slicer-item{display:inline-flex;align-items:center;padding:5px 12px;border-radius:6px;font-size:.8rem;font-weight:500;color:var(--text-soft);transition:all .15s;white-space:nowrap;flex-shrink:0;background:transparent}
+.nav-slicer-item:hover{background:rgba(0,0,0,.04);color:var(--text)}
+.nav-slicer-item.inicio{font-weight:600;color:var(--text)}
+.header-cta{display:flex;align-items:center;gap:8px;flex-shrink:0}
+.btn-wpp-header{display:inline-flex;align-items:center;gap:6px;background:#25D366;color:#fff;padding:7px 14px;border-radius:20px;font-size:.78rem;font-weight:600;transition:all .2s;white-space:nowrap}
+.btn-wpp-header:hover{background:#1da850;transform:scale(1.02)}
+.btn-wpp-header svg{width:14px;height:14px;flex-shrink:0}
+.hamburger{display:none;background:none;border:none;cursor:pointer;padding:6px;color:var(--text)}
+.hamburger svg{width:22px;height:22px;stroke:currentColor;fill:none;stroke-width:2}
+.mobile-nav-overlay{display:none;position:fixed;inset:0;background:rgba(255,255,255,.98);backdrop-filter:blur(20px);z-index:300;justify-content:center;align-items:center;opacity:0;transition:opacity .2s}
+.mobile-nav-overlay.active{display:flex;opacity:1}
+.mobile-nav-overlay ul{list-style:none;text-align:center}
+.mobile-nav-overlay ul li{margin:14px 0}
+.mobile-nav-overlay ul li a{color:var(--text);font-size:1.6rem;font-weight:600;letter-spacing:-.5px}
+.mobile-nav-close{position:absolute;top:18px;right:18px;background:var(--bg2);border:none;color:var(--text);width:32px;height:32px;border-radius:50%;font-size:1.1rem;cursor:pointer;display:flex;align-items:center;justify-content:center}
+
+/* ── HERO ── */
+.hero{
+  background:var(--bg2);
+  padding:96px 24px 80px;
+  text-align:center;
+  position:relative;overflow:hidden;
+}
+.hero-bg-img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:center;z-index:0;opacity:.08}
+.hero .container{position:relative;z-index:1}
+.hero-eyebrow{
+  display:inline-block;
+  font-size:.75rem;font-weight:600;letter-spacing:.06em;text-transform:uppercase;
+  color:var(--primary);margin-bottom:16px;
+}
+.hero h1{
+  font-size:clamp(2.2rem,5.5vw,4rem);
+  font-weight:700;color:var(--text);
+  line-height:1.08;letter-spacing:-.04em;
+  margin-bottom:16px;
+}
+.hero h1 em{color:var(--primary);font-style:normal}
+.hero p{font-size:1.05rem;color:var(--text-soft);max-width:500px;margin:0 auto 48px;line-height:1.6;font-weight:400}
+.hero-stats{
+  display:flex;justify-content:center;gap:0;flex-wrap:wrap;
+  border:1px solid var(--border-light);border-radius:var(--radius-lg);
+  background:white;box-shadow:var(--shadow);
+  overflow:hidden;max-width:480px;margin:0 auto;
+}
+.hero-stat{
+  flex:1;padding:20px 16px;text-align:center;
+  border-right:1px solid var(--border-light);
+}
+.hero-stat:last-child{border-right:none}
+.hero-stat strong{display:block;font-size:1.6rem;font-weight:700;color:var(--text);letter-spacing:-.03em;line-height:1}
+.hero-stat span{font-size:.72rem;color:var(--muted);margin-top:4px;display:block;font-weight:500}
+
+/* ── BUSCA ── */
+.busca-section{
+  background:rgba(255,255,255,.85);
+  backdrop-filter:blur(20px);
+  padding:12px 0;
+  border-bottom:1px solid var(--border-light);
+  position:sticky;top:52px;z-index:100;
+}
+.busca-inner{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.busca-input-wrap{
+  display:flex;align-items:center;gap:8px;flex:1;min-width:200px;
+  background:var(--bg2);
+  border:1px solid var(--border-light);
+  border-radius:10px;padding:9px 14px;
+  transition:all .2s;
+}
+.busca-input-wrap:focus-within{background:#fff;border-color:var(--primary);box-shadow:0 0 0 3px rgba(0,113,227,.12)}
+.busca-input-wrap svg{width:14px;height:14px;stroke:var(--muted);fill:none;stroke-width:2;flex-shrink:0}
+.busca-input-wrap input{border:none;outline:none;background:none;font-family:var(--sans);font-size:.88rem;color:var(--text);width:100%}
+.busca-input-wrap input::placeholder{color:var(--muted)}
+
+/* ── CHIPS / SLICER ── */
+.cats-filter{display:none}
+.cat-chip{
+  padding:7px 16px;border-radius:20px;
+  border:1px solid var(--border);background:white;
+  font-family:var(--sans);font-size:.82rem;font-weight:500;
+  color:var(--text-soft);cursor:pointer;transition:all .15s;
+  display:inline-flex;align-items:center;gap:6px;white-space:nowrap;flex-shrink:0;
+}
+.cat-chip:hover{border-color:var(--primary);color:var(--primary)}
+.cat-chip.active{background:var(--primary);border-color:var(--primary);color:#fff}
+
+/* ── SLICER DROPDOWN ── */
+.cat-slicer-wrap{position:relative;display:inline-block;margin-bottom:20px}
+.cat-slicer-btn{
+  display:flex;align-items:center;justify-content:space-between;gap:10px;
+  padding:9px 16px;min-width:200px;
+  background:white;border:1px solid var(--border);border-radius:10px;
+  cursor:pointer;font-family:var(--sans);font-size:.85rem;font-weight:600;color:var(--text);
+  transition:all .2s;box-shadow:var(--shadow);
+}
+.cat-slicer-btn:hover{border-color:var(--primary)}
+.cat-slicer-btn.has-active{border-color:var(--primary);color:var(--primary)}
+.cat-slicer-btn svg{width:14px;height:14px;stroke:currentColor;fill:none;stroke-width:2.5;flex-shrink:0;transition:transform .2s}
+.cat-slicer-btn.open svg{transform:rotate(180deg)}
+.cat-slicer-label{display:flex;align-items:center;gap:8px}
+.cat-slicer-label svg{width:14px;height:14px;stroke:currentColor;fill:none;stroke-width:2;flex-shrink:0}
+.cat-slicer-selected{font-size:.72rem;font-weight:700;background:var(--primary);color:#fff;padding:2px 8px;border-radius:20px;margin-left:4px}
+.cat-slicer-panel{
+  display:none;position:absolute;top:calc(100% + 6px);left:0;z-index:50;
+  background:white;border:1px solid var(--border-light);border-radius:var(--radius);
+  box-shadow:var(--shadow-lg);min-width:220px;max-height:280px;overflow-y:auto;
+  padding:10px;
+}
+.cat-slicer-panel.open{display:block}
+.cat-slicer-inner{display:flex;flex-wrap:wrap;gap:6px;padding-top:2px}
+
+/* ── AZ FILTER ── */
+.az-filter{display:flex;gap:4px;justify-content:center;flex-wrap:wrap;margin-bottom:24px}
+.az-btn{
+  width:32px;height:32px;border-radius:8px;
+  border:1px solid var(--border-light);background:white;
+  font-size:.75rem;font-weight:600;color:var(--muted);
+  cursor:pointer;transition:all .15s;display:flex;align-items:center;justify-content:center;flex-shrink:0;
+}
+.az-btn:hover,.az-btn.active{background:var(--primary);border-color:var(--primary);color:#fff}
+@media(max-width:600px){.az-filter{flex-wrap:nowrap;overflow-x:auto;justify-content:flex-start;scrollbar-width:none;padding-bottom:4px}.az-filter::-webkit-scrollbar{display:none}}
+
+/* ── CAROUSEL CATS ── */
+.cats-carousel-outer{position:relative;padding:0 48px}
+.cats-carousel{display:flex;gap:14px;overflow-x:auto;scroll-behavior:smooth;scrollbar-width:none;-webkit-overflow-scrolling:touch;padding-bottom:6px;align-items:stretch}
+.cats-carousel::-webkit-scrollbar{display:none}
+.cats-carousel .cat-card{min-width:170px;max-width:170px;flex-shrink:0}
+.carousel-btn{
+  position:absolute;top:50%;transform:translateY(-50%);
+  background:white;border:1px solid var(--border-light);border-radius:50%;
+  width:36px;height:36px;display:flex;align-items:center;justify-content:center;
+  font-size:1.2rem;cursor:pointer;color:var(--text);
+  transition:all .2s;z-index:2;box-shadow:var(--shadow);
+}
+.carousel-btn:hover{border-color:var(--primary);color:var(--primary)}
+.carousel-prev{left:0}
+.carousel-next{right:0}
+@media(max-width:768px){.cats-carousel-outer{padding:0 34px}.carousel-btn{width:30px;height:30px;font-size:1rem}}
+@media(max-width:480px){.cats-carousel-outer{padding:0 26px}.cats-carousel .cat-card{min-width:148px;max-width:148px}}
+
+/* ── BOTÃO PRÓXIMO A MIM ── */
+.btn-localizar-hub{
+  display:inline-flex;align-items:center;gap:7px;
+  background:var(--primary);color:#fff;
+  padding:9px 20px;border-radius:20px;
+  font-size:.82rem;font-weight:600;
+  border:none;cursor:pointer;transition:all .2s;font-family:var(--sans);
+  letter-spacing:-.01em;
+}
+.btn-localizar-hub:hover{background:var(--primary-d);transform:scale(1.02)}
+.btn-localizar-hub:disabled{opacity:.5;cursor:not-allowed;transform:none}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+/* ── SECTIONS ── */
+.section{padding:72px 0}
+.section-alt{background:var(--bg2)}
+.section-header{text-align:center;margin-bottom:48px}
+.section-eyebrow{font-size:.72rem;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--primary);margin-bottom:10px;display:block}
+.section-title{font-size:clamp(1.6rem,3.5vw,2.2rem);font-weight:700;color:var(--text);letter-spacing:-.04em;line-height:1.1}
+.section-subtitle{color:var(--muted);font-size:.9rem;margin-top:8px}
+
+/* ── BANNERS ── */
+.banners-section{padding:40px 0;background:var(--bg)}
+.banners-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.banner-link{display:block;border-radius:var(--radius-lg);overflow:hidden;box-shadow:var(--shadow);transition:all .25s}
+.banner-link:hover{transform:scale(1.01);box-shadow:var(--shadow-md)}
+.banner-link img{width:100%;height:180px;object-fit:cover;display:block}
+@media(max-width:600px){
+  .banners-grid{grid-template-columns:1fr}
+  .banner-link img{height:140px}
+}
+
+/* ── GRID NEGÓCIOS ── */
+.negocios-carousel-outer{overflow:hidden;width:100%}
+.negocios-track{
+  display:flex;gap:16px;
+  transition:transform .4s cubic-bezier(.4,0,.2,1);
+  will-change:transform;cursor:grab;user-select:none;
+}
+.negocios-track:active{cursor:grabbing}
+@media(max-width:768px){
+  .negocios-carousel-outer{overflow-x:scroll;-webkit-overflow-scrolling:touch;scroll-snap-type:x mandatory;scrollbar-width:none}
+  .negocios-carousel-outer::-webkit-scrollbar{display:none}
+  .negocios-track{transform:none!important;transition:none!important;cursor:default}
+}
+.negocio-card{
+  flex:0 0 calc(33.333% - 11px);min-width:0;
+  background:white;
+  border:1px solid var(--border-light);
+  border-radius:var(--radius-lg);
+  overflow:hidden;transition:all .25s;display:flex;flex-direction:column;
+  text-decoration:none;color:inherit;
+  box-shadow:var(--shadow);
+}
+@media(max-width:900px){.negocio-card{flex:0 0 calc(50% - 8px)}}
+@media(max-width:580px){.negocio-card{flex:0 0 calc(85% - 8px);scroll-snap-align:start}}
+.negocio-card:hover{transform:translateY(-4px);box-shadow:var(--shadow-lg);border-color:rgba(0,113,227,.2)}
+.negocio-card-foto{width:100%;height:180px;object-fit:cover;display:block}
+.negocio-card-sem-foto{width:100%;height:180px;background:var(--bg2);display:flex;align-items:center;justify-content:center;font-size:2.2rem}
+.negocio-card-body{padding:16px;flex:1;display:flex;flex-direction:column;gap:5px}
+.negocio-badge{
+  display:inline-block;padding:3px 10px;border-radius:20px;
+  background:rgba(0,113,227,.08);color:var(--primary);
+  font-size:.7rem;font-weight:600;width:fit-content;letter-spacing:.01em;
+}
+.negocio-card-body h3{font-size:.95rem;font-weight:600;color:var(--text);line-height:1.3;letter-spacing:-.01em}
+.negocio-bairro{display:flex;align-items:center;gap:4px;font-size:.78rem;color:var(--muted)}
+.negocio-bairro svg{width:11px;height:11px;stroke:currentColor;fill:none;stroke-width:2;flex-shrink:0}
+.negocio-card-footer{margin-top:auto;padding-top:12px;border-top:1px solid var(--border-light);display:flex;align-items:center;justify-content:space-between}
+.btn-ver-negocio{font-size:.78rem;font-weight:600;color:var(--primary)}
+
+/* ── NAV CARROSSEL ── */
+.negocios-nav{display:flex;align-items:center;justify-content:center;gap:14px;margin-top:24px}
+.neg-arrow{
+  background:white;border:1px solid var(--border-light);border-radius:50%;
+  width:38px;height:38px;display:flex;align-items:center;justify-content:center;
+  cursor:pointer;color:var(--text);transition:all .2s;flex-shrink:0;box-shadow:var(--shadow);
+}
+.neg-arrow:hover:not(:disabled){background:var(--primary);border-color:var(--primary);color:#fff}
+.neg-arrow:disabled{opacity:.25;cursor:not-allowed}
+.neg-arrow svg{width:15px;height:15px;stroke:currentColor;fill:none;stroke-width:2.5}
+.neg-progress-bar{flex:1;max-width:200px;height:2px;background:var(--border-light);border-radius:4px;overflow:hidden}
+.neg-progress-fill{height:100%;background:var(--primary);border-radius:4px;width:0%;transition:width .35s cubic-bezier(.4,0,.2,1)}
+
+/* ── EMPTY ── */
+.empty-state{text-align:center;padding:60px 20px;color:var(--muted)}
+.empty-state svg{width:40px;height:40px;stroke:var(--border);fill:none;stroke-width:1.5;margin:0 auto 12px}
+
+/* ── CATEGORIAS CARDS ── */
+.cats-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:14px}
+.cat-card{
+  background:white;border:1px solid var(--border-light);border-radius:var(--radius-lg);
+  overflow:hidden;transition:all .25s;display:flex;flex-direction:column;align-items:center;
+  padding:0 0 18px;text-align:center;box-shadow:var(--shadow);
+}
+.cat-card:hover{transform:translateY(-3px);box-shadow:var(--shadow-md);border-color:rgba(0,113,227,.2)}
+.cat-card-icon{width:100%;height:110px;display:flex;align-items:center;justify-content:center;font-size:2.6rem;background:var(--bg2)}
+.cat-card h3{font-size:.88rem;font-weight:600;color:var(--text);margin:12px 14px 4px;letter-spacing:-.01em}
+.cat-card p{font-size:.76rem;color:var(--muted);padding:0 14px}
+.cat-card-btn{
+  margin-top:12px;display:inline-flex;align-items:center;gap:5px;
+  background:var(--primary);color:#fff;
+  padding:7px 16px;border-radius:20px;font-size:.76rem;font-weight:600;transition:background .2s;
+}
+.cat-card:hover .cat-card-btn{background:var(--primary-d)}
+
+/* ── FOOTER ── */
+footer{background:var(--bg2);border-top:1px solid var(--border-light);padding:40px 0 24px}
+.footer-inner{max-width:1200px;margin:0 auto;padding:0 24px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:24px}
+.footer-logo img{height:36px;width:auto;display:block}
+.footer-logo-mark{display:flex;align-items:center;gap:9px}
+.footer-logo-mark .mark{width:30px;height:30px;background:var(--primary);border-radius:8px;display:flex;align-items:center;justify-content:center;color:#fff;font-size:.8rem;font-weight:700;flex-shrink:0}
+.footer-logo-mark .mark-text strong{display:block;color:var(--text);font-size:.85rem;font-weight:700}
+.footer-logo-mark .mark-text span{color:var(--muted);font-size:.7rem}
+.footer-divider{width:1px;height:36px;background:var(--border-light);flex-shrink:0}
+.footer-text{flex:1;min-width:180px}
+.footer-text strong{display:block;color:var(--text);font-size:13px;font-weight:600;margin-bottom:2px}
+.footer-text span{color:var(--muted);font-size:11.5px;line-height:1.5}
+.footer-actions{display:flex;align-items:center;gap:8px;flex-shrink:0;flex-wrap:wrap}
+.f-btn{display:inline-flex;align-items:center;gap:6px;font-size:12px;font-weight:600;text-decoration:none;padding:8px 16px;border-radius:20px;white-space:nowrap;transition:all .2s;border:none;cursor:pointer}
+.f-btn:hover{transform:scale(1.03)}
+.f-btn svg{width:13px;height:13px;flex-shrink:0}
+.f-btn-site{background:var(--text);color:#fff}
+.f-btn-wpp{background:#25D366;color:#fff}
+.f-btn-ig{background:linear-gradient(135deg,#f09433,#e6683c,#dc2743,#cc2366,#bc1888);color:#fff}
+.footer-bottom{max-width:1200px;margin:24px auto 0;padding:18px 24px 0;border-top:1px solid var(--border-light);text-align:center;color:var(--muted);font-size:11px}
+.footer-bottom a{color:var(--muted);text-decoration:none}
+.footer-bottom a:hover{color:var(--text);text-decoration:underline}
+@media(max-width:640px){
+  .footer-inner{flex-direction:column;align-items:center;text-align:center;gap:14px}
+  .footer-divider{display:none}
+  .footer-text{min-width:unset}
+  .footer-actions{width:100%;justify-content:center}
+  .f-btn{flex:1;justify-content:center;font-size:11px;padding:8px 10px}
+}
+
+/* ── WHATSAPP FLUTUANTE ── */
+.wpp-float{position:fixed;bottom:24px;right:24px;background:#25D366;color:#fff;width:52px;height:52px;border-radius:50%;display:flex;align-items:center;justify-content:center;box-shadow:0 4px 20px rgba(37,211,102,.4);z-index:999;transition:transform .2s}
+.wpp-float:hover{transform:scale(1.08)}
+
+/* ── RESPONSIVO ── */
+@media(max-width:768px){
+  nav.desktop-nav{display:flex;flex:1;min-width:0;overflow:hidden}
+  .hamburger{display:block}
+  .hero{padding:72px 20px 60px}
+  .hero-stats{max-width:100%}
+  .hero-stat{padding:16px 10px}
+  .hero-stat strong{font-size:1.3rem}
+}
+@media(max-width:480px){
+  .hero h1{letter-spacing:-.03em}
+  .section{padding:48px 0}
+}
+</style>
+</head>
+<body>
+
+<!-- HEADER -->
+<header>
+  <div class="header-inner">
+    <a href="/" class="logo-hub">
+      {% if hub.logo_url %}
+        <img src="{{ hub.logo_url }}" alt="{{ hub.nome }}">
+      {% else %}
+        <div class="logo-hub-mark">{{ hub.nome[0] | upper }}</div>
+        <span>{{ hub.nome }}</span>
+      {% endif %}
+    </a>
+    <nav class="desktop-nav" aria-label="Categorias">
+      <div class="nav-slicer">
+        <a href="/" class="nav-slicer-item inicio">Início</a>
+        {% for cat in categorias %}
+        <a href="/{{ cat.slug }}/" class="nav-slicer-item">{{ cat.nome }}</a>
+        {% endfor %}
+      </div>
+    </nav>
+    <div class="header-cta">
+      {% if hub.whatsapp %}
+      <a href="https://wa.me/55{{ hub.whatsapp | replace(' ','') | replace('-','') | replace('(','') | replace(')','') }}" target="_blank" rel="noopener" class="btn-wpp-header">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07A19.5 19.5 0 013.07 9.81 19.79 19.79 0 01.01 1.18 2 2 0 012 0h3a2 2 0 012 1.72c.127.96.361 1.903.7 2.81a2 2 0 01-.45 2.11L6.09 7.91a16 16 0 006 6l1.27-1.27a2 2 0 012.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0122 16.92z"/></svg>
+        WhatsApp
+      </a>
+      {% endif %}
+      <button class="hamburger" id="hamburger" aria-label="Menu">
+        <svg viewBox="0 0 24 24"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+      </button>
+    </div>
+  </div>
+</header>
+
+<!-- MOBILE NAV -->
+<div class="mobile-nav-overlay" id="mobileNav">
+  <button class="mobile-nav-close" id="navClose">✕</button>
+  <ul>
+    <li><a href="/" onclick="closeNav()">Início</a></li>
+    {% for cat in categorias %}
+    <li><a href="/{{ cat.slug }}/" onclick="closeNav()">{{ cat.nome }}</a></li>
+    {% endfor %}
+    {% if hub.whatsapp %}<li><a href="https://wa.me/55{{ hub.whatsapp | replace(' ','') | replace('-','') | replace('(','') | replace(')','') }}" onclick="closeNav()">WhatsApp</a></li>{% endif %}
+  </ul>
+</div>
+
+<!-- HERO -->
+<section class="hero" aria-label="{{ hub.nome }}">
+  {% if hub.banner_fundo_url %}
+  <img src="{{ hub.banner_fundo_url }}" alt="" class="hero-bg-img" aria-hidden="true">
+  {% endif %}
+  <div class="container">
+    <span class="hero-eyebrow">Guia local de negócios</span>
+    <h1>{{ hub.nome }}<br><em>{{ hub.titulo and hub.titulo != hub.nome and hub.titulo or (hub.descricao and hub.descricao[:60] or 'Encontre os melhores negócios') }}</em></h1>
+    <p>{{ hub.descricao or 'Encontre os melhores negócios locais. Tudo organizado por categoria e bairro.' }}</p>
+    <div class="hero-stats">
+      <div class="hero-stat"><strong>{{ negocios | length }}</strong><span>negócios</span></div>
+      <div class="hero-stat"><strong>{{ categorias | length }}</strong><span>categorias</span></div>
+      <div class="hero-stat"><strong>Grátis</strong><span>para usar</span></div>
+    </div>
+  </div>
+</section>
+
+<!-- CATEGORIAS DESTAQUE -->
+{% if categorias %}
+<section class="section" id="categorias" aria-label="Categorias">
+  <div class="container">
+    <div class="section-header">
+      <span class="section-eyebrow">Explorar</span>
+      <h2 class="section-title">Categorias</h2>
+      <p class="section-subtitle">Escolha uma categoria para explorar</p>
+    </div>
+    <div class="az-filter" id="azFilter"></div>
+    <div class="cats-carousel-outer">
+      <button class="carousel-btn carousel-prev" onclick="carouselScroll(-1)" aria-label="Anterior">&#8249;</button>
+      <div class="cats-carousel" id="catsCarousel">
+        {% for cat in categorias %}
+        {% set total = negocios | selectattr('categoria_slug','equalto',cat.slug) | list | length %}
+        {% if total > 0 %}
+        <a href="/{{ cat.slug }}/" class="cat-card" data-letra="{{ cat.nome[0] | upper }}">
+          <div class="cat-card-icon">
+            {% if cat.icone_url %}
+              <img src="{{ cat.icone_url }}" alt="{{ cat.nome }}" style="height:56px;width:auto">
+            {% else %}
+              🏪
+            {% endif %}
+          </div>
+          <h3>{{ cat.nome }}</h3>
+          <p>{{ total }} negócio(s)</p>
+          <span class="cat-card-btn">Explorar →</span>
+        </a>
+        {% endif %}
+        {% endfor %}
+      </div>
+      <button class="carousel-btn carousel-next" onclick="carouselScroll(1)" aria-label="Próximo">&#8250;</button>
+    </div>
+  </div>
+</section>
+{% endif %}
+
+<!-- BANNERS CLICÁVEIS -->
+{% if hub.banner1_foto_url or hub.banner2_foto_url %}
+<section class="banners-section" aria-label="Banners">
+  <div class="container">
+    <div class="banners-grid">
+      {% if hub.banner1_foto_url %}
+      <a href="{{ hub.banner1_link or '#' }}" class="banner-link" {% if hub.banner1_link %}target="_blank" rel="noopener"{% endif %}>
+        <img src="{{ hub.banner1_foto_url }}" alt="Banner 1" loading="lazy">
+      </a>
+      {% endif %}
+      {% if hub.banner2_foto_url %}
+      <a href="{{ hub.banner2_link or '#' }}" class="banner-link" {% if hub.banner2_link %}target="_blank" rel="noopener"{% endif %}>
+        <img src="{{ hub.banner2_foto_url }}" alt="Banner 2" loading="lazy">
+      </a>
+      {% endif %}
+    </div>
+  </div>
+</section>
+{% endif %}
+
+<!-- TODOS OS NEGÓCIOS -->
+<section class="section section-alt" id="negocios" aria-label="Todos os negócios">
+  <div class="container">
+    <div class="section-header">
+      <span class="section-eyebrow">Diretório</span>
+      <h2 class="section-title">Todos os negócios</h2>
+      <p class="section-subtitle">{{ negocios | length }} negócio(s) cadastrado(s)</p>
+    </div>
+
+    <div style="text-align:center;margin-bottom:16px">
+      <button id="btnLocalizacao" class="btn-localizar-hub">
+        <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" style="flex-shrink:0"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
+        Próximo a mim
+      </button>
+    </div>
+
+    <div style="display:flex;justify-content:center;margin-bottom:20px">
+      <div class="cat-slicer-wrap" id="catSlicerWrap">
+        <button class="cat-slicer-btn" id="catSlicerBtn" aria-haspopup="listbox" aria-expanded="false">
+          <span class="cat-slicer-label">
+            <svg viewBox="0 0 24 24"><path d="M4 6h16M4 12h16M4 18h7"/></svg>
+            <span id="catSlicerLabelText">Todas as categorias</span>
+          </span>
+          <svg viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"/></svg>
+        </button>
+        <div class="cat-slicer-panel" id="catSlicerPanel" role="listbox">
+          <div class="cat-slicer-inner" id="catSlicerInner">
+            <button class="cat-chip active" onclick="filtrarSlicer(this, '')" data-cat="">🔍 Todos</button>
+            {% for cat in categorias %}
+            {% set total = negocios | selectattr('categoria_slug','equalto',cat.slug) | list | length %}
+            {% if total > 0 %}
+            <button class="cat-chip" onclick="filtrarSlicer(this, '{{ cat.slug }}')" data-cat="{{ cat.slug }}">{{ cat.nome }}</button>
+            {% endif %}
+            {% endfor %}
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="cats-filter" id="catFilter" style="display:none">
+      <button class="cat-chip active" onclick="filtrar(this, '')" data-cat="">🔍 Todos</button>
+      {% for cat in categorias %}
+      <button class="cat-chip" onclick="filtrar(this, '{{ cat.slug }}')" data-cat="{{ cat.slug }}">{{ cat.nome }}</button>
+      {% endfor %}
+    </div>
+
+    <div class="busca-inner" style="margin-bottom:24px">
+      <div class="busca-input-wrap" style="max-width:420px">
+        <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+        <input type="text" id="searchInput" placeholder="Buscar negócio..." oninput="buscar(this.value)">
+      </div>
+    </div>
+
+    <div class="negocios-carousel-outer" id="negociosOuter">
+      <div class="negocios-track" id="negociosGrid">
+        {% for n in negocios %}
+        <a href="/{{ n.categoria_slug }}/{{ n.slug }}/" class="negocio-card"
+           data-cat="{{ n.categoria_slug }}"
+           data-nome="{{ n.nome | lower }}"
+           data-lat="{{ n.lat or '' }}"
+           data-lng="{{ n.lng or n.lon or '' }}">
+          {% if n.foto_url and n.mostrar_foto %}
+            <img src="{{ n.foto_url }}" alt="{{ n.nome }}" class="negocio-card-foto" loading="lazy">
+          {% else %}
+            <div class="negocio-card-sem-foto">🏪</div>
+          {% endif %}
+          <div class="negocio-card-body">
+            <span class="negocio-badge">{{ n.categoria_nome }}</span>
+            <h3>{{ n.nome }}</h3>
+            {% if n.bairro %}
+            <p class="negocio-bairro">
+              <svg viewBox="0 0 24 24"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
+              {{ n.bairro }}{% if n.cidade %}, {{ n.cidade }}{% endif %}
+            </p>
+            {% endif %}
+            <p class="dist-badge" id="dist-{{ loop.index }}" style="display:none;font-size:.78rem;color:var(--primary);font-weight:600;margin-top:2px"></p>
+            <div class="negocio-card-footer">
+              <span></span>
+              <span class="btn-ver-negocio">Ver mais →</span>
+            </div>
+          </div>
+        </a>
+        {% else %}
+        <div class="empty-state" style="min-width:100%;text-align:center;padding:60px 20px">
+          <p>Nenhum negócio cadastrado ainda.</p>
+        </div>
+        {% endfor %}
+      </div>
+    </div>
+
+    <div class="negocios-nav">
+      <button class="neg-arrow" id="negPrev" aria-label="Anterior">
+        <svg viewBox="0 0 24 24"><polyline points="15 18 9 12 15 6"/></svg>
+      </button>
+      <div class="neg-progress-bar"><div class="neg-progress-fill" id="negProgress"></div></div>
+      <button class="neg-arrow" id="negNext" aria-label="Próximo">
+        <svg viewBox="0 0 24 24"><polyline points="9 18 15 12 9 6"/></svg>
+      </button>
+    </div>
+
+    <div id="emptyMsg" style="display:none" class="empty-state">
+      <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+      <p>Nenhum resultado encontrado.</p>
+    </div>
+  </div>
+</section>
+
+<!-- FOOTER -->
+<footer itemscope itemtype="https://schema.org/WPFooter">
+  <div class="footer-inner">
+    {% if hub.logo_url %}
+    <a href="/" class="footer-logo"><img src="{{ hub.logo_url }}" alt="{{ hub.nome }}"></a>
+    {% else %}
+    <div class="footer-logo-mark">
+      <div class="mark">{{ hub.nome[0] | upper }}</div>
+      <div class="mark-text"><strong>{{ hub.nome }}</strong><span>Guia local</span></div>
+    </div>
+    {% endif %}
+    <div class="footer-divider"></div>
+    <div class="footer-text">
+      <strong>{{ hub.titulo or hub.nome }}</strong>
+      <span>{{ hub.descricao or 'Guia local de negócios' }}</span>
+    </div>
+    <nav class="footer-actions">
+      {% if hub.whatsapp %}
+      <a href="https://wa.me/55{{ hub.whatsapp | replace(' ','') | replace('-','') | replace('(','') | replace(')','') }}" target="_blank" rel="noopener" class="f-btn f-btn-wpp">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07A19.5 19.5 0 013.07 9.81 19.79 19.79 0 01.01 1.18 2 2 0 012 0h3a2 2 0 012 1.72c.127.96.361 1.903.7 2.81a2 2 0 01-.45 2.11L6.09 7.91a16 16 0 006 6l1.27-1.27a2 2 0 012.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0122 16.92z"/></svg>
+        WhatsApp
+      </a>
+      {% endif %}
+      {% if hub.instagram_url %}
+      <a href="{{ hub.instagram_url }}" target="_blank" rel="noopener" class="f-btn f-btn-ig">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="2" width="20" height="20" rx="5" ry="5"/><circle cx="12" cy="12" r="4"/><circle cx="17.5" cy="6.5" r="0.5" fill="currentColor"/></svg>
+        Instagram
+      </a>
+      {% endif %}
+    </nav>
+  </div>
+  <div class="footer-bottom">
+    <div style="display:flex;flex-direction:column;align-items:center;gap:12px;padding-bottom:8px">
+      <a href="https://www.leanttro.com" target="_blank" rel="noopener" style="display:inline-block">
+        <img src="https://res.cloudinary.com/dzcaxmbjn/image/upload/v1779203844/logo_claro_rtbddh.png" alt="Leanttro" style="height:32px;width:auto;display:block;opacity:.6">
+      </a>
+      <div style="display:flex;gap:20px;flex-wrap:wrap;justify-content:center;font-size:11px;color:var(--muted)">
+        <span>🌐 Sites profissionais a partir de R$499</span>
+        <span>📈 Hubs de tráfego orgânico</span>
+        <span>⚡ Automações com n8n</span>
+        <span>📊 Painel de métricas gratuito</span>
+      </div>
+      <p style="font-size:11px;color:var(--muted);margin:0">
+        © {{ hub.nome }} · Desenvolvido por <a href="https://www.leanttro.com" target="_blank" rel="noopener">Leanttro</a>
+        — tecnologia e presença digital para pequenas empresas em São Paulo
+      </p>
+    </div>
+  </div>
+</footer>
+
+{% if hub.whatsapp %}
+<a href="https://wa.me/55{{ hub.whatsapp | replace(' ','') | replace('-','') | replace('(','') | replace(')','') }}" target="_blank" rel="noopener" class="wpp-float" aria-label="WhatsApp">
+  <svg width="26" height="26" viewBox="0 0 24 24" fill="#fff"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
+</a>
+{% endif %}
+
+<script>
+// ── CARROSSEL DE NEGÓCIOS ────────────────────────────────────
+(function initNegociosCarousel() {
+  const outer = document.getElementById('negociosOuter');
+  const track = document.getElementById('negociosGrid');
+  const prev  = document.getElementById('negPrev');
+  const next  = document.getElementById('negNext');
+  const fill  = document.getElementById('negProgress');
+  if (!track || !prev || !next) return;
+
+  if (window.innerWidth <= 768) {
+    function updateFill() {
+      const max = outer.scrollWidth - outer.clientWidth;
+      if (fill && max > 0) fill.style.width = (outer.scrollLeft / max * 100) + '%';
+    }
+    outer.addEventListener('scroll', updateFill, { passive: true });
+    prev.addEventListener('click', () => outer.scrollBy({ left: -outer.clientWidth * .85, behavior: 'smooth' }));
+    next.addEventListener('click', () => outer.scrollBy({ left:  outer.clientWidth * .85, behavior: 'smooth' }));
+    return;
+  }
+
+  let pos = 0;
+  function visibleCount() { return window.innerWidth >= 1100 ? 3 : window.innerWidth >= 768 ? 2 : 1; }
+  function cardW() { const c = track.querySelector('.negocio-card'); return c ? c.offsetWidth + 16 : 320; }
+  function allCards() { return Array.from(track.querySelectorAll('.negocio-card:not([style*="display:none"])')); }
+  function maxPos() { return Math.max(0, allCards().length - visibleCount()); }
+
+  function update() {
+    const cards = allCards();
+    pos = Math.max(0, Math.min(pos, Math.max(0, cards.length - visibleCount())));
+    track.style.transform = `translateX(-${pos * cardW()}px)`;
+    prev.disabled = pos === 0;
+    next.disabled = pos >= maxPos();
+    const mp = maxPos();
+    fill.style.width = (mp > 0 ? (pos / mp * 100) : 100) + '%';
+  }
+
+  prev.addEventListener('click', () => { pos--; update(); });
+  next.addEventListener('click', () => { pos++; update(); });
+
+  let startX = 0, startPos = 0, dragging = false;
+  track.addEventListener('mousedown', e => { dragging = true; startX = e.clientX; startPos = pos; track.style.transition = 'none'; });
+  window.addEventListener('mousemove', e => {
+    if (!dragging) return;
+    const diff = Math.round((startX - e.clientX) / cardW());
+    pos = Math.max(0, Math.min(startPos + diff, maxPos()));
+    track.style.transform = `translateX(-${pos * cardW()}px)`;
+    fill.style.width = (maxPos() > 0 ? pos / maxPos() * 100 : 100) + '%';
+  });
+  window.addEventListener('mouseup', () => {
+    if (!dragging) return;
+    dragging = false;
+    track.style.transition = 'transform .4s cubic-bezier(.4,0,.2,1)';
+    update();
+  });
+  window.addEventListener('resize', () => update());
+  update();
+  window._negCarousel = { reset: () => { pos = 0; update(); } };
+})();
+
+// ── PRÓXIMO A MIM ──────────────────────────────────────────
+(function initLocalizacao() {
+  const btnLoc = document.getElementById('btnLocalizacao');
+  if (!btnLoc) return;
+
+  function haversine(lat1, lng1, lat2, lng2) {
+    const R = 6371, toRad = d => d * Math.PI / 180;
+    const dLat = toRad(lat2 - lat1), dLng = toRad(lng2 - lng1);
+    const a = Math.sin(dLat/2)**2 + Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) * Math.sin(dLng/2)**2;
+    return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+  }
+
+  function aplicarDistancias(lat, lng) {
+    const cards = Array.from(document.querySelectorAll('.negocio-card'));
+    cards.forEach(card => {
+      const cardLat = parseFloat(card.dataset.lat);
+      const cardLng = parseFloat(card.dataset.lng);
+      let distBadge = card.querySelector('.dist-badge');
+      if (!distBadge) {
+        distBadge = document.createElement('p');
+        distBadge.className = 'dist-badge';
+        distBadge.style.cssText = 'font-size:.78rem;color:var(--primary);font-weight:600;margin-top:2px';
+        const footer = card.querySelector('.negocio-card-footer');
+        if (footer) footer.before(distBadge);
+      }
+      if (!isNaN(cardLat) && !isNaN(cardLng) && cardLat !== 0 && cardLng !== 0) {
+        const dist = haversine(lat, lng, cardLat, cardLng);
+        distBadge.textContent = '📍 ' + dist.toFixed(1) + ' km de você';
+        distBadge.style.display = '';
+        card.dataset.dist = dist;
+      } else {
+        distBadge.style.display = 'none';
+        card.dataset.dist = '9999';
+      }
+    });
+    const track = document.getElementById('negociosGrid');
+    if (track) {
+      const sorted = cards.slice().sort((a, b) => parseFloat(a.dataset.dist||9999) - parseFloat(b.dataset.dist||9999));
+      sorted.forEach(c => track.appendChild(c));
+      if (window._negCarousel) window._negCarousel.reset();
+    }
+    btnLoc.innerHTML = '<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" style="flex-shrink:0"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg> Localização obtida ✓';
+    btnLoc.disabled = true;
+  }
+
+  if (navigator.geolocation) {
+    navigator.geolocation.getCurrentPosition(
+      pos => aplicarDistancias(pos.coords.latitude, pos.coords.longitude),
+      () => {}
+    );
+  }
+
+  btnLoc.addEventListener('click', function() {
+    if (!navigator.geolocation) { alert('Geolocalização não suportada neste navegador.'); return; }
+    btnLoc.innerHTML = '<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" style="flex-shrink:0;animation:spin 1s linear infinite"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg> Localizando...';
+    btnLoc.disabled = true;
+    navigator.geolocation.getCurrentPosition(
+      pos => aplicarDistancias(pos.coords.latitude, pos.coords.longitude),
+      () => {
+        btnLoc.innerHTML = '<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" style="flex-shrink:0"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg> Próximo a mim';
+        btnLoc.disabled = false;
+        alert('Não foi possível obter sua localização. Verifique as permissões do navegador.');
+      }
+    );
+  });
+})();
+
+// ── Mobile nav ──────────────────────────────────────────────
+document.getElementById('hamburger').addEventListener('click',()=>document.getElementById('mobileNav').classList.add('active'));
+document.getElementById('navClose').addEventListener('click',()=>closeNav());
+function closeNav(){document.getElementById('mobileNav').classList.remove('active')}
+
+// ── Filtros de negócios ──────────────────────────────────────
+let catAtiva = '';
+let buscaAtiva = '';
+
+function filtrar(btn, cat) {
+  catAtiva = cat;
+  document.querySelectorAll('.cat-chip').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  aplicarFiltros();
+}
+
+function filtrarSlicer(btn, cat) {
+  catAtiva = cat;
+  document.querySelectorAll('#catSlicerInner .cat-chip').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  const labelEl = document.getElementById('catSlicerLabelText');
+  const slicerBtn = document.getElementById('catSlicerBtn');
+  const panel = document.getElementById('catSlicerPanel');
+  if (cat === '') {
+    labelEl.textContent = 'Todas as categorias';
+    slicerBtn.classList.remove('has-active');
+    const badge = slicerBtn.querySelector('.cat-slicer-selected');
+    if (badge) badge.remove();
+  } else {
+    labelEl.textContent = 'Categoria';
+    slicerBtn.classList.add('has-active');
+    let badge = slicerBtn.querySelector('.cat-slicer-selected');
+    if (!badge) { badge = document.createElement('span'); badge.className = 'cat-slicer-selected'; slicerBtn.querySelector('.cat-slicer-label').appendChild(badge); }
+    badge.textContent = btn.textContent.trim();
+  }
+  panel.classList.remove('open');
+  slicerBtn.classList.remove('open');
+  slicerBtn.setAttribute('aria-expanded','false');
+  aplicarFiltros();
+}
+
+(function initCatSlicer() {
+  const btn = document.getElementById('catSlicerBtn');
+  const panel = document.getElementById('catSlicerPanel');
+  if (!btn || !panel) return;
+  btn.addEventListener('click', function(e) {
+    e.stopPropagation();
+    const isOpen = panel.classList.contains('open');
+    panel.classList.toggle('open', !isOpen);
+    btn.classList.toggle('open', !isOpen);
+    btn.setAttribute('aria-expanded', String(!isOpen));
+  });
+  document.addEventListener('click', function(e) {
+    const wrap = document.getElementById('catSlicerWrap');
+    if (wrap && !wrap.contains(e.target)) {
+      panel.classList.remove('open');
+      btn.classList.remove('open');
+      btn.setAttribute('aria-expanded','false');
+    }
+  });
+})();
+
+function buscar(q) {
+  buscaAtiva = q.toLowerCase();
+  aplicarFiltros();
+}
+
+function aplicarFiltros() {
+  const cards = document.querySelectorAll('.negocio-card');
+  let visivel = 0;
+  cards.forEach(card => {
+    const matchCat = !catAtiva || card.dataset.cat === catAtiva;
+    const matchBusca = !buscaAtiva || card.dataset.nome.includes(buscaAtiva);
+    const show = matchCat && matchBusca;
+    card.style.display = show ? '' : 'none';
+    if (show) visivel++;
+  });
+  document.getElementById('emptyMsg').style.display = visivel === 0 ? 'block' : 'none';
+  if (window._negCarousel) window._negCarousel.reset();
+}
+
+// ── Carrossel de categorias ──────────────────────────────────
+function carouselScroll(dir) {
+  const c = document.getElementById('catsCarousel');
+  if (!c) return;
+  c.scrollBy({ left: dir * 620, behavior: 'smooth' });
+}
+
+// ── Filtro A-Z de categorias ─────────────────────────────────
+(function initAZ() {
+  const carousel = document.getElementById('catsCarousel');
+  const azContainer = document.getElementById('azFilter');
+  if (!carousel || !azContainer) return;
+  const cards = Array.from(carousel.querySelectorAll('.cat-card'));
+  const letras = [...new Set(cards.map(c => c.dataset.letra).filter(Boolean))].sort();
+  if (letras.length <= 1) { azContainer.style.display = 'none'; return; }
+  const btnTodos = document.createElement('button');
+  btnTodos.className = 'az-btn active';
+  btnTodos.textContent = '✦';
+  btnTodos.title = 'Todas';
+  btnTodos.onclick = () => filtrarAZ(null, btnTodos);
+  azContainer.appendChild(btnTodos);
+  letras.forEach(l => {
+    const btn = document.createElement('button');
+    btn.className = 'az-btn';
+    btn.textContent = l;
+    btn.onclick = () => filtrarAZ(l, btn);
+    azContainer.appendChild(btn);
+  });
+})();
+
+function filtrarAZ(letra, activeBtn) {
+  document.querySelectorAll('.az-btn').forEach(b => b.classList.remove('active'));
+  activeBtn.classList.add('active');
+  const carousel = document.getElementById('catsCarousel');
+  if (!carousel) return;
+  carousel.querySelectorAll('.cat-card').forEach(card => {
+    card.style.display = (!letra || card.dataset.letra === letra) ? '' : 'none';
+  });
+  carousel.scrollTo({ left: 0, behavior: 'smooth' });
+}
+</script>
+</body>
+</html>
