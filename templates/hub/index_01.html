@@ -363,7 +363,11 @@ footer{background:var(--bg2);border-top:1px solid var(--border-light);padding:40
 
 /* ── RESPONSIVO ── */
 @media(max-width:768px){
-  nav.desktop-nav{display:flex;flex:1;min-width:0;overflow:hidden}
+  nav.desktop-nav{display:flex;flex:1;min-width:0;overflow:hidden;max-width:calc(100vw - 200px)}
+  .header-inner{padding:0 16px;gap:8px;overflow:hidden}
+  .cat-slicer-btn{min-width:0!important;max-width:150px}
+  #headerSlicerLabelText{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:80px}
+  #headerSlicerPanel{left:auto;right:0;min-width:200px;max-width:calc(100vw - 32px)}
   .hamburger{display:block}
   .hero{padding:44px 20px 36px}
   .hero-stats{max-width:100%}
@@ -392,7 +396,7 @@ footer{background:var(--bg2);border-top:1px solid var(--border-light);padding:40
     </a>
     <nav class="desktop-nav" aria-label="Categorias">
       <div id="headerSlicerWrap" style="position:relative;display:inline-block">
-        <button class="cat-slicer-btn" id="headerSlicerBtn" aria-haspopup="listbox" aria-expanded="false" style="min-width:160px">
+        <button class="cat-slicer-btn" id="headerSlicerBtn" aria-haspopup="listbox" aria-expanded="false">
           <span class="cat-slicer-label">
             <svg viewBox="0 0 24 24"><path d="M4 6h16M4 12h16M4 18h7"/></svg>
             <span id="headerSlicerLabelText">Categorias</span>
