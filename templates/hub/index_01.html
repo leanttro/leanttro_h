@@ -67,11 +67,11 @@ header{
   border-bottom:1px solid rgba(0,0,0,.08);
   position:sticky;top:0;z-index:200;
 }
-.header-inner{max-width:1200px;margin:0 auto;padding:0 24px;display:flex;align-items:center;justify-content:space-between;height:52px;gap:16px}
+.header-inner{max-width:1200px;margin:0 auto;padding:0 24px;display:flex;align-items:center;justify-content:space-between;height:68px;gap:16px}
 .logo-hub{display:flex;align-items:center;gap:9px;font-family:var(--sans);font-weight:700;font-size:1rem;color:var(--text);letter-spacing:-.2px}
 .logo-hub img{height:58px;width:auto}
 .logo-hub-mark{width:30px;height:30px;background:var(--primary);border-radius:8px;display:flex;align-items:center;justify-content:center;color:#fff;font-size:.85rem;font-weight:700;flex-shrink:0}
-nav.desktop-nav{display:flex;align-items:center;flex-shrink:0}
+nav.desktop-nav{display:flex;align-items:center;flex-shrink:0;margin-left:12px}
 .nav-slicer{display:flex;gap:2px;overflow-x:auto;scrollbar-width:none;-webkit-overflow-scrolling:touch;padding:2px 0;align-items:center}
 .nav-slicer::-webkit-scrollbar{display:none}
 .nav-slicer-item{display:inline-flex;align-items:center;padding:5px 12px;border-radius:6px;font-size:.8rem;font-weight:500;color:var(--text-soft);transition:all .15s;white-space:nowrap;flex-shrink:0;background:transparent}
@@ -101,7 +101,7 @@ nav.desktop-nav{display:flex;align-items:center;flex-shrink:0}
   text-align:center;
   position:relative;overflow:hidden;
 }
-.hero-bg-img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:center;z-index:0;opacity:.08}
+.hero-bg-img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:center;z-index:0;opacity:.35}
 .hero .container{position:relative;z-index:1}
 .hero-eyebrow{
   display:inline-block;
@@ -381,6 +381,7 @@ footer{background:var(--bg2);border-top:1px solid var(--border-light);padding:40
 <!-- HEADER -->
 <header>
   <div class="header-inner">
+    <div style="display:flex;align-items:center;gap:12px;flex-shrink:0">
     <a href="/" class="logo-hub">
       {% if hub.logo_url %}
         <img src="{{ hub.logo_url }}" alt="{{ hub.nome }}">
@@ -391,7 +392,7 @@ footer{background:var(--bg2);border-top:1px solid var(--border-light);padding:40
     </a>
     <nav class="desktop-nav" aria-label="Categorias">
       <div id="headerSlicerWrap" style="position:relative;display:inline-block">
-        <button class="cat-slicer-btn" id="headerSlicerBtn" aria-haspopup="listbox" aria-expanded="false" style="min-width:180px">
+        <button class="cat-slicer-btn" id="headerSlicerBtn" aria-haspopup="listbox" aria-expanded="false" style="min-width:160px">
           <span class="cat-slicer-label">
             <svg viewBox="0 0 24 24"><path d="M4 6h16M4 12h16M4 18h7"/></svg>
             <span id="headerSlicerLabelText">Categorias</span>
@@ -408,6 +409,7 @@ footer{background:var(--bg2);border-top:1px solid var(--border-light);padding:40
         </div>
       </div>
     </nav>
+    </div>
     <div class="header-cta">
       {% if hub.banner1_link %}
       <a href="{{ hub.banner1_link }}" target="_blank" rel="noopener" class="btn-site-header">
@@ -477,7 +479,15 @@ footer{background:var(--bg2);border-top:1px solid var(--border-light);padding:40
             {% if cat.icone_url %}
               <img src="{{ cat.icone_url }}" alt="{{ cat.nome }}" style="height:56px;width:auto">
             {% else %}
-              <svg viewBox="0 0 24 24" width="40" height="40" fill="none" stroke="var(--border)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l1-5h16l1 5"/><path d="M3 9a2 2 0 0 0 4 0 2 2 0 0 0 4 0 2 2 0 0 0 4 0 2 2 0 0 0 4 0"/><path d="M5 9v11h14V9"/><rect x="9" y="14" width="6" height="6" rx="1"/></svg>
+              {% if cat.slug == 'academia' %}
+              <svg viewBox="0 0 24 24" width="44" height="44" fill="none" stroke="var(--primary)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M6 4v16M18 4v16M2 9h4M18 9h4M2 15h4M18 15h4M6 12h12"/></svg>
+              {% elif cat.slug == 'nutricionista' %}
+              <svg viewBox="0 0 24 24" width="44" height="44" fill="none" stroke="var(--primary)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2a7 7 0 0 1 7 7c0 4-3 7-7 13C9 16 5 13 5 9a7 7 0 0 1 7-7z"/><path d="M12 6v6M9 9h6"/></svg>
+              {% elif cat.slug == 'personal-trainer' or cat.slug == 'personal_trainer' or cat.slug == 'personal trainer' %}
+              <svg viewBox="0 0 24 24" width="44" height="44" fill="none" stroke="var(--primary)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="5" r="2"/><path d="M12 7v7M9 10l-3 3M15 10l3 3M9 21l3-7 3 7"/></svg>
+              {% else %}
+              <svg viewBox="0 0 24 24" width="44" height="44" fill="none" stroke="var(--primary)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l1-5h16l1 5"/><path d="M3 9a2 2 0 0 0 4 0 2 2 0 0 0 4 0 2 2 0 0 0 4 0 2 2 0 0 0 4 0"/><path d="M5 9v11h14V9"/><rect x="9" y="14" width="6" height="6" rx="1"/></svg>
+              {% endif %}
             {% endif %}
           </div>
           <h3>{{ cat.nome }}</h3>
