@@ -811,13 +811,6 @@ footer{background:var(--bg2);border-top:1px solid var(--border-light);padding:40
     btnLoc.disabled = true;
   }
 
-  if (navigator.geolocation) {
-    navigator.geolocation.getCurrentPosition(
-      pos => aplicarDistancias(pos.coords.latitude, pos.coords.longitude),
-      () => {}
-    );
-  }
-
   btnLoc.addEventListener('click', function() {
     if (!navigator.geolocation) { alert('Geolocalização não suportada neste navegador.'); return; }
     btnLoc.innerHTML = '<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" style="flex-shrink:0;animation:spin 1s linear infinite"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg> Localizando...';
