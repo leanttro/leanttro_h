@@ -69,15 +69,19 @@ header{
 }
 .header-inner{max-width:1200px;margin:0 auto;padding:0 24px;display:flex;align-items:center;justify-content:space-between;height:52px;gap:16px}
 .logo-hub{display:flex;align-items:center;gap:9px;font-family:var(--sans);font-weight:700;font-size:1rem;color:var(--text);letter-spacing:-.2px}
-.logo-hub img{height:44px;width:auto}
+.logo-hub img{height:58px;width:auto}
 .logo-hub-mark{width:30px;height:30px;background:var(--primary);border-radius:8px;display:flex;align-items:center;justify-content:center;color:#fff;font-size:.85rem;font-weight:700;flex-shrink:0}
-nav.desktop-nav{flex:1;min-width:0;overflow:hidden}
+nav.desktop-nav{display:flex;align-items:center;flex-shrink:0}
 .nav-slicer{display:flex;gap:2px;overflow-x:auto;scrollbar-width:none;-webkit-overflow-scrolling:touch;padding:2px 0;align-items:center}
 .nav-slicer::-webkit-scrollbar{display:none}
 .nav-slicer-item{display:inline-flex;align-items:center;padding:5px 12px;border-radius:6px;font-size:.8rem;font-weight:500;color:var(--text-soft);transition:all .15s;white-space:nowrap;flex-shrink:0;background:transparent}
 .nav-slicer-item:hover{background:rgba(0,0,0,.04);color:var(--text)}
 .nav-slicer-item.inicio{font-weight:600;color:var(--text)}
 .header-cta{display:flex;align-items:center;gap:8px;flex-shrink:0}
+.btn-site-header{display:inline-flex;align-items:center;gap:6px;background:var(--primary);color:#fff;padding:7px 14px;border-radius:20px;font-size:.78rem;font-weight:600;transition:all .2s;white-space:nowrap;border:1px solid var(--primary)}
+.btn-site-header:hover{opacity:.88;transform:scale(1.02)}
+.btn-site-header svg{width:13px;height:13px;flex-shrink:0}
+@media(max-width:600px){.btn-site-label{display:none}.btn-site-header{padding:7px 10px;border-radius:50%;width:34px;height:34px;justify-content:center}.btn-site-header svg{width:15px;height:15px}}
 .btn-wpp-header{display:inline-flex;align-items:center;gap:6px;background:#25D366;color:#fff;padding:7px 14px;border-radius:20px;font-size:.78rem;font-weight:600;transition:all .2s;white-space:nowrap}
 .btn-wpp-header:hover{background:#1da850;transform:scale(1.02)}
 .btn-wpp-header svg{width:14px;height:14px;flex-shrink:0}
@@ -197,9 +201,13 @@ nav.desktop-nav{flex:1;min-width:0;overflow:hidden}
 
 /* ── CAROUSEL CATS ── */
 .cats-carousel-outer{position:relative;padding:0 48px}
-.cats-carousel{display:flex;gap:14px;overflow-x:auto;scroll-behavior:smooth;scrollbar-width:none;-webkit-overflow-scrolling:touch;padding-bottom:6px;align-items:stretch}
+.cats-carousel{
+  display:flex;gap:14px;overflow-x:auto;scroll-behavior:smooth;scrollbar-width:none;
+  -webkit-overflow-scrolling:touch;padding-bottom:6px;align-items:stretch;
+  justify-content:center;flex-wrap:wrap;
+}
 .cats-carousel::-webkit-scrollbar{display:none}
-.cats-carousel .cat-card{min-width:170px;max-width:170px;flex-shrink:0}
+.cats-carousel .cat-card{min-width:170px;max-width:220px;flex:1 1 170px}
 .carousel-btn{
   position:absolute;top:50%;transform:translateY(-50%);
   background:white;border:1px solid var(--border-light);border-radius:50%;
@@ -211,7 +219,7 @@ nav.desktop-nav{flex:1;min-width:0;overflow:hidden}
 .carousel-prev{left:0}
 .carousel-next{right:0}
 @media(max-width:768px){.cats-carousel-outer{padding:0 34px}.carousel-btn{width:30px;height:30px;font-size:1rem}}
-@media(max-width:480px){.cats-carousel-outer{padding:0 26px}.cats-carousel .cat-card{min-width:148px;max-width:148px}}
+@media(max-width:480px){.cats-carousel-outer{padding:0}.carousel-btn{display:none}.cats-carousel .cat-card{min-width:148px;max-width:100%;flex:1 1 148px}}
 
 /* ── BOTÃO PRÓXIMO A MIM ── */
 .btn-localizar-hub{
@@ -401,6 +409,12 @@ footer{background:var(--bg2);border-top:1px solid var(--border-light);padding:40
       </div>
     </nav>
     <div class="header-cta">
+      {% if hub.banner1_link %}
+      <a href="{{ hub.banner1_link }}" target="_blank" rel="noopener" class="btn-site-header">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
+        <span class="btn-site-label">Acessar o site</span>
+      </a>
+      {% endif %}
       {% if hub.whatsapp %}
       <a href="https://wa.me/55{{ hub.whatsapp | replace(' ','') | replace('-','') | replace('(','') | replace(')','') }}" target="_blank" rel="noopener" class="btn-wpp-header">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07A19.5 19.5 0 013.07 9.81 19.79 19.79 0 01.01 1.18 2 2 0 012 0h3a2 2 0 012 1.72c.127.96.361 1.903.7 2.81a2 2 0 01-.45 2.11L6.09 7.91a16 16 0 006 6l1.27-1.27a2 2 0 012.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0122 16.92z"/></svg>
@@ -463,7 +477,7 @@ footer{background:var(--bg2);border-top:1px solid var(--border-light);padding:40
             {% if cat.icone_url %}
               <img src="{{ cat.icone_url }}" alt="{{ cat.nome }}" style="height:56px;width:auto">
             {% else %}
-              🏪
+              <svg viewBox="0 0 24 24" width="40" height="40" fill="none" stroke="var(--border)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l1-5h16l1 5"/><path d="M3 9a2 2 0 0 0 4 0 2 2 0 0 0 4 0 2 2 0 0 0 4 0 2 2 0 0 0 4 0"/><path d="M5 9v11h14V9"/><rect x="9" y="14" width="6" height="6" rx="1"/></svg>
             {% endif %}
           </div>
           <h3>{{ cat.nome }}</h3>
