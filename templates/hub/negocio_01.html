@@ -64,6 +64,7 @@ a{text-decoration:none;color:inherit}
 img{max-width:100%;display:block}
 
 /* ── HEADER ── */
+.header-logo-nav{display:flex;align-items:center;gap:12px;flex-shrink:0}
 header{
   background:rgba(255,255,255,.85);
   backdrop-filter:saturate(180%) blur(20px);
@@ -71,19 +72,26 @@ header{
   border-bottom:1px solid rgba(0,0,0,.08);
   position:sticky;top:0;z-index:200;
 }
-.header-inner{max-width:1200px;margin:0 auto;padding:0 24px;display:flex;align-items:center;justify-content:space-between;height:52px;gap:16px}
+.header-inner{max-width:1200px;margin:0 auto;padding:0 24px;display:flex;align-items:center;justify-content:space-between;height:68px;gap:16px}
 .logo-hub{display:flex;align-items:center;gap:9px;font-family:var(--sans);font-weight:700;font-size:1rem;color:var(--text);letter-spacing:-.2px}
-.logo-hub img{height:32px;width:auto}
+.logo-hub img{height:58px;width:auto}
 .logo-hub-mark{width:30px;height:30px;background:var(--primary);border-radius:8px;display:flex;align-items:center;justify-content:center;color:#fff;font-size:.85rem;font-weight:700;flex-shrink:0}
-nav.desktop-nav ul{list-style:none;display:flex;gap:2px;overflow-x:auto;scrollbar-width:none;padding:2px 0;align-items:center}
-nav.desktop-nav ul::-webkit-scrollbar{display:none}
-nav.desktop-nav ul li a{display:inline-flex;align-items:center;padding:5px 12px;border-radius:6px;font-size:.8rem;font-weight:500;color:var(--text-soft);transition:all .15s;white-space:nowrap}
-nav.desktop-nav ul li a:hover{background:rgba(0,0,0,.04);color:var(--text)}
-nav.desktop-nav ul li a.ativo{font-weight:600;color:var(--text)}
+nav.desktop-nav{display:flex;align-items:center;flex-shrink:0;margin-left:12px}
+.nav-slicer{display:flex;gap:2px;overflow-x:auto;scrollbar-width:none;-webkit-overflow-scrolling:touch;padding:2px 0;align-items:center}
+.nav-slicer::-webkit-scrollbar{display:none}
+.nav-slicer-item{display:inline-flex;align-items:center;padding:5px 12px;border-radius:6px;font-size:.8rem;font-weight:500;color:var(--text-soft);transition:all .15s;white-space:nowrap;flex-shrink:0;background:transparent}
+.nav-slicer-item:hover{background:rgba(0,0,0,.04);color:var(--text)}
+.nav-slicer-item.inicio{font-weight:600;color:var(--text)}
 .header-cta{display:flex;align-items:center;gap:8px;flex-shrink:0}
+.btn-site-header{display:inline-flex;align-items:center;gap:6px;background:var(--primary);color:#fff;padding:7px 14px;border-radius:20px;font-size:.78rem;font-weight:600;transition:all .2s;white-space:nowrap;border:1px solid var(--primary)}
+.btn-site-header:hover{opacity:.88;transform:scale(1.02)}
+.btn-site-header svg{width:13px;height:13px;flex-shrink:0}
+@media(max-width:600px){.btn-site-label{display:inline}.btn-site-header{padding:8px 16px;border-radius:20px;width:auto;height:auto;font-size:.85rem}.btn-site-header svg{display:none}}
 .btn-wpp-header{display:inline-flex;align-items:center;gap:6px;background:#25D366;color:#fff;padding:7px 14px;border-radius:20px;font-size:.78rem;font-weight:600;transition:all .2s;white-space:nowrap}
 .btn-wpp-header:hover{background:#1da850;transform:scale(1.02)}
 .btn-wpp-header svg{width:14px;height:14px;flex-shrink:0}
+.btn-wpp-text{display:inline}
+@media(max-width:768px){.btn-wpp-text{display:none}.btn-wpp-header{padding:7px 10px;border-radius:50%;width:34px;height:34px;justify-content:center}.btn-wpp-header svg{width:18px;height:18px}}
 .hamburger{display:none;background:none;border:none;cursor:pointer;padding:6px;color:var(--text)}
 .hamburger svg{width:22px;height:22px;stroke:currentColor;fill:none;stroke-width:2}
 .mobile-nav-overlay{display:none;position:fixed;inset:0;background:rgba(255,255,255,.98);backdrop-filter:blur(20px);z-index:300;justify-content:center;align-items:center;opacity:0;transition:opacity .2s}
@@ -92,6 +100,26 @@ nav.desktop-nav ul li a.ativo{font-weight:600;color:var(--text)}
 .mobile-nav-overlay ul li{margin:14px 0}
 .mobile-nav-overlay ul li a{color:var(--text);font-size:1.6rem;font-weight:600;letter-spacing:-.5px}
 .mobile-nav-close{position:absolute;top:18px;right:18px;background:var(--bg2);border:none;color:var(--text);width:32px;height:32px;border-radius:50%;font-size:1.1rem;cursor:pointer;display:flex;align-items:center;justify-content:center}
+/* slicer categorias desktop */
+.cat-slicer-btn{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:9px 16px;min-width:160px;background:white;border:1px solid var(--border);border-radius:10px;cursor:pointer;font-family:var(--sans);font-size:.85rem;font-weight:600;color:var(--text);transition:all .2s;box-shadow:var(--shadow)}
+.cat-slicer-btn:hover{border-color:var(--primary)}
+.cat-slicer-btn svg{width:14px;height:14px;stroke:currentColor;fill:none;stroke-width:2.5;flex-shrink:0;transition:transform .2s}
+.cat-slicer-btn.open svg:last-child{transform:rotate(180deg)}
+.cat-slicer-label{display:flex;align-items:center;gap:8px}
+.cat-slicer-label svg{width:14px;height:14px;stroke:currentColor;fill:none;stroke-width:2;flex-shrink:0}
+.cat-slicer-panel{display:none;position:absolute;top:calc(100% + 6px);left:0;z-index:50;background:white;border:1px solid var(--border-light);border-radius:var(--radius);box-shadow:var(--shadow-lg);min-width:220px;max-height:280px;overflow-y:auto;padding:10px}
+.cat-slicer-panel.open{display:block}
+.cat-slicer-inner{display:flex;flex-wrap:wrap;gap:6px;padding-top:2px}
+.cat-chip{padding:7px 16px;border-radius:20px;border:1px solid var(--border);background:white;font-family:var(--sans);font-size:.82rem;font-weight:500;color:var(--text-soft);cursor:pointer;transition:all .15s;display:inline-flex;align-items:center;gap:6px;white-space:nowrap;flex-shrink:0}
+.cat-chip:hover{border-color:var(--primary);color:var(--primary)}
+.cat-chip.active{background:var(--primary);border-color:var(--primary);color:#fff}
+/* banners */
+.banners-section{padding:32px 0;background:var(--bg)}
+.banners-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.banner-link{display:block;border-radius:var(--radius-lg);overflow:hidden;box-shadow:var(--shadow);transition:all .25s}
+.banner-link:hover{transform:scale(1.01);box-shadow:var(--shadow-md)}
+.banner-link img{width:100%;height:160px;object-fit:cover;display:block}
+@media(max-width:600px){.banners-grid{grid-template-columns:1fr}.banner-link img{height:130px}}
 
 /* ── HERO NEGÓCIO ── */
 .negocio-hero{
@@ -237,12 +265,11 @@ footer{background:var(--bg2);border-top:1px solid var(--border-light);padding:40
 /* ── RESPONSIVO ── */
 @media(max-width:768px){
   nav.desktop-nav{display:none}
-  .hamburger{display:block}
-  header{padding:0}
-  .header-inner{gap:8px}
-  .logo-hub img{height:28px}
-  .btn-wpp-header{font-size:0;gap:0;padding:7px 10px}
+  .header-logo-nav{display:flex;align-items:center;gap:8px;flex-shrink:0}
+  .logo-hub img{height:40px}
+  .btn-wpp-header{padding:7px 10px;border-radius:50%;width:34px;height:34px;justify-content:center}
   .btn-wpp-header svg{width:16px;height:16px}
+  .hamburger{display:block}
   .negocio-hero-body{flex-direction:column;align-items:flex-start;gap:14px}
   .negocio-hero-foto,.negocio-hero-sem-foto{width:110px;height:110px;font-size:2.8rem}
   .negocio-hero-info h1{font-size:1.7rem}
@@ -264,6 +291,7 @@ footer{background:var(--bg2);border-top:1px solid var(--border-light);padding:40
 <!-- HEADER -->
 <header>
   <div class="header-inner">
+    <div class="header-logo-nav">
     <a href="/" class="logo-hub">
       {% if hub.logo_url %}
         <img src="{{ hub.logo_url }}" alt="{{ hub.nome }}">
@@ -272,18 +300,40 @@ footer{background:var(--bg2);border-top:1px solid var(--border-light);padding:40
         <span>{{ hub.nome }}</span>
       {% endif %}
     </a>
-    <nav class="desktop-nav" aria-label="Navegação principal">
-      <ul>
-        <li><a href="/">Início</a></li>
-        <li><a href="/{{ segmento }}/" class="ativo">{{ negocio.categoria_nome }}</a></li>
-        {% if hub.whatsapp %}<li><a href="https://wa.me/55{{ hub.whatsapp | replace(' ','') | replace('-','') | replace('(','') | replace(')','') }}" target="_blank" rel="noopener">Contato</a></li>{% endif %}
-      </ul>
+    <nav class="desktop-nav" aria-label="Categorias">
+      <div id="headerSlicerWrap" style="position:relative;display:inline-block">
+        <button class="cat-slicer-btn" id="headerSlicerBtn" aria-haspopup="listbox" aria-expanded="false">
+          <span class="cat-slicer-label">
+            <svg viewBox="0 0 24 24"><path d="M4 6h16M4 12h16M4 18h7"/></svg>
+            <span id="headerSlicerLabelText">Categorias</span>
+          </span>
+          <svg viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"/></svg>
+        </button>
+        <div class="cat-slicer-panel" id="headerSlicerPanel" role="listbox">
+          <div class="cat-slicer-inner">
+            <a href="/" class="cat-chip">🔍 Todas</a>
+            {% for cat in categorias %}
+            {% set total = negocios | selectattr('categoria_slug','equalto',cat.slug) | list | length %}
+            {% if total > 0 %}
+            <a href="/{{ cat.slug }}/" class="cat-chip{% if cat.slug == segmento %} active{% endif %}">{{ cat.nome }}</a>
+            {% endif %}
+            {% endfor %}
+          </div>
+        </div>
+      </div>
     </nav>
+    </div>
     <div class="header-cta">
+      {% if hub.banner1_link %}
+      <a href="{{ hub.banner1_link }}" target="_blank" rel="noopener" class="btn-site-header">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
+        <span class="btn-site-label">Acessar o site</span>
+      </a>
+      {% endif %}
       {% if hub.whatsapp %}
-      <a href="https://wa.me/55{{ hub.whatsapp | replace(' ','') | replace('-','') | replace('(','') | replace(')','') }}" class="btn-wpp-header" target="_blank" rel="noopener">
-        <svg viewBox="0 0 24 24" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
-        WhatsApp
+      <a href="https://wa.me/55{{ hub.whatsapp | replace(' ','') | replace('-','') | replace('(','') | replace(')','') }}" target="_blank" rel="noopener" class="btn-wpp-header">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07A19.5 19.5 0 013.07 9.81 19.79 19.79 0 01.01 1.18 2 2 0 012 0h3a2 2 0 012 1.72c.127.96.361 1.903.7 2.81a2 2 0 01-.45 2.11L6.09 7.91a16 16 0 006 6l1.27-1.27a2 2 0 012.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0122 16.92z"/></svg>
+        <span class="btn-wpp-text">WhatsApp</span>
       </a>
       {% endif %}
       <button class="hamburger" id="hamburger" aria-label="Menu">
@@ -298,7 +348,12 @@ footer{background:var(--bg2);border-top:1px solid var(--border-light);padding:40
   <button class="mobile-nav-close" id="navClose">✕</button>
   <ul>
     <li><a href="/" onclick="closeNav()">Início</a></li>
-    <li><a href="/{{ segmento }}/" onclick="closeNav()">{{ negocio.categoria_nome }}</a></li>
+    {% for cat in categorias %}
+    {% set total = negocios | selectattr('categoria_slug','equalto',cat.slug) | list | length %}
+    {% if total > 0 %}
+    <li><a href="/{{ cat.slug }}/" onclick="closeNav()">{{ cat.nome }}</a></li>
+    {% endif %}
+    {% endfor %}
     {% if hub.whatsapp %}<li><a href="https://wa.me/55{{ hub.whatsapp | replace(' ','') | replace('-','') | replace('(','') | replace(')','') }}" onclick="closeNav()">WhatsApp</a></li>{% endif %}
   </ul>
 </div>
@@ -348,6 +403,26 @@ footer{background:var(--bg2);border-top:1px solid var(--border-light);padding:40
     </svg>
   </div>
 </section>
+
+<!-- BANNERS -->
+{% if hub.banner1_foto_url or hub.banner2_foto_url %}
+<section class="banners-section" aria-label="Banners">
+  <div class="container">
+    <div class="banners-grid">
+      {% if hub.banner1_foto_url %}
+      <a href="{{ hub.banner1_link or '#' }}" class="banner-link" {% if hub.banner1_link %}target="_blank" rel="noopener"{% endif %}>
+        <img src="{{ hub.banner1_foto_url }}" alt="Banner 1" loading="lazy">
+      </a>
+      {% endif %}
+      {% if hub.banner2_foto_url %}
+      <a href="{{ hub.banner2_link or '#' }}" class="banner-link" {% if hub.banner2_link %}target="_blank" rel="noopener"{% endif %}>
+        <img src="{{ hub.banner2_foto_url }}" alt="Banner 2" loading="lazy">
+      </a>
+      {% endif %}
+    </div>
+  </div>
+</section>
+{% endif %}
 
 <!-- CONTEÚDO PRINCIPAL -->
 <section class="negocio-layout">
@@ -575,6 +650,28 @@ footer{background:var(--bg2);border-top:1px solid var(--border-light);padding:40
 {% endif %}
 
 <script>
+// ── Header category slicer ───────────────────────────────────
+(function initHeaderSlicer() {
+  const btn = document.getElementById('headerSlicerBtn');
+  const panel = document.getElementById('headerSlicerPanel');
+  if (!btn || !panel) return;
+  btn.addEventListener('click', function(e) {
+    e.stopPropagation();
+    const isOpen = panel.classList.contains('open');
+    panel.classList.toggle('open', !isOpen);
+    btn.classList.toggle('open', !isOpen);
+    btn.setAttribute('aria-expanded', String(!isOpen));
+  });
+  document.addEventListener('click', function(e) {
+    const wrap = document.getElementById('headerSlicerWrap');
+    if (wrap && !wrap.contains(e.target)) {
+      panel.classList.remove('open');
+      btn.classList.remove('open');
+      btn.setAttribute('aria-expanded','false');
+    }
+  });
+})();
+
 document.getElementById('hamburger').addEventListener('click',()=>document.getElementById('mobileNav').classList.add('active'));
 document.getElementById('navClose').addEventListener('click',()=>closeNav());
 function closeNav(){document.getElementById('mobileNav').classList.remove('active')}
