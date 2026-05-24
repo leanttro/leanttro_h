@@ -83,10 +83,12 @@ nav.desktop-nav{display:flex;align-items:center;flex-shrink:0;margin-left:12px}
 .btn-site-header{display:inline-flex;align-items:center;gap:6px;background:var(--primary);color:#fff;padding:7px 14px;border-radius:20px;font-size:.78rem;font-weight:600;transition:all .2s;white-space:nowrap;border:1px solid var(--primary)}
 .btn-site-header:hover{opacity:.88;transform:scale(1.02)}
 .btn-site-header svg{width:13px;height:13px;flex-shrink:0}
-@media(max-width:600px){.btn-site-label{display:none}.btn-site-header{padding:7px 10px;border-radius:50%;width:34px;height:34px;justify-content:center}.btn-site-header svg{width:15px;height:15px}}
+@media(max-width:600px){.btn-site-label{display:inline}.btn-site-header{padding:8px 16px;border-radius:20px;width:auto;height:auto;font-size:.85rem}.btn-site-header svg{display:none}}
 .btn-wpp-header{display:inline-flex;align-items:center;gap:6px;background:#25D366;color:#fff;padding:7px 14px;border-radius:20px;font-size:.78rem;font-weight:600;transition:all .2s;white-space:nowrap}
 .btn-wpp-header:hover{background:#1da850;transform:scale(1.02)}
 .btn-wpp-header svg{width:14px;height:14px;flex-shrink:0}
+.btn-wpp-text{display:inline}
+@media(max-width:768px){.btn-wpp-text{display:none}.btn-wpp-header{padding:7px 10px;border-radius:50%;width:34px;height:34px;justify-content:center}.btn-wpp-header svg{width:18px;height:18px}}
 .hamburger{display:none;background:none;border:none;cursor:pointer;padding:6px;color:var(--text)}
 .hamburger svg{width:22px;height:22px;stroke:currentColor;fill:none;stroke-width:2}
 .mobile-nav-overlay{display:none;position:fixed;inset:0;background:rgba(255,255,255,.98);backdrop-filter:blur(20px);z-index:300;justify-content:center;align-items:center;opacity:0;transition:opacity .2s}
@@ -429,7 +431,7 @@ footer{background:var(--bg2);border-top:1px solid var(--border-light);padding:40
       {% if hub.whatsapp %}
       <a href="https://wa.me/55{{ hub.whatsapp | replace(' ','') | replace('-','') | replace('(','') | replace(')','') }}" target="_blank" rel="noopener" class="btn-wpp-header">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07A19.5 19.5 0 013.07 9.81 19.79 19.79 0 01.01 1.18 2 2 0 012 0h3a2 2 0 012 1.72c.127.96.361 1.903.7 2.81a2 2 0 01-.45 2.11L6.09 7.91a16 16 0 006 6l1.27-1.27a2 2 0 012.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0122 16.92z"/></svg>
-        WhatsApp
+        <span class="btn-wpp-text">WhatsApp</span>
       </a>
       {% endif %}
       <button class="hamburger" id="hamburger" aria-label="Menu">
