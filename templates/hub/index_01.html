@@ -69,7 +69,7 @@ header{
 }
 .header-inner{max-width:1200px;margin:0 auto;padding:0 24px;display:flex;align-items:center;justify-content:space-between;height:52px;gap:16px}
 .logo-hub{display:flex;align-items:center;gap:9px;font-family:var(--sans);font-weight:700;font-size:1rem;color:var(--text);letter-spacing:-.2px}
-.logo-hub img{height:32px;width:auto}
+.logo-hub img{height:44px;width:auto}
 .logo-hub-mark{width:30px;height:30px;background:var(--primary);border-radius:8px;display:flex;align-items:center;justify-content:center;color:#fff;font-size:.85rem;font-weight:700;flex-shrink:0}
 nav.desktop-nav{flex:1;min-width:0;overflow:hidden}
 .nav-slicer{display:flex;gap:2px;overflow-x:auto;scrollbar-width:none;-webkit-overflow-scrolling:touch;padding:2px 0;align-items:center}
@@ -93,7 +93,7 @@ nav.desktop-nav{flex:1;min-width:0;overflow:hidden}
 /* ── HERO ── */
 .hero{
   background:var(--bg2);
-  padding:96px 24px 80px;
+  padding:56px 24px 44px;
   text-align:center;
   position:relative;overflow:hidden;
 }
@@ -357,7 +357,7 @@ footer{background:var(--bg2);border-top:1px solid var(--border-light);padding:40
 @media(max-width:768px){
   nav.desktop-nav{display:flex;flex:1;min-width:0;overflow:hidden}
   .hamburger{display:block}
-  .hero{padding:72px 20px 60px}
+  .hero{padding:44px 20px 36px}
   .hero-stats{max-width:100%}
   .hero-stat{padding:16px 10px}
   .hero-stat strong{font-size:1.3rem}
@@ -382,11 +382,22 @@ footer{background:var(--bg2);border-top:1px solid var(--border-light);padding:40
       {% endif %}
     </a>
     <nav class="desktop-nav" aria-label="Categorias">
-      <div class="nav-slicer">
-        <a href="/" class="nav-slicer-item inicio">Início</a>
-        {% for cat in categorias %}
-        <a href="/{{ cat.slug }}/" class="nav-slicer-item">{{ cat.nome }}</a>
-        {% endfor %}
+      <div id="headerSlicerWrap" style="position:relative;display:inline-block">
+        <button class="cat-slicer-btn" id="headerSlicerBtn" aria-haspopup="listbox" aria-expanded="false" style="min-width:180px">
+          <span class="cat-slicer-label">
+            <svg viewBox="0 0 24 24"><path d="M4 6h16M4 12h16M4 18h7"/></svg>
+            <span id="headerSlicerLabelText">Categorias</span>
+          </span>
+          <svg viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"/></svg>
+        </button>
+        <div class="cat-slicer-panel" id="headerSlicerPanel" role="listbox">
+          <div class="cat-slicer-inner">
+            <a href="/" class="cat-chip active">🔍 Todas</a>
+            {% for cat in categorias %}
+            <a href="/{{ cat.slug }}/" class="cat-chip">{{ cat.nome }}</a>
+            {% endfor %}
+          </div>
+        </div>
       </div>
     </nav>
     <div class="header-cta">
@@ -421,7 +432,6 @@ footer{background:var(--bg2);border-top:1px solid var(--border-light);padding:40
   <img src="{{ hub.banner_fundo_url }}" alt="" class="hero-bg-img" aria-hidden="true">
   {% endif %}
   <div class="container">
-    <span class="hero-eyebrow">Guia local de negócios</span>
     <h1>{{ hub.nome }}<br><em>{{ hub.titulo and hub.titulo != hub.nome and hub.titulo or (hub.descricao and hub.descricao[:60] or 'Encontre os melhores negócios') }}</em></h1>
     <p>{{ hub.descricao or 'Encontre os melhores negócios locais. Tudo organizado por categoria e bairro.' }}</p>
     <div class="hero-stats">
@@ -776,6 +786,28 @@ footer{background:var(--bg2);border-top:1px solid var(--border-light);padding:40
         alert('Não foi possível obter sua localização. Verifique as permissões do navegador.');
       }
     );
+  });
+})();
+
+// ── Header category slicer ───────────────────────────────────
+(function initHeaderSlicer() {
+  const btn = document.getElementById('headerSlicerBtn');
+  const panel = document.getElementById('headerSlicerPanel');
+  if (!btn || !panel) return;
+  btn.addEventListener('click', function(e) {
+    e.stopPropagation();
+    const isOpen = panel.classList.contains('open');
+    panel.classList.toggle('open', !isOpen);
+    btn.classList.toggle('open', !isOpen);
+    btn.setAttribute('aria-expanded', String(!isOpen));
+  });
+  document.addEventListener('click', function(e) {
+    const wrap = document.getElementById('headerSlicerWrap');
+    if (wrap && !wrap.contains(e.target)) {
+      panel.classList.remove('open');
+      btn.classList.remove('open');
+      btn.setAttribute('aria-expanded','false');
+    }
   });
 })();
 
