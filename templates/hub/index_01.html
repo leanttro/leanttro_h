@@ -59,6 +59,8 @@ body{font-family:var(--sans);background:var(--bg);color:var(--text);line-height:
 a{text-decoration:none;color:inherit}
 img{max-width:100%;display:block}
 
+.header-logo-nav{display:flex;align-items:center;gap:12px;flex-shrink:0}
+
 /* ── HEADER ── */
 header{
   background:rgba(255,255,255,.85);
@@ -363,11 +365,14 @@ footer{background:var(--bg2);border-top:1px solid var(--border-light);padding:40
 
 /* ── RESPONSIVO ── */
 @media(max-width:768px){
-  nav.desktop-nav{display:flex;flex:1;min-width:0;overflow:hidden;max-width:calc(100vw - 200px)}
-  .header-inner{padding:0 16px;gap:8px;overflow:hidden}
-  .cat-slicer-btn{min-width:0!important;max-width:150px}
-  #headerSlicerLabelText{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:80px}
+  nav.desktop-nav{display:flex;flex:1;min-width:0;overflow:hidden}
+  .header-logo-nav{display:flex;align-items:center;gap:8px;flex:1;min-width:0;overflow:hidden}
+  .logo-hub img{height:40px}
+  .cat-slicer-btn{min-width:0!important;max-width:130px}
+  #headerSlicerLabelText{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:70px}
   #headerSlicerPanel{left:auto;right:0;min-width:200px;max-width:calc(100vw - 32px)}
+  .btn-wpp-header .wpp-label{display:none}
+  .btn-wpp-header{padding:7px 10px;border-radius:50%;width:34px;height:34px;justify-content:center}
   .hamburger{display:block}
   .hero{padding:44px 20px 36px}
   .hero-stats{max-width:100%}
@@ -385,7 +390,7 @@ footer{background:var(--bg2);border-top:1px solid var(--border-light);padding:40
 <!-- HEADER -->
 <header>
   <div class="header-inner">
-    <div style="display:flex;align-items:center;gap:12px;flex-shrink:0">
+    <div class="header-logo-nav">
     <a href="/" class="logo-hub">
       {% if hub.logo_url %}
         <img src="{{ hub.logo_url }}" alt="{{ hub.nome }}">
