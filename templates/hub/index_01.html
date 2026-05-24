@@ -365,14 +365,11 @@ footer{background:var(--bg2);border-top:1px solid var(--border-light);padding:40
 
 /* ── RESPONSIVO ── */
 @media(max-width:768px){
-  nav.desktop-nav{display:flex;flex:1;min-width:0;overflow:hidden}
-  .header-logo-nav{display:flex;align-items:center;gap:8px;flex:1;min-width:0;overflow:hidden}
+  nav.desktop-nav{display:none}
+  .header-logo-nav{display:flex;align-items:center;gap:8px;flex-shrink:0}
   .logo-hub img{height:40px}
-  .cat-slicer-btn{min-width:0!important;max-width:130px}
-  #headerSlicerLabelText{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:70px}
-  #headerSlicerPanel{left:auto;right:0;min-width:200px;max-width:calc(100vw - 32px)}
-  .btn-wpp-header .wpp-label{display:none}
   .btn-wpp-header{padding:7px 10px;border-radius:50%;width:34px;height:34px;justify-content:center}
+  .btn-wpp-header svg{width:16px;height:16px}
   .hamburger{display:block}
   .hero{padding:44px 20px 36px}
   .hero-stats{max-width:100%}
@@ -448,7 +445,10 @@ footer{background:var(--bg2);border-top:1px solid var(--border-light);padding:40
   <ul>
     <li><a href="/" onclick="closeNav()">Início</a></li>
     {% for cat in categorias %}
+    {% set total = negocios | selectattr('categoria_slug','equalto',cat.slug) | list | length %}
+    {% if total > 0 %}
     <li><a href="/{{ cat.slug }}/" onclick="closeNav()">{{ cat.nome }}</a></li>
+    {% endif %}
     {% endfor %}
     {% if hub.whatsapp %}<li><a href="https://wa.me/55{{ hub.whatsapp | replace(' ','') | replace('-','') | replace('(','') | replace(')','') }}" onclick="closeNav()">WhatsApp</a></li>{% endif %}
   </ul>
