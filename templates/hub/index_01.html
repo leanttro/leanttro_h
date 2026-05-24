@@ -118,17 +118,17 @@ nav.desktop-nav{display:flex;align-items:center;flex-shrink:0;margin-left:12px}
 .hero p{font-size:1.05rem;color:rgba(255,255,255,.85);max-width:500px;margin:0 auto 48px;line-height:1.6;font-weight:400}
 .hero-stats{
   display:flex;justify-content:center;gap:0;flex-wrap:wrap;
-  border:1px solid rgba(255,255,255,.25);border-radius:var(--radius-lg);
-  background:rgba(255,255,255,.15);backdrop-filter:blur(10px);box-shadow:var(--shadow);
+  border:1px solid var(--border-light);border-radius:var(--radius-lg);
+  background:white;box-shadow:var(--shadow);
   overflow:hidden;max-width:480px;margin:0 auto;
 }
 .hero-stat{
   flex:1;padding:20px 16px;text-align:center;
-  border-right:1px solid rgba(255,255,255,.2);
+  border-right:1px solid var(--border-light);
 }
 .hero-stat:last-child{border-right:none}
-.hero-stat strong{display:block;font-size:1.6rem;font-weight:700;color:#fff;letter-spacing:-.03em;line-height:1}
-.hero-stat span{font-size:.72rem;color:rgba(255,255,255,.75);margin-top:4px;display:block;font-weight:500}
+.hero-stat strong{display:block;font-size:1.6rem;font-weight:700;color:var(--text);letter-spacing:-.03em;line-height:1}
+.hero-stat span{font-size:.72rem;color:var(--muted);margin-top:4px;display:block;font-weight:500}
 
 /* ── BUSCA ── */
 .busca-section{
@@ -455,7 +455,7 @@ footer{background:var(--bg2);border-top:1px solid var(--border-light);padding:40
     <p>{{ hub.descricao or 'Encontre os melhores negócios locais. Tudo organizado por categoria e bairro.' }}</p>
     <div class="hero-stats">
       <div class="hero-stat"><strong>{{ negocios | length }}</strong><span>negócios</span></div>
-      <div class="hero-stat"><strong>{{ categorias | length }}</strong><span>categorias</span></div>
+      <div class="hero-stat"><strong>{{ negocios | map(attribute='bairro') | select | unique | list | length }}</strong><span>bairros</span></div>
       <div class="hero-stat"><strong>Grátis</strong><span>para usar</span></div>
     </div>
   </div>
@@ -586,7 +586,17 @@ footer{background:var(--bg2);border-top:1px solid var(--border-light);padding:40
           {% if n.foto_url and n.mostrar_foto %}
             <img src="{{ n.foto_url }}" alt="{{ n.nome }}" class="negocio-card-foto" loading="lazy">
           {% else %}
-            <div class="negocio-card-sem-foto">🏪</div>
+            <div class="negocio-card-sem-foto">
+              {% if n.categoria_slug == 'academia' %}
+              <svg viewBox="0 0 24 24" width="40" height="40" fill="none" stroke="var(--primary)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M6 4v16M18 4v16M2 9h4M18 9h4M2 15h4M18 15h4M6 12h12"/></svg>
+              {% elif n.categoria_slug == 'nutricionista' %}
+              <svg viewBox="0 0 24 24" width="40" height="40" fill="none" stroke="var(--primary)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2a7 7 0 0 1 7 7c0 4-3 7-7 13C9 16 5 13 5 9a7 7 0 0 1 7-7z"/><path d="M12 6v6M9 9h6"/></svg>
+              {% elif 'personal' in n.categoria_slug %}
+              <svg viewBox="0 0 24 24" width="40" height="40" fill="none" stroke="var(--primary)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="5" r="2"/><path d="M12 7v7M9 10l-3 3M15 10l3 3M9 21l3-7 3 7"/></svg>
+              {% else %}
+              <svg viewBox="0 0 24 24" width="40" height="40" fill="none" stroke="var(--primary)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l1-5h16l1 5"/><path d="M3 9a2 2 0 0 0 4 0 2 2 0 0 0 4 0 2 2 0 0 0 4 0 2 2 0 0 0 4 0"/><path d="M5 9v11h14V9"/><rect x="9" y="14" width="6" height="6" rx="1"/></svg>
+              {% endif %}
+            </div>
           {% endif %}
           <div class="negocio-card-body">
             <span class="negocio-badge">{{ n.categoria_nome }}</span>
