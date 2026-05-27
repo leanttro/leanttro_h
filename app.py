@@ -1,8 +1,8 @@
-from flask import Flask, render_template, request, jsonify, redirect, session, g
+from flask import Flask, render_template, request, jsonify, redirect, session, g, Response
 from werkzeug.security import generate_password_hash, check_password_hash
 from werkzeug.middleware.proxy_fix import ProxyFix
 from functools import wraps
-from datetime import datetime
+from datetime import datetime, timezone
 import psycopg2
 import psycopg2.extras
 import os
@@ -105,6 +105,93 @@ def index():
     return render_template(f"hub/{template}.html", hub=hub, negocios=negocios, categorias=categorias)
 
 
+@app.route("/robots.txt")
+def robots():
+    hub = get_hub_by_host()
+    base_url = f"https://{request.host}"
+    linhas = [
+        "User-agent: *",
+        "Allow: /",
+        f"Sitemap: {base_url}/sitemap.xml",
+    ]
+    if not hub:
+        linhas.insert(1, "Disallow: /")
+    return Response("\n".join(linhas), mimetype="text/plain")
+
+
+@app.route("/sitemap.xml")
+def sitemap():
+    hub = get_hub_by_host()
+    if not hub:
+        return "Hub não encontrado", 404
+
+    base_url = f"https://{request.host}"
+    hoje = datetime.now(timezone.utc).strftime("%Y-%m-%d")
+
+    # Negócios ativos com categoria e data de atualização
+    negocios = query("""
+        SELECT n.slug, n.bairro,
+               COALESCE(n.updated_at, n.criado_em) as atualizado_em,
+               c.slug as categoria_slug
+        FROM hub_negocios n
+        JOIN hub_negocio_hubs nh ON nh.negocio_id = n.id
+        JOIN hub_categorias c ON c.id = n.categoria_id
+        WHERE nh.hub_id = %s AND n.ativo = true
+        ORDER BY n.nome
+    """, (hub["id"],))
+
+    # Segmentos únicos (categoria ou bairro conforme tipo do hub)
+    eh_bairro = hub.get("tipo") == "bairro"
+    segmentos_vistos = set()
+    segmentos = []
+    for n in negocios:
+        seg = n["bairro"].lower() if eh_bairro and n["bairro"] else n["categoria_slug"]
+        if seg and seg not in segmentos_vistos:
+            segmentos_vistos.add(seg)
+            segmentos.append(seg)
+
+    def fmt_date(val):
+        if not val:
+            return hoje
+        if hasattr(val, "strftime"):
+            return val.strftime("%Y-%m-%d")
+        return str(val)[:10]
+
+    urls = []
+
+    # Página inicial
+    urls.append({"loc": f"{base_url}/", "lastmod": hoje, "priority": "1.0", "changefreq": "weekly"})
+
+    # Páginas de filtro (categoria ou bairro)
+    for seg in segmentos:
+        urls.append({"loc": f"{base_url}/{seg}/", "lastmod": hoje, "priority": "0.8", "changefreq": "weekly"})
+
+    # Páginas individuais de negócio
+    for n in negocios:
+        seg = n["bairro"].lower() if eh_bairro and n["bairro"] else n["categoria_slug"]
+        if not seg:
+            continue
+        urls.append({
+            "loc": f"{base_url}/{seg}/{n['slug']}/",
+            "lastmod": fmt_date(n["atualizado_em"]),
+            "priority": "0.6",
+            "changefreq": "monthly",
+        })
+
+    linhas = ['<?xml version="1.0" encoding="UTF-8"?>']
+    linhas.append('<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">')
+    for u in urls:
+        linhas.append("  <url>")
+        linhas.append(f"    <loc>{u['loc']}</loc>")
+        linhas.append(f"    <lastmod>{u['lastmod']}</lastmod>")
+        linhas.append(f"    <changefreq>{u['changefreq']}</changefreq>")
+        linhas.append(f"    <priority>{u['priority']}</priority>")
+        linhas.append("  </url>")
+    linhas.append("</urlset>")
+
+    return Response("\n".join(linhas), mimetype="application/xml")
+
+
 @app.route("/<segmento>/")
 def pagina_filtro(segmento):
     if segmento in ROTAS_RESERVADAS:
@@ -179,8 +266,8 @@ def admin_login():
             return render_template("admin/login.html", erro="Senha não configurada. Redefina pelo banco.")
         if not check_password_hash(senha_hash, senha):
             return render_template("admin/login.html", erro="Senha incorreta")
-        session["admin_id"] = user["id"]
-        session["admin_nome"] = user["nome"]
+        session["admin_id"]    = user["id"]
+        session["admin_nome"]  = user["nome"]
         session["admin_nivel"] = admin["nivel"]
         return redirect("/admin")
     return render_template("admin/login.html")
@@ -427,25 +514,19 @@ def admin_negocio_deletar(negocio_id):
 @app.route("/admin/negocios/bulk", methods=["POST"])
 @login_required
 def admin_negocios_bulk():
-    data = request.get_json(force=True)
-    ids     = [int(i) for i in data.get("ids", []) if str(i).isdigit()]
-    action  = data.get("action", "")
-    hub_id  = data.get("hub_id")
+    data   = request.get_json(force=True)
+    ids    = [int(i) for i in data.get("ids", []) if str(i).isdigit()]
+    action = data.get("action", "")
+    hub_id = data.get("hub_id")
 
     if not ids:
         return jsonify({"error": "Nenhum negócio selecionado"}), 400
 
     if action == "ativar":
-        query(
-            f"UPDATE hub_negocios SET ativo = TRUE WHERE id = ANY(%s)",
-            (ids,), commit=True
-        )
+        query("UPDATE hub_negocios SET ativo = TRUE WHERE id = ANY(%s)", (ids,), commit=True)
 
     elif action == "desativar":
-        query(
-            f"UPDATE hub_negocios SET ativo = FALSE WHERE id = ANY(%s)",
-            (ids,), commit=True
-        )
+        query("UPDATE hub_negocios SET ativo = FALSE WHERE id = ANY(%s)", (ids,), commit=True)
 
     elif action == "excluir":
         query("DELETE FROM hub_negocio_hubs WHERE negocio_id = ANY(%s)", (ids,), commit=True)
@@ -454,13 +535,10 @@ def admin_negocios_bulk():
     elif action == "vincular" and hub_id:
         hub_id = int(hub_id)
         for nid in ids:
-            # INSERT OR IGNORE — evita duplicata
-            query(
-                """INSERT INTO hub_negocio_hubs (negocio_id, hub_id)
-                   VALUES (%s, %s)
-                   ON CONFLICT (negocio_id, hub_id) DO NOTHING""",
-                (nid, hub_id), commit=True
-            )
+            query("""
+                INSERT INTO hub_negocio_hubs (negocio_id, hub_id)
+                VALUES (%s, %s) ON CONFLICT (negocio_id, hub_id) DO NOTHING
+            """, (nid, hub_id), commit=True)
 
     elif action == "desvincular" and hub_id:
         hub_id = int(hub_id)
