@@ -131,7 +131,7 @@ def sitemap():
     # Negócios ativos com categoria e data de atualização
     negocios = query("""
         SELECT n.slug, n.bairro,
-               COALESCE(n.updated_at, n.criado_em) as atualizado_em,
+               n.criado_em as atualizado_em,
                c.slug as categoria_slug
         FROM hub_negocios n
         JOIN hub_negocio_hubs nh ON nh.negocio_id = n.id
