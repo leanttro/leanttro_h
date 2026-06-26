@@ -248,6 +248,63 @@
             .section-title { font-size: 1.6em; }
             .busca-section { padding: 36px 0; }
         }
+
+        /* ══ CARROSSEL DE NEGÓCIOS ══ */
+        .carousel-wrapper { position: relative; }
+        .carousel-track-outer { overflow: hidden; border-radius: 12px; }
+        .carousel-track {
+            display: flex; gap: 22px;
+            transition: transform 0.4s ease;
+            will-change: transform; cursor: grab; user-select: none;
+        }
+        .carousel-track.dragging { transition: none; cursor: grabbing; }
+        .carousel-track .negocio-card {
+            flex: 0 0 calc(25% - 17px); min-width: 0;
+        }
+        @media (max-width: 900px) {
+            .carousel-track .negocio-card { flex: 0 0 calc(50% - 11px); }
+        }
+        @media (max-width: 768px) {
+            .carousel-track-outer {
+                overflow-x: scroll; overflow-y: hidden;
+                -webkit-overflow-scrolling: touch;
+                scroll-snap-type: x mandatory; scrollbar-width: none;
+            }
+            .carousel-track-outer::-webkit-scrollbar { display: none; }
+            .carousel-track { transform: none !important; transition: none !important; cursor: default; }
+            .carousel-track .negocio-card { scroll-snap-align: start; flex: 0 0 calc(75% - 11px); }
+        }
+        @media (max-width: 480px) {
+            .carousel-track .negocio-card { flex: 0 0 calc(85%); }
+        }
+        .carousel-nav {
+            display: flex; align-items: center; justify-content: center;
+            gap: 12px; margin-top: 20px;
+        }
+        .carousel-arrow {
+            background: var(--white); border: 2px solid var(--medium-gray);
+            border-radius: 50%; width: 42px; height: 42px;
+            display: flex; align-items: center; justify-content: center;
+            cursor: pointer; font-size: 1em; color: var(--dark-gray);
+            transition: all 0.2s; flex-shrink: 0;
+        }
+        .carousel-arrow:hover:not(:disabled) { background: var(--primary); border-color: var(--primary); color: var(--white); }
+        .carousel-arrow:disabled { opacity: 0.3; cursor: not-allowed; }
+        .carousel-progress-bar { flex: 1; max-width: 200px; height: 4px; background: var(--medium-gray); border-radius: 4px; overflow: hidden; }
+        .carousel-progress-fill { height: 100%; background: var(--primary); border-radius: 4px; transition: width 0.35s cubic-bezier(.4,0,.2,1); }
+        /* grade */
+        .negocios-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 22px; }
+        /* view controls */
+        .view-controls { display: flex; align-items: center; justify-content: flex-end; margin-bottom: 16px; gap: 8px; }
+        .view-controls span { font-size: 0.85em; color: #6c757d; margin-right: 4px; }
+        .view-btn {
+            background: var(--white); border: 2px solid var(--medium-gray);
+            border-radius: 8px; width: 36px; height: 36px;
+            display: flex; align-items: center; justify-content: center;
+            cursor: pointer; transition: all 0.2s; color: #6c757d; font-size: 1em;
+        }
+        .view-btn:hover { border-color: var(--primary); color: var(--primary); }
+        .view-btn.active { background: var(--primary); border-color: var(--primary); color: var(--white); }
     </style>
 </head>
 <body>
@@ -263,10 +320,10 @@
     <nav class="desktop-nav" aria-label="Navegação principal">
         <ul>
             <li><a href="/">Início</a></li>
-            {% for cat in categorias %}
-            <li><a href="/{{ cat.slug }}/">{{ cat.nome }}</a></li>
-            {% endfor %}
+            <li><a href="#categorias">Categorias</a></li>
+            <li><a href="#cidades">Cidades</a></li>
             <li><a href="/blog/">Blog</a></li>
+            <li><a href="https://wa.me/55{{ hub.whatsapp or '11999999999' }}?text=Olá,+quero+saber+mais" target="_blank" rel="noopener">Contato</a></li>
         </ul>
     </nav>
     <button class="hamburger-btn" id="hamburger-btn" aria-label="Abrir menu">
@@ -280,10 +337,10 @@
     <nav>
         <ul>
             <li><a href="/" onclick="closeMobileNav()">Início</a></li>
-            {% for cat in categorias %}
-            <li><a href="/{{ cat.slug }}/" onclick="closeMobileNav()">{{ cat.nome }}</a></li>
-            {% endfor %}
+            <li><a href="#categorias" onclick="closeMobileNav()">Categorias</a></li>
+            <li><a href="#cidades" onclick="closeMobileNav()">Cidades</a></li>
             <li><a href="/blog/" onclick="closeMobileNav()">Blog</a></li>
+            <li><a href="https://wa.me/55{{ hub.whatsapp or '11999999999' }}?text=Olá,+quero+saber+mais" target="_blank" rel="noopener" onclick="closeMobileNav()">Contato</a></li>
         </ul>
     </nav>
 </div>
@@ -337,34 +394,32 @@
             {% endfor %}
         </div>
 
-        <!-- Grid -->
-        <div id="negocios-resultado">
-            <div class="negocios-grid" id="negocios-grid">
-                {% for n in negocios[:24] %}
-                <a href="/{{ n.categoria_slug }}/{{ n.slug }}/" class="negocio-card">
-                    {% if n.mostrar_foto != false %}
-                    <div class="card-foto">
-                        <img src="{{ n.foto_url or 'https://images.unsplash.com/photo-1486325212027-8081e485255e?w=400&q=80' }}"
-                             alt="{{ n.nome }} — {{ n.categoria_nome }} perto de mim"
-                             loading="lazy" width="400" height="180">
-                        <span class="badge-cat">{{ n.categoria_nome }}</span>
-                    </div>
-                    {% endif %}
-                    <div class="card-body">
-                        <h3>{{ n.nome }}</h3>
-                        <p class="card-bairro">
-                            <i class="fas fa-map-marker-alt" style="color:var(--primary)"></i>
-                            {{ n.bairro }}{% if n.cidade %}, {{ n.cidade }}{% endif %}
-                        </p>
-                        <span class="card-dist" id="dist-{{ n.id }}"></span>
-                        <span class="btn-ver">Ver detalhes →</span>
-                    </div>
-                </a>
-                {% else %}
-                <p class="info-message">Nenhum estabelecimento cadastrado ainda.</p>
-                {% endfor %}
+        <!-- Controles de visualização -->
+        <div class="view-controls" id="view-controls" style="display:none;">
+            <span>Ver como:</span>
+            <button class="view-btn active" id="btn-carousel" title="Carrossel" onclick="setView('carousel')">
+                <i class="fas fa-grip-lines"></i>
+            </button>
+            <button class="view-btn" id="btn-grade" title="Grade" onclick="setView('grade')">
+                <i class="fas fa-th"></i>
+            </button>
+        </div>
+
+        <!-- Carrossel de negócios -->
+        <div id="negocios-carousel-wrapper" class="carousel-wrapper">
+            <div class="carousel-track-outer">
+                <div class="carousel-track" id="negocios-track"></div>
+            </div>
+            <div class="carousel-nav" id="negocios-carousel-nav">
+                <button class="carousel-arrow" id="negocios-prev" onclick="moveCarousel(-1)"><i class="fas fa-chevron-left"></i></button>
+                <div class="carousel-progress-bar"><div class="carousel-progress-fill" id="negocios-progress-fill"></div></div>
+                <button class="carousel-arrow" id="negocios-next" onclick="moveCarousel(1)"><i class="fas fa-chevron-right"></i></button>
             </div>
         </div>
+
+        <!-- Grade (oculta inicialmente) -->
+        <div class="negocios-grid" id="negocios-grade" style="display:none;"></div>
+        <p class="info-message" id="negocios-vazio" style="display:none;">Nenhum estabelecimento encontrado.</p>
     </div>
 </section>
 
@@ -478,6 +533,7 @@ document.addEventListener('keydown', function(e){ if(e.key === 'Escape') closeMo
 var todosNegocios = {{ negocios | tojson }};
 var negociosFiltrados = todosNegocios.slice();
 var userLat = null, userLng = null, geoAtivo = false;
+var carouselPos = 0, carouselView = 'carousel';
 
 function calcDistancia(lat1,lng1,lat2,lng2){
     var R=6371,dLat=(lat2-lat1)*Math.PI/180,dLng=(lng2-lng1)*Math.PI/180;
@@ -501,33 +557,124 @@ function filtrarCategoria(slug, btn){
     renderNegocios(negociosFiltrados);
 }
 
+function cardHTML(n){
+    var dist=(n._dist&&n._dist<9999)?'<span class="card-dist"><i class="fas fa-map-marker-alt"></i> '+n._dist.toFixed(1)+' km de você</span>':'';
+    var foto=n.foto_url||'https://images.unsplash.com/photo-1486325212027-8081e485255e?w=400&q=80';
+    var local=[n.bairro,n.cidade].filter(Boolean).join(', ');
+    return '<a href="/'+n.categoria_slug+'/'+n.slug+'/" class="negocio-card">'+
+        '<div class="card-foto">'+
+            '<img src="'+foto+'" alt="'+n.nome+' perto de mim" loading="lazy" width="400" height="180">'+
+            '<span class="badge-cat">'+(n.categoria_nome||'')+'</span>'+
+        '</div>'+
+        '<div class="card-body">'+
+            '<h3>'+n.nome+'</h3>'+
+            (local?'<p class="card-bairro"><i class="fas fa-map-marker-alt" style="color:var(--primary)"></i> '+local+'</p>':'')+
+            dist+
+            '<span class="btn-ver">Ver detalhes →</span>'+
+        '</div>'+
+    '</a>';
+}
+
+function getCardWidth(){
+    var track=document.getElementById('negocios-track');
+    var card=track.querySelector('.negocio-card');
+    if(!card) return 280;
+    return card.offsetWidth+22;
+}
+
+function clampAndUpdate(){
+    var track=document.getElementById('negocios-track');
+    var cards=track.querySelectorAll('.negocio-card');
+    if(!cards.length) return;
+    var maxPos=Math.max(0,(cards.length)*getCardWidth()-document.getElementById('negocios-track').parentElement.offsetWidth);
+    carouselPos=Math.max(0,Math.min(carouselPos,maxPos));
+    track.style.transform='translateX(-'+carouselPos+'px)';
+    var fill=document.getElementById('negocios-progress-fill');
+    var prev=document.getElementById('negocios-prev');
+    var next=document.getElementById('negocios-next');
+    if(fill) fill.style.width=maxPos>0?Math.min(100,(carouselPos/maxPos)*100)+'%':'0%';
+    if(prev) prev.disabled=carouselPos<=0;
+    if(next) next.disabled=maxPos<=0||carouselPos>=maxPos;
+}
+
+function snapCarousel(){
+    var w=getCardWidth(); if(!w) return;
+    carouselPos=Math.round(carouselPos/w)*w;
+    clampAndUpdate();
+}
+
+function buildCarousel(cards){
+    var track=document.getElementById('negocios-track');
+    track.innerHTML=cards.join('');
+    carouselPos=0;
+    track.style.transform='translateX(0)';
+    clampAndUpdate();
+    // drag
+    var isDragging=false,startX=0,startPos=0;
+    var newTrack=track.cloneNode(true);
+    track.parentNode.replaceChild(newTrack,track);
+    track=document.getElementById('negocios-track');
+    function onStart(x){ isDragging=true; startX=x; startPos=carouselPos; track.classList.add('dragging'); }
+    function onMove(x){ if(!isDragging) return; carouselPos=startPos-(x-startX); clampAndUpdate(); }
+    function onEnd(){ isDragging=false; track.classList.remove('dragging'); snapCarousel(); }
+    track.addEventListener('mousedown',function(e){ onStart(e.clientX); e.preventDefault(); });
+    window.addEventListener('mousemove',function(e){ if(isDragging) onMove(e.clientX); });
+    window.addEventListener('mouseup',function(){ if(isDragging) onEnd(); });
+    var _ty=0,_horiz=false,_det=false;
+    track.addEventListener('touchstart',function(e){ _ty=e.touches[0].clientY; _horiz=false; _det=false; onStart(e.touches[0].clientX); },{passive:true});
+    track.addEventListener('touchmove',function(e){
+        if(!isDragging) return;
+        if(!_det){ var dx=Math.abs(e.touches[0].clientX-startX),dy=Math.abs(e.touches[0].clientY-_ty); if(dx>5||dy>5){_horiz=dx>=dy;_det=true;} }
+        if(!_det||!_horiz) return; e.preventDefault(); onMove(e.touches[0].clientX);
+    },{passive:false});
+    track.addEventListener('touchend',function(e){ if(_horiz) onEnd(); else isDragging=false; });
+}
+
+function moveCarousel(dir){
+    var outer=document.getElementById('negocios-track').parentElement;
+    var visivel=Math.max(1,Math.floor(outer.offsetWidth/getCardWidth()));
+    carouselPos+=dir*visivel*getCardWidth();
+    clampAndUpdate();
+}
+
+function setView(mode){
+    carouselView=mode;
+    var cw=document.getElementById('negocios-carousel-wrapper');
+    var gd=document.getElementById('negocios-grade');
+    document.getElementById('btn-carousel').classList.toggle('active',mode==='carousel');
+    document.getElementById('btn-grade').classList.toggle('active',mode==='grade');
+    if(cw) cw.style.display=mode==='carousel'?'':'none';
+    if(gd) gd.style.display=mode==='grade'?'grid':'none';
+}
+
 function renderNegocios(lista){
-    var grid = document.getElementById('negocios-grid');
-    if(geoAtivo && userLat && userLng){
-        lista = lista.map(function(n){
+    var vc=document.getElementById('view-controls');
+    var vazio=document.getElementById('negocios-vazio');
+    if(geoAtivo&&userLat&&userLng){
+        lista=lista.map(function(n){
             var d=(n.lat&&n.lng)?calcDistancia(userLat,userLng,parseFloat(n.lat),parseFloat(n.lng)):9999;
             return Object.assign({},n,{_dist:d});
         }).sort(function(a,b){ return a._dist-b._dist; });
     }
-    if(!lista.length){ grid.innerHTML='<p class="info-message">Nenhum resultado encontrado.</p>'; return; }
-    grid.innerHTML=lista.slice(0,24).map(function(n){
-        var dist=(n._dist&&n._dist<9999)?'<span class="card-dist"><i class="fas fa-map-marker-alt"></i> '+n._dist.toFixed(1)+' km de você</span>':'';
-        var foto=n.foto_url||'https://images.unsplash.com/photo-1486325212027-8081e485255e?w=400&q=80';
-        var local=[n.bairro,n.cidade].filter(Boolean).join(', ');
-        return '<a href="/'+n.categoria_slug+'/'+n.slug+'/" class="negocio-card">'+
-            '<div class="card-foto">'+
-                '<img src="'+foto+'" alt="'+n.nome+' perto de mim" loading="lazy" width="400" height="180">'+
-                '<span class="badge-cat">'+(n.categoria_nome||'')+'</span>'+
-            '</div>'+
-            '<div class="card-body">'+
-                '<h3>'+n.nome+'</h3>'+
-                (local?'<p class="card-bairro"><i class="fas fa-map-marker-alt" style="color:var(--primary)"></i> '+local+'</p>':'')+
-                dist+
-                '<span class="btn-ver">Ver detalhes →</span>'+
-            '</div>'+
-        '</a>';
-    }).join('');
+    if(!lista.length){
+        if(vc) vc.style.display='none';
+        var cw=document.getElementById('negocios-carousel-wrapper');
+        var gd=document.getElementById('negocios-grade');
+        if(cw) cw.style.display='none';
+        if(gd) gd.style.display='none';
+        if(vazio){ vazio.style.display=''; vazio.textContent='Nenhum resultado encontrado.'; }
+        return;
+    }
+    if(vazio) vazio.style.display='none';
+    if(vc) vc.style.display='flex';
+    var cards=lista.slice(0,48).map(cardHTML);
+    buildCarousel(cards);
+    var gd=document.getElementById('negocios-grade');
+    if(gd) gd.innerHTML=cards.join('');
+    setView(carouselView);
 }
+
+renderNegocios(negociosFiltrados);
 </script>
 
 <script>
