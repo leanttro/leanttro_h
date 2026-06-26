@@ -247,6 +247,227 @@ def pagina_negocio(segmento, slug_negocio):
 
 
 # ════════════════════════════════════════════════════════════
+#  ROTAS DE CIDADE — NOVAS (não tocam nas existentes)
+# ════════════════════════════════════════════════════════════
+
+import unicodedata as _uc
+
+def _slugify(texto):
+    if not texto:
+        return ""
+    texto = _uc.normalize("NFD", texto.lower())
+    texto = "".join(c for c in texto if _uc.category(c) != "Mn")
+    return texto.replace(" ", "-").strip("-")
+
+
+def _resolve_cidade(hub_id, cidade_slug):
+    """Devolve o nome real da cidade a partir do slug."""
+    rows = query("""
+        SELECT DISTINCT n.cidade
+        FROM hub_negocios n
+        JOIN hub_negocio_hubs nh ON nh.negocio_id = n.id
+        WHERE nh.hub_id = %s AND n.ativo = true AND n.cidade IS NOT NULL
+    """, (hub_id,))
+    for row in rows:
+        if _slugify(row["cidade"]) == cidade_slug:
+            return row["cidade"]
+    return None
+
+
+def _negocios_cidade(hub_id, cidade_nome=None, cat_slug=None, bairro_slug=None):
+    sql = """
+        SELECT n.*, c.nome as categoria_nome, c.slug as categoria_slug
+        FROM hub_negocios n
+        JOIN hub_negocio_hubs nh ON nh.negocio_id = n.id
+        JOIN hub_categorias c ON c.id = n.categoria_id
+        WHERE nh.hub_id = %s AND n.ativo = true
+    """
+    params = [hub_id]
+    if cidade_nome:
+        sql += " AND LOWER(TRIM(n.cidade)) = LOWER(%s)"
+        params.append(cidade_nome)
+    if cat_slug:
+        sql += " AND c.slug = %s"
+        params.append(cat_slug)
+    if bairro_slug:
+        sql += " AND LOWER(TRIM(n.bairro)) = LOWER(%s)"
+        params.append(bairro_slug.replace("-", " "))
+    sql += " ORDER BY n.nome"
+    return query(sql, params)
+
+
+def _bairros_cidade(hub_id, cidade_nome):
+    rows = query("""
+        SELECT DISTINCT n.bairro
+        FROM hub_negocios n
+        JOIN hub_negocio_hubs nh ON nh.negocio_id = n.id
+        WHERE nh.hub_id = %s AND n.ativo = true
+          AND n.bairro IS NOT NULL AND TRIM(n.bairro) != ''
+          AND LOWER(TRIM(n.cidade)) = LOWER(%s)
+        ORDER BY n.bairro
+    """, (hub_id, cidade_nome))
+    return [r["bairro"] for r in rows]
+
+
+def _categorias_cidade(hub_id, cidade_nome):
+    return query("""
+        SELECT DISTINCT c.id, c.nome, c.slug, c.icone_url
+        FROM hub_categorias c
+        JOIN hub_negocios n ON n.categoria_id = c.id
+        JOIN hub_negocio_hubs nh ON nh.negocio_id = n.id
+        WHERE nh.hub_id = %s AND n.ativo = true AND c.ativo = true
+          AND LOWER(TRIM(n.cidade)) = LOWER(%s)
+        ORDER BY c.nome
+    """, (hub_id, cidade_nome))
+
+
+def _render_cidade(hub, negocios, categorias, cidade_nome,
+                   bairro=None, categoria=None,
+                   bairros_disponiveis=None, categorias_disponiveis=None):
+    template = hub.get("template_cidade") or "cidade_otp"
+    return render_template(
+        f"hub/{template}.html",
+        hub=hub,
+        negocios=negocios,
+        categorias=categorias,
+        cidade=cidade_nome,
+        bairro=bairro,
+        categoria=categoria,
+        bairros_disponiveis=bairros_disponiveis or [],
+        categorias_disponiveis=categorias_disponiveis or [],
+    )
+
+
+@app.route("/cidade/<cidade_slug>/")
+def pagina_cidade(cidade_slug):
+    hub = get_hub_by_host()
+    if not hub:
+        return "Hub não encontrado", 404
+    cidade_nome = _resolve_cidade(hub["id"], cidade_slug)
+    if not cidade_nome:
+        return "Cidade não encontrada", 404
+    negocios   = _negocios_cidade(hub["id"], cidade_nome=cidade_nome)
+    categorias = query("SELECT * FROM hub_categorias WHERE ativo = true ORDER BY nome")
+    bairros    = _bairros_cidade(hub["id"], cidade_nome)
+    cats_disp  = _categorias_cidade(hub["id"], cidade_nome)
+    return _render_cidade(hub, negocios, categorias, cidade_nome,
+                          bairros_disponiveis=bairros,
+                          categorias_disponiveis=cats_disp)
+
+
+@app.route("/cidade/<cidade_slug>/<segundo_slug>/")
+def pagina_cidade_segundo(cidade_slug, segundo_slug):
+    """Detecta automaticamente se o segundo segmento é categoria ou bairro."""
+    hub = get_hub_by_host()
+    if not hub:
+        return "Hub não encontrado", 404
+    cidade_nome = _resolve_cidade(hub["id"], cidade_slug)
+    if not cidade_nome:
+        return "Cidade não encontrada", 404
+    categoria = query(
+        "SELECT * FROM hub_categorias WHERE slug = %s AND ativo = true",
+        (segundo_slug,), one=True
+    )
+    categorias = query("SELECT * FROM hub_categorias WHERE ativo = true ORDER BY nome")
+    bairros    = _bairros_cidade(hub["id"], cidade_nome)
+    cats_disp  = _categorias_cidade(hub["id"], cidade_nome)
+    if categoria:
+        negocios = _negocios_cidade(hub["id"], cidade_nome=cidade_nome, cat_slug=segundo_slug)
+        return _render_cidade(hub, negocios, categorias, cidade_nome,
+                              categoria=dict(categoria),
+                              bairros_disponiveis=bairros,
+                              categorias_disponiveis=cats_disp)
+    else:
+        bairro_nome = segundo_slug.replace("-", " ").title()
+        negocios    = _negocios_cidade(hub["id"], cidade_nome=cidade_nome, bairro_slug=segundo_slug)
+        return _render_cidade(hub, negocios, categorias, cidade_nome,
+                              bairro=bairro_nome,
+                              bairros_disponiveis=bairros,
+                              categorias_disponiveis=cats_disp)
+
+
+@app.route("/cidade/<cidade_slug>/<bairro_slug>/<cat_slug>/")
+def pagina_cidade_bairro_cat(cidade_slug, bairro_slug, cat_slug):
+    hub = get_hub_by_host()
+    if not hub:
+        return "Hub não encontrado", 404
+    cidade_nome = _resolve_cidade(hub["id"], cidade_slug)
+    if not cidade_nome:
+        return "Cidade não encontrada", 404
+    categoria  = query(
+        "SELECT * FROM hub_categorias WHERE slug = %s AND ativo = true",
+        (cat_slug,), one=True
+    )
+    negocios   = _negocios_cidade(hub["id"], cidade_nome=cidade_nome,
+                                   cat_slug=cat_slug, bairro_slug=bairro_slug)
+    categorias = query("SELECT * FROM hub_categorias WHERE ativo = true ORDER BY nome")
+    bairros    = _bairros_cidade(hub["id"], cidade_nome)
+    cats_disp  = _categorias_cidade(hub["id"], cidade_nome)
+    bairro_nome = bairro_slug.replace("-", " ").title()
+    return _render_cidade(hub, negocios, categorias, cidade_nome,
+                          bairro=bairro_nome,
+                          categoria=dict(categoria) if categoria else None,
+                          bairros_disponiveis=bairros,
+                          categorias_disponiveis=cats_disp)
+
+
+@app.route("/<cat_slug>/em/<cidade_slug>/")
+def pagina_cat_cidade(cat_slug, cidade_slug):
+    """/<cat_slug>/em/<cidade_slug>/ — usa /em/ para não colidir com /<seg>/<slug_negocio>/"""
+    if cat_slug in ROTAS_RESERVADAS:
+        return "Não encontrado", 404
+    hub = get_hub_by_host()
+    if not hub:
+        return "Hub não encontrado", 404
+    categoria = query(
+        "SELECT * FROM hub_categorias WHERE slug = %s AND ativo = true",
+        (cat_slug,), one=True
+    )
+    if not categoria:
+        return "Categoria não encontrada", 404
+    cidade_nome = _resolve_cidade(hub["id"], cidade_slug)
+    if not cidade_nome:
+        return "Cidade não encontrada", 404
+    negocios   = _negocios_cidade(hub["id"], cidade_nome=cidade_nome, cat_slug=cat_slug)
+    categorias = query("SELECT * FROM hub_categorias WHERE ativo = true ORDER BY nome")
+    bairros    = _bairros_cidade(hub["id"], cidade_nome)
+    cats_disp  = _categorias_cidade(hub["id"], cidade_nome)
+    return _render_cidade(hub, negocios, categorias, cidade_nome,
+                          categoria=dict(categoria),
+                          bairros_disponiveis=bairros,
+                          categorias_disponiveis=cats_disp)
+
+
+@app.route("/<cat_slug>/em/<cidade_slug>/<bairro_slug>/")
+def pagina_cat_cidade_bairro(cat_slug, cidade_slug, bairro_slug):
+    if cat_slug in ROTAS_RESERVADAS:
+        return "Não encontrado", 404
+    hub = get_hub_by_host()
+    if not hub:
+        return "Hub não encontrado", 404
+    categoria = query(
+        "SELECT * FROM hub_categorias WHERE slug = %s AND ativo = true",
+        (cat_slug,), one=True
+    )
+    if not categoria:
+        return "Categoria não encontrada", 404
+    cidade_nome = _resolve_cidade(hub["id"], cidade_slug)
+    if not cidade_nome:
+        return "Cidade não encontrada", 404
+    bairro_nome = bairro_slug.replace("-", " ").title()
+    negocios    = _negocios_cidade(hub["id"], cidade_nome=cidade_nome,
+                                    cat_slug=cat_slug, bairro_slug=bairro_slug)
+    categorias  = query("SELECT * FROM hub_categorias WHERE ativo = true ORDER BY nome")
+    bairros     = _bairros_cidade(hub["id"], cidade_nome)
+    cats_disp   = _categorias_cidade(hub["id"], cidade_nome)
+    return _render_cidade(hub, negocios, categorias, cidade_nome,
+                          bairro=bairro_nome,
+                          categoria=dict(categoria),
+                          bairros_disponiveis=bairros,
+                          categorias_disponiveis=cats_disp)
+
+
+# ════════════════════════════════════════════════════════════
 #  ADMIN — AUTH
 # ════════════════════════════════════════════════════════════
 
@@ -304,6 +525,7 @@ def admin_templates():
         "index":   listar_templates("index"),
         "filtro":  listar_templates("filtro"),
         "negocio": listar_templates("negocio"),
+        "cidade":  listar_templates("cidade"),
     })
 
 
@@ -333,10 +555,10 @@ def admin_hub_novo():
         (user_id, nome, slug, dominio_proprio, hub_leanttro, tipo,
          bairro_fixo, categoria_fixa, logo_url, cor_primaria, cor_secundaria,
          titulo, descricao, ga4_id, pixel_id, instagram_url, whatsapp,
-         template_index, template_filtro, template_negocio,
+         template_index, template_filtro, template_negocio, template_cidade,
          banner_fundo_url, banner1_foto_url, banner1_link, banner2_foto_url, banner2_link,
          ativo)
-        VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)
+        VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)
     """, (
         d.get("user_id") or None, d["nome"], d["slug"],
         d.get("dominio_proprio") or None, d.get("hub_leanttro") or None,
@@ -349,6 +571,7 @@ def admin_hub_novo():
         d.get("template_index", "index_padrao"),
         d.get("template_filtro", "filtro_padrao"),
         d.get("template_negocio", "negocio_padrao"),
+        d.get("template_cidade", "cidade_otp"),
         d.get("banner_fundo_url") or None,
         d.get("banner1_foto_url") or None, d.get("banner1_link") or None,
         d.get("banner2_foto_url") or None, d.get("banner2_link") or None,
@@ -371,7 +594,7 @@ def admin_hub_editar(hub_id):
             tipo=%s, bairro_fixo=%s, categoria_fixa=%s, logo_url=%s,
             cor_primaria=%s, cor_secundaria=%s, titulo=%s, descricao=%s,
             ga4_id=%s, pixel_id=%s, instagram_url=%s, whatsapp=%s,
-            template_index=%s, template_filtro=%s, template_negocio=%s,
+            template_index=%s, template_filtro=%s, template_negocio=%s, template_cidade=%s,
             banner_fundo_url=%s, banner1_foto_url=%s, banner1_link=%s,
             banner2_foto_url=%s, banner2_link=%s, ativo=%s
             WHERE id=%s
@@ -387,6 +610,7 @@ def admin_hub_editar(hub_id):
             d.get("template_index", "index_padrao"),
             d.get("template_filtro", "filtro_padrao"),
             d.get("template_negocio", "negocio_padrao"),
+            d.get("template_cidade", "cidade_otp"),
             d.get("banner_fundo_url") or None,
             d.get("banner1_foto_url") or None, d.get("banner1_link") or None,
             d.get("banner2_foto_url") or None, d.get("banner2_link") or None,
