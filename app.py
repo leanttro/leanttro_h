@@ -286,6 +286,26 @@ def _slugify(texto):
     return texto.replace(" ", "-").strip("-")
 
 
+def _resolve_bairro(hub_id, bairro_slug, cidade_nome=None):
+    """Devolve o nome real do bairro a partir do slug."""
+    bairro_slug_norm = _slugify(bairro_slug)
+    sql = """
+        SELECT DISTINCT n.bairro
+        FROM hub_negocios n
+        JOIN hub_negocio_hubs nh ON nh.negocio_id = n.id
+        WHERE nh.hub_id = %s AND n.ativo = true AND n.bairro IS NOT NULL
+    """
+    params = [hub_id]
+    if cidade_nome:
+        sql += " AND LOWER(TRIM(n.cidade)) = LOWER(%s)"
+        params.append(cidade_nome)
+    rows = query(sql, params)
+    for row in rows:
+        if _slugify(row["bairro"]) == bairro_slug_norm:
+            return row["bairro"]
+    return None
+
+
 def _resolve_cidade(hub_id, cidade_slug):
     """Devolve o nome real da cidade a partir do slug."""
     # Normaliza o slug recebido (remove acentos que o browser pode mandar)
@@ -318,8 +338,8 @@ def _negocios_cidade(hub_id, cidade_nome=None, cat_slug=None, bairro_slug=None):
         sql += " AND c.slug = %s"
         params.append(cat_slug)
     if bairro_slug:
-        sql += " AND LOWER(TRIM(n.bairro)) = LOWER(%s)"
-        params.append(bairro_slug.replace("-", " "))
+        sql += " AND LOWER(TRIM(n.bairro)) = LOWER(TRIM(%s))"
+        params.append(bairro_slug)
     sql += " ORDER BY n.nome"
     return query(sql, params)
 
@@ -406,8 +426,8 @@ def pagina_cidade_segundo(cidade_slug, segundo_slug):
                               bairros_disponiveis=bairros,
                               categorias_disponiveis=cats_disp)
     else:
-        bairro_nome = segundo_slug.replace("-", " ").title()
-        negocios    = _negocios_cidade(hub["id"], cidade_nome=cidade_nome, bairro_slug=segundo_slug)
+        bairro_nome = _resolve_bairro(hub["id"], segundo_slug, cidade_nome) or segundo_slug.replace("-", " ").title()
+        negocios    = _negocios_cidade(hub["id"], cidade_nome=cidade_nome, bairro_slug=bairro_nome)
         return _render_cidade(hub, negocios, categorias, cidade_nome,
                               bairro=bairro_nome,
                               bairros_disponiveis=bairros,
@@ -431,7 +451,9 @@ def pagina_cidade_bairro_cat(cidade_slug, bairro_slug, cat_slug):
     categorias = query("SELECT * FROM hub_categorias WHERE ativo = true ORDER BY nome")
     bairros    = _bairros_cidade(hub["id"], cidade_nome)
     cats_disp  = _categorias_cidade(hub["id"], cidade_nome)
-    bairro_nome = bairro_slug.replace("-", " ").title()
+    bairro_nome = _resolve_bairro(hub["id"], bairro_slug, cidade_nome) or bairro_slug.replace("-", " ").title()
+    negocios    = _negocios_cidade(hub["id"], cidade_nome=cidade_nome,
+                                   cat_slug=cat_slug, bairro_slug=bairro_nome)
     return _render_cidade(hub, negocios, categorias, cidade_nome,
                           bairro=bairro_nome,
                           categoria=dict(categoria) if categoria else None,
