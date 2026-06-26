@@ -1,0 +1,560 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <!-- SEO -->
+    <title>Onde Tem Perto de Mim? — Encontre tudo próximo a você</title>
+    <meta name="description" content="Onde tem perto de mim? Encontre farmácias, mercados, academias, igrejas, metrô e muito mais próximo a você. O maior guia local do Brasil.">
+    <meta name="keywords" content="onde tem perto de mim, perto de mim, estabelecimentos próximos, o que tem perto de mim, onde tem, serviços perto de mim, comércio perto de mim">
+    <meta name="robots" content="index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1">
+    <meta name="theme-color" content="#f6972b">
+    <meta name="author" content="Onde Tem Perto">
+    <link rel="canonical" href="https://{{ request.host }}/">
+
+    <!-- Favicon -->
+    <link rel="icon" type="image/png" href="https://res.cloudinary.com/dhu1cqvrb/image/upload/v1782512370/Logo_for_a_Brazilian_local_directory_website_called_Onde_Tem_Perto._Modern_clean_minimalist_style._Use_orange_f4a740_as_the_primary_color._Include_a_location_pin_or_map_marker_icon_integrated_1_rgh092.png">
+    <link rel="apple-touch-icon" href="https://res.cloudinary.com/dhu1cqvrb/image/upload/v1782512370/Logo_for_a_Brazilian_local_directory_website_called_Onde_Tem_Perto._Modern_clean_minimalist_style._Use_orange_f4a740_as_the_primary_color._Include_a_location_pin_or_map_marker_icon_integrated_1_rgh092.png">
+
+    <!-- Open Graph -->
+    <meta property="og:type"        content="website">
+    <meta property="og:site_name"   content="Onde Tem Perto">
+    <meta property="og:url"         content="https://{{ request.host }}/">
+    <meta property="og:title"       content="Onde Tem Perto de Mim? — Encontre tudo próximo a você">
+    <meta property="og:description" content="Farmácias, mercados, academias, igrejas, metrô e muito mais perto de você. O maior guia local do Brasil.">
+    <meta property="og:image"       content="https://res.cloudinary.com/dhu1cqvrb/image/upload/v1782512370/Logo_for_a_Brazilian_local_directory_website_called_Onde_Tem_Perto._Modern_clean_minimalist_style._Use_orange_f4a740_as_the_primary_color._Include_a_location_pin_or_map_marker_icon_integrated_1_rgh092.png">
+    <meta property="og:locale"      content="pt_BR">
+
+    <!-- Twitter Card -->
+    <meta name="twitter:card"        content="summary_large_image">
+    <meta name="twitter:title"       content="Onde Tem Perto de Mim? — Encontre tudo próximo a você">
+    <meta name="twitter:description" content="Farmácias, mercados, academias, igrejas, metrô e muito mais perto de você.">
+    <meta name="twitter:image"       content="https://res.cloudinary.com/dhu1cqvrb/image/upload/v1782512370/Logo_for_a_Brazilian_local_directory_website_called_Onde_Tem_Perto._Modern_clean_minimalist_style._Use_orange_f4a740_as_the_primary_color._Include_a_location_pin_or_map_marker_icon_integrated_1_rgh092.png">
+
+    <!-- JSON-LD WebSite -->
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "WebSite",
+      "name": "Onde Tem Perto",
+      "url": "https://{{ request.host }}/",
+      "description": "Onde tem perto de mim? Encontre farmácias, mercados, academias, igrejas, metrô e muito mais próximo a você em todo o Brasil.",
+      "inLanguage": "pt-BR",
+      "potentialAction": {
+        "@type": "SearchAction",
+        "target": { "@type": "EntryPoint", "urlTemplate": "https://{{ request.host }}/{search_term_string}/" },
+        "query-input": "required name=search_term_string"
+      }
+    }
+    </script>
+
+    <!-- JSON-LD ItemList de categorias -->
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "ItemList",
+      "name": "Categorias — Onde Tem Perto de Mim",
+      "description": "Tudo que tem perto de você no Brasil",
+      "url": "https://{{ request.host }}/",
+      "itemListElement": [
+        {% for cat in categorias %}
+        {
+          "@type": "ListItem",
+          "position": {{ loop.index }},
+          "item": {
+            "@type": "Thing",
+            "name": "{{ cat.nome }} perto de mim",
+            "url": "https://{{ request.host }}/{{ cat.slug }}/"
+          }
+        }{% if not loop.last %},{% endif %}
+        {% endfor %}
+      ]
+    }
+    </script>
+
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700;900&display=swap" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+
+    <style>
+        :root {
+            --primary:       #f6972b;
+            --dark:          #d47a1a;
+            --light:         #fff3e0;
+            --light-gray:    #f8f9fa;
+            --medium-gray:   #e0e0e0;
+            --dark-gray:     #343a40;
+            --text-color:    #495057;
+            --white:         #ffffff;
+            --shadow-light:  rgba(0,0,0,0.08);
+            --shadow-medium: rgba(0,0,0,0.16);
+        }
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        html { scroll-behavior: smooth; }
+        body { font-family: 'Roboto', sans-serif; background: var(--light-gray); color: var(--text-color); line-height: 1.6; }
+        .container { max-width: 1200px; margin: 0 auto; padding: 0 20px; }
+        a { text-decoration: none; color: inherit; }
+
+        /* ══ HEADER ══ */
+        body > header {
+            background: var(--primary);
+            padding: 20px 24px 0;
+            display: flex; flex-direction: column;
+            align-items: center; justify-content: center;
+            position: sticky; top: 0; z-index: 900;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.15);
+        }
+        .header-logo { margin-bottom: 14px; }
+        .header-logo a { display: block; text-align: center; }
+        .header-logo img { height: 160px; width: auto; display: block; margin: 0 auto; }
+        .hamburger-btn {
+            display: none; background: none; border: none; color: #fff;
+            font-size: 1.8em; cursor: pointer; padding: 6px;
+            position: absolute; right: 20px; top: 20px;
+        }
+        nav.desktop-nav { width: 100%; }
+        nav.desktop-nav ul { list-style: none; display: flex; align-items: center; justify-content: center; flex-wrap: wrap; }
+        nav.desktop-nav ul li a {
+            color: #fff; font-weight: 600; font-size: 0.95em;
+            padding: 12px 20px; display: block;
+            border-bottom: 3px solid transparent; transition: border-color 0.2s, background 0.2s;
+        }
+        nav.desktop-nav ul li a:hover { border-bottom-color: #fff; background: rgba(0,0,0,0.08); }
+
+        /* ══ MOBILE NAV ══ */
+        .mobile-nav-overlay {
+            display: none; position: fixed; inset: 0;
+            background: rgba(0,0,0,0.95); z-index: 1000;
+            flex-direction: column; justify-content: center; align-items: center;
+            opacity: 0; transition: opacity 0.25s;
+        }
+        .mobile-nav-overlay.active { display: flex; opacity: 1; }
+        .mobile-nav-close { position: absolute; top: 20px; left: 24px; background: none; border: none; color: #fff; font-size: 2em; cursor: pointer; }
+        .mobile-nav-overlay nav ul { list-style: none; text-align: center; max-height: 80vh; overflow-y: auto; }
+        .mobile-nav-overlay nav ul li { margin: 12px 0; }
+        .mobile-nav-overlay nav ul li a { color: #fff; font-size: 1.5em; font-weight: 700; }
+
+        /* ══ BANNER TOPO ══ */
+        .banner-topo { background: var(--white); border-bottom: 1px solid var(--medium-gray); padding: 10px 20px; text-align: center; }
+        .banner-placeholder { display: inline-block; background: var(--light-gray); border: 2px dashed var(--medium-gray); border-radius: 8px; padding: 12px 36px; color: #aaa; font-size: 0.9em; font-weight: 500; transition: all 0.2s; }
+        .banner-placeholder:hover { border-color: var(--primary); color: var(--primary); }
+        .banner-rotativo { display: none; }
+        .banner-rotativo img { max-height: 90px; width: auto; max-width: 100%; border-radius: 8px; transition: opacity 0.3s; }
+
+        /* ══ HERO ══ */
+        .hero-section {
+            color: #fff; text-align: center; min-height: 540px;
+            display: flex; align-items: center; justify-content: center;
+            background:
+                linear-gradient(rgba(0,0,0,0.55), rgba(0,0,0,0.55)),
+                url('{{ hub.banner_fundo_url or "https://images.unsplash.com/photo-1477959858617-67f85cf4f1df?w=1400&q=80" }}') center/cover no-repeat;
+        }
+        .hero-inner { padding: 48px 20px; }
+        .hero-section h1 { font-size: 3em; font-weight: 900; line-height: 1.2; text-shadow: 2px 2px 8px rgba(0,0,0,0.6); margin-bottom: 16px; }
+        .hero-section h1 em { color: var(--primary); font-style: normal; }
+        .hero-section .hero-sub { font-size: 1.25em; max-width: 660px; margin: 0 auto 32px; text-shadow: 1px 1px 4px rgba(0,0,0,0.5); opacity: 0.92; }
+        .hero-btns { display: flex; gap: 14px; justify-content: center; flex-wrap: wrap; }
+        .btn-hero { display: inline-flex; align-items: center; gap: 8px; background: var(--primary); color: #fff; padding: 15px 34px; border-radius: 8px; font-size: 1.1em; font-weight: 700; border: none; cursor: pointer; transition: background 0.3s, transform 0.2s; }
+        .btn-hero:hover { background: var(--dark); transform: translateY(-2px); }
+        .btn-hero-outline { display: inline-flex; align-items: center; gap: 8px; background: transparent; color: #fff; padding: 15px 34px; border-radius: 8px; font-size: 1.1em; font-weight: 700; border: 2px solid rgba(255,255,255,0.8); transition: all 0.2s; }
+        .btn-hero-outline:hover { background: rgba(255,255,255,0.15); }
+
+        /* ══ BUSCA ══ */
+        .busca-section { background: var(--white); padding: 52px 0; }
+        .busca-topo { text-align: center; margin-bottom: 32px; }
+        .busca-topo h2 { font-size: 2em; font-weight: 800; color: var(--dark-gray); margin-bottom: 8px; }
+        .busca-topo p { color: #6c757d; margin-bottom: 20px; font-size: 1.05em; }
+        .btn-geo { background: var(--primary); color: #fff; border: none; padding: 13px 28px; border-radius: 8px; font-size: 1em; font-weight: 700; cursor: pointer; display: inline-flex; align-items: center; gap: 8px; transition: background 0.3s; }
+        .btn-geo:hover { background: var(--dark); }
+
+        /* Chips de categoria */
+        .filtros-categoria { display: flex; flex-wrap: wrap; gap: 10px; justify-content: center; margin-bottom: 28px; }
+        .chip-cat { padding: 7px 20px; border-radius: 20px; border: 2px solid var(--medium-gray); background: var(--white); color: var(--text-color); font-family: inherit; font-size: 0.9em; font-weight: 600; cursor: pointer; transition: all 0.2s; }
+        .chip-cat:hover { border-color: var(--primary); color: var(--primary); }
+        .chip-cat.active { background: var(--primary); border-color: var(--primary); color: #fff; }
+        @media (max-width: 600px) {
+            .filtros-categoria { flex-wrap: nowrap; overflow-x: auto; justify-content: flex-start; -webkit-overflow-scrolling: touch; scrollbar-width: none; padding-bottom: 4px; }
+            .filtros-categoria::-webkit-scrollbar { display: none; }
+            .chip-cat { flex-shrink: 0; }
+        }
+
+        /* Cards negócio */
+        .negocios-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 22px; }
+        .negocio-card { background: var(--white); border-radius: 14px; overflow: hidden; box-shadow: 0 4px 14px var(--shadow-light); transition: transform 0.3s, box-shadow 0.3s; display: flex; flex-direction: column; }
+        .negocio-card:hover { transform: translateY(-5px); box-shadow: 0 10px 28px var(--shadow-medium); }
+        .card-foto { width: 100%; height: 180px; overflow: hidden; position: relative; background: #eee; }
+        .card-foto img { width: 100%; height: 100%; object-fit: cover; transition: transform 0.4s; }
+        .negocio-card:hover .card-foto img { transform: scale(1.06); }
+        .badge-cat { position: absolute; top: 10px; left: 10px; background: var(--primary); color: #fff; font-size: 0.72em; font-weight: 700; padding: 3px 10px; border-radius: 20px; }
+        .card-body { padding: 16px; flex: 1; display: flex; flex-direction: column; gap: 4px; }
+        .card-body h3 { font-size: 1.05em; font-weight: 700; color: var(--dark-gray); }
+        .card-bairro { font-size: 0.88em; color: #6c757d; display: flex; align-items: center; gap: 5px; }
+        .card-dist { font-size: 0.85em; color: var(--primary); font-weight: 700; margin-top: 4px; }
+        .btn-ver { margin-top: auto; padding-top: 12px; display: inline-block; background: var(--primary); color: #fff; padding: 9px 18px; border-radius: 6px; font-size: 0.88em; font-weight: 700; text-align: center; transition: background 0.2s; }
+        .negocio-card:hover .btn-ver { background: var(--dark); }
+        .info-message { text-align: center; color: #6c757d; padding: 50px 0; font-size: 1.05em; }
+
+        /* ══ BANNER MEIO ══ */
+        .banner-meio { background: var(--light); padding: 28px 20px; text-align: center; border-top: 1px solid #ffe0b2; border-bottom: 1px solid #ffe0b2; }
+        .banner-meio .banner-rotativo img { max-height: 120px; }
+
+        /* ══ CATEGORIAS ══ */
+        .section { padding: 62px 0; }
+        .section-title { text-align: center; font-size: 2em; font-weight: 800; color: var(--dark-gray); margin-bottom: 10px; }
+        .section-subtitle { text-align: center; color: #6c757d; margin-bottom: 40px; font-size: 1.05em; }
+        .categorias-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 20px; }
+        .categoria-card { background: var(--white); border-radius: 14px; overflow: hidden; box-shadow: 0 4px 12px var(--shadow-light); transition: transform 0.3s, box-shadow 0.3s; display: flex; flex-direction: column; align-items: center; padding-bottom: 20px; text-align: center; }
+        .categoria-card:hover { transform: translateY(-6px); box-shadow: 0 10px 26px var(--shadow-medium); }
+        .cat-photo { width: 100%; aspect-ratio: 1/1; overflow: hidden; background: #eee; }
+        .cat-photo img { width: 100%; height: 100%; object-fit: cover; transition: transform 0.4s; }
+        .categoria-card:hover .cat-photo img { transform: scale(1.07); }
+        .categoria-card h3 { font-size: 1.05em; font-weight: 700; color: var(--dark-gray); margin: 14px 12px 4px; }
+        .categoria-card .btn-ver { margin-top: 10px; background: var(--primary); color: #fff; padding: 8px 18px; border-radius: 6px; font-weight: 600; font-size: 0.88em; transition: background 0.3s; display: inline-block; }
+        .categoria-card:hover .btn-ver { background: var(--dark); }
+
+        /* ══ COMO FUNCIONA ══ */
+        .como-funciona { background: var(--white); }
+        .steps-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 22px; }
+        .step-card { background: var(--light-gray); border-radius: 14px; padding: 28px 22px; text-align: center; border: 1px solid var(--medium-gray); }
+        .step-num { width: 38px; height: 38px; border-radius: 50%; background: var(--primary); color: #fff; font-size: 1em; font-weight: 800; display: flex; align-items: center; justify-content: center; margin: 0 auto 14px; }
+        .step-card h3 { font-size: 1em; font-weight: 700; color: var(--dark-gray); margin-bottom: 8px; }
+        .step-card p { font-size: 0.85em; color: #6c757d; line-height: 1.55; }
+
+        /* ══ ANUNCIE ══ */
+        .anuncie-section { background: var(--dark-gray); color: #fff; padding: 64px 20px; text-align: center; }
+        .anuncie-section h2 { font-size: 2em; font-weight: 800; margin-bottom: 12px; }
+        .anuncie-section p { font-size: 1.05em; color: #ccc; margin-bottom: 30px; max-width: 560px; margin-left: auto; margin-right: auto; }
+        .btn-anuncie { display: inline-flex; align-items: center; gap: 8px; background: var(--primary); color: #fff; padding: 15px 34px; border-radius: 8px; font-size: 1.05em; font-weight: 700; transition: background 0.3s, transform 0.2s; }
+        .btn-anuncie:hover { background: var(--dark); transform: translateY(-2px); }
+
+        /* ══ FOOTER ══ */
+        footer { background: #111; color: #999; text-align: center; padding: 32px 20px; font-size: 0.88em; }
+        footer a { color: var(--primary); }
+        footer a:hover { text-decoration: underline; }
+        .footer-logo { margin-bottom: 14px; }
+        .footer-logo img { height: 36px; width: auto; opacity: 0.85; }
+
+        /* ══ RESPONSIVE ══ */
+        @media (max-width: 768px) {
+            body > header { padding: 16px 60px 16px 20px; flex-direction: row; justify-content: center; }
+            .header-logo { margin-bottom: 0; }
+            .header-logo img { height: 96px; }
+            nav.desktop-nav { display: none; }
+            .hamburger-btn { display: block; top: 50%; transform: translateY(-50%); }
+            .hero-section { min-height: 440px; }
+            .hero-section h1 { font-size: 2.1em; }
+            .hero-section .hero-sub { font-size: 1em; }
+            .section { padding: 44px 0; }
+            .section-title { font-size: 1.6em; }
+            .busca-section { padding: 36px 0; }
+        }
+    </style>
+</head>
+<body>
+
+<!-- HEADER -->
+<header>
+    <div class="header-logo">
+        <a href="/" aria-label="Onde Tem Perto — Página inicial">
+            <img src="https://res.cloudinary.com/dhu1cqvrb/image/upload/v1782512370/Logo_for_a_Brazilian_local_directory_website_called_Onde_Tem_Perto._Modern_clean_minimalist_style._Use_orange_f4a740_as_the_primary_color._Include_a_location_pin_or_map_marker_icon_integrated_1_rgh092.png"
+                 alt="Onde Tem Perto" height="80" loading="eager">
+        </a>
+    </div>
+    <nav class="desktop-nav" aria-label="Navegação principal">
+        <ul>
+            <li><a href="/">Início</a></li>
+            {% for cat in categorias %}
+            <li><a href="/{{ cat.slug }}/">{{ cat.nome }}</a></li>
+            {% endfor %}
+            <li><a href="/blog/">Blog</a></li>
+        </ul>
+    </nav>
+    <button class="hamburger-btn" id="hamburger-btn" aria-label="Abrir menu">
+        <i class="fas fa-bars"></i>
+    </button>
+</header>
+
+<!-- MOBILE NAV -->
+<div class="mobile-nav-overlay" id="mobile-nav" role="dialog" aria-modal="true">
+    <button class="mobile-nav-close" onclick="closeMobileNav()" aria-label="Fechar menu">&#x2715;</button>
+    <nav>
+        <ul>
+            <li><a href="/" onclick="closeMobileNav()">Início</a></li>
+            {% for cat in categorias %}
+            <li><a href="/{{ cat.slug }}/" onclick="closeMobileNav()">{{ cat.nome }}</a></li>
+            {% endfor %}
+            <li><a href="/blog/" onclick="closeMobileNav()">Blog</a></li>
+        </ul>
+    </nav>
+</div>
+
+<!-- BANNER TOPO -->
+<div class="banner-topo">
+    <div id="banner-rotativo-topo" class="banner-rotativo">
+        <a id="banner-link-topo" href="#" target="_blank" rel="noopener sponsored">
+            <img id="banner-img-topo" src="" alt="Publicidade">
+        </a>
+    </div>
+    <a id="banner-placeholder-topo" class="banner-placeholder"
+       href="https://wa.me/55{{ hub.whatsapp or '11999999999' }}?text=Quero+anunciar+no+Onde+Tem+Perto"
+       target="_blank" rel="noopener">
+        📣 Anuncie aqui — espaço disponível
+    </a>
+</div>
+
+<!-- HERO -->
+<section class="hero-section" aria-label="Onde tem perto de você">
+    <div class="hero-inner container">
+        <h1>O que tem<br><em>perto de mim?</em></h1>
+        <p class="hero-sub">Farmácias, mercados, academias, igrejas, metrô e muito mais — encontre tudo próximo a você em qualquer cidade do Brasil.</p>
+        <div class="hero-btns">
+            <button class="btn-hero" onclick="buscarProximos()">
+                <i class="fas fa-location-arrow"></i> Ver o que tem perto de mim
+            </button>
+            <a href="#categorias" class="btn-hero-outline">
+                <i class="fas fa-th-large"></i> Explorar categorias
+            </a>
+        </div>
+    </div>
+</section>
+
+<!-- BUSCA -->
+<section class="busca-section" id="busca">
+    <div class="container">
+        <div class="busca-topo">
+            <h2>O que tem perto de mim agora?</h2>
+            <p>Ative sua localização e veja os estabelecimentos mais próximos de você primeiro</p>
+            <button class="btn-geo" onclick="buscarProximos()">
+                <i class="fas fa-map-marker-alt"></i> Usar minha localização
+            </button>
+        </div>
+
+        <!-- Filtros de categoria -->
+        <div class="filtros-categoria" id="filtros-categoria" role="group" aria-label="Filtrar por categoria">
+            <button class="chip-cat active" onclick="filtrarCategoria(null, this)">Tudo</button>
+            {% for cat in categorias %}
+            <button class="chip-cat" onclick="filtrarCategoria('{{ cat.slug }}', this)">{{ cat.nome }}</button>
+            {% endfor %}
+        </div>
+
+        <!-- Grid -->
+        <div id="negocios-resultado">
+            <div class="negocios-grid" id="negocios-grid">
+                {% for n in negocios[:24] %}
+                <a href="/{{ n.categoria_slug }}/{{ n.slug }}/" class="negocio-card">
+                    {% if n.mostrar_foto != false %}
+                    <div class="card-foto">
+                        <img src="{{ n.foto_url or 'https://images.unsplash.com/photo-1486325212027-8081e485255e?w=400&q=80' }}"
+                             alt="{{ n.nome }} — {{ n.categoria_nome }} perto de mim"
+                             loading="lazy" width="400" height="180">
+                        <span class="badge-cat">{{ n.categoria_nome }}</span>
+                    </div>
+                    {% endif %}
+                    <div class="card-body">
+                        <h3>{{ n.nome }}</h3>
+                        <p class="card-bairro">
+                            <i class="fas fa-map-marker-alt" style="color:var(--primary)"></i>
+                            {{ n.bairro }}{% if n.cidade %}, {{ n.cidade }}{% endif %}
+                        </p>
+                        <span class="card-dist" id="dist-{{ n.id }}"></span>
+                        <span class="btn-ver">Ver detalhes →</span>
+                    </div>
+                </a>
+                {% else %}
+                <p class="info-message">Nenhum estabelecimento cadastrado ainda.</p>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- BANNER MEIO -->
+<div class="banner-meio">
+    <div id="banner-rotativo-meio" class="banner-rotativo">
+        <a id="banner-link-meio" href="#" target="_blank" rel="noopener sponsored">
+            <img id="banner-img-meio" src="" alt="Publicidade">
+        </a>
+    </div>
+    <a id="banner-placeholder-meio" class="banner-placeholder"
+       href="https://wa.me/55{{ hub.whatsapp or '11999999999' }}?text=Quero+anunciar+no+Onde+Tem+Perto"
+       target="_blank" rel="noopener">
+        📣 Anuncie aqui — espaço disponível
+    </a>
+</div>
+
+<!-- CATEGORIAS -->
+<section class="section" id="categorias" style="background:var(--light-gray);">
+    <div class="container">
+        <h2 class="section-title">O que você está procurando?</h2>
+        <p class="section-subtitle">Selecione uma categoria e veja o que tem perto de mim</p>
+        <div class="categorias-grid">
+            {% for cat in categorias %}
+            <a href="/{{ cat.slug }}/" class="categoria-card" aria-label="{{ cat.nome }} perto de mim">
+                <div class="cat-photo">
+                    <img src="{{ cat.icone_url or 'https://images.unsplash.com/photo-1486325212027-8081e485255e?w=400&q=80' }}"
+                         alt="{{ cat.nome }} perto de mim" loading="lazy" width="400" height="400">
+                </div>
+                <h3>{{ cat.nome }}</h3>
+                <span class="btn-ver">Ver todos →</span>
+            </a>
+            {% else %}
+            <p class="info-message">Nenhuma categoria cadastrada.</p>
+            {% endfor %}
+        </div>
+    </div>
+</section>
+
+<!-- COMO FUNCIONA -->
+<section class="section como-funciona">
+    <div class="container">
+        <h2 class="section-title">Como funciona</h2>
+        <p class="section-subtitle">Descubra o que tem perto de mim em segundos</p>
+        <div class="steps-grid">
+            <div class="step-card">
+                <div class="step-num">1</div>
+                <h3>Escolha a categoria</h3>
+                <p>Farmácia, mercado, academia, metrô, igreja — selecione o que você procura.</p>
+            </div>
+            <div class="step-card">
+                <div class="step-num">2</div>
+                <h3>Ative sua localização</h3>
+                <p>Clique em "usar minha localização" e veja o que tem mais perto de você agora.</p>
+            </div>
+            <div class="step-card">
+                <div class="step-num">3</div>
+                <h3>Veja todos os detalhes</h3>
+                <p>Endereço, telefone, WhatsApp e mapa — tudo num só lugar para chegar fácil.</p>
+            </div>
+            <div class="step-card">
+                <div class="step-num">4</div>
+                <h3>Compartilhe com alguém</h3>
+                <p>Mande o link pelo WhatsApp pra quem também precisa saber o que tem perto.</p>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- ANUNCIE -->
+<section class="anuncie-section">
+    <div class="container">
+        <h2>Seu negócio no Onde Tem Perto</h2>
+        <p>Apareça para milhares de pessoas que buscam o que tem perto de mim todos os dias — em todo o Brasil.</p>
+        <a href="https://wa.me/55{{ hub.whatsapp or '11999999999' }}?text=Quero+anunciar+meu+negócio+no+Onde+Tem+Perto"
+           target="_blank" rel="noopener" class="btn-anuncie">
+            <i class="fab fa-whatsapp"></i> Quero anunciar meu negócio
+        </a>
+    </div>
+</section>
+
+<!-- FOOTER -->
+<footer>
+    <div class="footer-logo">
+        <img src="https://res.cloudinary.com/dhu1cqvrb/image/upload/v1782512370/Logo_for_a_Brazilian_local_directory_website_called_Onde_Tem_Perto._Modern_clean_minimalist_style._Use_orange_f4a740_as_the_primary_color._Include_a_location_pin_or_map_marker_icon_integrated_1_rgh092.png"
+             alt="Onde Tem Perto" loading="lazy">
+    </div>
+    <p>© 2026 <strong>Onde Tem Perto</strong> — Todos os direitos reservados</p>
+    <p style="margin-top:10px;">
+        <a href="/sitemap.xml">Sitemap</a> &middot;
+        <a href="/robots.txt">Robots.txt</a> &middot;
+        <a href="/blog/">Blog</a>
+    </p>
+</footer>
+
+<!-- Scripts -->
+<script>
+document.getElementById('hamburger-btn').addEventListener('click', function(){
+    var nav = document.getElementById('mobile-nav');
+    nav.classList.add('active');
+    document.body.style.overflow = 'hidden';
+});
+function closeMobileNav(){
+    document.getElementById('mobile-nav').classList.remove('active');
+    document.body.style.overflow = '';
+}
+document.addEventListener('keydown', function(e){ if(e.key === 'Escape') closeMobileNav(); });
+</script>
+
+<script>
+var todosNegocios = {{ negocios | tojson }};
+var negociosFiltrados = todosNegocios.slice();
+var userLat = null, userLng = null, geoAtivo = false;
+
+function calcDistancia(lat1,lng1,lat2,lng2){
+    var R=6371,dLat=(lat2-lat1)*Math.PI/180,dLng=(lng2-lng1)*Math.PI/180;
+    var a=Math.sin(dLat/2)*Math.sin(dLat/2)+Math.cos(lat1*Math.PI/180)*Math.cos(lat2*Math.PI/180)*Math.sin(dLng/2)*Math.sin(dLng/2);
+    return R*2*Math.atan2(Math.sqrt(a),Math.sqrt(1-a));
+}
+
+function buscarProximos(){
+    if(!navigator.geolocation){ alert('Geolocalização não suportada.'); return; }
+    navigator.geolocation.getCurrentPosition(function(pos){
+        userLat=pos.coords.latitude; userLng=pos.coords.longitude; geoAtivo=true;
+        renderNegocios(negociosFiltrados);
+        document.getElementById('busca').scrollIntoView({behavior:'smooth',block:'start'});
+    }, function(){ alert('Não foi possível obter sua localização. Verifique as permissões.'); });
+}
+
+function filtrarCategoria(slug, btn){
+    document.querySelectorAll('.chip-cat').forEach(function(c){ c.classList.remove('active'); });
+    btn.classList.add('active');
+    negociosFiltrados = slug ? todosNegocios.filter(function(n){ return n.categoria_slug===slug; }) : todosNegocios.slice();
+    renderNegocios(negociosFiltrados);
+}
+
+function renderNegocios(lista){
+    var grid = document.getElementById('negocios-grid');
+    if(geoAtivo && userLat && userLng){
+        lista = lista.map(function(n){
+            var d=(n.lat&&n.lng)?calcDistancia(userLat,userLng,parseFloat(n.lat),parseFloat(n.lng)):9999;
+            return Object.assign({},n,{_dist:d});
+        }).sort(function(a,b){ return a._dist-b._dist; });
+    }
+    if(!lista.length){ grid.innerHTML='<p class="info-message">Nenhum resultado encontrado.</p>'; return; }
+    grid.innerHTML=lista.slice(0,24).map(function(n){
+        var dist=(n._dist&&n._dist<9999)?'<span class="card-dist"><i class="fas fa-map-marker-alt"></i> '+n._dist.toFixed(1)+' km de você</span>':'';
+        var foto=n.foto_url||'https://images.unsplash.com/photo-1486325212027-8081e485255e?w=400&q=80';
+        var local=[n.bairro,n.cidade].filter(Boolean).join(', ');
+        return '<a href="/'+n.categoria_slug+'/'+n.slug+'/" class="negocio-card">'+
+            '<div class="card-foto">'+
+                '<img src="'+foto+'" alt="'+n.nome+' perto de mim" loading="lazy" width="400" height="180">'+
+                '<span class="badge-cat">'+(n.categoria_nome||'')+'</span>'+
+            '</div>'+
+            '<div class="card-body">'+
+                '<h3>'+n.nome+'</h3>'+
+                (local?'<p class="card-bairro"><i class="fas fa-map-marker-alt" style="color:var(--primary)"></i> '+local+'</p>':'')+
+                dist+
+                '<span class="btn-ver">Ver detalhes →</span>'+
+            '</div>'+
+        '</a>';
+    }).join('');
+}
+</script>
+
+<script>
+(function(){
+    {% if hub.banner1_foto_url %}
+    document.getElementById('banner-placeholder-topo').style.display='none';
+    document.getElementById('banner-rotativo-topo').style.display='block';
+    document.getElementById('banner-img-topo').src='{{ hub.banner1_foto_url }}';
+    document.getElementById('banner-link-topo').href='{{ hub.banner1_link or "#" }}';
+    {% endif %}
+    {% if hub.banner2_foto_url %}
+    document.getElementById('banner-placeholder-meio').style.display='none';
+    document.getElementById('banner-rotativo-meio').style.display='block';
+    document.getElementById('banner-img-meio').src='{{ hub.banner2_foto_url }}';
+    document.getElementById('banner-link-meio').href='{{ hub.banner2_link or "#" }}';
+    {% endif %}
+})();
+</script>
+
+{% if hub.ga4_id %}
+<script async src="https://www.googletagmanager.com/gtag/js?id={{ hub.ga4_id }}"></script>
+<script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag('js',new Date());gtag('config','{{ hub.ga4_id }}');</script>
+{% endif %}
+
+{% if hub.pixel_id %}
+<script>!function(f,b,e,v,n,t,s){if(f.fbq)return;n=f.fbq=function(){n.callMethod?n.callMethod.apply(n,arguments):n.queue.push(arguments)};if(!f._fbq)f._fbq=n;n.push=n;n.loaded=!0;n.version='2.0';n.queue=[];t=b.createElement(e);t.async=!0;t.src=v;s=b.getElementsByTagName(e)[0];s.parentNode.insertBefore(t,s)}(window,document,'script','https://connect.facebook.net/en_US/fbevents.js');fbq('init','{{ hub.pixel_id }}');fbq('track','PageView');</script>
+{% endif %}
+
+</body>
+</html>
