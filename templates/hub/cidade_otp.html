@@ -4,7 +4,6 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-    <!-- SEO dinâmico -->
     {% set titulo_cidade = cidade ~ (" — " ~ bairro if bairro else "") ~ (" — " ~ categoria.nome if categoria else "") %}
     <title>{{ titulo_cidade }} — Onde Tem Perto</title>
     <meta name="description" content="O que tem em {{ cidade }}{% if bairro %} no {{ bairro }}{% endif %}{% if categoria %} — {{ categoria.nome }}{% endif %}? Encontre estabelecimentos, lojas, serviços e muito mais perto de você.">
@@ -12,10 +11,8 @@
     <meta name="theme-color" content="#f6972b">
     <link rel="canonical" href="https://{{ request.host }}/cidade/{{ cidade | lower | replace(' ', '-') }}/">
 
-    <!-- Favicon -->
     <link rel="icon" type="image/png" href="{{ hub.logo_url or 'https://res.cloudinary.com/dhu1cqvrb/image/upload/v1782512370/Logo_for_a_Brazilian_local_directory_website_called_Onde_Tem_Perto._Modern_clean_minimalist_style._Use_orange_f4a740_as_the_primary_color._Include_a_location_pin_or_map_marker_icon_integrated_1_rgh092.png' }}">
 
-    <!-- Open Graph -->
     <meta property="og:type"        content="website">
     <meta property="og:site_name"   content="{{ hub.nome or 'Onde Tem Perto' }}">
     <meta property="og:url"         content="https://{{ request.host }}/cidade/{{ cidade | lower | replace(' ', '-') }}/">
@@ -24,7 +21,6 @@
     <meta property="og:image"       content="{{ hub.banner_fundo_url or 'https://images.unsplash.com/photo-1477959858617-67f85cf4f1df?w=1200&q=80' }}">
     <meta property="og:locale"      content="pt_BR">
 
-    <!-- JSON-LD BreadcrumbList -->
     <script type="application/ld+json">
     {
       "@context": "https://schema.org",
@@ -62,67 +58,49 @@
 
         /* ══ HEADER ══ */
         body > header {
-            background: var(--primary);
-            padding: 6px 24px 0;
-            display: flex; flex-direction: column;
-            align-items: center; justify-content: center;
-            position: sticky; top: 0; z-index: 900;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.15);
+            background: var(--primary); padding: 6px 24px 0;
+            display: flex; flex-direction: column; align-items: center; justify-content: center;
+            position: sticky; top: 0; z-index: 900; box-shadow: 0 2px 10px rgba(0,0,0,0.15);
         }
         .header-logo { margin-bottom: 0; }
         .header-logo a { display: block; text-align: center; }
         .header-logo img { height: 160px; width: auto; display: block; margin: 0 auto; }
-        .hamburger-btn {
-            display: none; background: none; border: none; color: #fff;
-            font-size: 1.8em; cursor: pointer; padding: 6px;
-            position: absolute; right: 20px; top: 20px;
-        }
+        .hamburger-btn { display: none; background: none; border: none; color: #fff; font-size: 1.8em; cursor: pointer; padding: 6px; position: absolute; right: 20px; top: 20px; }
         nav.desktop-nav { width: 100%; }
         nav.desktop-nav ul { list-style: none; display: flex; align-items: center; justify-content: center; flex-wrap: wrap; }
-        nav.desktop-nav ul li a {
-            color: #fff; font-weight: 600; font-size: 0.95em;
-            padding: 12px 20px; display: block;
-            border-bottom: 3px solid transparent; transition: border-color 0.2s, background 0.2s;
-        }
+        nav.desktop-nav ul li { position: relative; }
+        nav.desktop-nav ul li a { color: #fff; font-weight: 600; font-size: 0.95em; padding: 12px 20px; display: block; border-bottom: 3px solid transparent; transition: border-color 0.2s, background 0.2s; }
         nav.desktop-nav ul li a:hover { border-bottom-color: #fff; background: rgba(0,0,0,0.08); }
+        .nav-dropdown { display: none; position: absolute; top: 100%; left: 50%; transform: translateX(-50%); background: #fff; border-radius: 12px; box-shadow: 0 8px 32px rgba(0,0,0,0.15); min-width: 220px; max-height: 360px; overflow-y: auto; z-index: 999; padding: 8px 0; }
+        nav.desktop-nav ul li:hover .nav-dropdown { display: block; }
+        .nav-dropdown a { display: block; padding: 10px 20px; color: var(--dark-gray) !important; font-size: 0.9em; font-weight: 500; border-bottom: none !important; background: none !important; transition: background 0.15s; white-space: nowrap; }
+        .nav-dropdown a:hover { background: var(--light) !important; color: var(--primary) !important; }
 
         /* ══ MOBILE NAV ══ */
-        .mobile-nav-overlay {
-            display: none; position: fixed; inset: 0;
-            background: rgba(0,0,0,0.95); z-index: 1000;
-            flex-direction: column; justify-content: center; align-items: center;
-            opacity: 0; transition: opacity 0.25s;
-        }
+        .mobile-nav-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.95); z-index: 1000; flex-direction: column; justify-content: center; align-items: center; opacity: 0; transition: opacity 0.25s; }
         .mobile-nav-overlay.active { display: flex; opacity: 1; }
         .mobile-nav-close { position: absolute; top: 20px; left: 24px; background: none; border: none; color: #fff; font-size: 2em; cursor: pointer; }
         .mobile-nav-overlay nav ul { list-style: none; text-align: center; max-height: 80vh; overflow-y: auto; }
         .mobile-nav-overlay nav ul li { margin: 12px 0; }
         .mobile-nav-overlay nav ul li a { color: #fff; font-size: 1.5em; font-weight: 700; }
 
-        /* ══ BANNER TOPO ══ */
+        /* ══ BANNER ══ */
         .banner-topo { background: var(--white); border-bottom: 1px solid var(--medium-gray); padding: 10px 20px; text-align: center; }
         .banner-placeholder { display: inline-block; background: var(--light-gray); border: 2px dashed var(--medium-gray); border-radius: 8px; padding: 12px 36px; color: #aaa; font-size: 0.9em; font-weight: 500; transition: all 0.2s; }
         .banner-placeholder:hover { border-color: var(--primary); color: var(--primary); }
         .banner-rotativo { display: none; }
         .banner-rotativo img { max-height: 90px; width: auto; max-width: 100%; border-radius: 8px; }
+        .banner-meio { background: var(--light); padding: 28px 20px; text-align: center; border-top: 1px solid #ffe0b2; border-bottom: 1px solid #ffe0b2; }
 
         /* ══ BREADCRUMB ══ */
-        .breadcrumb-bar {
-            background: var(--white); border-bottom: 1px solid var(--medium-gray);
-            padding: 10px 20px; font-size: 0.88em; color: #6c757d;
-        }
+        .breadcrumb-bar { background: var(--white); border-bottom: 1px solid var(--medium-gray); padding: 10px 20px; font-size: 0.88em; color: #6c757d; }
         .breadcrumb-bar a { color: var(--primary); }
         .breadcrumb-bar a:hover { text-decoration: underline; }
         .breadcrumb-bar span { margin: 0 6px; }
 
-        /* ══ HERO CIDADE ══ */
-        .hero-section {
-            color: #fff; text-align: center; min-height: 420px;
-            display: flex; align-items: center; justify-content: center;
-            background:
-                linear-gradient(rgba(0,0,0,0.55), rgba(0,0,0,0.55)),
-                url('{{ hub.banner_fundo_url or "https://images.unsplash.com/photo-1477959858617-67f85cf4f1df?w=1400&q=80" }}') center/cover no-repeat;
-        }
+        /* ══ HERO ══ */
+        .hero-section { color: #fff; text-align: center; min-height: 420px; display: flex; align-items: center; justify-content: center;
+            background: linear-gradient(rgba(0,0,0,0.55), rgba(0,0,0,0.55)), url('{{ hub.banner_fundo_url or "https://images.unsplash.com/photo-1477959858617-67f85cf4f1df?w=1400&q=80" }}') center/cover no-repeat; }
         .hero-inner { padding: 48px 20px; }
         .hero-label { font-size: 0.9em; font-weight: 600; text-transform: uppercase; letter-spacing: 2px; color: var(--primary); margin-bottom: 10px; }
         .hero-section h1 { font-size: 3em; font-weight: 900; line-height: 1.2; text-shadow: 2px 2px 8px rgba(0,0,0,0.6); margin-bottom: 8px; }
@@ -134,18 +112,68 @@
         .btn-hero-outline { display: inline-flex; align-items: center; gap: 8px; background: transparent; color: #fff; padding: 13px 28px; border-radius: 8px; font-size: 1.05em; font-weight: 700; border: 2px solid rgba(255,255,255,0.8); transition: all 0.2s; }
         .btn-hero-outline:hover { background: rgba(255,255,255,0.15); }
 
-        /* ══ CHIPS ══ */
-        .chips-row { display: flex; flex-wrap: wrap; gap: 10px; justify-content: center; margin-bottom: 28px; }
-        .chip { padding: 7px 20px; border-radius: 20px; border: 2px solid var(--medium-gray); background: var(--white); color: var(--text-color); font-family: inherit; font-size: 0.9em; font-weight: 600; cursor: pointer; transition: all 0.2s; }
-        .chip:hover { border-color: var(--primary); color: var(--primary); }
-        .chip.active { background: var(--primary); border-color: var(--primary); color: #fff; }
-        @media (max-width: 600px) {
-            .chips-row { flex-wrap: nowrap; overflow-x: auto; justify-content: flex-start; -webkit-overflow-scrolling: touch; scrollbar-width: none; padding-bottom: 4px; }
-            .chips-row::-webkit-scrollbar { display: none; }
-            .chip { flex-shrink: 0; }
-        }
+        /* ══ SEÇÃO ══ */
+        .section { padding: 62px 0; }
+        .section-title { text-align: center; font-size: 2em; font-weight: 800; color: var(--dark-gray); margin-bottom: 10px; }
+        .section-subtitle { text-align: center; color: #6c757d; margin-bottom: 28px; font-size: 1.05em; }
 
-        /* ══ CARDS NEGÓCIO ══ */
+        /* ══ CABEÇALHO DE SEÇÃO COM TOGGLE ══ */
+        .secao-header { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px; margin-bottom: 24px; }
+        .secao-header-left h2 { font-size: 1.9em; font-weight: 800; color: var(--dark-gray); }
+        .secao-header-left p { color: #6c757d; font-size: 0.95em; margin-top: 4px; }
+        .toggle-view-btns { display: flex; gap: 6px; align-items: center; }
+        .toggle-view-btns span { font-size: 0.82em; color: #6c757d; margin-right: 4px; }
+        .tvbtn { background: var(--white); border: 2px solid var(--medium-gray); border-radius: 8px; width: 36px; height: 36px; display: flex; align-items: center; justify-content: center; cursor: pointer; transition: all 0.2s; color: #6c757d; font-size: 1em; }
+        .tvbtn:hover { border-color: var(--primary); color: var(--primary); }
+        .tvbtn.active { background: var(--primary); border-color: var(--primary); color: #fff; }
+
+        /* ══ CARROSSEL GENÉRICO ══ */
+        .gen-carousel-wrapper { position: relative; }
+        .gen-carousel-outer { overflow: hidden; border-radius: 12px; }
+        .gen-carousel-track { display: flex; gap: 16px; transition: transform 0.4s ease; will-change: transform; cursor: grab; user-select: none; }
+        .gen-carousel-track.dragging { transition: none; cursor: grabbing; }
+        .gen-carousel-nav { display: flex; align-items: center; justify-content: center; gap: 12px; margin-top: 16px; }
+        .gen-carousel-arrow { background: var(--white); border: 2px solid var(--medium-gray); border-radius: 50%; width: 40px; height: 40px; display: flex; align-items: center; justify-content: center; cursor: pointer; font-size: 0.95em; color: var(--dark-gray); transition: all 0.2s; flex-shrink: 0; }
+        .gen-carousel-arrow:hover:not(:disabled) { background: var(--primary); border-color: var(--primary); color: #fff; }
+        .gen-carousel-arrow:disabled { opacity: 0.3; cursor: not-allowed; }
+        .gen-progress-bar { flex: 1; max-width: 180px; height: 4px; background: var(--medium-gray); border-radius: 4px; overflow: hidden; }
+        .gen-progress-fill { height: 100%; background: var(--primary); border-radius: 4px; transition: width 0.35s cubic-bezier(.4,0,.2,1); }
+
+        /* ══ CARDS BAIRRO ══ */
+        .bairro-card { background: var(--white); border-radius: 12px; padding: 18px 16px; border: 2px solid var(--medium-gray); text-align: center; font-weight: 700; font-size: 0.95em; color: var(--dark-gray); transition: all 0.2s; display: flex; flex-direction: column; align-items: center; gap: 8px; flex: 0 0 calc(16.66% - 14px); min-width: 0; }
+        .bairro-card:hover { border-color: var(--primary); color: var(--primary); transform: translateY(-3px); box-shadow: 0 6px 18px var(--shadow-medium); }
+        .bairro-card i { font-size: 1.3em; color: var(--primary); }
+        @media (max-width: 1100px) { .bairro-card { flex: 0 0 calc(25% - 12px); } }
+        @media (max-width: 768px) { .bairro-card { flex: 0 0 calc(50% - 8px); } }
+        @media (max-width: 480px) { .bairro-card { flex: 0 0 calc(70%); } }
+
+        /* LISTA BAIRROS */
+        .bairros-lista { display: none; }
+        .bairros-lista.ativo { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 12px; }
+        .bairro-lista-item { background: var(--white); border: 2px solid var(--medium-gray); border-radius: 10px; padding: 10px 14px; font-weight: 600; font-size: 0.9em; color: var(--dark-gray); display: flex; align-items: center; gap: 8px; transition: all 0.2s; }
+        .bairro-lista-item:hover { border-color: var(--primary); color: var(--primary); }
+        .bairro-lista-item i { color: var(--primary); font-size: 0.9em; flex-shrink: 0; }
+
+        /* ══ CARDS CATEGORIA ══ */
+        .categoria-card { background: var(--white); border-radius: 14px; overflow: hidden; box-shadow: 0 4px 12px var(--shadow-light); transition: transform 0.3s, box-shadow 0.3s; display: flex; flex-direction: column; align-items: center; padding-bottom: 18px; text-align: center; flex: 0 0 calc(20% - 13px); min-width: 0; }
+        .categoria-card:hover { transform: translateY(-6px); box-shadow: 0 10px 26px var(--shadow-medium); }
+        .cat-photo { width: 100%; aspect-ratio: 1/1; overflow: hidden; background: #eee; }
+        .cat-photo img { width: 100%; height: 100%; object-fit: cover; transition: transform 0.4s; }
+        .categoria-card:hover .cat-photo img { transform: scale(1.07); }
+        .categoria-card h3 { font-size: 0.92em; font-weight: 700; color: var(--dark-gray); margin: 12px 10px 4px; }
+        .categoria-card .btn-ver { margin-top: 8px; background: var(--primary); color: #fff; padding: 7px 16px; border-radius: 6px; font-weight: 600; font-size: 0.85em; transition: background 0.3s; display: inline-block; }
+        .categoria-card:hover .btn-ver { background: var(--dark); }
+        @media (max-width: 900px) { .categoria-card { flex: 0 0 calc(33.33% - 11px); } }
+        @media (max-width: 600px) { .categoria-card { flex: 0 0 calc(60%); } }
+
+        /* LISTA CATEGORIAS */
+        .categorias-lista { display: none; }
+        .categorias-lista.ativo { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 12px; }
+        .cat-lista-item { background: var(--white); border: 2px solid var(--medium-gray); border-radius: 10px; padding: 12px 16px; font-weight: 700; font-size: 0.92em; color: var(--dark-gray); display: flex; align-items: center; gap: 10px; transition: all 0.2s; }
+        .cat-lista-item:hover { border-color: var(--primary); color: var(--primary); }
+        .cat-lista-thumb { width: 36px; height: 36px; border-radius: 8px; object-fit: cover; flex-shrink: 0; background: #eee; }
+
+        /* ══ NEGÓCIOS ══ */
         .negocio-card { background: var(--white); border-radius: 14px; overflow: hidden; box-shadow: 0 4px 14px var(--shadow-light); transition: transform 0.3s, box-shadow 0.3s; display: flex; flex-direction: column; }
         .negocio-card:hover { transform: translateY(-5px); box-shadow: 0 10px 28px var(--shadow-medium); }
         .card-foto { width: 100%; height: 180px; overflow: hidden; position: relative; background: #eee; }
@@ -160,14 +188,10 @@
         .negocio-card:hover .btn-ver { background: var(--dark); }
         .info-message { text-align: center; color: #6c757d; padding: 50px 0; font-size: 1.05em; }
 
-        /* ══ CARROSSEL ══ */
+        /* ══ CARROSSEL NEGÓCIOS ══ */
         .carousel-wrapper { position: relative; }
         .carousel-track-outer { overflow: hidden; border-radius: 12px; }
-        .carousel-track {
-            display: flex; gap: 22px;
-            transition: transform 0.4s ease;
-            will-change: transform; cursor: grab; user-select: none;
-        }
+        .carousel-track { display: flex; gap: 22px; transition: transform 0.4s ease; will-change: transform; cursor: grab; user-select: none; }
         .carousel-track.dragging { transition: none; cursor: grabbing; }
         .carousel-track .negocio-card { flex: 0 0 calc(25% - 17px); min-width: 0; }
         @media (max-width: 900px) { .carousel-track .negocio-card { flex: 0 0 calc(50% - 11px); } }
@@ -176,11 +200,15 @@
             .carousel-track-outer::-webkit-scrollbar { display: none; }
             .carousel-track { transform: none !important; transition: none !important; cursor: default; }
             .carousel-track .negocio-card { scroll-snap-align: start; flex: 0 0 calc(75% - 11px); }
+            .gen-carousel-outer { overflow-x: scroll; overflow-y: hidden; -webkit-overflow-scrolling: touch; scroll-snap-type: x mandatory; scrollbar-width: none; }
+            .gen-carousel-outer::-webkit-scrollbar { display: none; }
+            .gen-carousel-track { transform: none !important; transition: none !important; cursor: default; }
+            .gen-carousel-track > * { scroll-snap-align: start; }
         }
-        @media (max-width: 480px) { .carousel-track .negocio-card { flex: 0 0 calc(85%); } }
+        @media (max-width: 480px) { .carousel-track .negocio-card { flex: 0 0 85%; } }
         .carousel-nav { display: flex; align-items: center; justify-content: center; gap: 12px; margin-top: 20px; }
         .carousel-arrow { background: var(--white); border: 2px solid var(--medium-gray); border-radius: 50%; width: 42px; height: 42px; display: flex; align-items: center; justify-content: center; cursor: pointer; font-size: 1em; color: var(--dark-gray); transition: all 0.2s; flex-shrink: 0; }
-        .carousel-arrow:hover:not(:disabled) { background: var(--primary); border-color: var(--primary); color: var(--white); }
+        .carousel-arrow:hover:not(:disabled) { background: var(--primary); border-color: var(--primary); color: #fff; }
         .carousel-arrow:disabled { opacity: 0.3; cursor: not-allowed; }
         .carousel-progress-bar { flex: 1; max-width: 200px; height: 4px; background: var(--medium-gray); border-radius: 4px; overflow: hidden; }
         .carousel-progress-fill { height: 100%; background: var(--primary); border-radius: 4px; transition: width 0.35s cubic-bezier(.4,0,.2,1); }
@@ -189,46 +217,30 @@
         .view-controls span { font-size: 0.85em; color: #6c757d; margin-right: 4px; }
         .view-btn { background: var(--white); border: 2px solid var(--medium-gray); border-radius: 8px; width: 36px; height: 36px; display: flex; align-items: center; justify-content: center; cursor: pointer; transition: all 0.2s; color: #6c757d; font-size: 1em; }
         .view-btn:hover { border-color: var(--primary); color: var(--primary); }
-        .view-btn.active { background: var(--primary); border-color: var(--primary); color: var(--white); }
+        .view-btn.active { background: var(--primary); border-color: var(--primary); color: #fff; }
 
-        /* ══ SEÇÃO ══ */
-        .section { padding: 62px 0; }
-        .section-title { text-align: center; font-size: 2em; font-weight: 800; color: var(--dark-gray); margin-bottom: 10px; }
-        .section-subtitle { text-align: center; color: #6c757d; margin-bottom: 40px; font-size: 1.05em; }
+        /* ══ CHIPS ══ */
+        .chips-row { display: flex; flex-wrap: wrap; gap: 10px; justify-content: center; margin-bottom: 28px; }
+        .chip { padding: 7px 20px; border-radius: 20px; border: 2px solid var(--medium-gray); background: var(--white); color: var(--text-color); font-family: inherit; font-size: 0.9em; font-weight: 600; cursor: pointer; transition: all 0.2s; }
+        .chip:hover { border-color: var(--primary); color: var(--primary); }
+        .chip.active { background: var(--primary); border-color: var(--primary); color: #fff; }
+        @media (max-width: 600px) { .chips-row { flex-wrap: nowrap; overflow-x: auto; justify-content: flex-start; -webkit-overflow-scrolling: touch; scrollbar-width: none; padding-bottom: 4px; } .chips-row::-webkit-scrollbar { display: none; } .chip { flex-shrink: 0; } }
 
-        /* ══ BAIRROS ══ */
-        .bairros-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 14px; }
-        .bairro-card {
-            background: var(--white); border-radius: 12px; padding: 18px 16px;
-            border: 2px solid var(--medium-gray); text-align: center;
-            font-weight: 700; font-size: 0.95em; color: var(--dark-gray);
-            transition: all 0.2s; display: flex; flex-direction: column; align-items: center; gap: 8px;
-        }
-        .bairro-card:hover { border-color: var(--primary); color: var(--primary); transform: translateY(-3px); box-shadow: 0 6px 18px var(--shadow-medium); }
-        .bairro-card i { font-size: 1.4em; color: var(--primary); }
+        /* ══ FILTROS NEGÓCIOS ══ */
+        .filtros-wrapper { display: flex; gap: 12px; flex-wrap: wrap; align-items: center; margin-bottom: 24px; }
+        .filtros-label { font-size: 0.85em; font-weight: 700; color: #6c757d; text-transform: uppercase; letter-spacing: 0.5px; }
+        select.filtro-select { padding: 8px 14px; border-radius: 8px; border: 2px solid var(--medium-gray); font-family: inherit; font-size: 0.92em; font-weight: 600; color: var(--dark-gray); background: var(--white); cursor: pointer; transition: border-color 0.2s; appearance: none; -webkit-appearance: none; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath fill='%23f6972b' d='M6 8L0 0h12z'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right 12px center; padding-right: 36px; }
+        select.filtro-select:focus { outline: none; border-color: var(--primary); }
+        .btn-limpar { padding: 8px 16px; border-radius: 8px; border: 2px solid var(--medium-gray); background: none; font-family: inherit; font-size: 0.88em; cursor: pointer; color: #6c757d; transition: all 0.2s; }
+        .btn-limpar:hover { border-color: var(--primary); color: var(--primary); }
+        .resultados-count { font-size: 0.88em; color: #6c757d; margin-left: auto; }
 
-        /* ══ CATEGORIAS ══ */
-        .categorias-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 18px; }
-        .categoria-card { background: var(--white); border-radius: 14px; overflow: hidden; box-shadow: 0 4px 12px var(--shadow-light); transition: transform 0.3s, box-shadow 0.3s; display: flex; flex-direction: column; align-items: center; padding-bottom: 18px; text-align: center; }
-        .categoria-card:hover { transform: translateY(-6px); box-shadow: 0 10px 26px var(--shadow-medium); }
-        .cat-photo { width: 100%; aspect-ratio: 1/1; overflow: hidden; background: #eee; }
-        .cat-photo img { width: 100%; height: 100%; object-fit: cover; transition: transform 0.4s; }
-        .categoria-card:hover .cat-photo img { transform: scale(1.07); }
-        .categoria-card h3 { font-size: 0.95em; font-weight: 700; color: var(--dark-gray); margin: 12px 10px 4px; }
-        .categoria-card .btn-ver { margin-top: 8px; background: var(--primary); color: #fff; padding: 7px 16px; border-radius: 6px; font-weight: 600; font-size: 0.85em; transition: background 0.3s; display: inline-block; }
-        .categoria-card:hover .btn-ver { background: var(--dark); }
-
-        /* ══ BANNER MEIO ══ */
-        .banner-meio { background: var(--light); padding: 28px 20px; text-align: center; border-top: 1px solid #ffe0b2; border-bottom: 1px solid #ffe0b2; }
-
-        /* ══ ANUNCIE ══ */
+        /* ══ ANUNCIE / FOOTER ══ */
         .anuncie-section { background: var(--dark-gray); color: #fff; padding: 64px 20px; text-align: center; }
         .anuncie-section h2 { font-size: 2em; font-weight: 800; margin-bottom: 12px; }
         .anuncie-section p { font-size: 1.05em; color: #ccc; margin-bottom: 30px; max-width: 560px; margin-left: auto; margin-right: auto; }
         .btn-anuncie { display: inline-flex; align-items: center; gap: 8px; background: var(--primary); color: #fff; padding: 15px 34px; border-radius: 8px; font-size: 1.05em; font-weight: 700; transition: background 0.3s, transform 0.2s; }
         .btn-anuncie:hover { background: var(--dark); transform: translateY(-2px); }
-
-        /* ══ FOOTER ══ */
         footer { background: #111; color: #999; text-align: center; padding: 32px 20px; font-size: 0.88em; }
         footer a { color: var(--primary); }
         footer a:hover { text-decoration: underline; }
@@ -245,23 +257,8 @@
             .hero-section h1 { font-size: 2.2em; }
             .section { padding: 44px 0; }
             .section-title { font-size: 1.6em; }
+            .secao-header { flex-direction: column; align-items: flex-start; }
         }
-
-        /* ══ FILTROS LADO A LADO ══ */
-        .filtros-wrapper { display: flex; gap: 12px; flex-wrap: wrap; align-items: center; margin-bottom: 24px; }
-        .filtros-label { font-size: 0.85em; font-weight: 700; color: #6c757d; text-transform: uppercase; letter-spacing: 0.5px; }
-        select.filtro-select {
-            padding: 8px 14px; border-radius: 8px; border: 2px solid var(--medium-gray);
-            font-family: inherit; font-size: 0.92em; font-weight: 600; color: var(--dark-gray);
-            background: var(--white); cursor: pointer; transition: border-color 0.2s;
-            appearance: none; -webkit-appearance: none;
-            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath fill='%23f6972b' d='M6 8L0 0h12z'/%3E%3C/svg%3E");
-            background-repeat: no-repeat; background-position: right 12px center; padding-right: 36px;
-        }
-        select.filtro-select:focus { outline: none; border-color: var(--primary); }
-        .btn-limpar { padding: 8px 16px; border-radius: 8px; border: 2px solid var(--medium-gray); background: none; font-family: inherit; font-size: 0.88em; cursor: pointer; color: #6c757d; transition: all 0.2s; }
-        .btn-limpar:hover { border-color: var(--primary); color: var(--primary); }
-        .resultados-count { font-size: 0.88em; color: #6c757d; margin-left: auto; }
     </style>
 </head>
 <body>
@@ -289,9 +286,7 @@
             <li><a href="https://wa.me/55{{ hub.whatsapp or '11999999999' }}?text=Olá,+quero+saber+mais" target="_blank" rel="noopener">Contato</a></li>
         </ul>
     </nav>
-    <button class="hamburger-btn" id="hamburger-btn" aria-label="Abrir menu">
-        <i class="fas fa-bars"></i>
-    </button>
+    <button class="hamburger-btn" id="hamburger-btn" aria-label="Abrir menu"><i class="fas fa-bars"></i></button>
 </header>
 
 <!-- MOBILE NAV -->
@@ -316,25 +311,16 @@
     </div>
     <a id="banner-placeholder-topo" class="banner-placeholder"
        href="https://wa.me/55{{ hub.whatsapp or '11999999999' }}?text=Quero+anunciar+no+Onde+Tem+Perto"
-       target="_blank" rel="noopener">
-        📣 Anuncie aqui — espaço disponível
-    </a>
+       target="_blank" rel="noopener">📣 Anuncie aqui — espaço disponível</a>
 </div>
 
 <!-- BREADCRUMB -->
 <div class="breadcrumb-bar">
     <div class="container">
-        <a href="/">Início</a>
-        <span>›</span>
+        <a href="/">Início</a><span>›</span>
         <a href="/cidade/{{ cidade | lower | replace(' ', '-') }}/">{{ cidade }}</a>
-        {% if bairro %}
-        <span>›</span>
-        <a href="/cidade/{{ cidade | lower | replace(' ', '-') }}/{{ bairro | lower | replace(' ', '-') }}/">{{ bairro }}</a>
-        {% endif %}
-        {% if categoria %}
-        <span>›</span>
-        <span>{{ categoria.nome }}</span>
-        {% endif %}
+        {% if bairro %}<span>›</span><a href="/cidade/{{ cidade | lower | replace(' ', '-') }}/{{ bairro | lower | replace(' ', '-') }}/">{{ bairro }}</a>{% endif %}
+        {% if categoria %}<span>›</span><span>{{ categoria.nome }}</span>{% endif %}
     </div>
 </div>
 
@@ -343,50 +329,64 @@
     <div class="hero-inner container">
         <p class="hero-label"><i class="fas fa-map-marker-alt"></i> {{ cidade }}</p>
         <h1>
-            {% if categoria and bairro %}
-                {{ categoria.nome }} em <em>{{ bairro }}</em>
-            {% elif categoria %}
-                {{ categoria.nome }} em <em>{{ cidade }}</em>
-            {% elif bairro %}
-                O que tem em <em>{{ bairro }}</em>
-            {% else %}
-                O que tem em <em>{{ cidade }}</em>?
-            {% endif %}
+            {% if categoria and bairro %}{{ categoria.nome }} em <em>{{ bairro }}</em>
+            {% elif categoria %}{{ categoria.nome }} em <em>{{ cidade }}</em>
+            {% elif bairro %}O que tem em <em>{{ bairro }}</em>
+            {% else %}O que tem em <em>{{ cidade }}</em>?{% endif %}
         </h1>
         {% if bairro or categoria %}
-        <p class="hero-sub-filtro">
-            Mostrando
-            {% if categoria %}{{ categoria.nome | lower }}{% else %}todos os estabelecimentos{% endif %}
-            {% if bairro %} no bairro {{ bairro }}{% endif %}
-            em {{ cidade }}.
-        </p>
+        <p class="hero-sub-filtro">Mostrando {% if categoria %}{{ categoria.nome | lower }}{% else %}todos os estabelecimentos{% endif %}{% if bairro %} no bairro {{ bairro }}{% endif %} em {{ cidade }}.</p>
         {% else %}
         <p class="hero-sub-filtro">Explore estabelecimentos, lojas e serviços em {{ cidade }}.</p>
         {% endif %}
         <div class="hero-btns">
-            <button class="btn-hero" onclick="buscarProximos()">
-                <i class="fas fa-location-arrow"></i> Ver o que tem perto de mim
-            </button>
-            <a href="#negocios" class="btn-hero-outline">
-                <i class="fas fa-list"></i> Ver estabelecimentos
-            </a>
+            <button class="btn-hero" onclick="buscarProximos()"><i class="fas fa-location-arrow"></i> Ver o que tem perto de mim</button>
+            <a href="#negocios" class="btn-hero-outline"><i class="fas fa-list"></i> Ver estabelecimentos</a>
         </div>
     </div>
 </section>
 
-<!-- BAIRROS (só aparece na página de cidade sem filtro de bairro) -->
+<!-- BAIRROS — carrossel com toggle lista -->
 {% if not bairro and bairros_disponiveis %}
 <section class="section" style="background:var(--white);" id="bairros">
     <div class="container">
-        <h2 class="section-title">Bairros em {{ cidade }}</h2>
-        <p class="section-subtitle">Filtre por bairro para encontrar o que tem mais perto de você</p>
-        <div class="bairros-grid">
+        <div class="secao-header">
+            <div class="secao-header-left">
+                <h2>Bairros em {{ cidade }}</h2>
+                <p>Filtre por bairro para encontrar o que tem mais perto de você</p>
+            </div>
+            <div class="toggle-view-btns" id="bairros-toggle">
+                <span>Ver como:</span>
+                <button class="tvbtn active" id="bairros-btn-carousel" title="Carrossel" onclick="setBairrosView('carousel')"><i class="fas fa-grip-lines"></i></button>
+                <button class="tvbtn" id="bairros-btn-lista" title="Lista" onclick="setBairrosView('lista')"><i class="fas fa-list"></i></button>
+            </div>
+        </div>
+
+        <!-- Carrossel de bairros -->
+        <div id="bairros-carousel-wrapper" class="gen-carousel-wrapper">
+            <div class="gen-carousel-outer">
+                <div class="gen-carousel-track" id="bairros-track">
+                    {% for b in bairros_disponiveis %}
+                    {% set b_slug = b | lower | replace(' ', '-') %}
+                    <a href="/cidade/{{ cidade | lower | replace(' ', '-') }}/{{ b_slug }}/" class="bairro-card">
+                        <i class="fas fa-map-pin"></i>{{ b }}
+                    </a>
+                    {% endfor %}
+                </div>
+            </div>
+            <div class="gen-carousel-nav" id="bairros-carousel-nav">
+                <button class="gen-carousel-arrow" id="bairros-prev" onclick="moverGenCarousel('bairros',-1)"><i class="fas fa-chevron-left"></i></button>
+                <div class="gen-progress-bar"><div class="gen-progress-fill" id="bairros-progress-fill"></div></div>
+                <button class="gen-carousel-arrow" id="bairros-next" onclick="moverGenCarousel('bairros',1)"><i class="fas fa-chevron-right"></i></button>
+            </div>
+        </div>
+
+        <!-- Lista de bairros (oculta por padrão) -->
+        <div class="bairros-lista" id="bairros-lista">
             {% for b in bairros_disponiveis %}
             {% set b_slug = b | lower | replace(' ', '-') %}
-            <a href="/cidade/{{ cidade | lower | replace(' ', '-') }}/{{ b_slug }}/"
-               class="bairro-card" aria-label="Bairro {{ b }}">
-                <i class="fas fa-map-pin"></i>
-                {{ b }}
+            <a href="/cidade/{{ cidade | lower | replace(' ', '-') }}/{{ b_slug }}/" class="bairro-lista-item">
+                <i class="fas fa-map-pin"></i>{{ b }}
             </a>
             {% endfor %}
         </div>
@@ -394,22 +394,51 @@
 </section>
 {% endif %}
 
-<!-- CATEGORIAS (só na página raiz de cidade) -->
+<!-- CATEGORIAS — carrossel com toggle lista -->
 {% if not categoria and categorias_disponiveis %}
 <section class="section" id="categorias" style="background:var(--light-gray);">
     <div class="container">
-        <h2 class="section-title">Categorias em {{ cidade }}</h2>
-        <p class="section-subtitle">O que você está procurando em {{ cidade }}?</p>
-        <div class="categorias-grid">
-            {% for cat in categorias_disponiveis %}
-            <a href="/cidade/{{ cidade | lower | replace(' ', '-') }}/{{ cat.slug }}/"
-               class="categoria-card" aria-label="{{ cat.nome }} em {{ cidade }}">
-                <div class="cat-photo">
-                    <img src="{{ cat.icone_url or 'https://images.unsplash.com/photo-1486325212027-8081e485255e?w=400&q=80' }}"
-                         alt="{{ cat.nome }} em {{ cidade }}" loading="lazy" width="400" height="400">
+        <div class="secao-header">
+            <div class="secao-header-left">
+                <h2>Categorias em {{ cidade }}</h2>
+                <p>O que você está procurando em {{ cidade }}?</p>
+            </div>
+            <div class="toggle-view-btns" id="cats-toggle">
+                <span>Ver como:</span>
+                <button class="tvbtn active" id="cats-btn-carousel" title="Carrossel" onclick="setCatsView('carousel')"><i class="fas fa-grip-lines"></i></button>
+                <button class="tvbtn" id="cats-btn-lista" title="Lista" onclick="setCatsView('lista')"><i class="fas fa-list"></i></button>
+            </div>
+        </div>
+
+        <!-- Carrossel de categorias -->
+        <div id="cats-carousel-wrapper" class="gen-carousel-wrapper">
+            <div class="gen-carousel-outer">
+                <div class="gen-carousel-track" id="cats-track">
+                    {% for cat in categorias_disponiveis %}
+                    <a href="/cidade/{{ cidade | lower | replace(' ', '-') }}/{{ cat.slug }}/" class="categoria-card">
+                        <div class="cat-photo">
+                            <img src="{{ cat.icone_url or 'https://images.unsplash.com/photo-1486325212027-8081e485255e?w=400&q=80' }}"
+                                 alt="{{ cat.nome }} em {{ cidade }}" loading="lazy" width="300" height="300">
+                        </div>
+                        <h3>{{ cat.nome }}</h3>
+                        <span class="btn-ver">Ver todos →</span>
+                    </a>
+                    {% endfor %}
                 </div>
-                <h3>{{ cat.nome }}</h3>
-                <span class="btn-ver">Ver todos →</span>
+            </div>
+            <div class="gen-carousel-nav" id="cats-carousel-nav">
+                <button class="gen-carousel-arrow" id="cats-prev" onclick="moverGenCarousel('cats',-1)"><i class="fas fa-chevron-left"></i></button>
+                <div class="gen-progress-bar"><div class="gen-progress-fill" id="cats-progress-fill"></div></div>
+                <button class="gen-carousel-arrow" id="cats-next" onclick="moverGenCarousel('cats',1)"><i class="fas fa-chevron-right"></i></button>
+            </div>
+        </div>
+
+        <!-- Lista de categorias (oculta por padrão) -->
+        <div class="categorias-lista" id="cats-lista">
+            {% for cat in categorias_disponiveis %}
+            <a href="/cidade/{{ cidade | lower | replace(' ', '-') }}/{{ cat.slug }}/" class="cat-lista-item">
+                <img class="cat-lista-thumb" src="{{ cat.icone_url or 'https://images.unsplash.com/photo-1486325212027-8081e485255e?w=80&q=60' }}" alt="{{ cat.nome }}" loading="lazy">
+                {{ cat.nome }}
             </a>
             {% endfor %}
         </div>
@@ -426,9 +455,7 @@
     </div>
     <a id="banner-placeholder-meio" class="banner-placeholder"
        href="https://wa.me/55{{ hub.whatsapp or '11999999999' }}?text=Quero+anunciar+no+Onde+Tem+Perto"
-       target="_blank" rel="noopener">
-        📣 Anuncie aqui — espaço disponível
-    </a>
+       target="_blank" rel="noopener">📣 Anuncie aqui — espaço disponível</a>
 </div>
 
 <!-- NEGÓCIOS -->
@@ -439,42 +466,32 @@
             {% if bairro %} em {{ bairro }}{% else %} em {{ cidade }}{% endif %}
         </h2>
         <p class="section-subtitle">
-            {% if negocios | length == 0 %}
-                Nenhum resultado encontrado.
-            {% elif negocios | length == 1 %}
-                1 estabelecimento encontrado
-            {% else %}
-                {{ negocios | length }} estabelecimentos encontrados
-            {% endif %}
+            {% if negocios | length == 0 %}Nenhum resultado encontrado.
+            {% elif negocios | length == 1 %}1 estabelecimento encontrado
+            {% else %}{{ negocios | length }} estabelecimentos encontrados{% endif %}
         </p>
 
-        <!-- Filtros interativos -->
+        <!-- Filtros -->
         <div class="filtros-wrapper">
             {% if bairros_disponiveis %}
             <label class="filtros-label">Bairro:</label>
             <select class="filtro-select" id="filtro-bairro" onchange="aplicarFiltros()">
                 <option value="">Todos</option>
-                {% for b in bairros_disponiveis %}
-                <option value="{{ b }}" {% if bairro == b %}selected{% endif %}>{{ b }}</option>
-                {% endfor %}
+                {% for b in bairros_disponiveis %}<option value="{{ b }}" {% if bairro == b %}selected{% endif %}>{{ b }}</option>{% endfor %}
             </select>
             {% endif %}
-
             {% if categorias_disponiveis %}
             <label class="filtros-label">Categoria:</label>
             <select class="filtro-select" id="filtro-categoria" onchange="aplicarFiltros()">
                 <option value="">Todas</option>
-                {% for cat in categorias_disponiveis %}
-                <option value="{{ cat.slug }}" {% if categoria and categoria.slug == cat.slug %}selected{% endif %}>{{ cat.nome }}</option>
-                {% endfor %}
+                {% for cat in categorias_disponiveis %}<option value="{{ cat.slug }}" {% if categoria and categoria.slug == cat.slug %}selected{% endif %}>{{ cat.nome }}</option>{% endfor %}
             </select>
             {% endif %}
-
             <button class="btn-limpar" onclick="limparFiltros()"><i class="fas fa-times"></i> Limpar</button>
             <span class="resultados-count" id="resultados-count"></span>
         </div>
 
-        <!-- Chips de categoria (rápidos) -->
+        <!-- Chips rápidos -->
         <div class="chips-row" id="chips-row" role="group" aria-label="Filtrar por categoria">
             <button class="chip active" onclick="filtrarCategoriaChip(null, this)">Tudo</button>
             {% for cat in categorias_disponiveis %}
@@ -482,30 +499,24 @@
             {% endfor %}
         </div>
 
-        <!-- Controles de visualização -->
+        <!-- Controles visualização -->
         <div class="view-controls" id="view-controls" style="display:none;">
             <span>Ver como:</span>
-            <button class="view-btn active" id="btn-carousel" title="Carrossel" onclick="setView('carousel')">
-                <i class="fas fa-grip-lines"></i>
-            </button>
-            <button class="view-btn" id="btn-grade" title="Grade" onclick="setView('grade')">
-                <i class="fas fa-th"></i>
-            </button>
+            <button class="view-btn active" id="btn-carousel" title="Carrossel" onclick="setView('carousel')"><i class="fas fa-grip-lines"></i></button>
+            <button class="view-btn" id="btn-grade" title="Grade" onclick="setView('grade')"><i class="fas fa-th"></i></button>
         </div>
 
-        <!-- Carrossel -->
+        <!-- Carrossel negócios -->
         <div id="negocios-carousel-wrapper" class="carousel-wrapper">
             <div class="carousel-track-outer">
                 <div class="carousel-track" id="negocios-track"></div>
             </div>
-            <div class="carousel-nav" id="negocios-carousel-nav">
+            <div class="carousel-nav">
                 <button class="carousel-arrow" id="negocios-prev" onclick="moveCarousel(-1)"><i class="fas fa-chevron-left"></i></button>
                 <div class="carousel-progress-bar"><div class="carousel-progress-fill" id="negocios-progress-fill"></div></div>
                 <button class="carousel-arrow" id="negocios-next" onclick="moveCarousel(1)"><i class="fas fa-chevron-right"></i></button>
             </div>
         </div>
-
-        <!-- Grade (oculta) -->
         <div class="negocios-grid" id="negocios-grade" style="display:none;"></div>
         <p class="info-message" id="negocios-vazio" style="display:none;">Nenhum estabelecimento encontrado com esses filtros.</p>
     </div>
@@ -530,47 +541,124 @@
              alt="{{ hub.nome or 'Onde Tem Perto' }}" loading="lazy">
     </div>
     <p>© 2026 <strong>{{ hub.nome or 'Onde Tem Perto' }}</strong> — Todos os direitos reservados</p>
-    <p style="margin-top:10px;">
-        <a href="/">Início</a> &middot;
-        <a href="/sitemap.xml">Sitemap</a> &middot;
-        <a href="/robots.txt">Robots.txt</a>
-    </p>
+    <p style="margin-top:10px;"><a href="/">Início</a> &middot; <a href="/sitemap.xml">Sitemap</a> &middot; <a href="/robots.txt">Robots.txt</a></p>
 </footer>
 
-<!-- nav dropdown style (re-usado do index_otp) -->
-<style>
-nav.desktop-nav ul li { position: relative; }
-.nav-dropdown {
-    display: none; position: absolute; top: 100%; left: 50%; transform: translateX(-50%);
-    background: #fff; border-radius: 12px; box-shadow: 0 8px 32px rgba(0,0,0,0.15);
-    min-width: 220px; max-height: 360px; overflow-y: auto; z-index: 999; padding: 8px 0;
-}
-nav.desktop-nav ul li:hover .nav-dropdown { display: block; }
-.nav-dropdown a { display: block; padding: 10px 20px; color: var(--dark-gray) !important; font-size: 0.9em; font-weight: 500; border-bottom: none !important; background: none !important; transition: background 0.15s; white-space: nowrap; }
-.nav-dropdown a:hover { background: var(--light) !important; color: var(--primary) !important; }
-</style>
-
-<!-- Scripts -->
 <script>
+/* ══ NAV ══ */
 document.getElementById('hamburger-btn').addEventListener('click', function(){
-    var nav = document.getElementById('mobile-nav');
-    nav.classList.add('active');
+    document.getElementById('mobile-nav').classList.add('active');
     document.body.style.overflow = 'hidden';
 });
 function closeMobileNav(){
     document.getElementById('mobile-nav').classList.remove('active');
     document.body.style.overflow = '';
 }
-document.addEventListener('keydown', function(e){ if(e.key === 'Escape') closeMobileNav(); });
+document.addEventListener('keydown', function(e){ if(e.key==='Escape') closeMobileNav(); });
+
+/* ══ CARROSSEL GENÉRICO (bairros / categorias) ══ */
+var genPos = { bairros: 0, cats: 0 };
+
+function genCardWidth(id){
+    var track = document.getElementById(id+'-track');
+    if(!track) return 200;
+    var card = track.firstElementChild;
+    if(!card) return 200;
+    return card.offsetWidth + 16;
+}
+
+function genClamp(id){
+    var track = document.getElementById(id+'-track');
+    if(!track) return;
+    var cards = track.children;
+    if(!cards.length) return;
+    var outer = track.parentElement;
+    var maxPos = Math.max(0, cards.length * genCardWidth(id) - outer.offsetWidth);
+    genPos[id] = Math.max(0, Math.min(genPos[id], maxPos));
+    track.style.transform = 'translateX(-'+genPos[id]+'px)';
+    var fill = document.getElementById(id+'-progress-fill');
+    var prev = document.getElementById(id+'-prev');
+    var next = document.getElementById(id+'-next');
+    if(fill) fill.style.width = maxPos > 0 ? Math.min(100,(genPos[id]/maxPos)*100)+'%' : '0%';
+    if(prev) prev.disabled = genPos[id] <= 0;
+    if(next) next.disabled = maxPos <= 0 || genPos[id] >= maxPos;
+}
+
+function moverGenCarousel(id, dir){
+    var outer = document.getElementById(id+'-track').parentElement;
+    var w = genCardWidth(id);
+    var vis = Math.max(1, Math.floor(outer.offsetWidth / w));
+    genPos[id] += dir * vis * w;
+    genClamp(id);
+}
+
+function initGenDrag(id){
+    var track = document.getElementById(id+'-track');
+    if(!track) return;
+    var isDragging=false, startX=0, startPos=0, _ty=0, _horiz=false, _det=false;
+    function onStart(x){ isDragging=true; startX=x; startPos=genPos[id]; track.classList.add('dragging'); }
+    function onMove(x){ if(!isDragging) return; genPos[id]=startPos-(x-startX); genClamp(id); }
+    function onEnd(){ if(!isDragging) return; isDragging=false; track.classList.remove('dragging');
+        var w=genCardWidth(id); if(w) genPos[id]=Math.round(genPos[id]/w)*w; genClamp(id); }
+    track.addEventListener('mousedown',function(e){ onStart(e.clientX); e.preventDefault(); });
+    window.addEventListener('mousemove',function(e){ if(isDragging) onMove(e.clientX); });
+    window.addEventListener('mouseup',function(){ onEnd(); });
+    track.addEventListener('touchstart',function(e){ _ty=e.touches[0].clientY;_horiz=false;_det=false; onStart(e.touches[0].clientX); },{passive:true});
+    track.addEventListener('touchmove',function(e){
+        if(!isDragging) return;
+        if(!_det){ var dx=Math.abs(e.touches[0].clientX-startX),dy=Math.abs(e.touches[0].clientY-_ty); if(dx>5||dy>5){_horiz=dx>=dy;_det=true;} }
+        if(!_det||!_horiz) return; e.preventDefault(); onMove(e.touches[0].clientX);
+    },{passive:false});
+    track.addEventListener('touchend',function(e){ if(_horiz) onEnd(); else isDragging=false; });
+}
+
+function setBairrosView(mode){
+    var cw = document.getElementById('bairros-carousel-wrapper');
+    var lista = document.getElementById('bairros-lista');
+    var bc = document.getElementById('bairros-btn-carousel');
+    var bl = document.getElementById('bairros-btn-lista');
+    if(!cw) return;
+    if(mode==='carousel'){
+        cw.style.display = ''; lista.classList.remove('ativo');
+        bc.classList.add('active'); bl.classList.remove('active');
+        setTimeout(function(){ genClamp('bairros'); }, 50);
+    } else {
+        cw.style.display = 'none'; lista.classList.add('ativo');
+        bc.classList.remove('active'); bl.classList.add('active');
+    }
+}
+
+function setCatsView(mode){
+    var cw = document.getElementById('cats-carousel-wrapper');
+    var lista = document.getElementById('cats-lista');
+    var bc = document.getElementById('cats-btn-carousel');
+    var bl = document.getElementById('cats-btn-lista');
+    if(!cw) return;
+    if(mode==='carousel'){
+        cw.style.display = ''; lista.classList.remove('ativo');
+        bc.classList.add('active'); bl.classList.remove('active');
+        setTimeout(function(){ genClamp('cats'); }, 50);
+    } else {
+        cw.style.display = 'none'; lista.classList.add('ativo');
+        bc.classList.remove('active'); bl.classList.add('active');
+    }
+}
+
+// inicia carrosseis após DOM pronto
+window.addEventListener('load', function(){
+    initGenDrag('bairros');
+    initGenDrag('cats');
+    setTimeout(function(){ genClamp('bairros'); genClamp('cats'); }, 100);
+});
+window.addEventListener('resize', function(){ genClamp('bairros'); genClamp('cats'); });
 </script>
 
 <script>
+/* ══ NEGÓCIOS ══ */
 var todosNegocios = {{ negocios | tojson }};
 var negociosFiltrados = todosNegocios.slice();
-var userLat = null, userLng = null, geoAtivo = false;
-var carouselPos = 0, carouselView = 'carousel';
-var filtroBairroAtivo = {{ ('"' ~ bairro ~ '"') | safe if bairro else 'null' }};
-var filtroCatAtivo    = {{ ('"' ~ categoria.slug ~ '"') | safe if categoria else 'null' }};
+var userLat=null, userLng=null, geoAtivo=false;
+var carouselPos=0, carouselView='carousel';
 
 function calcDistancia(lat1,lng1,lat2,lng2){
     var R=6371,dLat=(lat2-lat1)*Math.PI/180,dLng=(lng2-lng1)*Math.PI/180;
@@ -584,41 +672,30 @@ function buscarProximos(){
         userLat=pos.coords.latitude; userLng=pos.coords.longitude; geoAtivo=true;
         renderNegocios(negociosFiltrados);
         document.getElementById('negocios').scrollIntoView({behavior:'smooth',block:'start'});
-    }, function(){ alert('Não foi possível obter sua localização. Verifique as permissões.'); });
+    }, function(){ alert('Não foi possível obter sua localização.'); });
 }
-
-function slugify(s){ return s.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/\s+/g,'-').replace(/[^a-z0-9-]/g,''); }
 
 function cardHTML(n){
     var dist=(n._dist&&n._dist<9999)?'<span class="card-dist"><i class="fas fa-map-marker-alt"></i> '+n._dist.toFixed(1)+' km de você</span>':'';
     var foto=n.foto_url||'https://images.unsplash.com/photo-1486325212027-8081e485255e?w=400&q=80';
     var local=[n.bairro,n.cidade].filter(Boolean).join(', ');
     return '<a href="/'+n.categoria_slug+'/'+n.slug+'/" class="negocio-card">'+
-        '<div class="card-foto">'+
-            '<img src="'+foto+'" alt="'+n.nome+'" loading="lazy" width="400" height="180">'+
-            '<span class="badge-cat">'+(n.categoria_nome||'')+'</span>'+
-        '</div>'+
-        '<div class="card-body">'+
-            '<h3>'+n.nome+'</h3>'+
-            (local?'<p class="card-bairro"><i class="fas fa-map-marker-alt" style="color:var(--primary)"></i> '+local+'</p>':'')+
-            dist+
-            '<span class="btn-ver">Ver detalhes →</span>'+
-        '</div>'+
+        '<div class="card-foto"><img src="'+foto+'" alt="'+n.nome+'" loading="lazy" width="400" height="180"><span class="badge-cat">'+(n.categoria_nome||'')+'</span></div>'+
+        '<div class="card-body"><h3>'+n.nome+'</h3>'+(local?'<p class="card-bairro"><i class="fas fa-map-marker-alt" style="color:var(--primary)"></i> '+local+'</p>':'')+dist+'<span class="btn-ver">Ver detalhes →</span></div>'+
     '</a>';
 }
 
 function getCardWidth(){
     var track=document.getElementById('negocios-track');
     var card=track.querySelector('.negocio-card');
-    if(!card) return 280;
-    return card.offsetWidth+22;
+    return card ? card.offsetWidth+22 : 280;
 }
 
 function clampAndUpdate(){
     var track=document.getElementById('negocios-track');
     var cards=track.querySelectorAll('.negocio-card');
     if(!cards.length) return;
-    var maxPos=Math.max(0,(cards.length)*getCardWidth()-track.parentElement.offsetWidth);
+    var maxPos=Math.max(0,cards.length*getCardWidth()-track.parentElement.offsetWidth);
     carouselPos=Math.max(0,Math.min(carouselPos,maxPos));
     track.style.transform='translateX(-'+carouselPos+'px)';
     var fill=document.getElementById('negocios-progress-fill');
@@ -629,19 +706,13 @@ function clampAndUpdate(){
     if(next) next.disabled=maxPos<=0||carouselPos>=maxPos;
 }
 
-function snapCarousel(){
-    var w=getCardWidth(); if(!w) return;
-    carouselPos=Math.round(carouselPos/w)*w;
-    clampAndUpdate();
-}
+function snapCarousel(){ var w=getCardWidth(); if(w){ carouselPos=Math.round(carouselPos/w)*w; clampAndUpdate(); } }
 
 function buildCarousel(cards){
     var track=document.getElementById('negocios-track');
     track.innerHTML=cards.join('');
-    carouselPos=0;
-    track.style.transform='translateX(0)';
-    clampAndUpdate();
-    var isDragging=false,startX=0,startPos=0;
+    carouselPos=0; track.style.transform='translateX(0)'; clampAndUpdate();
+    var isDragging=false,startX=0,startPos=0,_ty=0,_horiz=false,_det=false;
     var newTrack=track.cloneNode(true);
     track.parentNode.replaceChild(newTrack,track);
     track=document.getElementById('negocios-track');
@@ -651,8 +722,7 @@ function buildCarousel(cards){
     track.addEventListener('mousedown',function(e){ onStart(e.clientX); e.preventDefault(); });
     window.addEventListener('mousemove',function(e){ if(isDragging) onMove(e.clientX); });
     window.addEventListener('mouseup',function(){ if(isDragging) onEnd(); });
-    var _ty=0,_horiz=false,_det=false;
-    track.addEventListener('touchstart',function(e){ _ty=e.touches[0].clientY; _horiz=false; _det=false; onStart(e.touches[0].clientX); },{passive:true});
+    track.addEventListener('touchstart',function(e){ _ty=e.touches[0].clientY;_horiz=false;_det=false; onStart(e.touches[0].clientX); },{passive:true});
     track.addEventListener('touchmove',function(e){
         if(!isDragging) return;
         if(!_det){ var dx=Math.abs(e.touches[0].clientX-startX),dy=Math.abs(e.touches[0].clientY-_ty); if(dx>5||dy>5){_horiz=dx>=dy;_det=true;} }
@@ -663,9 +733,8 @@ function buildCarousel(cards){
 
 function moveCarousel(dir){
     var outer=document.getElementById('negocios-track').parentElement;
-    var visivel=Math.max(1,Math.floor(outer.offsetWidth/getCardWidth()));
-    carouselPos+=dir*visivel*getCardWidth();
-    clampAndUpdate();
+    var vis=Math.max(1,Math.floor(outer.offsetWidth/getCardWidth()));
+    carouselPos+=dir*vis*getCardWidth(); clampAndUpdate();
 }
 
 function setView(mode){
@@ -693,10 +762,8 @@ function renderNegocios(lista){
         if(vc) vc.style.display='none';
         var cw=document.getElementById('negocios-carousel-wrapper');
         var gd=document.getElementById('negocios-grade');
-        if(cw) cw.style.display='none';
-        if(gd) gd.style.display='none';
-        if(vazio){ vazio.style.display=''; }
-        return;
+        if(cw) cw.style.display='none'; if(gd) gd.style.display='none';
+        if(vazio) vazio.style.display=''; return;
     }
     if(vazio) vazio.style.display='none';
     if(vc) vc.style.display='flex';
@@ -708,45 +775,32 @@ function renderNegocios(lista){
 }
 
 function aplicarFiltros(){
-    var bairroSel=document.getElementById('filtro-bairro');
-    var catSel=document.getElementById('filtro-categoria');
-    var bVal=bairroSel?bairroSel.value:'';
-    var cVal=catSel?catSel.value:'';
+    var bVal=document.getElementById('filtro-bairro')?document.getElementById('filtro-bairro').value:'';
+    var cVal=document.getElementById('filtro-categoria')?document.getElementById('filtro-categoria').value:'';
     negociosFiltrados=todosNegocios.filter(function(n){
-        var okB = !bVal || (n.bairro && n.bairro.toLowerCase()===bVal.toLowerCase());
-        var okC = !cVal || n.categoria_slug===cVal;
-        return okB && okC;
+        return (!bVal||(n.bairro&&n.bairro.toLowerCase()===bVal.toLowerCase())) && (!cVal||n.categoria_slug===cVal);
     });
     renderNegocios(negociosFiltrados);
 }
 
 function limparFiltros(){
-    var bairroSel=document.getElementById('filtro-bairro');
-    var catSel=document.getElementById('filtro-categoria');
-    if(bairroSel) bairroSel.value='';
-    if(catSel) catSel.value='';
-    document.querySelectorAll('.chip').forEach(function(c){ c.classList.remove('active'); });
+    var b=document.getElementById('filtro-bairro'); if(b) b.value='';
+    var c=document.getElementById('filtro-categoria'); if(c) c.value='';
+    document.querySelectorAll('.chip').forEach(function(ch){ ch.classList.remove('active'); });
     var first=document.querySelector('.chip'); if(first) first.classList.add('active');
-    negociosFiltrados=todosNegocios.slice();
-    renderNegocios(negociosFiltrados);
+    negociosFiltrados=todosNegocios.slice(); renderNegocios(negociosFiltrados);
 }
 
 function filtrarCategoriaChip(slug, btn){
     document.querySelectorAll('.chip').forEach(function(c){ c.classList.remove('active'); });
     btn.classList.add('active');
-    var catSel=document.getElementById('filtro-categoria');
-    if(catSel) catSel.value=slug||'';
-    negociosFiltrados = slug ? todosNegocios.filter(function(n){ return n.categoria_slug===slug; }) : todosNegocios.slice();
-    // mantém filtro de bairro
-    var bairroSel=document.getElementById('filtro-bairro');
-    if(bairroSel&&bairroSel.value){
-        var bVal=bairroSel.value;
-        negociosFiltrados=negociosFiltrados.filter(function(n){ return n.bairro&&n.bairro.toLowerCase()===bVal.toLowerCase(); });
-    }
+    var catSel=document.getElementById('filtro-categoria'); if(catSel) catSel.value=slug||'';
+    negociosFiltrados=slug?todosNegocios.filter(function(n){ return n.categoria_slug===slug; }):todosNegocios.slice();
+    var bSel=document.getElementById('filtro-bairro');
+    if(bSel&&bSel.value){ var bv=bSel.value; negociosFiltrados=negociosFiltrados.filter(function(n){ return n.bairro&&n.bairro.toLowerCase()===bv.toLowerCase(); }); }
     renderNegocios(negociosFiltrados);
 }
 
-// render inicial
 renderNegocios(negociosFiltrados);
 </script>
 
