@@ -1,0 +1,780 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <!-- SEO dinâmico -->
+    {% set titulo_cidade = cidade ~ (" — " ~ bairro if bairro else "") ~ (" — " ~ categoria.nome if categoria else "") %}
+    <title>{{ titulo_cidade }} — Onde Tem Perto</title>
+    <meta name="description" content="O que tem em {{ cidade }}{% if bairro %} no {{ bairro }}{% endif %}{% if categoria %} — {{ categoria.nome }}{% endif %}? Encontre estabelecimentos, lojas, serviços e muito mais perto de você.">
+    <meta name="robots" content="index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1">
+    <meta name="theme-color" content="#f6972b">
+    <link rel="canonical" href="https://{{ request.host }}/cidade/{{ cidade | lower | replace(' ', '-') }}/">
+
+    <!-- Favicon -->
+    <link rel="icon" type="image/png" href="{{ hub.logo_url or 'https://res.cloudinary.com/dhu1cqvrb/image/upload/v1782512370/Logo_for_a_Brazilian_local_directory_website_called_Onde_Tem_Perto._Modern_clean_minimalist_style._Use_orange_f4a740_as_the_primary_color._Include_a_location_pin_or_map_marker_icon_integrated_1_rgh092.png' }}">
+
+    <!-- Open Graph -->
+    <meta property="og:type"        content="website">
+    <meta property="og:site_name"   content="{{ hub.nome or 'Onde Tem Perto' }}">
+    <meta property="og:url"         content="https://{{ request.host }}/cidade/{{ cidade | lower | replace(' ', '-') }}/">
+    <meta property="og:title"       content="{{ titulo_cidade }} — Onde Tem Perto">
+    <meta property="og:description" content="O que tem em {{ cidade }}? Veja estabelecimentos, lojas e serviços perto de você.">
+    <meta property="og:image"       content="{{ hub.banner_fundo_url or 'https://images.unsplash.com/photo-1477959858617-67f85cf4f1df?w=1200&q=80' }}">
+    <meta property="og:locale"      content="pt_BR">
+
+    <!-- JSON-LD BreadcrumbList -->
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "BreadcrumbList",
+      "itemListElement": [
+        {"@type":"ListItem","position":1,"item":{"@id":"https://{{ request.host }}/","name":"Início"}},
+        {"@type":"ListItem","position":2,"item":{"@id":"https://{{ request.host }}/cidade/{{ cidade | lower | replace(' ', '-') }}/","name":"{{ cidade }}"}}
+        {% if bairro %},{"@type":"ListItem","position":3,"item":{"@id":"https://{{ request.host }}/cidade/{{ cidade | lower | replace(' ', '-') }}/{{ bairro | lower | replace(' ', '-') }}/","name":"{{ bairro }}"}}{% endif %}
+        {% if categoria %},{"@type":"ListItem","position":{{ 4 if bairro else 3 }},"item":{"@id":"https://{{ request.host }}/cidade/{{ cidade | lower | replace(' ', '-') }}/{{ categoria.slug }}/","name":"{{ categoria.nome }}"}}{% endif %}
+      ]
+    }
+    </script>
+
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700;900&display=swap" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+
+    <style>
+        :root {
+            --primary:       #f6972b;
+            --dark:          #d47a1a;
+            --light:         #fff3e0;
+            --light-gray:    #f8f9fa;
+            --medium-gray:   #e0e0e0;
+            --dark-gray:     #343a40;
+            --text-color:    #495057;
+            --white:         #ffffff;
+            --shadow-light:  rgba(0,0,0,0.08);
+            --shadow-medium: rgba(0,0,0,0.16);
+        }
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        html { scroll-behavior: smooth; }
+        body { font-family: 'Roboto', sans-serif; background: var(--light-gray); color: var(--text-color); line-height: 1.6; }
+        .container { max-width: 1200px; margin: 0 auto; padding: 0 20px; }
+        a { text-decoration: none; color: inherit; }
+
+        /* ══ HEADER ══ */
+        body > header {
+            background: var(--primary);
+            padding: 6px 24px 0;
+            display: flex; flex-direction: column;
+            align-items: center; justify-content: center;
+            position: sticky; top: 0; z-index: 900;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.15);
+        }
+        .header-logo { margin-bottom: 0; }
+        .header-logo a { display: block; text-align: center; }
+        .header-logo img { height: 160px; width: auto; display: block; margin: 0 auto; }
+        .hamburger-btn {
+            display: none; background: none; border: none; color: #fff;
+            font-size: 1.8em; cursor: pointer; padding: 6px;
+            position: absolute; right: 20px; top: 20px;
+        }
+        nav.desktop-nav { width: 100%; }
+        nav.desktop-nav ul { list-style: none; display: flex; align-items: center; justify-content: center; flex-wrap: wrap; }
+        nav.desktop-nav ul li a {
+            color: #fff; font-weight: 600; font-size: 0.95em;
+            padding: 12px 20px; display: block;
+            border-bottom: 3px solid transparent; transition: border-color 0.2s, background 0.2s;
+        }
+        nav.desktop-nav ul li a:hover { border-bottom-color: #fff; background: rgba(0,0,0,0.08); }
+
+        /* ══ MOBILE NAV ══ */
+        .mobile-nav-overlay {
+            display: none; position: fixed; inset: 0;
+            background: rgba(0,0,0,0.95); z-index: 1000;
+            flex-direction: column; justify-content: center; align-items: center;
+            opacity: 0; transition: opacity 0.25s;
+        }
+        .mobile-nav-overlay.active { display: flex; opacity: 1; }
+        .mobile-nav-close { position: absolute; top: 20px; left: 24px; background: none; border: none; color: #fff; font-size: 2em; cursor: pointer; }
+        .mobile-nav-overlay nav ul { list-style: none; text-align: center; max-height: 80vh; overflow-y: auto; }
+        .mobile-nav-overlay nav ul li { margin: 12px 0; }
+        .mobile-nav-overlay nav ul li a { color: #fff; font-size: 1.5em; font-weight: 700; }
+
+        /* ══ BANNER TOPO ══ */
+        .banner-topo { background: var(--white); border-bottom: 1px solid var(--medium-gray); padding: 10px 20px; text-align: center; }
+        .banner-placeholder { display: inline-block; background: var(--light-gray); border: 2px dashed var(--medium-gray); border-radius: 8px; padding: 12px 36px; color: #aaa; font-size: 0.9em; font-weight: 500; transition: all 0.2s; }
+        .banner-placeholder:hover { border-color: var(--primary); color: var(--primary); }
+        .banner-rotativo { display: none; }
+        .banner-rotativo img { max-height: 90px; width: auto; max-width: 100%; border-radius: 8px; }
+
+        /* ══ BREADCRUMB ══ */
+        .breadcrumb-bar {
+            background: var(--white); border-bottom: 1px solid var(--medium-gray);
+            padding: 10px 20px; font-size: 0.88em; color: #6c757d;
+        }
+        .breadcrumb-bar a { color: var(--primary); }
+        .breadcrumb-bar a:hover { text-decoration: underline; }
+        .breadcrumb-bar span { margin: 0 6px; }
+
+        /* ══ HERO CIDADE ══ */
+        .hero-section {
+            color: #fff; text-align: center; min-height: 420px;
+            display: flex; align-items: center; justify-content: center;
+            background:
+                linear-gradient(rgba(0,0,0,0.55), rgba(0,0,0,0.55)),
+                url('{{ hub.banner_fundo_url or "https://images.unsplash.com/photo-1477959858617-67f85cf4f1df?w=1400&q=80" }}') center/cover no-repeat;
+        }
+        .hero-inner { padding: 48px 20px; }
+        .hero-label { font-size: 0.9em; font-weight: 600; text-transform: uppercase; letter-spacing: 2px; color: var(--primary); margin-bottom: 10px; }
+        .hero-section h1 { font-size: 3em; font-weight: 900; line-height: 1.2; text-shadow: 2px 2px 8px rgba(0,0,0,0.6); margin-bottom: 8px; }
+        .hero-section h1 em { color: var(--primary); font-style: normal; }
+        .hero-sub-filtro { font-size: 1em; margin-bottom: 24px; opacity: 0.85; }
+        .hero-btns { display: flex; gap: 14px; justify-content: center; flex-wrap: wrap; }
+        .btn-hero { display: inline-flex; align-items: center; gap: 8px; background: var(--primary); color: #fff; padding: 13px 28px; border-radius: 8px; font-size: 1.05em; font-weight: 700; border: none; cursor: pointer; transition: background 0.3s, transform 0.2s; }
+        .btn-hero:hover { background: var(--dark); transform: translateY(-2px); }
+        .btn-hero-outline { display: inline-flex; align-items: center; gap: 8px; background: transparent; color: #fff; padding: 13px 28px; border-radius: 8px; font-size: 1.05em; font-weight: 700; border: 2px solid rgba(255,255,255,0.8); transition: all 0.2s; }
+        .btn-hero-outline:hover { background: rgba(255,255,255,0.15); }
+
+        /* ══ CHIPS ══ */
+        .chips-row { display: flex; flex-wrap: wrap; gap: 10px; justify-content: center; margin-bottom: 28px; }
+        .chip { padding: 7px 20px; border-radius: 20px; border: 2px solid var(--medium-gray); background: var(--white); color: var(--text-color); font-family: inherit; font-size: 0.9em; font-weight: 600; cursor: pointer; transition: all 0.2s; }
+        .chip:hover { border-color: var(--primary); color: var(--primary); }
+        .chip.active { background: var(--primary); border-color: var(--primary); color: #fff; }
+        @media (max-width: 600px) {
+            .chips-row { flex-wrap: nowrap; overflow-x: auto; justify-content: flex-start; -webkit-overflow-scrolling: touch; scrollbar-width: none; padding-bottom: 4px; }
+            .chips-row::-webkit-scrollbar { display: none; }
+            .chip { flex-shrink: 0; }
+        }
+
+        /* ══ CARDS NEGÓCIO ══ */
+        .negocio-card { background: var(--white); border-radius: 14px; overflow: hidden; box-shadow: 0 4px 14px var(--shadow-light); transition: transform 0.3s, box-shadow 0.3s; display: flex; flex-direction: column; }
+        .negocio-card:hover { transform: translateY(-5px); box-shadow: 0 10px 28px var(--shadow-medium); }
+        .card-foto { width: 100%; height: 180px; overflow: hidden; position: relative; background: #eee; }
+        .card-foto img { width: 100%; height: 100%; object-fit: cover; transition: transform 0.4s; }
+        .negocio-card:hover .card-foto img { transform: scale(1.06); }
+        .badge-cat { position: absolute; top: 10px; left: 10px; background: var(--primary); color: #fff; font-size: 0.72em; font-weight: 700; padding: 3px 10px; border-radius: 20px; }
+        .card-body { padding: 16px; flex: 1; display: flex; flex-direction: column; gap: 4px; }
+        .card-body h3 { font-size: 1.05em; font-weight: 700; color: var(--dark-gray); }
+        .card-bairro { font-size: 0.88em; color: #6c757d; display: flex; align-items: center; gap: 5px; }
+        .card-dist { font-size: 0.85em; color: var(--primary); font-weight: 700; margin-top: 4px; }
+        .btn-ver { margin-top: auto; padding-top: 12px; display: inline-block; background: var(--primary); color: #fff; padding: 9px 18px; border-radius: 6px; font-size: 0.88em; font-weight: 700; text-align: center; transition: background 0.2s; }
+        .negocio-card:hover .btn-ver { background: var(--dark); }
+        .info-message { text-align: center; color: #6c757d; padding: 50px 0; font-size: 1.05em; }
+
+        /* ══ CARROSSEL ══ */
+        .carousel-wrapper { position: relative; }
+        .carousel-track-outer { overflow: hidden; border-radius: 12px; }
+        .carousel-track {
+            display: flex; gap: 22px;
+            transition: transform 0.4s ease;
+            will-change: transform; cursor: grab; user-select: none;
+        }
+        .carousel-track.dragging { transition: none; cursor: grabbing; }
+        .carousel-track .negocio-card { flex: 0 0 calc(25% - 17px); min-width: 0; }
+        @media (max-width: 900px) { .carousel-track .negocio-card { flex: 0 0 calc(50% - 11px); } }
+        @media (max-width: 768px) {
+            .carousel-track-outer { overflow-x: scroll; overflow-y: hidden; -webkit-overflow-scrolling: touch; scroll-snap-type: x mandatory; scrollbar-width: none; }
+            .carousel-track-outer::-webkit-scrollbar { display: none; }
+            .carousel-track { transform: none !important; transition: none !important; cursor: default; }
+            .carousel-track .negocio-card { scroll-snap-align: start; flex: 0 0 calc(75% - 11px); }
+        }
+        @media (max-width: 480px) { .carousel-track .negocio-card { flex: 0 0 calc(85%); } }
+        .carousel-nav { display: flex; align-items: center; justify-content: center; gap: 12px; margin-top: 20px; }
+        .carousel-arrow { background: var(--white); border: 2px solid var(--medium-gray); border-radius: 50%; width: 42px; height: 42px; display: flex; align-items: center; justify-content: center; cursor: pointer; font-size: 1em; color: var(--dark-gray); transition: all 0.2s; flex-shrink: 0; }
+        .carousel-arrow:hover:not(:disabled) { background: var(--primary); border-color: var(--primary); color: var(--white); }
+        .carousel-arrow:disabled { opacity: 0.3; cursor: not-allowed; }
+        .carousel-progress-bar { flex: 1; max-width: 200px; height: 4px; background: var(--medium-gray); border-radius: 4px; overflow: hidden; }
+        .carousel-progress-fill { height: 100%; background: var(--primary); border-radius: 4px; transition: width 0.35s cubic-bezier(.4,0,.2,1); }
+        .negocios-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 22px; }
+        .view-controls { display: flex; align-items: center; justify-content: flex-end; margin-bottom: 16px; gap: 8px; }
+        .view-controls span { font-size: 0.85em; color: #6c757d; margin-right: 4px; }
+        .view-btn { background: var(--white); border: 2px solid var(--medium-gray); border-radius: 8px; width: 36px; height: 36px; display: flex; align-items: center; justify-content: center; cursor: pointer; transition: all 0.2s; color: #6c757d; font-size: 1em; }
+        .view-btn:hover { border-color: var(--primary); color: var(--primary); }
+        .view-btn.active { background: var(--primary); border-color: var(--primary); color: var(--white); }
+
+        /* ══ SEÇÃO ══ */
+        .section { padding: 62px 0; }
+        .section-title { text-align: center; font-size: 2em; font-weight: 800; color: var(--dark-gray); margin-bottom: 10px; }
+        .section-subtitle { text-align: center; color: #6c757d; margin-bottom: 40px; font-size: 1.05em; }
+
+        /* ══ BAIRROS ══ */
+        .bairros-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 14px; }
+        .bairro-card {
+            background: var(--white); border-radius: 12px; padding: 18px 16px;
+            border: 2px solid var(--medium-gray); text-align: center;
+            font-weight: 700; font-size: 0.95em; color: var(--dark-gray);
+            transition: all 0.2s; display: flex; flex-direction: column; align-items: center; gap: 8px;
+        }
+        .bairro-card:hover { border-color: var(--primary); color: var(--primary); transform: translateY(-3px); box-shadow: 0 6px 18px var(--shadow-medium); }
+        .bairro-card i { font-size: 1.4em; color: var(--primary); }
+
+        /* ══ CATEGORIAS ══ */
+        .categorias-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 18px; }
+        .categoria-card { background: var(--white); border-radius: 14px; overflow: hidden; box-shadow: 0 4px 12px var(--shadow-light); transition: transform 0.3s, box-shadow 0.3s; display: flex; flex-direction: column; align-items: center; padding-bottom: 18px; text-align: center; }
+        .categoria-card:hover { transform: translateY(-6px); box-shadow: 0 10px 26px var(--shadow-medium); }
+        .cat-photo { width: 100%; aspect-ratio: 1/1; overflow: hidden; background: #eee; }
+        .cat-photo img { width: 100%; height: 100%; object-fit: cover; transition: transform 0.4s; }
+        .categoria-card:hover .cat-photo img { transform: scale(1.07); }
+        .categoria-card h3 { font-size: 0.95em; font-weight: 700; color: var(--dark-gray); margin: 12px 10px 4px; }
+        .categoria-card .btn-ver { margin-top: 8px; background: var(--primary); color: #fff; padding: 7px 16px; border-radius: 6px; font-weight: 600; font-size: 0.85em; transition: background 0.3s; display: inline-block; }
+        .categoria-card:hover .btn-ver { background: var(--dark); }
+
+        /* ══ BANNER MEIO ══ */
+        .banner-meio { background: var(--light); padding: 28px 20px; text-align: center; border-top: 1px solid #ffe0b2; border-bottom: 1px solid #ffe0b2; }
+
+        /* ══ ANUNCIE ══ */
+        .anuncie-section { background: var(--dark-gray); color: #fff; padding: 64px 20px; text-align: center; }
+        .anuncie-section h2 { font-size: 2em; font-weight: 800; margin-bottom: 12px; }
+        .anuncie-section p { font-size: 1.05em; color: #ccc; margin-bottom: 30px; max-width: 560px; margin-left: auto; margin-right: auto; }
+        .btn-anuncie { display: inline-flex; align-items: center; gap: 8px; background: var(--primary); color: #fff; padding: 15px 34px; border-radius: 8px; font-size: 1.05em; font-weight: 700; transition: background 0.3s, transform 0.2s; }
+        .btn-anuncie:hover { background: var(--dark); transform: translateY(-2px); }
+
+        /* ══ FOOTER ══ */
+        footer { background: #111; color: #999; text-align: center; padding: 32px 20px; font-size: 0.88em; }
+        footer a { color: var(--primary); }
+        footer a:hover { text-decoration: underline; }
+        .footer-logo { margin-bottom: 14px; }
+        .footer-logo img { height: 36px; width: auto; opacity: 0.85; }
+
+        /* ══ RESPONSIVE ══ */
+        @media (max-width: 768px) {
+            body > header { padding: 16px 60px 16px 20px; flex-direction: row; justify-content: center; }
+            .header-logo img { height: 96px; }
+            nav.desktop-nav { display: none; }
+            .hamburger-btn { display: block; top: 50%; transform: translateY(-50%); }
+            .hero-section { min-height: 360px; }
+            .hero-section h1 { font-size: 2.2em; }
+            .section { padding: 44px 0; }
+            .section-title { font-size: 1.6em; }
+        }
+
+        /* ══ FILTROS LADO A LADO ══ */
+        .filtros-wrapper { display: flex; gap: 12px; flex-wrap: wrap; align-items: center; margin-bottom: 24px; }
+        .filtros-label { font-size: 0.85em; font-weight: 700; color: #6c757d; text-transform: uppercase; letter-spacing: 0.5px; }
+        select.filtro-select {
+            padding: 8px 14px; border-radius: 8px; border: 2px solid var(--medium-gray);
+            font-family: inherit; font-size: 0.92em; font-weight: 600; color: var(--dark-gray);
+            background: var(--white); cursor: pointer; transition: border-color 0.2s;
+            appearance: none; -webkit-appearance: none;
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath fill='%23f6972b' d='M6 8L0 0h12z'/%3E%3C/svg%3E");
+            background-repeat: no-repeat; background-position: right 12px center; padding-right: 36px;
+        }
+        select.filtro-select:focus { outline: none; border-color: var(--primary); }
+        .btn-limpar { padding: 8px 16px; border-radius: 8px; border: 2px solid var(--medium-gray); background: none; font-family: inherit; font-size: 0.88em; cursor: pointer; color: #6c757d; transition: all 0.2s; }
+        .btn-limpar:hover { border-color: var(--primary); color: var(--primary); }
+        .resultados-count { font-size: 0.88em; color: #6c757d; margin-left: auto; }
+    </style>
+</head>
+<body>
+
+<!-- HEADER -->
+<header>
+    <div class="header-logo">
+        <a href="/" aria-label="{{ hub.nome or 'Onde Tem Perto' }} — Página inicial">
+            <img src="{{ hub.logo_url or 'https://res.cloudinary.com/dhu1cqvrb/image/upload/v1782512370/Logo_for_a_Brazilian_local_directory_website_called_Onde_Tem_Perto._Modern_clean_minimalist_style._Use_orange_f4a740_as_the_primary_color._Include_a_location_pin_or_map_marker_icon_integrated_1_rgh092.png' }}"
+                 alt="{{ hub.nome or 'Onde Tem Perto' }}" height="80" loading="eager">
+        </a>
+    </div>
+    <nav class="desktop-nav" aria-label="Navegação principal">
+        <ul>
+            <li><a href="/">Início</a></li>
+            <li>
+                <a href="#categorias">Categorias ▾</a>
+                <div class="nav-dropdown">
+                    {% for cat in categorias %}
+                    <a href="/{{ cat.slug }}/">{{ cat.nome }}</a>
+                    {% endfor %}
+                </div>
+            </li>
+            <li><a href="#negocios">Estabelecimentos</a></li>
+            <li><a href="https://wa.me/55{{ hub.whatsapp or '11999999999' }}?text=Olá,+quero+saber+mais" target="_blank" rel="noopener">Contato</a></li>
+        </ul>
+    </nav>
+    <button class="hamburger-btn" id="hamburger-btn" aria-label="Abrir menu">
+        <i class="fas fa-bars"></i>
+    </button>
+</header>
+
+<!-- MOBILE NAV -->
+<div class="mobile-nav-overlay" id="mobile-nav" role="dialog" aria-modal="true">
+    <button class="mobile-nav-close" onclick="closeMobileNav()" aria-label="Fechar menu">&#x2715;</button>
+    <nav>
+        <ul>
+            <li><a href="/" onclick="closeMobileNav()">Início</a></li>
+            <li><a href="#categorias" onclick="closeMobileNav()">Categorias</a></li>
+            <li><a href="#negocios" onclick="closeMobileNav()">Estabelecimentos</a></li>
+            <li><a href="https://wa.me/55{{ hub.whatsapp or '11999999999' }}?text=Olá,+quero+saber+mais" target="_blank" rel="noopener" onclick="closeMobileNav()">Contato</a></li>
+        </ul>
+    </nav>
+</div>
+
+<!-- BANNER TOPO -->
+<div class="banner-topo">
+    <div id="banner-rotativo-topo" class="banner-rotativo">
+        <a id="banner-link-topo" href="#" target="_blank" rel="noopener sponsored">
+            <img id="banner-img-topo" src="" alt="Publicidade">
+        </a>
+    </div>
+    <a id="banner-placeholder-topo" class="banner-placeholder"
+       href="https://wa.me/55{{ hub.whatsapp or '11999999999' }}?text=Quero+anunciar+no+Onde+Tem+Perto"
+       target="_blank" rel="noopener">
+        📣 Anuncie aqui — espaço disponível
+    </a>
+</div>
+
+<!-- BREADCRUMB -->
+<div class="breadcrumb-bar">
+    <div class="container">
+        <a href="/">Início</a>
+        <span>›</span>
+        <a href="/cidade/{{ cidade | lower | replace(' ', '-') }}/">{{ cidade }}</a>
+        {% if bairro %}
+        <span>›</span>
+        <a href="/cidade/{{ cidade | lower | replace(' ', '-') }}/{{ bairro | lower | replace(' ', '-') }}/">{{ bairro }}</a>
+        {% endif %}
+        {% if categoria %}
+        <span>›</span>
+        <span>{{ categoria.nome }}</span>
+        {% endif %}
+    </div>
+</div>
+
+<!-- HERO -->
+<section class="hero-section" aria-label="Cidade {{ cidade }}">
+    <div class="hero-inner container">
+        <p class="hero-label"><i class="fas fa-map-marker-alt"></i> {{ cidade }}</p>
+        <h1>
+            {% if categoria and bairro %}
+                {{ categoria.nome }} em <em>{{ bairro }}</em>
+            {% elif categoria %}
+                {{ categoria.nome }} em <em>{{ cidade }}</em>
+            {% elif bairro %}
+                O que tem em <em>{{ bairro }}</em>
+            {% else %}
+                O que tem em <em>{{ cidade }}</em>?
+            {% endif %}
+        </h1>
+        {% if bairro or categoria %}
+        <p class="hero-sub-filtro">
+            Mostrando
+            {% if categoria %}{{ categoria.nome | lower }}{% else %}todos os estabelecimentos{% endif %}
+            {% if bairro %} no bairro {{ bairro }}{% endif %}
+            em {{ cidade }}.
+        </p>
+        {% else %}
+        <p class="hero-sub-filtro">Explore estabelecimentos, lojas e serviços em {{ cidade }}.</p>
+        {% endif %}
+        <div class="hero-btns">
+            <button class="btn-hero" onclick="buscarProximos()">
+                <i class="fas fa-location-arrow"></i> Ver o que tem perto de mim
+            </button>
+            <a href="#negocios" class="btn-hero-outline">
+                <i class="fas fa-list"></i> Ver estabelecimentos
+            </a>
+        </div>
+    </div>
+</section>
+
+<!-- BAIRROS (só aparece na página de cidade sem filtro de bairro) -->
+{% if not bairro and bairros_disponiveis %}
+<section class="section" style="background:var(--white);" id="bairros">
+    <div class="container">
+        <h2 class="section-title">Bairros em {{ cidade }}</h2>
+        <p class="section-subtitle">Filtre por bairro para encontrar o que tem mais perto de você</p>
+        <div class="bairros-grid">
+            {% for b in bairros_disponiveis %}
+            {% set b_slug = b | lower | replace(' ', '-') %}
+            <a href="/cidade/{{ cidade | lower | replace(' ', '-') }}/{{ b_slug }}/"
+               class="bairro-card" aria-label="Bairro {{ b }}">
+                <i class="fas fa-map-pin"></i>
+                {{ b }}
+            </a>
+            {% endfor %}
+        </div>
+    </div>
+</section>
+{% endif %}
+
+<!-- CATEGORIAS (só na página raiz de cidade) -->
+{% if not categoria and categorias_disponiveis %}
+<section class="section" id="categorias" style="background:var(--light-gray);">
+    <div class="container">
+        <h2 class="section-title">Categorias em {{ cidade }}</h2>
+        <p class="section-subtitle">O que você está procurando em {{ cidade }}?</p>
+        <div class="categorias-grid">
+            {% for cat in categorias_disponiveis %}
+            <a href="/cidade/{{ cidade | lower | replace(' ', '-') }}/{{ cat.slug }}/"
+               class="categoria-card" aria-label="{{ cat.nome }} em {{ cidade }}">
+                <div class="cat-photo">
+                    <img src="{{ cat.icone_url or 'https://images.unsplash.com/photo-1486325212027-8081e485255e?w=400&q=80' }}"
+                         alt="{{ cat.nome }} em {{ cidade }}" loading="lazy" width="400" height="400">
+                </div>
+                <h3>{{ cat.nome }}</h3>
+                <span class="btn-ver">Ver todos →</span>
+            </a>
+            {% endfor %}
+        </div>
+    </div>
+</section>
+{% endif %}
+
+<!-- BANNER MEIO -->
+<div class="banner-meio">
+    <div id="banner-rotativo-meio" class="banner-rotativo">
+        <a id="banner-link-meio" href="#" target="_blank" rel="noopener sponsored">
+            <img id="banner-img-meio" src="" alt="Publicidade">
+        </a>
+    </div>
+    <a id="banner-placeholder-meio" class="banner-placeholder"
+       href="https://wa.me/55{{ hub.whatsapp or '11999999999' }}?text=Quero+anunciar+no+Onde+Tem+Perto"
+       target="_blank" rel="noopener">
+        📣 Anuncie aqui — espaço disponível
+    </a>
+</div>
+
+<!-- NEGÓCIOS -->
+<section class="section" id="negocios" style="background:var(--white);">
+    <div class="container">
+        <h2 class="section-title">
+            {% if categoria %}{{ categoria.nome }}{% else %}Estabelecimentos{% endif %}
+            {% if bairro %} em {{ bairro }}{% else %} em {{ cidade }}{% endif %}
+        </h2>
+        <p class="section-subtitle">
+            {% if negocios | length == 0 %}
+                Nenhum resultado encontrado.
+            {% elif negocios | length == 1 %}
+                1 estabelecimento encontrado
+            {% else %}
+                {{ negocios | length }} estabelecimentos encontrados
+            {% endif %}
+        </p>
+
+        <!-- Filtros interativos -->
+        <div class="filtros-wrapper">
+            {% if bairros_disponiveis %}
+            <label class="filtros-label">Bairro:</label>
+            <select class="filtro-select" id="filtro-bairro" onchange="aplicarFiltros()">
+                <option value="">Todos</option>
+                {% for b in bairros_disponiveis %}
+                <option value="{{ b }}" {% if bairro == b %}selected{% endif %}>{{ b }}</option>
+                {% endfor %}
+            </select>
+            {% endif %}
+
+            {% if categorias_disponiveis %}
+            <label class="filtros-label">Categoria:</label>
+            <select class="filtro-select" id="filtro-categoria" onchange="aplicarFiltros()">
+                <option value="">Todas</option>
+                {% for cat in categorias_disponiveis %}
+                <option value="{{ cat.slug }}" {% if categoria and categoria.slug == cat.slug %}selected{% endif %}>{{ cat.nome }}</option>
+                {% endfor %}
+            </select>
+            {% endif %}
+
+            <button class="btn-limpar" onclick="limparFiltros()"><i class="fas fa-times"></i> Limpar</button>
+            <span class="resultados-count" id="resultados-count"></span>
+        </div>
+
+        <!-- Chips de categoria (rápidos) -->
+        <div class="chips-row" id="chips-row" role="group" aria-label="Filtrar por categoria">
+            <button class="chip active" onclick="filtrarCategoriaChip(null, this)">Tudo</button>
+            {% for cat in categorias_disponiveis %}
+            <button class="chip" onclick="filtrarCategoriaChip('{{ cat.slug }}', this)">{{ cat.nome }}</button>
+            {% endfor %}
+        </div>
+
+        <!-- Controles de visualização -->
+        <div class="view-controls" id="view-controls" style="display:none;">
+            <span>Ver como:</span>
+            <button class="view-btn active" id="btn-carousel" title="Carrossel" onclick="setView('carousel')">
+                <i class="fas fa-grip-lines"></i>
+            </button>
+            <button class="view-btn" id="btn-grade" title="Grade" onclick="setView('grade')">
+                <i class="fas fa-th"></i>
+            </button>
+        </div>
+
+        <!-- Carrossel -->
+        <div id="negocios-carousel-wrapper" class="carousel-wrapper">
+            <div class="carousel-track-outer">
+                <div class="carousel-track" id="negocios-track"></div>
+            </div>
+            <div class="carousel-nav" id="negocios-carousel-nav">
+                <button class="carousel-arrow" id="negocios-prev" onclick="moveCarousel(-1)"><i class="fas fa-chevron-left"></i></button>
+                <div class="carousel-progress-bar"><div class="carousel-progress-fill" id="negocios-progress-fill"></div></div>
+                <button class="carousel-arrow" id="negocios-next" onclick="moveCarousel(1)"><i class="fas fa-chevron-right"></i></button>
+            </div>
+        </div>
+
+        <!-- Grade (oculta) -->
+        <div class="negocios-grid" id="negocios-grade" style="display:none;"></div>
+        <p class="info-message" id="negocios-vazio" style="display:none;">Nenhum estabelecimento encontrado com esses filtros.</p>
+    </div>
+</section>
+
+<!-- ANUNCIE -->
+<section class="anuncie-section">
+    <div class="container">
+        <h2>Seu negócio em {{ cidade }}</h2>
+        <p>Apareça para quem busca o que tem perto em {{ cidade }} todos os dias.</p>
+        <a href="https://wa.me/55{{ hub.whatsapp or '11999999999' }}?text=Quero+anunciar+meu+negócio+em+{{ cidade | urlencode }}"
+           target="_blank" rel="noopener" class="btn-anuncie">
+            <i class="fab fa-whatsapp"></i> Quero anunciar meu negócio
+        </a>
+    </div>
+</section>
+
+<!-- FOOTER -->
+<footer>
+    <div class="footer-logo">
+        <img src="{{ hub.logo_url or 'https://res.cloudinary.com/dhu1cqvrb/image/upload/v1782512370/Logo_for_a_Brazilian_local_directory_website_called_Onde_Tem_Perto._Modern_clean_minimalist_style._Use_orange_f4a740_as_the_primary_color._Include_a_location_pin_or_map_marker_icon_integrated_1_rgh092.png' }}"
+             alt="{{ hub.nome or 'Onde Tem Perto' }}" loading="lazy">
+    </div>
+    <p>© 2026 <strong>{{ hub.nome or 'Onde Tem Perto' }}</strong> — Todos os direitos reservados</p>
+    <p style="margin-top:10px;">
+        <a href="/">Início</a> &middot;
+        <a href="/sitemap.xml">Sitemap</a> &middot;
+        <a href="/robots.txt">Robots.txt</a>
+    </p>
+</footer>
+
+<!-- nav dropdown style (re-usado do index_otp) -->
+<style>
+nav.desktop-nav ul li { position: relative; }
+.nav-dropdown {
+    display: none; position: absolute; top: 100%; left: 50%; transform: translateX(-50%);
+    background: #fff; border-radius: 12px; box-shadow: 0 8px 32px rgba(0,0,0,0.15);
+    min-width: 220px; max-height: 360px; overflow-y: auto; z-index: 999; padding: 8px 0;
+}
+nav.desktop-nav ul li:hover .nav-dropdown { display: block; }
+.nav-dropdown a { display: block; padding: 10px 20px; color: var(--dark-gray) !important; font-size: 0.9em; font-weight: 500; border-bottom: none !important; background: none !important; transition: background 0.15s; white-space: nowrap; }
+.nav-dropdown a:hover { background: var(--light) !important; color: var(--primary) !important; }
+</style>
+
+<!-- Scripts -->
+<script>
+document.getElementById('hamburger-btn').addEventListener('click', function(){
+    var nav = document.getElementById('mobile-nav');
+    nav.classList.add('active');
+    document.body.style.overflow = 'hidden';
+});
+function closeMobileNav(){
+    document.getElementById('mobile-nav').classList.remove('active');
+    document.body.style.overflow = '';
+}
+document.addEventListener('keydown', function(e){ if(e.key === 'Escape') closeMobileNav(); });
+</script>
+
+<script>
+var todosNegocios = {{ negocios | tojson }};
+var negociosFiltrados = todosNegocios.slice();
+var userLat = null, userLng = null, geoAtivo = false;
+var carouselPos = 0, carouselView = 'carousel';
+var filtroBairroAtivo = {{ ('"' ~ bairro ~ '"') | safe if bairro else 'null' }};
+var filtroCatAtivo    = {{ ('"' ~ categoria.slug ~ '"') | safe if categoria else 'null' }};
+
+function calcDistancia(lat1,lng1,lat2,lng2){
+    var R=6371,dLat=(lat2-lat1)*Math.PI/180,dLng=(lng2-lng1)*Math.PI/180;
+    var a=Math.sin(dLat/2)*Math.sin(dLat/2)+Math.cos(lat1*Math.PI/180)*Math.cos(lat2*Math.PI/180)*Math.sin(dLng/2)*Math.sin(dLng/2);
+    return R*2*Math.atan2(Math.sqrt(a),Math.sqrt(1-a));
+}
+
+function buscarProximos(){
+    if(!navigator.geolocation){ alert('Geolocalização não suportada.'); return; }
+    navigator.geolocation.getCurrentPosition(function(pos){
+        userLat=pos.coords.latitude; userLng=pos.coords.longitude; geoAtivo=true;
+        renderNegocios(negociosFiltrados);
+        document.getElementById('negocios').scrollIntoView({behavior:'smooth',block:'start'});
+    }, function(){ alert('Não foi possível obter sua localização. Verifique as permissões.'); });
+}
+
+function slugify(s){ return s.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/\s+/g,'-').replace(/[^a-z0-9-]/g,''); }
+
+function cardHTML(n){
+    var dist=(n._dist&&n._dist<9999)?'<span class="card-dist"><i class="fas fa-map-marker-alt"></i> '+n._dist.toFixed(1)+' km de você</span>':'';
+    var foto=n.foto_url||'https://images.unsplash.com/photo-1486325212027-8081e485255e?w=400&q=80';
+    var local=[n.bairro,n.cidade].filter(Boolean).join(', ');
+    return '<a href="/'+n.categoria_slug+'/'+n.slug+'/" class="negocio-card">'+
+        '<div class="card-foto">'+
+            '<img src="'+foto+'" alt="'+n.nome+'" loading="lazy" width="400" height="180">'+
+            '<span class="badge-cat">'+(n.categoria_nome||'')+'</span>'+
+        '</div>'+
+        '<div class="card-body">'+
+            '<h3>'+n.nome+'</h3>'+
+            (local?'<p class="card-bairro"><i class="fas fa-map-marker-alt" style="color:var(--primary)"></i> '+local+'</p>':'')+
+            dist+
+            '<span class="btn-ver">Ver detalhes →</span>'+
+        '</div>'+
+    '</a>';
+}
+
+function getCardWidth(){
+    var track=document.getElementById('negocios-track');
+    var card=track.querySelector('.negocio-card');
+    if(!card) return 280;
+    return card.offsetWidth+22;
+}
+
+function clampAndUpdate(){
+    var track=document.getElementById('negocios-track');
+    var cards=track.querySelectorAll('.negocio-card');
+    if(!cards.length) return;
+    var maxPos=Math.max(0,(cards.length)*getCardWidth()-track.parentElement.offsetWidth);
+    carouselPos=Math.max(0,Math.min(carouselPos,maxPos));
+    track.style.transform='translateX(-'+carouselPos+'px)';
+    var fill=document.getElementById('negocios-progress-fill');
+    var prev=document.getElementById('negocios-prev');
+    var next=document.getElementById('negocios-next');
+    if(fill) fill.style.width=maxPos>0?Math.min(100,(carouselPos/maxPos)*100)+'%':'0%';
+    if(prev) prev.disabled=carouselPos<=0;
+    if(next) next.disabled=maxPos<=0||carouselPos>=maxPos;
+}
+
+function snapCarousel(){
+    var w=getCardWidth(); if(!w) return;
+    carouselPos=Math.round(carouselPos/w)*w;
+    clampAndUpdate();
+}
+
+function buildCarousel(cards){
+    var track=document.getElementById('negocios-track');
+    track.innerHTML=cards.join('');
+    carouselPos=0;
+    track.style.transform='translateX(0)';
+    clampAndUpdate();
+    var isDragging=false,startX=0,startPos=0;
+    var newTrack=track.cloneNode(true);
+    track.parentNode.replaceChild(newTrack,track);
+    track=document.getElementById('negocios-track');
+    function onStart(x){ isDragging=true; startX=x; startPos=carouselPos; track.classList.add('dragging'); }
+    function onMove(x){ if(!isDragging) return; carouselPos=startPos-(x-startX); clampAndUpdate(); }
+    function onEnd(){ isDragging=false; track.classList.remove('dragging'); snapCarousel(); }
+    track.addEventListener('mousedown',function(e){ onStart(e.clientX); e.preventDefault(); });
+    window.addEventListener('mousemove',function(e){ if(isDragging) onMove(e.clientX); });
+    window.addEventListener('mouseup',function(){ if(isDragging) onEnd(); });
+    var _ty=0,_horiz=false,_det=false;
+    track.addEventListener('touchstart',function(e){ _ty=e.touches[0].clientY; _horiz=false; _det=false; onStart(e.touches[0].clientX); },{passive:true});
+    track.addEventListener('touchmove',function(e){
+        if(!isDragging) return;
+        if(!_det){ var dx=Math.abs(e.touches[0].clientX-startX),dy=Math.abs(e.touches[0].clientY-_ty); if(dx>5||dy>5){_horiz=dx>=dy;_det=true;} }
+        if(!_det||!_horiz) return; e.preventDefault(); onMove(e.touches[0].clientX);
+    },{passive:false});
+    track.addEventListener('touchend',function(e){ if(_horiz) onEnd(); else isDragging=false; });
+}
+
+function moveCarousel(dir){
+    var outer=document.getElementById('negocios-track').parentElement;
+    var visivel=Math.max(1,Math.floor(outer.offsetWidth/getCardWidth()));
+    carouselPos+=dir*visivel*getCardWidth();
+    clampAndUpdate();
+}
+
+function setView(mode){
+    carouselView=mode;
+    var cw=document.getElementById('negocios-carousel-wrapper');
+    var gd=document.getElementById('negocios-grade');
+    document.getElementById('btn-carousel').classList.toggle('active',mode==='carousel');
+    document.getElementById('btn-grade').classList.toggle('active',mode==='grade');
+    if(cw) cw.style.display=mode==='carousel'?'':'none';
+    if(gd) gd.style.display=mode==='grade'?'grid':'none';
+}
+
+function renderNegocios(lista){
+    var vc=document.getElementById('view-controls');
+    var vazio=document.getElementById('negocios-vazio');
+    var count=document.getElementById('resultados-count');
+    if(geoAtivo&&userLat&&userLng){
+        lista=lista.map(function(n){
+            var d=(n.lat&&n.lng)?calcDistancia(userLat,userLng,parseFloat(n.lat),parseFloat(n.lng)):9999;
+            return Object.assign({},n,{_dist:d});
+        }).sort(function(a,b){ return a._dist-b._dist; });
+    }
+    if(count) count.textContent=lista.length+' resultado'+(lista.length!==1?'s':'');
+    if(!lista.length){
+        if(vc) vc.style.display='none';
+        var cw=document.getElementById('negocios-carousel-wrapper');
+        var gd=document.getElementById('negocios-grade');
+        if(cw) cw.style.display='none';
+        if(gd) gd.style.display='none';
+        if(vazio){ vazio.style.display=''; }
+        return;
+    }
+    if(vazio) vazio.style.display='none';
+    if(vc) vc.style.display='flex';
+    var cards=lista.slice(0,48).map(cardHTML);
+    buildCarousel(cards);
+    var gd=document.getElementById('negocios-grade');
+    if(gd) gd.innerHTML=cards.join('');
+    setView(carouselView);
+}
+
+function aplicarFiltros(){
+    var bairroSel=document.getElementById('filtro-bairro');
+    var catSel=document.getElementById('filtro-categoria');
+    var bVal=bairroSel?bairroSel.value:'';
+    var cVal=catSel?catSel.value:'';
+    negociosFiltrados=todosNegocios.filter(function(n){
+        var okB = !bVal || (n.bairro && n.bairro.toLowerCase()===bVal.toLowerCase());
+        var okC = !cVal || n.categoria_slug===cVal;
+        return okB && okC;
+    });
+    renderNegocios(negociosFiltrados);
+}
+
+function limparFiltros(){
+    var bairroSel=document.getElementById('filtro-bairro');
+    var catSel=document.getElementById('filtro-categoria');
+    if(bairroSel) bairroSel.value='';
+    if(catSel) catSel.value='';
+    document.querySelectorAll('.chip').forEach(function(c){ c.classList.remove('active'); });
+    var first=document.querySelector('.chip'); if(first) first.classList.add('active');
+    negociosFiltrados=todosNegocios.slice();
+    renderNegocios(negociosFiltrados);
+}
+
+function filtrarCategoriaChip(slug, btn){
+    document.querySelectorAll('.chip').forEach(function(c){ c.classList.remove('active'); });
+    btn.classList.add('active');
+    var catSel=document.getElementById('filtro-categoria');
+    if(catSel) catSel.value=slug||'';
+    negociosFiltrados = slug ? todosNegocios.filter(function(n){ return n.categoria_slug===slug; }) : todosNegocios.slice();
+    // mantém filtro de bairro
+    var bairroSel=document.getElementById('filtro-bairro');
+    if(bairroSel&&bairroSel.value){
+        var bVal=bairroSel.value;
+        negociosFiltrados=negociosFiltrados.filter(function(n){ return n.bairro&&n.bairro.toLowerCase()===bVal.toLowerCase(); });
+    }
+    renderNegocios(negociosFiltrados);
+}
+
+// render inicial
+renderNegocios(negociosFiltrados);
+</script>
+
+<script>
+(function(){
+    {% if hub.banner1_foto_url %}
+    document.getElementById('banner-placeholder-topo').style.display='none';
+    document.getElementById('banner-rotativo-topo').style.display='block';
+    document.getElementById('banner-img-topo').src='{{ hub.banner1_foto_url }}';
+    document.getElementById('banner-link-topo').href='{{ hub.banner1_link or "#" }}';
+    {% endif %}
+    {% if hub.banner2_foto_url %}
+    document.getElementById('banner-placeholder-meio').style.display='none';
+    document.getElementById('banner-rotativo-meio').style.display='block';
+    document.getElementById('banner-img-meio').src='{{ hub.banner2_foto_url }}';
+    document.getElementById('banner-link-meio').href='{{ hub.banner2_link or "#" }}';
+    {% endif %}
+})();
+</script>
+
+{% if hub.ga4_id %}
+<script async src="https://www.googletagmanager.com/gtag/js?id={{ hub.ga4_id }}"></script>
+<script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag('js',new Date());gtag('config','{{ hub.ga4_id }}');</script>
+{% endif %}
+
+{% if hub.pixel_id %}
+<script>!function(f,b,e,v,n,t,s){if(f.fbq)return;n=f.fbq=function(){n.callMethod?n.callMethod.apply(n,arguments):n.queue.push(arguments)};if(!f._fbq)f._fbq=n;n.push=n;n.loaded=!0;n.version='2.0';n.queue=[];t=b.createElement(e);t.async=!0;t.src=v;s=b.getElementsByTagName(e)[0];s.parentNode.insertBefore(t,s)}(window,document,'script','https://connect.facebook.net/en_US/fbevents.js');fbq('init','{{ hub.pixel_id }}');fbq('track','PageView');</script>
+{% endif %}
+
+</body>
+</html>
