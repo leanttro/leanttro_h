@@ -98,13 +98,13 @@
         /* ══ HEADER ══ */
         body > header {
             background: var(--primary);
-            padding: 20px 24px 0;
+            padding: 6px 24px 0;
             display: flex; flex-direction: column;
             align-items: center; justify-content: center;
             position: sticky; top: 0; z-index: 900;
             box-shadow: 0 2px 10px rgba(0,0,0,0.15);
         }
-        .header-logo { margin-bottom: 14px; }
+        .header-logo { margin-bottom: 0; }
         .header-logo a { display: block; text-align: center; }
         .header-logo img { height: 160px; width: auto; display: block; margin: 0 auto; }
         .hamburger-btn {
@@ -305,6 +305,42 @@
         }
         .view-btn:hover { border-color: var(--primary); color: var(--primary); }
         .view-btn.active { background: var(--primary); border-color: var(--primary); color: var(--white); }
+
+        /* ══ DROPDOWN NAV ══ */
+        nav.desktop-nav ul li { position: relative; }
+        .nav-dropdown {
+            display: none; position: absolute; top: 100%; left: 50%; transform: translateX(-50%);
+            background: #fff; border-radius: 12px; box-shadow: 0 8px 32px rgba(0,0,0,0.15);
+            min-width: 220px; max-height: 360px; overflow-y: auto;
+            z-index: 999; padding: 8px 0;
+        }
+        nav.desktop-nav ul li:hover .nav-dropdown { display: block; }
+        .nav-dropdown a {
+            display: block; padding: 10px 20px; color: var(--dark-gray) !important;
+            font-size: 0.9em; font-weight: 500; border-bottom: none !important;
+            background: none !important; transition: background 0.15s;
+            white-space: nowrap;
+        }
+        .nav-dropdown a:hover { background: var(--light) !important; color: var(--primary) !important; }
+
+        /* ══ SEÇÃO CIDADES ══ */
+        .cidades-section { background: var(--white); }
+        .cidades-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 18px; }
+        .cidade-card {
+            background: var(--light-gray); border-radius: 12px; overflow: hidden;
+            text-decoration: none; color: inherit;
+            transition: transform 0.3s, box-shadow 0.3s;
+            border: 1px solid var(--medium-gray);
+            display: flex; flex-direction: column;
+        }
+        .cidade-card:hover { transform: translateY(-4px); box-shadow: 0 8px 24px var(--shadow-medium); }
+        .cidade-card .cidade-foto { width: 100%; height: 130px; overflow: hidden; }
+        .cidade-card .cidade-foto img { width: 100%; height: 100%; object-fit: cover; transition: transform 0.4s; }
+        .cidade-card:hover .cidade-foto img { transform: scale(1.06); }
+        .cidade-card .cidade-body { padding: 14px 16px; flex: 1; }
+        .cidade-card h3 { font-size: 1.05em; font-weight: 700; color: var(--dark-gray); margin-bottom: 4px; }
+        .cidade-card .cidade-estado { font-size: 0.82em; color: #6c757d; }
+        .cidade-card .cidade-count { font-size: 0.82em; color: var(--primary); font-weight: 600; margin-top: 4px; }
     </style>
 </head>
 <body>
@@ -320,8 +356,20 @@
     <nav class="desktop-nav" aria-label="Navegação principal">
         <ul>
             <li><a href="/">Início</a></li>
-            <li><a href="#categorias">Categorias</a></li>
-            <li><a href="#cidades">Cidades</a></li>
+            <li>
+                <a href="#categorias">Categorias ▾</a>
+                <div class="nav-dropdown">
+                    {% for cat in categorias %}
+                    <a href="/{{ cat.slug }}/">{{ cat.nome }}</a>
+                    {% endfor %}
+                </div>
+            </li>
+            <li>
+                <a href="#cidades">Cidades ▾</a>
+                <div class="nav-dropdown" id="nav-dropdown-cidades">
+                    <a href="#cidades">Ver todas as cidades</a>
+                </div>
+            </li>
             <li><a href="/blog/">Blog</a></li>
             <li><a href="https://wa.me/55{{ hub.whatsapp or '11999999999' }}?text=Olá,+quero+saber+mais" target="_blank" rel="noopener">Contato</a></li>
         </ul>
@@ -455,6 +503,17 @@
             {% else %}
             <p class="info-message">Nenhuma categoria cadastrada.</p>
             {% endfor %}
+        </div>
+    </div>
+</section>
+
+<!-- CIDADES -->
+<section class="section cidades-section" id="cidades">
+    <div class="container">
+        <h2 class="section-title">Cidades disponíveis</h2>
+        <p class="section-subtitle">Encontre o que tem perto em cada cidade</p>
+        <div class="cidades-grid" id="cidades-grid">
+            <!-- populado via JS com base nos negocios -->
         </div>
     </div>
 </section>
@@ -703,5 +762,47 @@ renderNegocios(negociosFiltrados);
 <script>!function(f,b,e,v,n,t,s){if(f.fbq)return;n=f.fbq=function(){n.callMethod?n.callMethod.apply(n,arguments):n.queue.push(arguments)};if(!f._fbq)f._fbq=n;n.push=n;n.loaded=!0;n.version='2.0';n.queue=[];t=b.createElement(e);t.async=!0;t.src=v;s=b.getElementsByTagName(e)[0];s.parentNode.insertBefore(t,s)}(window,document,'script','https://connect.facebook.net/en_US/fbevents.js');fbq('init','{{ hub.pixel_id }}');fbq('track','PageView');</script>
 {% endif %}
 
+
+<script>
+// Popula seção de cidades e dropdown com base nos negócios disponíveis
+(function(){
+    var cidades = {};
+    todosNegocios.forEach(function(n){
+        if(!n.cidade) return;
+        if(!cidades[n.cidade]) cidades[n.cidade] = { nome: n.cidade, count: 0, foto: null, estado: n.estado || '' };
+        cidades[n.cidade].count++;
+        if(!cidades[n.cidade].foto && n.foto_url) cidades[n.cidade].foto = n.foto_url;
+    });
+
+    var lista = Object.values(cidades).sort(function(a,b){ return b.count - a.count; });
+    if(!lista.length) return;
+
+    // Grid de cidades
+    var grid = document.getElementById('cidades-grid');
+    if(grid){
+        grid.innerHTML = lista.map(function(c){
+            var foto = c.foto || 'https://images.unsplash.com/photo-1477959858617-67f85cf4f1df?w=400&q=60';
+            var slug = c.nome.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g,'').replace(/\s+/g,'-').replace(/[^a-z0-9-]/g,'');
+            return '<a href="/cidade/'+slug+'/" class="cidade-card">'+
+                '<div class="cidade-foto"><img src="'+foto+'" alt="'+c.nome+'" loading="lazy" width="400" height="130"></div>'+
+                '<div class="cidade-body">'+
+                    '<h3>'+c.nome+'</h3>'+
+                    (c.estado ? '<p class="cidade-estado">'+c.estado+'</p>' : '')+
+                    '<p class="cidade-count">'+c.count+' estabelecimento'+(c.count>1?'s':'')+'</p>'+
+                '</div>'+
+            '</a>';
+        }).join('');
+    }
+
+    // Dropdown cidades no nav
+    var dd = document.getElementById('nav-dropdown-cidades');
+    if(dd){
+        dd.innerHTML = lista.map(function(c){
+            var slug = c.nome.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g,'').replace(/\s+/g,'-').replace(/[^a-z0-9-]/g,'');
+            return '<a href="/cidade/'+slug+'/">'+c.nome+'</a>';
+        }).join('');
+    }
+})();
+</script>
 </body>
 </html>
