@@ -4,70 +4,32 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-    {# ══ SEO dinâmico por contexto ══ #}
-    {% if categoria and bairro %}
-      {% set seo_title = categoria.nome ~ " no " ~ bairro ~ " — " ~ cidade ~ " | Onde Tem Perto" %}
-      {% set seo_desc  = "Encontre " ~ categoria.nome ~ " no bairro " ~ bairro ~ " em " ~ cidade ~ ". Endereços, telefones e muito mais perto de você." %}
-      {% set seo_url   = "https://" ~ request.host ~ "/cidade/" ~ (cidade | slugify) ~ "/" ~ (bairro | slugify) ~ "/" ~ categoria.slug ~ "/" %}
-    {% elif categoria %}
-      {% set seo_title = categoria.nome ~ " em " ~ cidade ~ " | Onde Tem Perto" %}
-      {% set seo_desc  = "Encontre " ~ categoria.nome ~ " em " ~ cidade ~ ". Lista completa com endereços, telefones e localização perto de você." %}
-      {% set seo_url   = "https://" ~ request.host ~ "/cidade/" ~ (cidade | slugify) ~ "/" ~ categoria.slug ~ "/" %}
-    {% elif bairro %}
-      {% set seo_title = "O que tem no " ~ bairro ~ " — " ~ cidade ~ " | Onde Tem Perto" %}
-      {% set seo_desc  = "Descubra estabelecimentos, lojas e serviços no bairro " ~ bairro ~ " em " ~ cidade ~ ". Encontre tudo perto de você." %}
-      {% set seo_url   = "https://" ~ request.host ~ "/cidade/" ~ (cidade | slugify) ~ "/" ~ (bairro | slugify) ~ "/" %}
-    {% else %}
-      {% set seo_title = "O que tem em " ~ cidade ~ " perto de mim | Onde Tem Perto" %}
-      {% set seo_desc  = "Encontre farmácias, mercados, academias, restaurantes e muito mais em " ~ cidade ~ ". O guia completo de estabelecimentos perto de você." %}
-      {% set seo_url   = "https://" ~ request.host ~ "/cidade/" ~ (cidade | slugify) ~ "/" %}
-    {% endif %}
-
-    <title>{{ seo_title }}</title>
-    <meta name="description" content="{{ seo_desc }}">
+    {% set titulo_cidade = cidade ~ (" — " ~ bairro if bairro else "") ~ (" — " ~ categoria.nome if categoria else "") %}
+    <title>{{ titulo_cidade }} — Onde Tem Perto</title>
+    <meta name="description" content="O que tem em {{ cidade }}{% if bairro %} no {{ bairro }}{% endif %}{% if categoria %} — {{ categoria.nome }}{% endif %}? Encontre estabelecimentos, lojas, serviços e muito mais perto de você.">
     <meta name="robots" content="index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1">
     <meta name="theme-color" content="#f6972b">
-    <link rel="canonical" href="{{ seo_url }}">
+    <link rel="canonical" href="https://{{ request.host }}/cidade/{{ cidade | lower | replace(' ', '-') }}/">
 
     <link rel="icon" type="image/png" href="{{ hub.logo_url or 'https://res.cloudinary.com/dhu1cqvrb/image/upload/v1782512370/Logo_for_a_Brazilian_local_directory_website_called_Onde_Tem_Perto._Modern_clean_minimalist_style._Use_orange_f4a740_as_the_primary_color._Include_a_location_pin_or_map_marker_icon_integrated_1_rgh092.png' }}">
-    <link rel="apple-touch-icon" href="{{ hub.logo_url or 'https://res.cloudinary.com/dhu1cqvrb/image/upload/v1782512370/Logo_for_a_Brazilian_local_directory_website_called_Onde_Tem_Perto._Modern_clean_minimalist_style._Use_orange_f4a740_as_the_primary_color._Include_a_location_pin_or_map_marker_icon_integrated_1_rgh092.png' }}">
 
     <meta property="og:type"        content="website">
     <meta property="og:site_name"   content="{{ hub.nome or 'Onde Tem Perto' }}">
-    <meta property="og:url"         content="{{ seo_url }}">
-    <meta property="og:title"       content="{{ seo_title }}">
-    <meta property="og:description" content="{{ seo_desc }}">
+    <meta property="og:url"         content="https://{{ request.host }}/cidade/{{ cidade | lower | replace(' ', '-') }}/">
+    <meta property="og:title"       content="{{ titulo_cidade }} — Onde Tem Perto">
+    <meta property="og:description" content="O que tem em {{ cidade }}? Veja estabelecimentos, lojas e serviços perto de você.">
     <meta property="og:image"       content="{{ hub.banner_fundo_url or 'https://images.unsplash.com/photo-1477959858617-67f85cf4f1df?w=1200&q=80' }}">
-    <meta property="og:image:width"  content="1200">
-    <meta property="og:image:height" content="630">
     <meta property="og:locale"      content="pt_BR">
-    <meta name="twitter:card"        content="summary_large_image">
-    <meta name="twitter:title"       content="{{ seo_title }}">
-    <meta name="twitter:description" content="{{ seo_desc }}">
-    <meta name="twitter:image"       content="{{ hub.banner_fundo_url or 'https://images.unsplash.com/photo-1477959858617-67f85cf4f1df?w=1200&q=80' }}">
 
     <script type="application/ld+json">
     {
       "@context": "https://schema.org",
-      "@graph": [
-        {
-          "@type": "BreadcrumbList",
-          "itemListElement": [
-            {"@type":"ListItem","position":1,"item":{"@id":"https://{{ request.host }}/","name":"Início"}},
-            {"@type":"ListItem","position":2,"item":{"@id":"https://{{ request.host }}/cidade/{{ cidade | slugify }}/","name":"{{ cidade }}"}}
-            {% if bairro %},{"@type":"ListItem","position":3,"item":{"@id":"https://{{ request.host }}/cidade/{{ cidade | slugify }}/{{ bairro | slugify }}/","name":"{{ bairro }}"}}{% endif %}
-            {% if categoria %},{"@type":"ListItem","position":{{ 4 if bairro else 3 }},"item":{"@id":"https://{{ request.host }}/cidade/{{ cidade | slugify }}/{{ categoria.slug }}/","name":"{{ categoria.nome }}"}}{% endif %}
-          ]
-        },
-        {
-          "@type": "WebPage",
-          "@id": "{{ seo_url }}",
-          "url": "{{ seo_url }}",
-          "name": "{{ seo_title }}",
-          "description": "{{ seo_desc }}",
-          "inLanguage": "pt-BR",
-          "isPartOf": {"@id": "https://{{ request.host }}/#website"}
-        }
+      "@type": "BreadcrumbList",
+      "itemListElement": [
+        {"@type":"ListItem","position":1,"item":{"@id":"https://{{ request.host }}/","name":"Início"}},
+        {"@type":"ListItem","position":2,"item":{"@id":"https://{{ request.host }}/cidade/{{ cidade | lower | replace(' ', '-') }}/","name":"{{ cidade }}"}}
+        {% if bairro %},{"@type":"ListItem","position":3,"item":{"@id":"https://{{ request.host }}/cidade/{{ cidade | lower | replace(' ', '-') }}/{{ bairro | lower | replace(' ', '-') }}/","name":"{{ bairro }}"}}{% endif %}
+        {% if categoria %},{"@type":"ListItem","position":{{ 4 if bairro else 3 }},"item":{"@id":"https://{{ request.host }}/cidade/{{ cidade | lower | replace(' ', '-') }}/{{ categoria.slug }}/","name":"{{ categoria.nome }}"}}{% endif %}
       ]
     }
     </script>
@@ -356,8 +318,8 @@
 <div class="breadcrumb-bar">
     <div class="container">
         <a href="/">Início</a><span>›</span>
-        <a href="/cidade/{{ cidade | slugify }}/">{{ cidade }}</a>
-        {% if bairro %}<span>›</span><a href="/cidade/{{ cidade | slugify }}/{{ bairro | slugify }}/">{{ bairro }}</a>{% endif %}
+        <a href="/cidade/{{ cidade | lower | replace(' ', '-') }}/">{{ cidade }}</a>
+        {% if bairro %}<span>›</span><a href="/cidade/{{ cidade | lower | replace(' ', '-') }}/{{ bairro | lower | replace(' ', '-') }}/">{{ bairro }}</a>{% endif %}
         {% if categoria %}<span>›</span><span>{{ categoria.nome }}</span>{% endif %}
     </div>
 </div>
@@ -405,8 +367,8 @@
             <div class="gen-carousel-outer">
                 <div class="gen-carousel-track" id="bairros-track">
                     {% for b in bairros_disponiveis %}
-                    {% set b_slug = b | slugify %}
-                    <a href="/cidade/{{ cidade | slugify }}/{{ b_slug }}/" class="bairro-card">
+                    {% set b_slug = b | lower | replace(' ', '-') %}
+                    <a href="/cidade/{{ cidade | lower | replace(' ', '-') }}/{{ b_slug }}/" class="bairro-card">
                         <i class="fas fa-map-pin"></i>{{ b }}
                     </a>
                     {% endfor %}
@@ -422,8 +384,8 @@
         <!-- Lista de bairros (oculta por padrão) -->
         <div class="bairros-lista" id="bairros-lista">
             {% for b in bairros_disponiveis %}
-            {% set b_slug = b | slugify %}
-            <a href="/cidade/{{ cidade | slugify }}/{{ b_slug }}/" class="bairro-lista-item">
+            {% set b_slug = b | lower | replace(' ', '-') %}
+            <a href="/cidade/{{ cidade | lower | replace(' ', '-') }}/{{ b_slug }}/" class="bairro-lista-item">
                 <i class="fas fa-map-pin"></i>{{ b }}
             </a>
             {% endfor %}
@@ -453,7 +415,7 @@
             <div class="gen-carousel-outer">
                 <div class="gen-carousel-track" id="cats-track">
                     {% for cat in categorias_disponiveis %}
-                    <a href="/cidade/{{ cidade | slugify }}/{{ cat.slug }}/" class="categoria-card">
+                    <a href="/cidade/{{ cidade | lower | replace(' ', '-') }}/{{ cat.slug }}/" class="categoria-card">
                         <div class="cat-photo">
                             <img src="{{ cat.icone_url or 'https://images.unsplash.com/photo-1486325212027-8081e485255e?w=400&q=80' }}"
                                  alt="{{ cat.nome }} em {{ cidade }}" loading="lazy" width="300" height="300">
@@ -474,7 +436,7 @@
         <!-- Lista de categorias (oculta por padrão) -->
         <div class="categorias-lista" id="cats-lista">
             {% for cat in categorias_disponiveis %}
-            <a href="/cidade/{{ cidade | slugify }}/{{ cat.slug }}/" class="cat-lista-item">
+            <a href="/cidade/{{ cidade | lower | replace(' ', '-') }}/{{ cat.slug }}/" class="cat-lista-item">
                 <img class="cat-lista-thumb" src="{{ cat.icone_url or 'https://images.unsplash.com/photo-1486325212027-8081e485255e?w=80&q=60' }}" alt="{{ cat.nome }}" loading="lazy">
                 {{ cat.nome }}
             </a>
