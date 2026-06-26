@@ -288,6 +288,8 @@ def _slugify(texto):
 
 def _resolve_cidade(hub_id, cidade_slug):
     """Devolve o nome real da cidade a partir do slug."""
+    # Normaliza o slug recebido (remove acentos que o browser pode mandar)
+    cidade_slug_norm = _slugify(cidade_slug)
     rows = query("""
         SELECT DISTINCT n.cidade
         FROM hub_negocios n
@@ -295,7 +297,7 @@ def _resolve_cidade(hub_id, cidade_slug):
         WHERE nh.hub_id = %s AND n.ativo = true AND n.cidade IS NOT NULL
     """, (hub_id,))
     for row in rows:
-        if _slugify(row["cidade"]) == cidade_slug:
+        if _slugify(row["cidade"]) == cidade_slug_norm:
             return row["cidade"]
     return None
 
