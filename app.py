@@ -209,6 +209,32 @@ def pagina_filtro(segmento):
             ORDER BY n.nome
         """, (hub["id"], segmento))
         filtro_tipo, filtro_valor = "bairro", segmento
+    elif hub["tipo"] == "cidade":
+        # Tenta categoria primeiro, senão trata como bairro
+        categoria = query(
+            "SELECT * FROM hub_categorias WHERE slug = %s AND ativo = true",
+            (segmento,), one=True
+        )
+        if categoria:
+            negocios = query("""
+                SELECT n.*, c.nome as categoria_nome, c.slug as categoria_slug
+                FROM hub_negocios n
+                JOIN hub_negocio_hubs nh ON nh.negocio_id = n.id
+                JOIN hub_categorias c ON c.id = n.categoria_id
+                WHERE nh.hub_id = %s AND n.ativo = true AND c.slug = %s
+                ORDER BY n.nome
+            """, (hub["id"], segmento))
+            filtro_tipo, filtro_valor = "categoria", segmento
+        else:
+            negocios = query("""
+                SELECT n.*, c.nome as categoria_nome, c.slug as categoria_slug
+                FROM hub_negocios n
+                JOIN hub_negocio_hubs nh ON nh.negocio_id = n.id
+                JOIN hub_categorias c ON c.id = n.categoria_id
+                WHERE nh.hub_id = %s AND n.ativo = true AND LOWER(n.bairro) = LOWER(%s)
+                ORDER BY n.nome
+            """, (hub["id"], segmento))
+            filtro_tipo, filtro_valor = "bairro", segmento
     else:
         negocios = query("""
             SELECT n.*, c.nome as categoria_nome, c.slug as categoria_slug
