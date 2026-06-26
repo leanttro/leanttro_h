@@ -1107,6 +1107,7 @@ async function editItem(type, id) {
         template_index:   data.template_index,
         template_filtro:  data.template_filtro,
         template_negocio: data.template_negocio,
+        template_cidade:  data.template_cidade,
       });
       setupFormSubmit(form);
     } else {
@@ -1220,6 +1221,7 @@ function formHub() {
         <select name="tipo">
           <option value="bairro">Bairro</option>
           <option value="categoria">Categoria</option>
+          <option value="cidade">Cidade</option>
         </select>
       </div>
       <div class="field"><label>Usuário dono</label>
@@ -1242,6 +1244,9 @@ function formHub() {
       </div>
       <div class="field"><label>Template negócio</label>
         <select name="template_negocio" id="sel_template_negocio"><option value="">Carregando...</option></select>
+</div>
+        <div class="field"><label>Template cidade</label>
+        <select name="template_cidade" id="sel_template_cidade"><option value="">Carregando...</option></select>
       </div>
       <div class="field form-full"><label>Título</label><input name="titulo"></div>
       <div class="field form-full"><label>Descrição</label><textarea name="descricao"></textarea></div>
@@ -1531,10 +1536,10 @@ async function populateTemplateSelects(currentValues = {}) {
       const r = await fetch('/admin/templates');
       state.templates = await r.json();
     } catch(e) {
-      state.templates = { index: ['index_padrao'], filtro: ['filtro_padrao'], negocio: ['negocio_padrao'] };
+      state.templates = { index: ['index_padrao'], filtro: ['filtro_padrao'], negocio: ['negocio_padrao'], cidade: ['cidade_padrao'] };
     }
   }
-  const map = { index: 'sel_template_index', filtro: 'sel_template_filtro', negocio: 'sel_template_negocio' };
+  const map = { index: 'sel_template_index', filtro: 'sel_template_filtro', negocio: 'sel_template_negocio', cidade: 'sel_template_cidade' };
   for (const [tipo, selId] of Object.entries(map)) {
     const sel = document.getElementById(selId);
     if (!sel) continue;
