@@ -1,0 +1,606 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="description" content="{% if negocio.descricao %}{{ negocio.descricao }}{% else %}{{ negocio.nome }} — {{ hub.nome or 'Onde Tem Perto' }}. Endereço, horário, telefone e informações completas.{% endif %}">
+<meta name="keywords" content="{{ negocio.nome }}, {{ negocio.categoria_nome }}, {{ negocio.bairro or negocio.cidade or 'São Paulo' }}, onde encontrar, perto de mim">
+<meta name="robots" content="index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1">
+<meta name="theme-color" content="#f6972b">
+<meta name="author" content="{{ hub.nome or 'Onde Tem Perto' }}">
+<title>{{ negocio.nome }} — {{ hub.nome or 'Onde Tem Perto' }}</title>
+<link rel="canonical" href="https://{{ request.host }}/{{ segmento }}/{{ negocio.slug }}/">
+<link rel="icon" type="image/png" href="{{ hub.logo_url or 'https://res.cloudinary.com/dhu1cqvrb/image/upload/v1782512370/Logo_for_a_Brazilian_local_directory_website_called_Onde_Tem_Perto._Modern_clean_minimalist_style._Use_orange_f4a740_as_the_primary_color._Include_a_location_pin_or_map_marker_icon_integrated_1_rgh092.png' }}">
+
+<!-- Open Graph -->
+<meta property="og:type" content="business.business">
+<meta property="og:site_name" content="{{ hub.nome or 'Onde Tem Perto' }}">
+<meta property="og:url" content="https://{{ request.host }}/{{ segmento }}/{{ negocio.slug }}/">
+<meta property="og:title" content="{{ negocio.nome }} — {{ hub.nome or 'Onde Tem Perto' }}">
+<meta property="og:description" content="{% if negocio.descricao %}{{ negocio.descricao | truncate(160) }}{% else %}Conheça {{ negocio.nome }}. Endereço, horário, telefone e informações.{% endif %}">
+{% if negocio.foto_url and negocio.mostrar_foto %}<meta property="og:image" content="{{ negocio.foto_url }}">{% endif %}
+<meta property="og:locale" content="pt_BR">
+
+<!-- Twitter Card -->
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="{{ negocio.nome }} — {{ hub.nome or 'Onde Tem Perto' }}">
+<meta name="twitter:description" content="{% if negocio.descricao %}{{ negocio.descricao | truncate(160) }}{% else %}Conheça {{ negocio.nome }}.{% endif %}">
+{% if negocio.foto_url and negocio.mostrar_foto %}<meta name="twitter:image" content="{{ negocio.foto_url }}">{% endif %}
+
+<!-- JSON-LD LocalBusiness -->
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "LocalBusiness",
+  "@id": "https://{{ request.host }}/{{ segmento }}/{{ negocio.slug }}/",
+  "name": "{{ negocio.nome }}",
+  "url": "https://{{ request.host }}/{{ segmento }}/{{ negocio.slug }}/",
+  {% if negocio.descricao %}"description": "{{ negocio.descricao }}",{% endif %}
+  {% if negocio.foto_url and negocio.mostrar_foto %}"image": ["{{ negocio.foto_url }}"],{% endif %}
+  {% if negocio.endereco and negocio.mostrar_endereco %}"address": {
+    "@type": "PostalAddress",
+    "streetAddress": "{{ negocio.endereco }}",
+    "addressLocality": "{{ negocio.cidade or 'São Paulo' }}",
+    "addressRegion": "SP",
+    "postalCode": "{{ negocio.cep or '' }}",
+    "addressCountry": "BR"
+  },{% endif %}
+  {% if negocio.telefone and negocio.mostrar_telefone %}"telephone": "{{ negocio.telefone }}",{% endif %}
+  {% if negocio.whatsapp and negocio.mostrar_whatsapp %}"contactPoint": {"@type": "ContactPoint","contactType": "Customer Service","telephone": "{{ negocio.whatsapp }}"},{% endif %}
+  "areaServed": "{{ negocio.cidade or 'São Paulo' }}",
+  "priceRange": "$$",
+  "knowsAbout": "{{ negocio.categoria_nome }}"
+}
+</script>
+
+<!-- JSON-LD BreadcrumbList -->
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "BreadcrumbList",
+  "itemListElement": [
+    {
+      "@type": "ListItem",
+      "position": 1,
+      "name": "{{ hub.nome or 'Onde Tem Perto' }}",
+      "item": "https://{{ request.host }}/"
+    },
+    {
+      "@type": "ListItem",
+      "position": 2,
+      "name": "{{ negocio.categoria_nome }}",
+      "item": "https://{{ request.host }}/{{ segmento }}/"
+    },
+    {
+      "@type": "ListItem",
+      "position": 3,
+      "name": "{{ negocio.nome }}",
+      "item": "https://{{ request.host }}/{{ segmento }}/{{ negocio.slug }}/"
+    }
+  ]
+}
+</script>
+
+{% if hub.ga4_id %}
+<script async src="https://www.googletagmanager.com/gtag/js?id={{ hub.ga4_id }}"></script>
+<script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag('js',new Date());gtag('config','{{ hub.ga4_id }}');</script>
+{% endif %}
+
+<link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700;900&display=swap" rel="stylesheet">
+<link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+
+<style>
+:root {
+  --primary: #f6972b;
+  --dark: #d47a1a;
+  --light: #fff3e0;
+  --light-gray: #f8f9fa;
+  --medium-gray: #e0e0e0;
+  --dark-gray: #343a40;
+  --text-color: #495057;
+  --white: #ffffff;
+  --shadow-light: rgba(0,0,0,0.08);
+  --shadow-medium: rgba(0,0,0,0.16);
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html { scroll-behavior: smooth; }
+body { font-family: 'Roboto', sans-serif; background: var(--light-gray); color: var(--text-color); line-height: 1.6; }
+.container { max-width: 1200px; margin: 0 auto; padding: 0 20px; }
+a { text-decoration: none; color: inherit; }
+img { max-width: 100%; display: block; }
+
+/* ══ HEADER ══ */
+body > header {
+  background: var(--primary);
+  padding: 6px 24px 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 2px 10px rgba(0,0,0,0.15);
+}
+
+.header-logo { margin-bottom: 0; }
+.header-logo a { display: block; text-align: center; }
+.header-logo img { height: 160px; width: auto; display: block; margin: 0 auto; }
+
+.hamburger-btn {
+  display: none;
+  background: none;
+  border: none;
+  color: #fff;
+  font-size: 1.8em;
+  cursor: pointer;
+  padding: 6px;
+  position: absolute;
+  right: 20px;
+  top: 20px;
+}
+
+nav.desktop-nav { width: 100%; }
+nav.desktop-nav ul { list-style: none; display: flex; align-items: center; justify-content: center; flex-wrap: wrap; }
+nav.desktop-nav ul li { position: relative; }
+nav.desktop-nav ul li a {
+  color: #fff;
+  font-weight: 600;
+  font-size: 0.95em;
+  padding: 12px 20px;
+  display: block;
+  border-bottom: 3px solid transparent;
+  transition: border-color 0.2s, background 0.2s;
+}
+nav.desktop-nav ul li a:hover { border-bottom-color: #fff; background: rgba(0,0,0,0.08); }
+
+/* ══ DROPDOWN ══ */
+.dropdown { position: relative; display: inline-block; }
+.dropdown-menu { display: none; position: absolute; background: #fff; min-width: 250px; box-shadow: 0 8px 16px rgba(0,0,0,0.16); z-index: 1; border-radius: 8px; max-height: 400px; overflow-y: auto; top: 100%; left: 0; }
+.dropdown-menu a { display: block; color: var(--dark-gray); padding: 12px 20px; text-decoration: none; transition: all 0.2s; font-weight: 500; font-size: 0.9em; }
+.dropdown-menu a:hover { background: var(--light); color: var(--dark); }
+.dropdown:hover .dropdown-menu { display: block; }
+
+/* ══ MOBILE NAV ══ */
+.mobile-nav-overlay {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.95);
+  z-index: 1000;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  opacity: 0;
+  transition: opacity 0.25s;
+}
+.mobile-nav-overlay.active { display: flex; opacity: 1; }
+.mobile-nav-close { position: absolute; top: 20px; left: 24px; background: none; border: none; color: #fff; font-size: 2em; cursor: pointer; }
+.mobile-nav-overlay nav ul { list-style: none; text-align: center; max-height: 80vh; overflow-y: auto; }
+.mobile-nav-overlay nav ul li { margin: 12px 0; }
+.mobile-nav-overlay nav ul li a { color: #fff; font-size: 1.5em; font-weight: 700; }
+
+/* ══ HERO NEGÓCIO ══ */
+.negocio-hero {
+  background: linear-gradient(rgba(0,0,0,0.55), rgba(0,0,0,0.55)), url('{{ negocio.foto_url or "https://res.cloudinary.com/dhu1cqvrb/image/upload/v1782520525/ondetemperto_uuoywl.jpg" }}') center/cover no-repeat;
+  color: #fff;
+  text-align: center;
+  padding: 80px 20px;
+  position: relative;
+}
+
+.hero-inner { padding: 0; }
+.negocio-hero h1 { font-size: 2.8em; font-weight: 900; line-height: 1.2; text-shadow: 2px 2px 8px rgba(0,0,0,0.6); margin-bottom: 16px; }
+.negocio-hero h1 em { color: var(--primary); font-style: normal; }
+.negocio-hero p { font-size: 1.1em; line-height: 1.5; margin-bottom: 24px; max-width: 600px; margin-left: auto; margin-right: auto; opacity: 0.9; }
+
+.hero-actions {
+  display: flex;
+  gap: 12px;
+  justify-content: center;
+  flex-wrap: wrap;
+  margin-top: 32px;
+}
+
+.hero-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background: var(--primary);
+  color: #fff;
+  padding: 14px 28px;
+  border-radius: 8px;
+  font-weight: 700;
+  font-size: 1em;
+  transition: all 0.2s;
+  border: 2px solid var(--primary);
+  cursor: pointer;
+}
+
+.hero-btn:hover { background: var(--dark); border-color: var(--dark); transform: translateY(-2px); box-shadow: 0 8px 20px rgba(0,0,0,0.3); }
+.hero-btn.secondary { background: transparent; color: #fff; border-color: #fff; }
+.hero-btn.secondary:hover { background: rgba(255,255,255,0.1); }
+
+/* ══ CONTEÚDO PRINCIPAL ══ */
+.negocio-container { padding: 48px 20px; }
+.negocio-layout { display: grid; grid-template-columns: 1fr 320px; gap: 32px; align-items: start; }
+
+@media(max-width: 900px) { .negocio-layout { grid-template-columns: 1fr; } }
+
+.negocio-main { background: #fff; border-radius: 12px; padding: 32px; box-shadow: 0 2px 8px var(--shadow-light); }
+
+.info-section {
+  margin-bottom: 32px;
+  padding-bottom: 32px;
+  border-bottom: 1px solid var(--medium-gray);
+}
+
+.info-section:last-child { border-bottom: none; }
+.info-section h2 { font-size: 1.6em; font-weight: 700; color: var(--dark-gray); margin-bottom: 16px; }
+.info-section p { color: var(--text-color); line-height: 1.8; }
+
+.info-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 16px;
+  margin-top: 16px;
+}
+
+.info-card {
+  background: var(--light-gray);
+  padding: 16px;
+  border-radius: 8px;
+  border-left: 4px solid var(--primary);
+}
+
+.info-card-label { font-size: 0.85em; color: var(--text-color); font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; }
+.info-card-value { font-size: 1.1em; font-weight: 700; color: var(--dark-gray); margin-top: 4px; word-break: break-word; }
+
+/* ══ SIDEBAR ══ */
+.negocio-sidebar { }
+
+.sidebar-card {
+  background: #fff;
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow: 0 2px 8px var(--shadow-light);
+  margin-bottom: 24px;
+}
+
+.sidebar-card-header {
+  background: var(--primary);
+  color: #fff;
+  padding: 16px 20px;
+  font-weight: 700;
+  font-size: 1.1em;
+}
+
+.sidebar-card-body { padding: 20px; }
+
+.contact-btn {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  background: var(--light);
+  color: var(--dark);
+  padding: 14px 16px;
+  border-radius: 8px;
+  text-decoration: none;
+  font-weight: 600;
+  margin-bottom: 12px;
+  transition: all 0.2s;
+  border: 2px solid var(--light);
+}
+
+.contact-btn:hover {
+  background: var(--primary);
+  color: #fff;
+  border-color: var(--primary);
+  transform: translateY(-2px);
+}
+
+.contact-btn svg { width: 20px; height: 20px; }
+
+/* ══ FOOTER ══ */
+footer {
+  background: var(--dark-gray);
+  color: #fff;
+  padding: 40px 20px;
+  text-align: center;
+  font-size: 0.9em;
+}
+
+footer p { margin: 8px 0; }
+
+.footer-logo { display: inline-block; margin-bottom: 16px; }
+.footer-logo img { height: 40px; width: auto; }
+
+/* ══ WHATSAPP FLUTUANTE ══ */
+.wpp-float {
+  position: fixed;
+  bottom: 24px;
+  right: 24px;
+  background: #25D366;
+  color: #fff;
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 4px 20px rgba(37,211,102,0.4);
+  z-index: 999;
+  transition: transform 0.2s;
+}
+
+.wpp-float:hover { transform: scale(1.1); }
+
+/* ══ RESPONSIVO ══ */
+@media(max-width: 768px) {
+  nav.desktop-nav { display: none; }
+  .hamburger-btn { display: block; }
+  .header-logo img { height: 120px; }
+  .negocio-hero h1 { font-size: 1.8em; }
+  .negocio-hero p { font-size: 1em; }
+  .negocio-main { padding: 20px; }
+  .info-grid { grid-template-columns: 1fr; }
+  .hero-actions { flex-direction: column; }
+  .hero-btn { width: 100%; justify-content: center; }
+}
+
+@media(max-width: 640px) {
+  .negocio-hero { padding: 60px 20px; }
+  .negocio-hero h1 { font-size: 1.5em; }
+  .wpp-float { width: 50px; height: 50px; bottom: 20px; right: 20px; }
+}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="header-logo">
+    <a href="/">
+      <img src="{{ hub.logo_url or 'https://res.cloudinary.com/dhu1cqvrb/image/upload/v1782512370/Logo_for_a_Brazilian_local_directory_website_called_Onde_Tem_Perto._Modern_clean_minimalist_style._Use_orange_f4a740_as_the_primary_color._Include_a_location_pin_or_map_marker_icon_integrated_1_rgh092.png' }}" alt="{{ hub.nome or 'Onde Tem Perto' }}">
+    </a>
+  </div>
+  <nav class="desktop-nav">
+    <ul>
+      <li><a href="/">Início</a></li>
+      <li class="dropdown">
+        <a href="#">Categorias</a>
+        <div class="dropdown-menu" id="nav-dropdown-categorias"></div>
+      </li>
+      <li class="dropdown">
+        <a href="#">Cidades</a>
+        <div class="dropdown-menu" id="nav-dropdown-cidades"></div>
+      </li>
+      <li><a href="/blog/">Blog</a></li>
+      <li><a href="/contato/">Contato</a></li>
+    </ul>
+  </nav>
+  <button class="hamburger-btn" id="hamburger-btn">☰</button>
+</header>
+
+<div class="mobile-nav-overlay" id="mobile-nav">
+  <button class="mobile-nav-close" onclick="document.getElementById('mobile-nav').classList.remove('active')">✕</button>
+  <nav>
+    <ul>
+      <li><a href="/" onclick="document.getElementById('mobile-nav').classList.remove('active')">Início</a></li>
+      <li><a href="/{{ segmento }}/" onclick="document.getElementById('mobile-nav').classList.remove('active')">{{ negocio.categoria_nome }}</a></li>
+      <li><a href="/blog/" onclick="document.getElementById('mobile-nav').classList.remove('active')">Blog</a></li>
+      <li><a href="/contato/" onclick="document.getElementById('mobile-nav').classList.remove('active')">Contato</a></li>
+    </ul>
+  </nav>
+</div>
+
+<!-- HERO -->
+<section class="negocio-hero">
+  <div class="container hero-inner">
+    <h1><em>{{ negocio.nome }}</em></h1>
+    {% if negocio.descricao and negocio.mostrar_descricao %}
+    <p>{{ negocio.descricao }}</p>
+    {% endif %}
+    <div class="hero-actions">
+      {% if negocio.whatsapp and negocio.mostrar_whatsapp %}
+      <a href="https://wa.me/55{{ negocio.whatsapp | replace(' ','') | replace('-','') | replace('(','') | replace(')','') }}" class="hero-btn" target="_blank" rel="noopener">
+        <i class="fab fa-whatsapp"></i> WhatsApp
+      </a>
+      {% elif hub.whatsapp %}
+      <a href="https://wa.me/55{{ hub.whatsapp | replace(' ','') | replace('-','') | replace('(','') | replace(')','') }}" class="hero-btn" target="_blank" rel="noopener">
+        <i class="fab fa-whatsapp"></i> WhatsApp
+      </a>
+      {% endif %}
+      
+      {% if negocio.telefone and negocio.mostrar_telefone %}
+      <a href="tel:{{ negocio.telefone }}" class="hero-btn secondary">
+        <i class="fas fa-phone"></i> Ligar
+      </a>
+      {% endif %}
+    </div>
+  </div>
+</section>
+
+<!-- CONTEÚDO PRINCIPAL -->
+<div class="negocio-container">
+  <div class="container negocio-layout">
+    
+    <!-- COLUNA ESQUERDA -->
+    <div class="negocio-main">
+      
+      <!-- ENDEREÇO -->
+      {% if negocio.endereco and negocio.mostrar_endereco %}
+      <div class="info-section">
+        <h2><i class="fas fa-map-marker-alt"></i> Localização</h2>
+        <div class="info-grid">
+          <div class="info-card">
+            <div class="info-card-label">Endereço</div>
+            <div class="info-card-value">{{ negocio.endereco }}</div>
+          </div>
+          {% if negocio.bairro %}
+          <div class="info-card">
+            <div class="info-card-label">Bairro</div>
+            <div class="info-card-value">{{ negocio.bairro }}</div>
+          </div>
+          {% endif %}
+          {% if negocio.cidade %}
+          <div class="info-card">
+            <div class="info-card-label">Cidade</div>
+            <div class="info-card-value">{{ negocio.cidade }}</div>
+          </div>
+          {% endif %}
+          {% if negocio.cep %}
+          <div class="info-card">
+            <div class="info-card-label">CEP</div>
+            <div class="info-card-value">{{ negocio.cep }}</div>
+          </div>
+          {% endif %}
+        </div>
+      </div>
+      {% endif %}
+
+      <!-- INFORMAÇÕES -->
+      <div class="info-section">
+        <h2><i class="fas fa-info-circle"></i> Informações</h2>
+        <div class="info-grid">
+          <div class="info-card">
+            <div class="info-card-label">Categoria</div>
+            <div class="info-card-value">{{ negocio.categoria_nome }}</div>
+          </div>
+          {% if negocio.horario_funcionamento %}
+          <div class="info-card">
+            <div class="info-card-label">Horário</div>
+            <div class="info-card-value">{{ negocio.horario_funcionamento }}</div>
+          </div>
+          {% endif %}
+        </div>
+      </div>
+
+    </div>
+
+    <!-- SIDEBAR -->
+    <div class="negocio-sidebar">
+      
+      <!-- CONTATOS -->
+      <div class="sidebar-card">
+        <div class="sidebar-card-header">
+          <i class="fas fa-phone"></i> Contato
+        </div>
+        <div class="sidebar-card-body">
+          {% if negocio.whatsapp and negocio.mostrar_whatsapp %}
+          <a href="https://wa.me/55{{ negocio.whatsapp | replace(' ','') | replace('-','') | replace('(','') | replace(')','') }}" class="contact-btn" target="_blank" rel="noopener">
+            <i class="fab fa-whatsapp"></i>
+            <span>WhatsApp</span>
+          </a>
+          {% elif hub.whatsapp %}
+          <a href="https://wa.me/55{{ hub.whatsapp | replace(' ','') | replace('-','') | replace('(','') | replace(')','') }}" class="contact-btn" target="_blank" rel="noopener">
+            <i class="fab fa-whatsapp"></i>
+            <span>WhatsApp</span>
+          </a>
+          {% endif %}
+
+          {% if negocio.telefone and negocio.mostrar_telefone %}
+          <a href="tel:{{ negocio.telefone }}" class="contact-btn">
+            <i class="fas fa-phone"></i>
+            <span>{{ negocio.telefone }}</span>
+          </a>
+          {% endif %}
+
+          {% if negocio.site_url and negocio.mostrar_site %}
+          <a href="{{ negocio.site_url }}" class="contact-btn" target="_blank" rel="noopener">
+            <i class="fas fa-globe"></i>
+            <span>Site</span>
+          </a>
+          {% endif %}
+
+          {% if negocio.instagram and negocio.mostrar_instagram %}
+          <a href="https://instagram.com/{{ negocio.instagram }}" class="contact-btn" target="_blank" rel="noopener">
+            <i class="fab fa-instagram"></i>
+            <span>Instagram</span>
+          </a>
+          {% endif %}
+
+          {% if not negocio.mostrar_whatsapp and not negocio.mostrar_telefone and not negocio.mostrar_instagram and not negocio.mostrar_site %}
+          <p style="text-align: center; color: var(--text-color); padding: 20px; font-size: 0.9em;">Sem contato disponível.</p>
+          {% endif %}
+        </div>
+      </div>
+
+      <!-- VOLTAR -->
+      <a href="/{{ segmento }}/" style="display: flex; align-items: center; gap: 8px; font-size: 0.9em; font-weight: 600; color: var(--primary); padding: 12px; text-align: center; transition: color 0.2s;">
+        <i class="fas fa-arrow-left"></i> Voltar para {{ negocio.categoria_nome }}
+      </a>
+
+    </div>
+
+  </div>
+</div>
+
+<!-- FOOTER -->
+<footer>
+  <a href="/" class="footer-logo">
+    <img src="{{ hub.logo_url or 'https://res.cloudinary.com/dhu1cqvrb/image/upload/v1782512370/Logo_for_a_Brazilian_local_directory_website_called_Onde_Tem_Perto._Modern_clean_minimalist_style._Use_orange_f4a740_as_the_primary_color._Include_a_location_pin_or_map_marker_icon_integrated_1_rgh092.png' }}" alt="{{ hub.nome or 'Onde Tem Perto' }}">
+  </a>
+  <p>&copy; 2024 <strong>{{ hub.nome or 'Onde Tem Perto' }}</strong> — Todos os direitos reservados</p>
+  <p style="margin-top: 10px;">Desenvolvido com ❤️ para ajudar você a encontrar tudo perto de você</p>
+</footer>
+
+{% if negocio.whatsapp and negocio.mostrar_whatsapp %}
+<a href="https://wa.me/55{{ negocio.whatsapp | replace(' ','') | replace('-','') | replace('(','') | replace(')','') }}" target="_blank" rel="noopener" class="wpp-float" aria-label="WhatsApp">
+  <svg width="28" height="28" viewBox="0 0 24 24" fill="#fff"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
+</a>
+{% elif hub.whatsapp %}
+<a href="https://wa.me/55{{ hub.whatsapp | replace(' ','') | replace('-','') | replace('(','') | replace(')','') }}" target="_blank" rel="noopener" class="wpp-float" aria-label="WhatsApp">
+  <svg width="28" height="28" viewBox="0 0 24 24" fill="#fff"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
+</a>
+{% endif %}
+
+<script>
+document.getElementById('hamburger-btn').addEventListener('click', function(){
+  document.getElementById('mobile-nav').classList.add('active');
+});
+
+// Populate categories and cities dropdowns (similar to index)
+(function(){
+  var categorias = {{ categorias_json or "[]" }};
+  var negocios = {{ negocios_json or "[]" }};
+  
+  // Populate categories
+  var catDrop = document.getElementById('nav-dropdown-categorias');
+  if(catDrop && categorias.length){
+    catDrop.innerHTML = categorias.map(function(c){
+      return '<a href="/'+c.slug+'/">'+c.nome+'</a>';
+    }).join('');
+  }
+  
+  // Populate cities
+  var cidades = {};
+  if(negocios.forEach){
+    negocios.forEach(function(n){
+      if(!n.cidade) return;
+      if(!cidades[n.cidade]) cidades[n.cidade] = { nome: n.cidade, count: 0, estado: n.estado || '' };
+      cidades[n.cidade].count++;
+    });
+  }
+  
+  var cidadeLista = Object.values(cidades).sort(function(a,b){ return b.count - a.count; });
+  var cidadeDrop = document.getElementById('nav-dropdown-cidades');
+  if(cidadeDrop && cidadeLista.length){
+    cidadeDrop.innerHTML = cidadeLista.map(function(c){
+      var slug = c.nome.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g,'').replace(/\s+/g,'-').replace(/[^a-z0-9-]/g,'');
+      return '<a href="/bairro/'+slug+'/">'+c.nome+'</a>';
+    }).join('');
+  }
+})();
+</script>
+
+{% if hub.ga4_id %}
+<!-- Google Analytics -->
+<script async src="https://www.googletagmanager.com/gtag/js?id={{ hub.ga4_id }}"></script>
+<script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag('js',new Date());gtag('config','{{ hub.ga4_id }}');</script>
+{% endif %}
+
+{% if hub.pixel_id %}
+<!-- Facebook Pixel -->
+<script>!function(f,b,e,v,n,t,s){if(f.fbq)return;n=f.fbq=function(){n.callMethod?n.callMethod.apply(n,arguments):n.queue.push(arguments)};if(!f._fbq)f._fbq=n;n.push=n;n.loaded=!0;n.version='2.0';n.queue=[];t=b.createElement(e);t.async=!0;t.src=v;s=b.getElementsByTagName(e)[0];s.parentNode.insertBefore(t,s)}(window,document,'script','https://connect.facebook.net/en_US/fbevents.js');fbq('init','{{ hub.pixel_id }}');fbq('track','PageView');</script>
+{% endif %}
+
+</body>
+</html>
