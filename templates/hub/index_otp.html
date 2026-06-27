@@ -151,351 +151,591 @@
         .hero-inner { padding: 48px 20px; }
         .hero-section h1 { font-size: 3em; font-weight: 900; line-height: 1.2; text-shadow: 2px 2px 8px rgba(0,0,0,0.6); margin-bottom: 16px; }
         .hero-section h1 em { color: var(--primary); font-style: normal; }
-        .hero-section p { font-size: 1.2em; line-height: 1.5; margin-bottom: 32px; max-width: 600px; }
-        .hero-btn { display: inline-block; background: var(--primary); color: #fff; padding: 14px 36px; border-radius: 50px; font-weight: 700; font-size: 1em; transition: all 0.2s; text-shadow: none; }
-        .hero-btn:hover { background: var(--dark); transform: translateY(-2px); box-shadow: 0 8px 20px rgba(0,0,0,0.3); }
+        .hero-section .hero-sub { font-size: 1.25em; max-width: 660px; margin: 0 auto 32px; text-shadow: 1px 1px 4px rgba(0,0,0,0.5); opacity: 0.92; }
+        .hero-btns { display: flex; gap: 14px; justify-content: center; flex-wrap: wrap; }
+        .btn-hero { display: inline-flex; align-items: center; gap: 8px; background: var(--primary); color: #fff; padding: 15px 34px; border-radius: 8px; font-size: 1.1em; font-weight: 700; border: none; cursor: pointer; transition: background 0.3s, transform 0.2s; }
+        .btn-hero:hover { background: var(--dark); transform: translateY(-2px); }
+        .btn-hero-outline { display: inline-flex; align-items: center; gap: 8px; background: transparent; color: #fff; padding: 15px 34px; border-radius: 8px; font-size: 1.1em; font-weight: 700; border: 2px solid rgba(255,255,255,0.8); transition: all 0.2s; }
+        .btn-hero-outline:hover { background: rgba(255,255,255,0.15); }
 
-        /* ══ FILTROS / CATEGORIAS ══ */
-        .filtros-section { padding: 48px 20px; background: var(--white); text-align: center; }
-        .filtros-section h2 { font-size: 1.8em; font-weight: 700; margin-bottom: 24px; color: var(--dark-gray); }
-        .filtros-container { display: flex; align-items: center; justify-content: center; gap: 12px; flex-wrap: wrap; margin-bottom: 32px; }
-        .filtro-btn { padding: 10px 20px; background: var(--light-gray); border: none; border-radius: 50px; cursor: pointer; font-weight: 500; color: var(--text-color); transition: all 0.2s; }
-        .filtro-btn.active { background: var(--primary); color: #fff; }
-        .filtro-btn:hover { background: var(--primary); color: #fff; }
+        /* ══ BUSCA ══ */
+        .busca-section { background: var(--white); padding: 52px 0; }
+        .busca-topo { text-align: center; margin-bottom: 32px; }
+        .busca-topo h2 { font-size: 2em; font-weight: 800; color: var(--dark-gray); margin-bottom: 8px; }
+        .busca-topo p { color: #6c757d; margin-bottom: 20px; font-size: 1.05em; }
+        .btn-geo { background: var(--primary); color: #fff; border: none; padding: 13px 28px; border-radius: 8px; font-size: 1em; font-weight: 700; cursor: pointer; display: inline-flex; align-items: center; gap: 8px; transition: background 0.3s; }
+        .btn-geo:hover { background: var(--dark); }
 
-        /* ══ NEGÓCIOS / CARDS ══ */
-        .negocios-section { padding: 48px 20px; background: var(--light-gray); }
-        .negocios-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 32px; flex-wrap: wrap; gap: 16px; }
-        .negocios-header h2 { font-size: 1.8em; font-weight: 700; color: var(--dark-gray); }
-        .view-controls { display: flex; gap: 12px; }
-        .view-btn { width: 44px; height: 44px; border: 2px solid var(--medium-gray); background: #fff; border-radius: 8px; cursor: pointer; font-size: 1.2em; transition: all 0.2s; display: flex; align-items: center; justify-content: center; }
-        .view-btn.active { background: var(--primary); color: #fff; border-color: var(--primary); }
-        .view-btn:hover { border-color: var(--primary); }
-
-        /* ══ CAROUSEL ══ */
-        .negocios-carousel-wrapper { position: relative; margin-bottom: 48px; }
-        .carousel-controls { display: flex; gap: 12px; justify-content: center; margin-top: 20px; }
-        .carousel-btn { width: 44px; height: 44px; border: none; background: var(--primary); color: #fff; border-radius: 50%; cursor: pointer; font-size: 1.2em; display: flex; align-items: center; justify-content: center; transition: all 0.2s; }
-        .carousel-btn:hover:not(:disabled) { background: var(--dark); transform: scale(1.1); }
-        .carousel-btn:disabled { opacity: 0.5; cursor: not-allowed; }
-        .negocios-track { display: flex; gap: 20px; overflow: hidden; position: relative; }
-        .negocios-track.dragging { cursor: grabbing; }
-        .negocio-card { flex: 0 0 280px; background: #fff; border-radius: 12px; overflow: hidden; box-shadow: 0 2px 8px var(--shadow-light); transition: all 0.2s; }
-        .negocio-card:hover { transform: translateY(-4px); box-shadow: 0 8px 16px var(--shadow-medium); }
-        .negocio-foto { overflow: hidden; height: 160px; background: var(--light-gray); }
-        .negocio-foto img { width: 100%; height: 100%; object-fit: cover; }
-        .negocio-body { padding: 16px; }
-        .negocio-body h3 { font-size: 1.1em; font-weight: 700; margin-bottom: 4px; color: var(--dark-gray); }
-        .negocio-body p { font-size: 0.9em; color: var(--text-color); }
-        .negocio-categoria { display: inline-block; margin-top: 8px; padding: 4px 12px; background: var(--light); border-radius: 20px; font-size: 0.8em; color: var(--dark); font-weight: 600; }
-        .negocio-distancia { display: block; margin-top: 8px; font-size: 0.85em; color: var(--primary); font-weight: 600; }
-
-        /* ══ GRADE ══ */
-        .negocios-grade { display: none; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 20px; }
-        .negocios-grade.show { display: grid; }
-
-        /* ══ CIDADES ══ */
-        .cidades-section { padding: 48px 20px; background: #fff; }
-        .cidades-section h2 { font-size: 1.8em; font-weight: 700; text-align: center; margin-bottom: 32px; color: var(--dark-gray); }
-        .cidades-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 20px; }
-        .cidade-card { background: #fff; border-radius: 12px; overflow: hidden; box-shadow: 0 2px 8px var(--shadow-light); transition: all 0.2s; display: flex; flex-direction: column; }
-        .cidade-card:hover { transform: translateY(-4px); box-shadow: 0 8px 16px var(--shadow-medium); }
-        .cidade-foto { overflow: hidden; height: 130px; background: var(--light-gray); }
-        .cidade-foto img { width: 100%; height: 100%; object-fit: cover; }
-        .cidade-body { padding: 16px; flex: 1; display: flex; flex-direction: column; }
-        .cidade-body h3 { font-size: 1.2em; font-weight: 700; margin-bottom: 4px; color: var(--dark-gray); }
-        .cidade-body p { font-size: 0.9em; color: var(--text-color); }
-        .cidade-estado { color: var(--primary); font-weight: 600; margin-bottom: 4px; }
-        .cidade-count { color: #aaa; font-size: 0.85em; margin-top: auto; }
-
-        /* ══ DROPDOWN CIDADES ══ */
-        .dropdown { position: relative; display: inline-block; }
-        .dropdown-menu { display: none; position: absolute; background: #fff; min-width: 250px; box-shadow: 0 8px 16px var(--shadow-medium); z-index: 1; border-radius: 8px; max-height: 400px; overflow-y: auto; top: 100%; left: 0; }
-        .dropdown-menu a { display: block; color: var(--dark-gray); padding: 12px 20px; text-decoration: none; transition: all 0.2s; }
-        .dropdown-menu a:hover { background: var(--light); color: var(--dark); }
-        .dropdown:hover .dropdown-menu { display: block; }
-
-        /* ══ RESPONSIVO ══ */
-        @media (max-width: 768px) {
-            .hero-section h1 { font-size: 1.8em; }
-            .hero-section p { font-size: 1em; }
-            .header-logo img { height: 120px; }
-            nav.desktop-nav { display: none; }
-            .hamburger-btn { display: block; }
-            .cidades-grid { grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); }
-            .negocios-grade { grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); }
-            .filtro-btn { padding: 8px 16px; font-size: 0.9em; }
+        /* Chips de categoria */
+        .filtros-categoria { display: flex; flex-wrap: wrap; gap: 10px; justify-content: center; margin-bottom: 28px; }
+        .chip-cat { padding: 7px 20px; border-radius: 20px; border: 2px solid var(--medium-gray); background: var(--white); color: var(--text-color); font-family: inherit; font-size: 0.9em; font-weight: 600; cursor: pointer; transition: all 0.2s; }
+        .chip-cat:hover { border-color: var(--primary); color: var(--primary); }
+        .chip-cat.active { background: var(--primary); border-color: var(--primary); color: #fff; }
+        @media (max-width: 600px) {
+            .filtros-categoria { flex-wrap: nowrap; overflow-x: auto; justify-content: flex-start; -webkit-overflow-scrolling: touch; scrollbar-width: none; padding-bottom: 4px; }
+            .filtros-categoria::-webkit-scrollbar { display: none; }
+            .chip-cat { flex-shrink: 0; }
         }
 
-        /* ══ FOOTER ══ */
-        body > footer { background: var(--dark-gray); color: #fff; padding: 40px 20px; text-align: center; font-size: 0.9em; }
-        body > footer p { margin: 8px 0; }
+        /* Cards negócio */
+        .negocios-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 22px; }
+        .negocio-card { background: var(--white); border-radius: 14px; overflow: hidden; box-shadow: 0 4px 14px var(--shadow-light); transition: transform 0.3s, box-shadow 0.3s; display: flex; flex-direction: column; }
+        .negocio-card:hover { transform: translateY(-5px); box-shadow: 0 10px 28px var(--shadow-medium); }
+        .card-foto { width: 100%; height: 0; padding-bottom: 100%; overflow: hidden; position: relative; background: #f5f5f5; }
+        .card-foto img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: contain; padding: 12px; transition: transform 0.4s; }
+        .negocio-card:hover .card-foto img { transform: scale(1.06); }
+        .badge-cat { position: absolute; top: 10px; left: 10px; background: var(--primary); color: #fff; font-size: 0.72em; font-weight: 700; padding: 3px 10px; border-radius: 20px; }
+        .card-body { padding: 16px; flex: 1; display: flex; flex-direction: column; gap: 4px; }
+        .card-body h3 { font-size: 1.05em; font-weight: 700; color: var(--dark-gray); }
+        .card-bairro { font-size: 0.88em; color: #6c757d; display: flex; align-items: center; gap: 5px; }
+        .card-dist { font-size: 0.85em; color: var(--primary); font-weight: 700; margin-top: 4px; }
+        .btn-ver { margin-top: auto; padding-top: 12px; display: inline-block; background: var(--primary); color: #fff; padding: 9px 18px; border-radius: 6px; font-size: 0.88em; font-weight: 700; text-align: center; transition: background 0.2s; }
+        .negocio-card:hover .btn-ver { background: var(--dark); }
+        .info-message { text-align: center; color: #6c757d; padding: 50px 0; font-size: 1.05em; }
 
-        /* ══ VAZIO ══ */
-        #negocios-vazio { padding: 60px 20px; text-align: center; color: #aaa; font-size: 1.1em; }
+        /* ══ BANNER MEIO ══ */
+        .banner-meio { background: var(--light); padding: 28px 20px; text-align: center; border-top: 1px solid #ffe0b2; border-bottom: 1px solid #ffe0b2; }
+        .banner-meio .banner-rotativo img { max-height: 120px; }
+
+        /* ══ CATEGORIAS ══ */
+        .section { padding: 62px 0; }
+        .section-title { text-align: center; font-size: 2em; font-weight: 800; color: var(--dark-gray); margin-bottom: 10px; }
+        .section-subtitle { text-align: center; color: #6c757d; margin-bottom: 40px; font-size: 1.05em; }
+        .categorias-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 20px; }
+        .categoria-card { background: var(--white); border-radius: 14px; overflow: hidden; box-shadow: 0 4px 12px var(--shadow-light); transition: transform 0.3s, box-shadow 0.3s; display: flex; flex-direction: column; align-items: center; padding-bottom: 20px; text-align: center; }
+        .categoria-card:hover { transform: translateY(-6px); box-shadow: 0 10px 26px var(--shadow-medium); }
+        .cat-photo { width: 100%; aspect-ratio: 1/1; overflow: hidden; background: #eee; }
+        .cat-photo img { width: 100%; height: 100%; object-fit: cover; transition: transform 0.4s; }
+        .categoria-card:hover .cat-photo img { transform: scale(1.07); }
+        .categoria-card h3 { font-size: 1.05em; font-weight: 700; color: var(--dark-gray); margin: 14px 12px 4px; }
+        .categoria-card .btn-ver { margin-top: 10px; background: var(--primary); color: #fff; padding: 8px 18px; border-radius: 6px; font-weight: 600; font-size: 0.88em; transition: background 0.3s; display: inline-block; }
+        .categoria-card:hover .btn-ver { background: var(--dark); }
+
+        /* ══ COMO FUNCIONA ══ */
+        .como-funciona { background: var(--white); }
+        .steps-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 22px; }
+        .step-card { background: var(--light-gray); border-radius: 14px; padding: 28px 22px; text-align: center; border: 1px solid var(--medium-gray); }
+        .step-num { width: 38px; height: 38px; border-radius: 50%; background: var(--primary); color: #fff; font-size: 1em; font-weight: 800; display: flex; align-items: center; justify-content: center; margin: 0 auto 14px; }
+        .step-card h3 { font-size: 1em; font-weight: 700; color: var(--dark-gray); margin-bottom: 8px; }
+        .step-card p { font-size: 0.85em; color: #6c757d; line-height: 1.55; }
+
+        /* ══ ANUNCIE ══ */
+        .anuncie-section { background: var(--dark-gray); color: #fff; padding: 64px 20px; text-align: center; }
+        .anuncie-section h2 { font-size: 2em; font-weight: 800; margin-bottom: 12px; }
+        .anuncie-section p { font-size: 1.05em; color: #ccc; margin-bottom: 30px; max-width: 560px; margin-left: auto; margin-right: auto; }
+        .btn-anuncie { display: inline-flex; align-items: center; gap: 8px; background: var(--primary); color: #fff; padding: 15px 34px; border-radius: 8px; font-size: 1.05em; font-weight: 700; transition: background 0.3s, transform 0.2s; }
+        .btn-anuncie:hover { background: var(--dark); transform: translateY(-2px); }
+
+        /* ══ FOOTER ══ */
+        footer { background: #111; color: #999; text-align: center; padding: 32px 20px; font-size: 0.88em; }
+        footer a { color: var(--primary); }
+        footer a:hover { text-decoration: underline; }
+        .footer-logo { margin-bottom: 14px; }
+        .footer-logo img { height: 36px; width: auto; opacity: 0.85; }
+
+        /* ══ RESPONSIVE ══ */
+        @media (max-width: 768px) {
+            body > header { padding: 16px 60px 16px 20px; flex-direction: row; justify-content: center; }
+            .header-logo { margin-bottom: 0; }
+            .header-logo img { height: 96px; }
+            nav.desktop-nav { display: none; }
+            .hamburger-btn { display: block; top: 50%; transform: translateY(-50%); }
+            .hero-section { min-height: 440px; }
+            .hero-section h1 { font-size: 2.1em; }
+            .hero-section .hero-sub { font-size: 1em; }
+            .section { padding: 44px 0; }
+            .section-title { font-size: 1.6em; }
+            .busca-section { padding: 36px 0; }
+        }
+
+        /* ══ CARROSSEL DE NEGÓCIOS ══ */
+        .carousel-wrapper { position: relative; }
+        .carousel-track-outer { overflow: hidden; border-radius: 12px; }
+        .carousel-track {
+            display: flex; gap: 22px;
+            transition: transform 0.4s ease;
+            will-change: transform; cursor: grab; user-select: none;
+        }
+        .carousel-track.dragging { transition: none; cursor: grabbing; }
+        .carousel-track .negocio-card {
+            flex: 0 0 calc(25% - 17px); min-width: 0;
+        }
+        @media (max-width: 900px) {
+            .carousel-track .negocio-card { flex: 0 0 calc(50% - 11px); }
+        }
+        @media (max-width: 768px) {
+            .carousel-track-outer {
+                overflow-x: scroll; overflow-y: hidden;
+                -webkit-overflow-scrolling: touch;
+                scroll-snap-type: x mandatory; scrollbar-width: none;
+            }
+            .carousel-track-outer::-webkit-scrollbar { display: none; }
+            .carousel-track { transform: none !important; transition: none !important; cursor: default; gap: 14px; padding: 4px 0; }
+            .carousel-track .negocio-card { scroll-snap-align: start; flex: 0 0 78%; min-width: 0; }
+            /* Esconder arrows no mobile */
+            .carousel-nav { display: none; }
+        }
+        @media (max-width: 480px) {
+            .carousel-track .negocio-card { flex: 0 0 calc(85%); }
+        }
+        .carousel-nav {
+            display: flex; align-items: center; justify-content: center;
+            gap: 12px; margin-top: 20px;
+        }
+        .carousel-arrow {
+            background: var(--white); border: 2px solid var(--medium-gray);
+            border-radius: 50%; width: 42px; height: 42px;
+            display: flex; align-items: center; justify-content: center;
+            cursor: pointer; font-size: 1em; color: var(--dark-gray);
+            transition: all 0.2s; flex-shrink: 0;
+        }
+        .carousel-arrow:hover:not(:disabled) { background: var(--primary); border-color: var(--primary); color: var(--white); }
+        .carousel-arrow:disabled { opacity: 0.3; cursor: not-allowed; }
+        .carousel-progress-bar { flex: 1; max-width: 200px; height: 4px; background: var(--medium-gray); border-radius: 4px; overflow: hidden; }
+        .carousel-progress-fill { height: 100%; background: var(--primary); border-radius: 4px; transition: width 0.35s cubic-bezier(.4,0,.2,1); }
+        /* grade */
+        .negocios-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 22px; }
+        /* view controls */
+        .view-controls { display: flex; align-items: center; justify-content: flex-end; margin-bottom: 16px; gap: 8px; }
+        .view-controls span { font-size: 0.85em; color: #6c757d; margin-right: 4px; }
+        .view-btn {
+            background: var(--white); border: 2px solid var(--medium-gray);
+            border-radius: 8px; width: 36px; height: 36px;
+            display: flex; align-items: center; justify-content: center;
+            cursor: pointer; transition: all 0.2s; color: #6c757d; font-size: 1em;
+        }
+        .view-btn:hover { border-color: var(--primary); color: var(--primary); }
+        .view-btn.active { background: var(--primary); border-color: var(--primary); color: var(--white); }
+
+        /* ══ DROPDOWN NAV ══ */
+        nav.desktop-nav ul li { position: relative; }
+        .nav-dropdown {
+            display: none; position: absolute; top: 100%; left: 50%; transform: translateX(-50%);
+            background: #fff; border-radius: 12px; box-shadow: 0 8px 32px rgba(0,0,0,0.15);
+            min-width: 220px; max-height: 360px; overflow-y: auto;
+            z-index: 999; padding: 8px 0;
+        }
+        nav.desktop-nav ul li:hover .nav-dropdown { display: block; }
+        .nav-dropdown a {
+            display: block; padding: 10px 20px; color: var(--dark-gray) !important;
+            font-size: 0.9em; font-weight: 500; border-bottom: none !important;
+            background: none !important; transition: background 0.15s;
+            white-space: nowrap;
+        }
+        .nav-dropdown a:hover { background: var(--light) !important; color: var(--primary) !important; }
+
+        /* ══ SEÇÃO CIDADES ══ */
+        .cidades-section { background: var(--white); }
+        .cidades-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 18px; }
+        .cidade-card {
+            background: var(--light-gray); border-radius: 12px; overflow: hidden;
+            text-decoration: none; color: inherit;
+            transition: transform 0.3s, box-shadow 0.3s;
+            border: 1px solid var(--medium-gray);
+            display: flex; flex-direction: column;
+        }
+        .cidade-card:hover { transform: translateY(-4px); box-shadow: 0 8px 24px var(--shadow-medium); }
+        .cidade-card .cidade-foto { width: 100%; height: 130px; overflow: hidden; }
+        .cidade-card .cidade-foto img { width: 100%; height: 100%; object-fit: contain; background: var(--white); transition: transform 0.4s; }
+        .cidade-card:hover .cidade-foto img { transform: scale(1.06); }
+        .cidade-card .cidade-body { padding: 14px 16px; flex: 1; }
+        .cidade-card h3 { font-size: 1.05em; font-weight: 700; color: var(--dark-gray); margin-bottom: 4px; }
+        .cidade-card .cidade-estado { font-size: 0.82em; color: #6c757d; }
+        .cidade-card .cidade-count { font-size: 0.82em; color: var(--primary); font-weight: 600; margin-top: 4px; }
     </style>
 </head>
 <body>
 
+<!-- HEADER -->
 <header>
     <div class="header-logo">
-        <a href="/">
-            <img src="https://res.cloudinary.com/dhu1cqvrb/image/upload/v1782512370/Logo_for_a_Brazilian_local_directory_website_called_Onde_Tem_Perto._Modern_clean_minimalist_style._Use_orange_f4a740_as_the_primary_color._Include_a_location_pin_or_map_marker_icon_integrated_1_rgh092.png" alt="Onde Tem Perto">
+        <a href="/" aria-label="Onde Tem Perto — Página inicial">
+            <img src="https://res.cloudinary.com/dhu1cqvrb/image/upload/v1782512370/Logo_for_a_Brazilian_local_directory_website_called_Onde_Tem_Perto._Modern_clean_minimalist_style._Use_orange_f4a740_as_the_primary_color._Include_a_location_pin_or_map_marker_icon_integrated_1_rgh092.png"
+                 alt="Onde Tem Perto" height="80" loading="eager">
         </a>
     </div>
-    <nav class="desktop-nav">
+    <nav class="desktop-nav" aria-label="Navegação principal">
         <ul>
             <li><a href="/">Início</a></li>
-            <li class="dropdown">
-                <a href="#">Categorias</a>
-                <div class="dropdown-menu" id="nav-dropdown-categorias"></div>
+            <li>
+                <a href="#categorias">Categorias ▾</a>
+                <div class="nav-dropdown">
+                    {% for cat in categorias %}
+                    <a href="/{{ cat.slug }}/">{{ cat.nome }}</a>
+                    {% endfor %}
+                </div>
             </li>
-            <li class="dropdown">
-                <a href="#">Cidades</a>
-                <div class="dropdown-menu" id="nav-dropdown-cidades"></div>
+            <li>
+                <a href="#cidades">Cidades ▾</a>
+                <div class="nav-dropdown" id="nav-dropdown-cidades">
+                    <a href="#cidades">Ver todas as cidades</a>
+                </div>
             </li>
             <li><a href="/blog/">Blog</a></li>
-            <li><a href="/contato/">Contato</a></li>
+            <li><a href="https://wa.me/55{{ hub.whatsapp or '11999999999' }}?text=Olá,+quero+saber+mais" target="_blank" rel="noopener">Contato</a></li>
         </ul>
     </nav>
-    <button class="hamburger-btn" onclick="document.querySelector('.mobile-nav-overlay').classList.add('active')">☰</button>
+    <button class="hamburger-btn" id="hamburger-btn" aria-label="Abrir menu">
+        <i class="fas fa-bars"></i>
+    </button>
 </header>
 
-<div class="mobile-nav-overlay">
-    <button class="mobile-nav-close" onclick="this.parentElement.classList.remove('active')">✕</button>
+<!-- MOBILE NAV -->
+<div class="mobile-nav-overlay" id="mobile-nav" role="dialog" aria-modal="true">
+    <button class="mobile-nav-close" onclick="closeMobileNav()" aria-label="Fechar menu">&#x2715;</button>
     <nav>
         <ul>
-            <li><a href="/">Início</a></li>
-            <li><a href="#">Categorias</a></li>
-            <li><a href="#">Cidades</a></li>
-            <li><a href="/blog/">Blog</a></li>
-            <li><a href="/contato/">Contato</a></li>
+            <li><a href="/" onclick="closeMobileNav()">Início</a></li>
+            <li><a href="#categorias" onclick="closeMobileNav()">Categorias</a></li>
+            <li><a href="#cidades" onclick="closeMobileNav()">Cidades</a></li>
+            <li><a href="/blog/" onclick="closeMobileNav()">Blog</a></li>
+            <li><a href="https://wa.me/55{{ hub.whatsapp or '11999999999' }}?text=Olá,+quero+saber+mais" target="_blank" rel="noopener" onclick="closeMobileNav()">Contato</a></li>
         </ul>
     </nav>
 </div>
 
+<!-- BANNER TOPO -->
 <div class="banner-topo">
-    <a id="banner-link-topo" href="#">
-        <span id="banner-placeholder-topo" class="banner-placeholder">📢 Banner rotativo (coloque seu anúncio aqui)</span>
-        <div id="banner-rotativo-topo" class="banner-rotativo" style="display:none;">
-            <img id="banner-img-topo" src="" alt="Banner" loading="lazy">
-        </div>
+    <div id="banner-rotativo-topo" class="banner-rotativo">
+        <a id="banner-link-topo" href="#" target="_blank" rel="noopener sponsored">
+            <img id="banner-img-topo" src="" alt="Publicidade">
+        </a>
+    </div>
+    <a id="banner-placeholder-topo" class="banner-placeholder"
+       href="https://wa.me/55{{ hub.whatsapp or '11999999999' }}?text=Quero+anunciar+no+Onde+Tem+Perto"
+       target="_blank" rel="noopener">
+        📣 Anuncie aqui — espaço disponível
     </a>
 </div>
 
-<section class="hero-section">
-    <div class="hero-inner">
-        <h1><em>Onde Tem</em> Perto?</h1>
-        <p>Ative sua localização e veja os estabelecimentos mais próximos de você primeiro</p>
-        <button class="hero-btn" onclick="ativarGeo()">📍 Usar minha localização</button>
+<!-- HERO -->
+<section class="hero-section" aria-label="Onde tem perto de você">
+    <div class="hero-inner container">
+        <h1>Onde tem<br><em>perto de mim?</em></h1>
+        <p class="hero-sub">Farmácias, mercados, academias, igrejas, metrô e muito mais — encontre tudo próximo a você em qualquer cidade do Brasil.</p>
+        <div class="hero-btns">
+            <button class="btn-hero" onclick="buscarProximos()">
+                <i class="fas fa-location-arrow"></i> Ver o que tem perto de mim
+            </button>
+            <a href="#categorias" class="btn-hero-outline">
+                <i class="fas fa-th-large"></i> Explorar categorias
+            </a>
+        </div>
     </div>
 </section>
 
-<section class="filtros-section">
-    <h2>Busque por categoria</h2>
-    <div class="filtros-container" id="filtros-container"></div>
+<!-- BUSCA -->
+<section class="busca-section" id="busca">
+    <div class="container">
+        <div class="busca-topo">
+            <h2>Onde tem perto de mim agora?</h2>
+            <p>Ative sua localização e veja os estabelecimentos mais próximos de você primeiro</p>
+            <button class="btn-geo" onclick="buscarProximos()">
+                <i class="fas fa-map-marker-alt"></i> Usar minha localização
+            </button>
+        </div>
+
+        <!-- Filtros de categoria -->
+        <div class="filtros-categoria" id="filtros-categoria" role="group" aria-label="Filtrar por categoria">
+            <button class="chip-cat active" onclick="filtrarCategoria(null, this)">Tudo</button>
+            {% for cat in categorias %}
+            <button class="chip-cat" onclick="filtrarCategoria('{{ cat.slug }}', this)">{{ cat.nome }}</button>
+            {% endfor %}
+        </div>
+
+        <!-- Controles de visualização -->
+        <div class="view-controls" id="view-controls" style="display:none;">
+            <span>Ver como:</span>
+            <button class="view-btn active" id="btn-carousel" title="Carrossel" onclick="setView('carousel')">
+                <i class="fas fa-grip-lines"></i>
+            </button>
+            <button class="view-btn" id="btn-grade" title="Grade" onclick="setView('grade')">
+                <i class="fas fa-th"></i>
+            </button>
+        </div>
+
+        <!-- Carrossel de negócios -->
+        <div id="negocios-carousel-wrapper" class="carousel-wrapper">
+            <div class="carousel-track-outer">
+                <div class="carousel-track" id="negocios-track"></div>
+            </div>
+            <div class="carousel-nav" id="negocios-carousel-nav">
+                <button class="carousel-arrow" id="negocios-prev" onclick="moveCarousel(-1)"><i class="fas fa-chevron-left"></i></button>
+                <div class="carousel-progress-bar"><div class="carousel-progress-fill" id="negocios-progress-fill"></div></div>
+                <button class="carousel-arrow" id="negocios-next" onclick="moveCarousel(1)"><i class="fas fa-chevron-right"></i></button>
+            </div>
+        </div>
+
+        <!-- Grade (oculta inicialmente) -->
+        <div class="negocios-grid" id="negocios-grade" style="display:none;"></div>
+        <p class="info-message" id="negocios-vazio" style="display:none;">Nenhum estabelecimento encontrado.</p>
+    </div>
 </section>
 
-<div class="banner-topo">
-    <a id="banner-link-meio" href="#">
-        <span id="banner-placeholder-meio" class="banner-placeholder">📢 Banner rotativo (coloque seu anúncio aqui)</span>
-        <div id="banner-rotativo-meio" class="banner-rotativo" style="display:none;">
-            <img id="banner-img-meio" src="" alt="Banner" loading="lazy">
-        </div>
+<!-- BANNER MEIO -->
+<div class="banner-meio">
+    <div id="banner-rotativo-meio" class="banner-rotativo">
+        <a id="banner-link-meio" href="#" target="_blank" rel="noopener sponsored">
+            <img id="banner-img-meio" src="" alt="Publicidade">
+        </a>
+    </div>
+    <a id="banner-placeholder-meio" class="banner-placeholder"
+       href="https://wa.me/55{{ hub.whatsapp or '11999999999' }}?text=Quero+anunciar+no+Onde+Tem+Perto"
+       target="_blank" rel="noopener">
+        📣 Anuncie aqui — espaço disponível
     </a>
 </div>
 
-<section class="negocios-section">
+<!-- CATEGORIAS -->
+<section class="section" id="categorias" style="background:var(--light-gray);">
     <div class="container">
-        <div class="negocios-header">
-            <h2 id="negocios-titulo">Estabelecimentos</h2>
-            <div id="view-controls" class="view-controls">
-                <button id="btn-carousel" class="view-btn active" onclick="setView('carousel')" title="Visualização em carrossel">
-                    <i class="fas fa-list"></i>
-                </button>
-                <button id="btn-grade" class="view-btn" onclick="setView('grade')" title="Visualização em grade">
-                    <i class="fas fa-th"></i>
-                </button>
-            </div>
+        <h2 class="section-title">O que você está procurando?</h2>
+        <p class="section-subtitle">Selecione uma categoria e veja onde tem perto de você agora mesmo</p>
+        <div class="categorias-grid">
+            {% for cat in categorias %}
+            <a href="/{{ cat.slug }}/" class="categoria-card" aria-label="{{ cat.nome }} perto de mim">
+                <div class="cat-photo">
+                    <img src="{{ cat.icone_url or 'https://res.cloudinary.com/dhu1cqvrb/image/upload/v1782522274/locais_pkyekz.png' }}"
+                         alt="{{ cat.nome }} perto de mim" loading="lazy" width="400" height="400">
+                </div>
+                <h3>{{ cat.nome }}</h3>
+                <span class="btn-ver">Ver todos →</span>
+            </a>
+            {% else %}
+            <p class="info-message">Nenhuma categoria cadastrada.</p>
+            {% endfor %}
         </div>
-
-        <div id="negocios-carousel-wrapper" class="negocios-carousel-wrapper">
-            <div style="overflow: hidden; position: relative;">
-                <div id="negocios-track" class="negocios-track"></div>
-            </div>
-            <div class="carousel-controls">
-                <button id="carousel-prev" class="carousel-btn" onclick="moveCarousel(-1)">❮</button>
-                <button id="carousel-next" class="carousel-btn" onclick="moveCarousel(1)">❯</button>
-            </div>
-        </div>
-
-        <div id="negocios-grade" class="negocios-grade"></div>
-        <div id="negocios-vazio"></div>
     </div>
 </section>
 
-<section class="cidades-section">
+<!-- CIDADES -->
+<section class="section cidades-section" id="cidades">
     <div class="container">
-        <h2>Cidades com mais estabelecimentos</h2>
-        <div id="cidades-grid" class="cidades-grid"></div>
+        <h2 class="section-title">Cidades disponíveis</h2>
+        <p class="section-subtitle">Encontre o que tem perto em cada cidade</p>
+        <div class="cidades-grid" id="cidades-grid">
+            <!-- populado via JS com base nos negocios -->
+        </div>
     </div>
 </section>
 
+<!-- COMO FUNCIONA -->
+<section class="section como-funciona">
+    <div class="container">
+        <h2 class="section-title">Como funciona</h2>
+        <p class="section-subtitle">Descubra o que tem perto de mim em segundos</p>
+        <div class="steps-grid">
+            <div class="step-card">
+                <div class="step-num">1</div>
+                <h3>Escolha a categoria</h3>
+                <p>Farmácia, mercado, academia, metrô, igreja — selecione o que você procura.</p>
+            </div>
+            <div class="step-card">
+                <div class="step-num">2</div>
+                <h3>Ative sua localização</h3>
+                <p>Clique em "usar minha localização" e veja o que tem mais perto de você agora.</p>
+            </div>
+            <div class="step-card">
+                <div class="step-num">3</div>
+                <h3>Veja todos os detalhes</h3>
+                <p>Endereço, telefone, WhatsApp e mapa — tudo num só lugar para chegar fácil.</p>
+            </div>
+            <div class="step-card">
+                <div class="step-num">4</div>
+                <h3>Compartilhe com alguém</h3>
+                <p>Mande o link pelo WhatsApp pra quem também precisa saber o que tem perto.</p>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- ANUNCIE -->
+<section class="anuncie-section">
+    <div class="container">
+        <h2>Seu negócio no Onde Tem Perto</h2>
+        <p>Apareça para milhares de pessoas que buscam o que tem perto de mim todos os dias — em todo o Brasil.</p>
+        <a href="https://wa.me/55{{ hub.whatsapp or '11999999999' }}?text=Quero+anunciar+meu+negócio+no+Onde+Tem+Perto"
+           target="_blank" rel="noopener" class="btn-anuncie">
+            <i class="fab fa-whatsapp"></i> Quero anunciar meu negócio
+        </a>
+    </div>
+</section>
+
+<!-- FOOTER -->
 <footer>
-    <p>&copy; 2024 Onde Tem Perto. Todos os direitos reservados.</p>
-    <p>Desenvolvido com ❤️ para ajudar você a encontrar tudo perto de você.</p>
+    <div class="footer-logo">
+        <img src="https://res.cloudinary.com/dhu1cqvrb/image/upload/v1782512370/Logo_for_a_Brazilian_local_directory_website_called_Onde_Tem_Perto._Modern_clean_minimalist_style._Use_orange_f4a740_as_the_primary_color._Include_a_location_pin_or_map_marker_icon_integrated_1_rgh092.png"
+             alt="Onde Tem Perto" loading="lazy">
+    </div>
+    <p>© 2026 <strong>Onde Tem Perto</strong> — Todos os direitos reservados</p>
+    <p style="margin-top:10px;">
+        <a href="/sitemap.xml">Sitemap</a> &middot;
+        <a href="/robots.txt">Robots.txt</a> &middot;
+        <a href="/blog/">Blog</a>
+    </p>
 </footer>
 
+<!-- Scripts -->
 <script>
-var negociosFiltrados = [];
-var todosNegocios = {{ negocios }};
-var categorias = {{ categorias }};
-var geoAtivo = false, userLat = null, userLng = null;
+document.getElementById('hamburger-btn').addEventListener('click', function(){
+    var nav = document.getElementById('mobile-nav');
+    nav.classList.add('active');
+    document.body.style.overflow = 'hidden';
+});
+function closeMobileNav(){
+    document.getElementById('mobile-nav').classList.remove('active');
+    document.body.style.overflow = '';
+}
+document.addEventListener('keydown', function(e){ if(e.key === 'Escape') closeMobileNav(); });
+</script>
+
+<script>
+var todosNegocios = {{ negocios | tojson }};
+var negociosFiltrados = todosNegocios.slice();
+var userLat = null, userLng = null, geoAtivo = false;
 var carouselPos = 0, carouselView = 'carousel';
 
-// Renderizar filtros
-(function() {
-    var container = document.getElementById('filtros-container');
-    var cats = [{ slug: '', nome: 'Tudo' }].concat(categorias);
-    container.innerHTML = cats.map(function(c) {
-        return '<button class="filtro-btn' + (c.slug === '' ? ' active' : '') + '" onclick="filtrarPor(\'' + c.slug + '\')">' + c.nome + '</button>';
-    }).join('');
-    negociosFiltrados = todosNegocios;
+function calcDistancia(lat1,lng1,lat2,lng2){
+    var R=6371,dLat=(lat2-lat1)*Math.PI/180,dLng=(lng2-lng1)*Math.PI/180;
+    var a=Math.sin(dLat/2)*Math.sin(dLat/2)+Math.cos(lat1*Math.PI/180)*Math.cos(lat2*Math.PI/180)*Math.sin(dLng/2)*Math.sin(dLng/2);
+    return R*2*Math.atan2(Math.sqrt(a),Math.sqrt(1-a));
+}
+
+function buscarProximos(){
+    if(!navigator.geolocation){ alert('Geolocalização não suportada.'); return; }
+    navigator.geolocation.getCurrentPosition(function(pos){
+        userLat=pos.coords.latitude; userLng=pos.coords.longitude; geoAtivo=true;
+        renderNegocios(negociosFiltrados);
+        document.getElementById('busca').scrollIntoView({behavior:'smooth',block:'start'});
+    }, function(){ alert('Não foi possível obter sua localização. Verifique as permissões.'); });
+}
+
+function filtrarCategoria(slug, btn){
+    document.querySelectorAll('.chip-cat').forEach(function(c){ c.classList.remove('active'); });
+    btn.classList.add('active');
+    negociosFiltrados = slug ? todosNegocios.filter(function(n){ return n.categoria_slug===slug; }) : todosNegocios.slice();
     renderNegocios(negociosFiltrados);
-})();
-
-// Filtrar por categoria
-function filtrarPor(slug) {
-    document.querySelectorAll('.filtro-btn').forEach(b => b.classList.remove('active'));
-    event.target.closest('.filtro-btn').classList.add('active');
-    negociosFiltrados = slug ? todosNegocios.filter(n => n.categoria_slug === slug) : todosNegocios;
-    renderNegocios(negociosFiltrados);
 }
 
-// Geolocalização
-function ativarGeo() {
-    if (!navigator.geolocation) {
-        alert('Geolocalização não suportada no seu navegador');
-        return;
-    }
-    navigator.geolocation.getCurrentPosition(
-        function(pos) {
-            geoAtivo = true;
-            userLat = pos.coords.latitude;
-            userLng = pos.coords.longitude;
-            renderNegocios(negociosFiltrados);
-        },
-        function() {
-            alert('Não foi possível obter sua localização. Verifique as permissões.');
-        }
-    );
+function cardHTML(n){
+    var dist=(n._dist&&n._dist<9999)?'<span class="card-dist"><i class="fas fa-map-marker-alt"></i> '+n._dist.toFixed(1)+' km de você</span>':'';
+    var foto=n.foto_url||'https://res.cloudinary.com/dhu1cqvrb/image/upload/v1782522274/locais_pkyekz.png';
+    var local=[n.bairro,n.cidade].filter(Boolean).join(', ');
+    return '<a href="/'+n.categoria_slug+'/'+n.slug+'/" class="negocio-card">'+
+        '<div class="card-foto">'+
+            '<img src="'+foto+'" alt="'+n.nome+' perto de mim" loading="lazy" width="400" height="180">'+
+            '<span class="badge-cat">'+(n.categoria_nome||'')+'</span>'+
+        '</div>'+
+        '<div class="card-body">'+
+            '<h3>'+n.nome+'</h3>'+
+            (local?'<p class="card-bairro"><i class="fas fa-map-marker-alt" style="color:var(--primary)"></i> '+local+'</p>':'')+
+            dist+
+            '<span class="btn-ver">Ver detalhes →</span>'+
+        '</div>'+
+    '</a>';
 }
 
-// Calcular distância (Haversine)
-function calcDistancia(lat1, lng1, lat2, lng2) {
-    var R = 6371, dLat = (lat2 - lat1) * Math.PI / 180, dLng = (lng2 - lng1) * Math.PI / 180;
-    var a = Math.sin(dLat / 2) * Math.sin(dLat / 2) + Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) * Math.sin(dLng / 2) * Math.sin(dLng / 2);
-    return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+function getCardWidth(){
+    var track=document.getElementById('negocios-track');
+    var card=track.querySelector('.negocio-card');
+    if(!card) return 280;
+    return card.offsetWidth+22;
 }
 
-// Card HTML
-function cardHTML(n) {
-    var dist = n._dist !== undefined ? (n._dist < 1 ? '< 1 km' : n._dist.toFixed(1) + ' km') : '';
-    var catClass = n.categoria_nome ? n.categoria_nome.toLowerCase().replace(/\s+/g, '-') : '';
-    return '<div class="negocio-card" style="cursor:pointer;" onclick="window.open(\'' + (n.url || '#') + '\', \'_blank\')"><div class="negocio-foto"><img src="' + (n.foto_url || 'https://via.placeholder.com/280x160?text=Sem+Foto') + '" alt="' + n.nome + '" loading="lazy" onerror="this.src=\'https://via.placeholder.com/280x160?text=Sem+Foto\'"></div><div class="negocio-body"><h3>' + n.nome + '</h3><p>' + (n.endereco || '') + '</p>' + (n.categoria_nome ? '<span class="negocio-categoria">' + n.categoria_nome + '</span>' : '') + (dist ? '<span class="negocio-distancia">📍 ' + dist + '</span>' : '') + '</div></div>';
+function isMobile(){ return window.innerWidth <= 768; }
+
+function clampAndUpdate(){
+    if(isMobile()) return;
+    var track=document.getElementById('negocios-track');
+    var cards=track.querySelectorAll('.negocio-card');
+    if(!cards.length) return;
+    var maxPos=Math.max(0,(cards.length)*getCardWidth()-document.getElementById('negocios-track').parentElement.offsetWidth);
+    carouselPos=Math.max(0,Math.min(carouselPos,maxPos));
+    track.style.transform='translateX(-'+carouselPos+'px)';
+    var fill=document.getElementById('negocios-progress-fill');
+    var prev=document.getElementById('negocios-prev');
+    var next=document.getElementById('negocios-next');
+    if(fill) fill.style.width=maxPos>0?Math.min(100,(carouselPos/maxPos)*100)+'%':'0%';
+    if(prev) prev.disabled=carouselPos<=0;
+    if(next) next.disabled=maxPos<=0||carouselPos>=maxPos;
 }
 
-// Carousel
-var getCardWidth = function() { var c = document.querySelector('.negocio-card'); return c ? c.offsetWidth + 20 : 0; };
-var isMobile = function() { return window.innerWidth < 768; };
-
-function clampAndUpdate() {
-    var w = getCardWidth(); if (!w) return;
-    var outer = document.getElementById('negocios-track').parentElement;
-    var maxPos = Math.max(0, document.getElementById('negocios-track').scrollWidth - outer.offsetWidth);
-    carouselPos = Math.min(Math.max(carouselPos, 0), maxPos);
-    document.getElementById('negocios-track').style.transform = 'translateX(' + (-carouselPos) + 'px)';
-    var prev = document.getElementById('carousel-prev'), next = document.getElementById('carousel-next');
-    if (prev) prev.disabled = carouselPos <= 0;
-    if (next) next.disabled = maxPos <= 0 || carouselPos >= maxPos;
-}
-
-function snapCarousel() {
-    var w = getCardWidth(); if (!w) return;
-    carouselPos = Math.round(carouselPos / w) * w;
+function snapCarousel(){
+    var w=getCardWidth(); if(!w) return;
+    carouselPos=Math.round(carouselPos/w)*w;
     clampAndUpdate();
 }
 
-function buildCarousel(cards) {
-    var track = document.getElementById('negocios-track');
-    track.innerHTML = cards.join('');
-    carouselPos = 0;
-    track.style.transform = 'translateX(0)';
+function buildCarousel(cards){
+    var track=document.getElementById('negocios-track');
+    track.innerHTML=cards.join('');
+    carouselPos=0;
+    track.style.transform='translateX(0)';
     clampAndUpdate();
     // drag
-    var isDragging = false, startX = 0, startPos = 0;
-    var newTrack = track.cloneNode(true);
-    track.parentNode.replaceChild(newTrack, track);
-    track = document.getElementById('negocios-track');
-    function onStart(x) { isDragging = true; startX = x; startPos = carouselPos; track.classList.add('dragging'); }
-    function onMove(x) { if (!isDragging) return; carouselPos = startPos - (x - startX); clampAndUpdate(); }
-    function onEnd() { isDragging = false; track.classList.remove('dragging'); snapCarousel(); }
-    if (!isMobile()) {
-        track.addEventListener('mousedown', function(e) { onStart(e.clientX); e.preventDefault(); });
-        window.addEventListener('mousemove', function(e) { if (isDragging) onMove(e.clientX); });
-        window.addEventListener('mouseup', function() { if (isDragging) onEnd(); });
-        var _ty = 0, _horiz = false, _det = false;
-        track.addEventListener('touchstart', function(e) { _ty = e.touches[0].clientY; _horiz = false; _det = false; onStart(e.touches[0].clientX); }, { passive: true });
-        track.addEventListener('touchmove', function(e) {
-            if (!isDragging) return;
-            if (!_det) { var dx = Math.abs(e.touches[0].clientX - startX), dy = Math.abs(e.touches[0].clientY - _ty); if (dx > 5 || dy > 5) { _horiz = dx >= dy; _det = true; } }
-            if (!_det || !_horiz) return; e.preventDefault(); onMove(e.touches[0].clientX);
-        }, { passive: false });
-        track.addEventListener('touchend', function(e) { if (_horiz) onEnd(); else isDragging = false; });
+    var isDragging=false,startX=0,startPos=0;
+    var newTrack=track.cloneNode(true);
+    track.parentNode.replaceChild(newTrack,track);
+    track=document.getElementById('negocios-track');
+    function onStart(x){ isDragging=true; startX=x; startPos=carouselPos; track.classList.add('dragging'); }
+    function onMove(x){ if(!isDragging) return; carouselPos=startPos-(x-startX); clampAndUpdate(); }
+    function onEnd(){ isDragging=false; track.classList.remove('dragging'); snapCarousel(); }
+    if(!isMobile()){
+        track.addEventListener('mousedown',function(e){ onStart(e.clientX); e.preventDefault(); });
+        window.addEventListener('mousemove',function(e){ if(isDragging) onMove(e.clientX); });
+        window.addEventListener('mouseup',function(){ if(isDragging) onEnd(); });
+        var _ty=0,_horiz=false,_det=false;
+        track.addEventListener('touchstart',function(e){ _ty=e.touches[0].clientY; _horiz=false; _det=false; onStart(e.touches[0].clientX); },{passive:true});
+        track.addEventListener('touchmove',function(e){
+            if(!isDragging) return;
+            if(!_det){ var dx=Math.abs(e.touches[0].clientX-startX),dy=Math.abs(e.touches[0].clientY-_ty); if(dx>5||dy>5){_horiz=dx>=dy;_det=true;} }
+            if(!_det||!_horiz) return; e.preventDefault(); onMove(e.touches[0].clientX);
+        },{passive:false});
+        track.addEventListener('touchend',function(e){ if(_horiz) onEnd(); else isDragging=false; });
     }
 }
 
-function moveCarousel(dir) {
-    var outer = document.getElementById('negocios-track').parentElement;
-    var visivel = Math.max(1, Math.floor(outer.offsetWidth / getCardWidth()));
-    carouselPos += dir * visivel * getCardWidth();
+function moveCarousel(dir){
+    var outer=document.getElementById('negocios-track').parentElement;
+    var visivel=Math.max(1,Math.floor(outer.offsetWidth/getCardWidth()));
+    carouselPos+=dir*visivel*getCardWidth();
     clampAndUpdate();
 }
 
-function setView(mode) {
-    carouselView = mode;
-    var cw = document.getElementById('negocios-carousel-wrapper');
-    var gd = document.getElementById('negocios-grade');
-    document.getElementById('btn-carousel').classList.toggle('active', mode === 'carousel');
-    document.getElementById('btn-grade').classList.toggle('active', mode === 'grade');
-    if (cw) cw.style.display = mode === 'carousel' ? '' : 'none';
-    if (gd) gd.style.display = mode === 'grade' ? 'grid' : 'none';
+function setView(mode){
+    carouselView=mode;
+    var cw=document.getElementById('negocios-carousel-wrapper');
+    var gd=document.getElementById('negocios-grade');
+    document.getElementById('btn-carousel').classList.toggle('active',mode==='carousel');
+    document.getElementById('btn-grade').classList.toggle('active',mode==='grade');
+    if(cw) cw.style.display=mode==='carousel'?'':'none';
+    if(gd) gd.style.display=mode==='grade'?'grid':'none';
 }
 
-function renderNegocios(lista) {
-    var vc = document.getElementById('view-controls');
-    var vazio = document.getElementById('negocios-vazio');
-    if (geoAtivo && userLat && userLng) {
-        lista = lista.map(function(n) {
-            var d = (n.lat && n.lng) ? calcDistancia(userLat, userLng, parseFloat(n.lat), parseFloat(n.lng)) : 9999;
-            return Object.assign({}, n, { _dist: d });
-        }).sort(function(a, b) { return a._dist - b._dist; });
+function renderNegocios(lista){
+    var vc=document.getElementById('view-controls');
+    var vazio=document.getElementById('negocios-vazio');
+    if(geoAtivo&&userLat&&userLng){
+        lista=lista.map(function(n){
+            var d=(n.lat&&n.lng)?calcDistancia(userLat,userLng,parseFloat(n.lat),parseFloat(n.lng)):9999;
+            return Object.assign({},n,{_dist:d});
+        }).sort(function(a,b){ return a._dist-b._dist; });
     }
-    if (!lista.length) {
-        if (vc) vc.style.display = 'none';
-        var cw = document.getElementById('negocios-carousel-wrapper');
-        var gd = document.getElementById('negocios-grade');
-        if (cw) cw.style.display = 'none';
-        if (gd) gd.style.display = 'none';
-        if (vazio) { vazio.style.display = ''; vazio.textContent = 'Nenhum resultado encontrado.'; }
+    if(!lista.length){
+        if(vc) vc.style.display='none';
+        var cw=document.getElementById('negocios-carousel-wrapper');
+        var gd=document.getElementById('negocios-grade');
+        if(cw) cw.style.display='none';
+        if(gd) gd.style.display='none';
+        if(vazio){ vazio.style.display=''; vazio.textContent='Nenhum resultado encontrado.'; }
         return;
     }
-    if (vazio) vazio.style.display = 'none';
-    if (vc) vc.style.display = 'flex';
-    var cards = lista.slice(0, 48).map(cardHTML);
+    if(vazio) vazio.style.display='none';
+    if(vc) vc.style.display='flex';
+    var cards=lista.slice(0,48).map(cardHTML);
     buildCarousel(cards);
-    var gd = document.getElementById('negocios-grade');
-    if (gd) gd.innerHTML = cards.join('');
+    var gd=document.getElementById('negocios-grade');
+    if(gd) gd.innerHTML=cards.join('');
     setView(carouselView);
 }
 
@@ -503,67 +743,68 @@ renderNegocios(negociosFiltrados);
 </script>
 
 <script>
-(function() {
+(function(){
     {% if hub.banner1_foto_url %}
-    document.getElementById('banner-placeholder-topo').style.display = 'none';
-    document.getElementById('banner-rotativo-topo').style.display = 'block';
-    document.getElementById('banner-img-topo').src = '{{ hub.banner1_foto_url }}';
-    document.getElementById('banner-link-topo').href = '{{ hub.banner1_link or "#" }}';
+    document.getElementById('banner-placeholder-topo').style.display='none';
+    document.getElementById('banner-rotativo-topo').style.display='block';
+    document.getElementById('banner-img-topo').src='{{ hub.banner1_foto_url }}';
+    document.getElementById('banner-link-topo').href='{{ hub.banner1_link or "#" }}';
     {% endif %}
     {% if hub.banner2_foto_url %}
-    document.getElementById('banner-placeholder-meio').style.display = 'none';
-    document.getElementById('banner-rotativo-meio').style.display = 'block';
-    document.getElementById('banner-img-meio').src = '{{ hub.banner2_foto_url }}';
-    document.getElementById('banner-link-meio').href = '{{ hub.banner2_link or "#" }}';
+    document.getElementById('banner-placeholder-meio').style.display='none';
+    document.getElementById('banner-rotativo-meio').style.display='block';
+    document.getElementById('banner-img-meio').src='{{ hub.banner2_foto_url }}';
+    document.getElementById('banner-link-meio').href='{{ hub.banner2_link or "#" }}';
     {% endif %}
 })();
 </script>
 
 {% if hub.ga4_id %}
 <script async src="https://www.googletagmanager.com/gtag/js?id={{ hub.ga4_id }}"></script>
-<script>window.dataLayer = window.dataLayer || []; function gtag() { dataLayer.push(arguments); } gtag('js', new Date()); gtag('config', '{{ hub.ga4_id }}');</script>
+<script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag('js',new Date());gtag('config','{{ hub.ga4_id }}');</script>
 {% endif %}
 
 {% if hub.pixel_id %}
 <script>!function(f,b,e,v,n,t,s){if(f.fbq)return;n=f.fbq=function(){n.callMethod?n.callMethod.apply(n,arguments):n.queue.push(arguments)};if(!f._fbq)f._fbq=n;n.push=n;n.loaded=!0;n.version='2.0';n.queue=[];t=b.createElement(e);t.async=!0;t.src=v;s=b.getElementsByTagName(e)[0];s.parentNode.insertBefore(t,s)}(window,document,'script','https://connect.facebook.net/en_US/fbevents.js');fbq('init','{{ hub.pixel_id }}');fbq('track','PageView');</script>
 {% endif %}
 
+
 <script>
 // Popula seção de cidades e dropdown com base nos negócios disponíveis
-(function() {
+(function(){
     var cidades = {};
-    todosNegocios.forEach(function(n) {
-        if (!n.cidade) return;
-        if (!cidades[n.cidade]) cidades[n.cidade] = { nome: n.cidade, count: 0, estado: n.estado || '' };
+    todosNegocios.forEach(function(n){
+        if(!n.cidade) return;
+        if(!cidades[n.cidade]) cidades[n.cidade] = { nome: n.cidade, count: 0, estado: n.estado || '' };
         cidades[n.cidade].count++;
     });
 
-    var lista = Object.values(cidades).sort(function(a, b) { return b.count - a.count; });
-    if (!lista.length) return;
+    var lista = Object.values(cidades).sort(function(a,b){ return b.count - a.count; });
+    if(!lista.length) return;
 
     // Grid de cidades
     var grid = document.getElementById('cidades-grid');
-    if (grid) {
-        grid.innerHTML = lista.map(function(c) {
+    if(grid){
+        grid.innerHTML = lista.map(function(c){
             var foto = 'https://res.cloudinary.com/dhu1cqvrb/image/upload/v1782521985/cidade_krf7xk.png';
-            var slug = c.nome.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '');
-            return '<a href="/cidade/' + slug + '/" class="cidade-card">' +
-                '<div class="cidade-foto"><img src="' + foto + '" alt="' + c.nome + '" loading="lazy" width="400" height="130"></div>' +
-                '<div class="cidade-body">' +
-                    '<h3>' + c.nome + '</h3>' +
-                    (c.estado ? '<p class="cidade-estado">' + c.estado + '</p>' : '') +
-                    '<p class="cidade-count">' + c.count + ' estabelecimento' + (c.count > 1 ? 's' : '') + '</p>' +
-                '</div>' +
+            var slug = c.nome.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g,'').replace(/\s+/g,'-').replace(/[^a-z0-9-]/g,'');
+            return '<a href="/cidade/'+slug+'/" class="cidade-card">'+
+                '<div class="cidade-foto"><img src="'+foto+'" alt="'+c.nome+'" loading="lazy" width="400" height="130"></div>'+
+                '<div class="cidade-body">'+
+                    '<h3>'+c.nome+'</h3>'+
+                    (c.estado ? '<p class="cidade-estado">'+c.estado+'</p>' : '')+
+                    '<p class="cidade-count">'+c.count+' estabelecimento'+(c.count>1?'s':'')+'</p>'+
+                '</div>'+
             '</a>';
         }).join('');
     }
 
     // Dropdown cidades no nav
     var dd = document.getElementById('nav-dropdown-cidades');
-    if (dd) {
-        dd.innerHTML = lista.map(function(c) {
-            var slug = c.nome.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '');
-            return '<a href="/cidade/' + slug + '/">' + c.nome + '</a>';
+    if(dd){
+        dd.innerHTML = lista.map(function(c){
+            var slug = c.nome.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g,'').replace(/\s+/g,'-').replace(/[^a-z0-9-]/g,'');
+            return '<a href="/cidade/'+slug+'/">'+c.nome+'</a>';
         }).join('');
     }
 })();
