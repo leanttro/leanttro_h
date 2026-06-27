@@ -147,7 +147,7 @@
             display: flex; align-items: center; justify-content: center;
             background:
                 linear-gradient(rgba(0,0,0,0.55), rgba(0,0,0,0.55)),
-                url('{{ hub.banner_fundo_url or "https://images.unsplash.com/photo-1477959858617-67f85cf4f1df?w=1400&q=80" }}') center/cover no-repeat;
+                url('{{ hub.banner_fundo_url or "https://res.cloudinary.com/dhu1cqvrb/image/upload/v1782520525/ondetemperto_uuoywl.jpg" }}') center/cover no-repeat;
         }
         .hero-inner { padding: 48px 20px; }
         .hero-section h1 { font-size: 3em; font-weight: 900; line-height: 1.2; text-shadow: 2px 2px 8px rgba(0,0,0,0.6); margin-bottom: 16px; }
@@ -337,7 +337,7 @@
         }
         .cidade-card:hover { transform: translateY(-4px); box-shadow: 0 8px 24px var(--shadow-medium); }
         .cidade-card .cidade-foto { width: 100%; height: 130px; overflow: hidden; }
-        .cidade-card .cidade-foto img { width: 100%; height: 100%; object-fit: cover; transition: transform 0.4s; }
+        .cidade-card .cidade-foto img { width: 100%; height: 100%; object-fit: contain; background: var(--white); transition: transform 0.4s; }
         .cidade-card:hover .cidade-foto img { transform: scale(1.06); }
         .cidade-card .cidade-body { padding: 14px 16px; flex: 1; }
         .cidade-card h3 { font-size: 1.05em; font-weight: 700; color: var(--dark-gray); margin-bottom: 4px; }
@@ -496,7 +496,7 @@
             {% for cat in categorias %}
             <a href="/{{ cat.slug }}/" class="categoria-card" aria-label="{{ cat.nome }} perto de mim">
                 <div class="cat-photo">
-                    <img src="{{ cat.icone_url or 'https://images.unsplash.com/photo-1486325212027-8081e485255e?w=400&q=80' }}"
+                    <img src="{{ cat.icone_url or 'https://res.cloudinary.com/dhu1cqvrb/image/upload/v1782522274/locais_pkyekz.png' }}"
                          alt="{{ cat.nome }} perto de mim" loading="lazy" width="400" height="400">
                 </div>
                 <h3>{{ cat.nome }}</h3>
@@ -620,7 +620,7 @@ function filtrarCategoria(slug, btn){
 
 function cardHTML(n){
     var dist=(n._dist&&n._dist<9999)?'<span class="card-dist"><i class="fas fa-map-marker-alt"></i> '+n._dist.toFixed(1)+' km de você</span>':'';
-    var foto=n.foto_url||'https://images.unsplash.com/photo-1486325212027-8081e485255e?w=400&q=80';
+    var foto=n.foto_url||'https://res.cloudinary.com/dhu1cqvrb/image/upload/v1782522274/locais_pkyekz.png';
     var local=[n.bairro,n.cidade].filter(Boolean).join(', ');
     return '<a href="/'+n.categoria_slug+'/'+n.slug+'/" class="negocio-card">'+
         '<div class="card-foto">'+
@@ -776,9 +776,8 @@ renderNegocios(negociosFiltrados);
     var cidades = {};
     todosNegocios.forEach(function(n){
         if(!n.cidade) return;
-        if(!cidades[n.cidade]) cidades[n.cidade] = { nome: n.cidade, count: 0, foto: null, estado: n.estado || '' };
+        if(!cidades[n.cidade]) cidades[n.cidade] = { nome: n.cidade, count: 0, estado: n.estado || '' };
         cidades[n.cidade].count++;
-        if(!cidades[n.cidade].foto && n.foto_url) cidades[n.cidade].foto = n.foto_url;
     });
 
     var lista = Object.values(cidades).sort(function(a,b){ return b.count - a.count; });
@@ -788,7 +787,7 @@ renderNegocios(negociosFiltrados);
     var grid = document.getElementById('cidades-grid');
     if(grid){
         grid.innerHTML = lista.map(function(c){
-            var foto = c.foto || 'https://images.unsplash.com/photo-1477959858617-67f85cf4f1df?w=400&q=60';
+            var foto = 'https://res.cloudinary.com/dhu1cqvrb/image/upload/v1782521985/cidade_krf7xk.png';
             var slug = c.nome.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g,'').replace(/\s+/g,'-').replace(/[^a-z0-9-]/g,'');
             return '<a href="/cidade/'+slug+'/" class="cidade-card">'+
                 '<div class="cidade-foto"><img src="'+foto+'" alt="'+c.nome+'" loading="lazy" width="400" height="130"></div>'+
