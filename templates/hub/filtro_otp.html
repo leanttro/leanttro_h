@@ -212,6 +212,12 @@
         .empty-state { text-align: center; color: #6c757d; padding: 60px 20px; font-size: 1.05em; }
         .empty-state i { font-size: 2.5em; color: var(--medium-gray); display: block; margin-bottom: 14px; }
 
+        /* ══ BOTÃO LOCALIZAÇÃO ══ */
+        .btn-localizacao { display: inline-flex; align-items: center; gap: 7px; padding: 9px 16px; border-radius: 10px; border: 2px solid var(--medium-gray); background: #fff; font-size: 0.88em; font-weight: 600; color: var(--dark-gray); cursor: pointer; transition: all 0.18s; font-family: inherit; white-space: nowrap; flex-shrink: 0; }
+        .btn-localizacao:hover { border-color: var(--primary); color: var(--primary); }
+        .btn-localizacao.ativo { border-color: var(--primary); color: var(--primary); background: var(--light); }
+        .btn-localizacao i { font-size: 0.9em; }
+
         /* ══ RESPONSIVE ══ */
         @media (max-width: 768px) {
             body > header { padding: 16px 60px 16px 20px; flex-direction: row; justify-content: center; }
@@ -347,6 +353,10 @@
                 </div>
             </div>
             {% endif %}
+            <button class="btn-localizacao" id="btnLocalizacao" onclick="usarLocalizacao()" type="button" title="Ordenar por mais próximo">
+                <i class="fas fa-location-arrow"></i>
+                <span id="btnLocLabel">Mais próximo</span>
+            </button>
             <div class="busca-input-wrap">
                 <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
                 <input type="text" placeholder="Buscar negócio..." oninput="buscar(this.value)">
@@ -370,7 +380,9 @@
             <a href="/{{ n.categoria_slug }}/{{ n.slug }}/" class="negocio-card"
                data-bairro="{{ (n.bairro or '') | lower }}"
                data-cat="{{ n.categoria_slug }}"
-               data-nome="{{ n.nome | lower }}">
+               data-nome="{{ n.nome | lower }}"
+               data-lat="{{ n.lat or '' }}"
+               data-lng="{{ n.lng or '' }}">
                 <div class="card-foto">
                     <img src="{{ n.foto_url if n.foto_url and n.mostrar_foto else 'https://res.cloudinary.com/dhu1cqvrb/image/upload/v1782522274/locais_pkyekz.png' }}"
                          alt="{{ n.nome }}" loading="lazy" width="400" height="400">
@@ -515,6 +527,86 @@ function aplicarFiltros(){
     });
     document.getElementById('emptyMsg').style.display = visivel === 0 && document.querySelectorAll('.negocio-card').length > 0 ? 'block' : 'none';
     document.getElementById('gridSubtitulo').textContent = visivel + ' negócio(s) encontrado(s)';
+}
+
+/* ══ LOCALIZAÇÃO ══ */
+var ordemOriginal = null;
+var locAtiva = false;
+
+function usarLocalizacao(){
+    var btn = document.getElementById('btnLocalizacao');
+    var label = document.getElementById('btnLocLabel');
+
+    if(locAtiva){
+        // desativa — restaura ordem original
+        locAtiva = false;
+        btn.classList.remove('ativo');
+        label.textContent = 'Mais próximo';
+        restaurarOrdem();
+        return;
+    }
+
+    if(!navigator.geolocation){
+        alert('Seu navegador não suporta geolocalização.');
+        return;
+    }
+
+    label.textContent = 'Localizando...';
+    btn.classList.add('ativo');
+
+    navigator.geolocation.getCurrentPosition(
+        function(pos){
+            locAtiva = true;
+            label.textContent = 'Mais próximo ✓';
+            ordenarPorProximidade(pos.coords.latitude, pos.coords.longitude);
+        },
+        function(){
+            locAtiva = false;
+            btn.classList.remove('ativo');
+            label.textContent = 'Mais próximo';
+            alert('Não foi possível obter sua localização. Verifique as permissões do navegador.');
+        },
+        { timeout: 10000 }
+    );
+}
+
+function distancia(lat1, lng1, lat2, lng2){
+    var R = 6371;
+    var dLat = (lat2-lat1)*Math.PI/180;
+    var dLng = (lng2-lng1)*Math.PI/180;
+    var a = Math.sin(dLat/2)*Math.sin(dLat/2) +
+            Math.cos(lat1*Math.PI/180)*Math.cos(lat2*Math.PI/180)*
+            Math.sin(dLng/2)*Math.sin(dLng/2);
+    return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+}
+
+function ordenarPorProximidade(userLat, userLng){
+    var grid = document.getElementById('negociosGrid');
+    var cards = Array.from(grid.querySelectorAll('.negocio-card'));
+
+    // salva ordem original uma única vez
+    if(!ordemOriginal) ordemOriginal = cards.slice();
+
+    cards.sort(function(a, b){
+        var aLat = parseFloat(a.dataset.lat);
+        var aLng = parseFloat(a.dataset.lng);
+        var bLat = parseFloat(b.dataset.lat);
+        var bLng = parseFloat(b.dataset.lng);
+        var aSemCoord = isNaN(aLat) || isNaN(aLng);
+        var bSemCoord = isNaN(bLat) || isNaN(bLng);
+        if(aSemCoord && bSemCoord) return 0;
+        if(aSemCoord) return 1;
+        if(bSemCoord) return -1;
+        return distancia(userLat, userLng, aLat, aLng) - distancia(userLat, userLng, bLat, bLng);
+    });
+
+    cards.forEach(function(c){ grid.appendChild(c); });
+}
+
+function restaurarOrdem(){
+    if(!ordemOriginal) return;
+    var grid = document.getElementById('negociosGrid');
+    ordemOriginal.forEach(function(c){ grid.appendChild(c); });
 }
 
 /* ══ BANNERS ══ */
