@@ -1,0 +1,542 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    {# ══ SEO dinâmico ══ #}
+    {% if filtro_tipo == 'categoria' %}
+      {% set seo_title = (filtro_valor | capitalize) ~ " em " ~ (hub.nome or 'Onde Tem Perto') ~ " | Onde Tem Perto" %}
+      {% set seo_desc  = "Encontre " ~ filtro_valor ~ " no " ~ (hub.nome or 'Onde Tem Perto') ~ ". Lista completa com endereços, telefones e localização." %}
+    {% else %}
+      {% set seo_title = "Negócios no " ~ (filtro_valor | capitalize) ~ " — " ~ (hub.nome or 'Onde Tem Perto') ~ " | Onde Tem Perto" %}
+      {% set seo_desc  = "Descubra estabelecimentos no bairro " ~ filtro_valor ~ " em " ~ (hub.nome or 'Onde Tem Perto') ~ ". Endereços e contatos perto de você." %}
+    {% endif %}
+
+    <title>{{ seo_title }}</title>
+    <meta name="description" content="{{ seo_desc }}">
+    <meta name="robots" content="index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1">
+    <meta name="theme-color" content="#f6972b">
+    <link rel="canonical" href="https://{{ request.host }}/{{ segmento }}/">
+    <link rel="icon" type="image/png" href="{{ hub.logo_url or 'https://res.cloudinary.com/dhu1cqvrb/image/upload/v1782512370/Logo_for_a_Brazilian_local_directory_website_called_Onde_Tem_Perto._Modern_clean_minimalist_style._Use_orange_f4a740_as_the_primary_color._Include_a_location_pin_or_map_marker_icon_integrated_1_rgh092.png' }}">
+    <link rel="apple-touch-icon" href="{{ hub.logo_url or 'https://res.cloudinary.com/dhu1cqvrb/image/upload/v1782512370/Logo_for_a_Brazilian_local_directory_website_called_Onde_Tem_Perto._Modern_clean_minimalist_style._Use_orange_f4a740_as_the_primary_color._Include_a_location_pin_or_map_marker_icon_integrated_1_rgh092.png' }}">
+
+    <meta property="og:type"         content="website">
+    <meta property="og:site_name"    content="{{ hub.nome or 'Onde Tem Perto' }}">
+    <meta property="og:url"          content="https://{{ request.host }}/{{ segmento }}/">
+    <meta property="og:title"        content="{{ seo_title }}">
+    <meta property="og:description"  content="{{ seo_desc }}">
+    <meta property="og:image"        content="{{ hub.banner_fundo_url or 'https://res.cloudinary.com/dhu1cqvrb/image/upload/v1782520525/ondetemperto_uuoywl.jpg' }}">
+    <meta property="og:image:width"  content="1200">
+    <meta property="og:image:height" content="630">
+    <meta property="og:locale"       content="pt_BR">
+    <meta name="twitter:card"        content="summary_large_image">
+    <meta name="twitter:title"       content="{{ seo_title }}">
+    <meta name="twitter:description" content="{{ seo_desc }}">
+    <meta name="twitter:image"       content="{{ hub.banner_fundo_url or 'https://res.cloudinary.com/dhu1cqvrb/image/upload/v1782520525/ondetemperto_uuoywl.jpg' }}">
+
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@graph": [
+        {
+          "@type": "BreadcrumbList",
+          "itemListElement": [
+            {"@type":"ListItem","position":1,"item":{"@id":"https://{{ request.host }}/","name":"Início"}},
+            {"@type":"ListItem","position":2,"item":{"@id":"https://{{ request.host }}/{{ segmento }}/","name":"{{ filtro_valor | capitalize }}"}}
+          ]
+        },
+        {
+          "@type": "CollectionPage",
+          "@id": "https://{{ request.host }}/{{ segmento }}/",
+          "url": "https://{{ request.host }}/{{ segmento }}/",
+          "name": "{{ seo_title }}",
+          "description": "{{ seo_desc }}",
+          "inLanguage": "pt-BR"
+        }
+      ]
+    }
+    </script>
+
+    {% if hub.ga4_id %}
+    <script async src="https://www.googletagmanager.com/gtag/js?id={{ hub.ga4_id }}"></script>
+    <script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag('js',new Date());gtag('config','{{ hub.ga4_id }}');</script>
+    {% endif %}
+
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700;900&display=swap" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+
+    <style>
+        :root {
+            --primary:       #f6972b;
+            --dark:          #d47a1a;
+            --light:         #fff3e0;
+            --light-gray:    #f8f9fa;
+            --medium-gray:   #e0e0e0;
+            --dark-gray:     #343a40;
+            --text-color:    #495057;
+            --white:         #ffffff;
+            --shadow-light:  rgba(0,0,0,0.08);
+            --shadow-medium: rgba(0,0,0,0.16);
+        }
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        html { scroll-behavior: smooth; }
+        body { font-family: 'Roboto', sans-serif; background: var(--light-gray); color: var(--text-color); line-height: 1.6; }
+        .container { max-width: 1200px; margin: 0 auto; padding: 0 20px; }
+        a { text-decoration: none; color: inherit; }
+
+        /* ══ HEADER ══ */
+        body > header {
+            background: var(--primary); padding: 6px 24px 0;
+            display: flex; flex-direction: column; align-items: center; justify-content: center;
+            position: sticky; top: 0; z-index: 900; box-shadow: 0 2px 10px rgba(0,0,0,0.15);
+        }
+        .header-logo { margin-bottom: 0; }
+        .header-logo a { display: block; text-align: center; }
+        .header-logo img { height: 160px; width: auto; display: block; margin: 0 auto; }
+        .hamburger-btn { display: none; background: none; border: none; color: #fff; font-size: 1.8em; cursor: pointer; padding: 6px; position: absolute; right: 20px; top: 20px; }
+        nav.desktop-nav { width: 100%; }
+        nav.desktop-nav ul { list-style: none; display: flex; align-items: center; justify-content: center; flex-wrap: wrap; }
+        nav.desktop-nav ul li { position: relative; }
+        nav.desktop-nav ul li a { color: #fff; font-weight: 600; font-size: 0.95em; padding: 12px 20px; display: block; border-bottom: 3px solid transparent; transition: border-color 0.2s, background 0.2s; }
+        nav.desktop-nav ul li a:hover, nav.desktop-nav ul li a.ativo { border-bottom-color: #fff; background: rgba(0,0,0,0.08); }
+
+        /* ══ MOBILE NAV ══ */
+        .mobile-nav-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.95); z-index: 1000; flex-direction: column; justify-content: center; align-items: center; opacity: 0; transition: opacity 0.25s; }
+        .mobile-nav-overlay.active { display: flex; opacity: 1; }
+        .mobile-nav-close { position: absolute; top: 20px; left: 24px; background: none; border: none; color: #fff; font-size: 2em; cursor: pointer; }
+        .mobile-nav-overlay nav ul { list-style: none; text-align: center; max-height: 80vh; overflow-y: auto; }
+        .mobile-nav-overlay nav ul li { margin: 12px 0; }
+        .mobile-nav-overlay nav ul li a { color: #fff; font-size: 1.5em; font-weight: 700; }
+
+        /* ══ BANNER ══ */
+        .banner-topo { background: var(--white); border-bottom: 1px solid var(--medium-gray); padding: 10px 20px; text-align: center; }
+        .banner-placeholder { display: inline-block; background: var(--light-gray); border: 2px dashed var(--medium-gray); border-radius: 8px; padding: 12px 36px; color: #aaa; font-size: 0.9em; font-weight: 500; transition: all 0.2s; }
+        .banner-placeholder:hover { border-color: var(--primary); color: var(--primary); }
+        .banner-rotativo { display: none; }
+        .banner-rotativo img { max-height: 90px; width: auto; max-width: 100%; border-radius: 8px; }
+
+        /* ══ BREADCRUMB ══ */
+        .breadcrumb-bar { background: var(--white); border-bottom: 1px solid var(--medium-gray); padding: 10px 20px; font-size: 0.88em; color: #6c757d; }
+        .breadcrumb-bar a { color: var(--primary); }
+        .breadcrumb-bar a:hover { text-decoration: underline; }
+        .breadcrumb-bar span { margin: 0 6px; }
+
+        /* ══ HERO ══ */
+        .hero-section {
+            color: #fff; text-align: center; min-height: 320px;
+            display: flex; align-items: center; justify-content: center;
+            background: linear-gradient(rgba(0,0,0,0.55), rgba(0,0,0,0.55)),
+                url('{{ hub.banner_fundo_url or "https://res.cloudinary.com/dhu1cqvrb/image/upload/v1782520525/ondetemperto_uuoywl.jpg" }}') center/cover no-repeat;
+        }
+        .hero-inner { padding: 48px 20px; }
+        .hero-label { font-size: 0.9em; font-weight: 600; text-transform: uppercase; letter-spacing: 2px; color: var(--primary); margin-bottom: 10px; }
+        .hero-section h1 { font-size: 2.6em; font-weight: 900; line-height: 1.2; text-shadow: 2px 2px 8px rgba(0,0,0,0.6); margin-bottom: 8px; }
+        .hero-section h1 em { color: var(--primary); font-style: normal; }
+        .hero-sub { font-size: 1em; margin-bottom: 16px; opacity: 0.85; }
+        .hero-stats { display: flex; gap: 32px; justify-content: center; flex-wrap: wrap; margin-top: 20px; }
+        .hero-stat strong { display: block; font-size: 1.8em; font-weight: 900; color: #fff; }
+        .hero-stat span { font-size: 0.82em; color: rgba(255,255,255,0.7); }
+
+        /* ══ FILTROS ══ */
+        .filtros-section { background: var(--white); border-bottom: 1px solid var(--medium-gray); padding: 14px 0; position: sticky; top: 0; z-index: 100; }
+        .filtros-inner { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+        .filtros-label { font-size: 0.82em; font-weight: 700; color: #6c757d; text-transform: uppercase; letter-spacing: 0.5px; white-space: nowrap; }
+        .slicer-wrap { position: relative; flex: 1; min-width: 0; }
+        .slicer-btn { display: inline-flex; align-items: center; gap: 8px; padding: 9px 16px; border-radius: 10px; border: 2px solid var(--medium-gray); background: #fff; font-size: 0.88em; font-weight: 600; color: var(--dark-gray); cursor: pointer; transition: all 0.18s; font-family: inherit; min-width: 180px; max-width: 100%; width: 100%; }
+        .slicer-btn:hover, .slicer-btn.open { border-color: var(--primary); color: var(--primary); }
+        .slicer-btn .slicer-arrow { margin-left: auto; width: 14px; height: 14px; stroke: currentColor; fill: none; stroke-width: 2; transition: transform 0.2s; flex-shrink: 0; }
+        .slicer-btn.open .slicer-arrow { transform: rotate(180deg); }
+        .slicer-dropdown { display: none; position: absolute; top: calc(100% + 6px); left: 0; min-width: 220px; max-width: 320px; background: #fff; border: 2px solid var(--medium-gray); border-radius: 12px; box-shadow: 0 8px 32px rgba(0,0,0,0.15); z-index: 200; overflow: hidden; }
+        .slicer-dropdown.open { display: block; }
+        .slicer-search { width: 100%; border: none; border-bottom: 1px solid var(--medium-gray); padding: 10px 14px; font-size: 0.85em; font-family: inherit; outline: none; color: var(--dark-gray); }
+        .slicer-list { max-height: 260px; overflow-y: auto; overscroll-behavior: contain; }
+        .slicer-item { display: block; width: 100%; text-align: left; padding: 10px 14px; font-size: 0.88em; font-family: inherit; background: none; border: none; cursor: pointer; color: var(--dark-gray); transition: background 0.12s; }
+        .slicer-item:hover { background: var(--light); }
+        .slicer-item.active { background: var(--light); color: var(--primary); font-weight: 600; }
+        .slicer-item-all { border-bottom: 1px solid var(--medium-gray); font-weight: 600; }
+        .busca-input-wrap { display: flex; align-items: center; gap: 8px; background: #fff; border: 2px solid var(--medium-gray); border-radius: 10px; padding: 9px 14px; transition: border-color 0.15s; flex: 1; min-width: 160px; }
+        .busca-input-wrap:focus-within { border-color: var(--primary); }
+        .busca-input-wrap svg { width: 14px; height: 14px; stroke: #6c757d; fill: none; stroke-width: 2; flex-shrink: 0; }
+        .busca-input-wrap input { border: none; outline: none; background: none; font-family: inherit; font-size: 0.88em; color: var(--dark-gray); width: 100%; }
+        @media (max-width: 768px) { .slicer-btn { min-width: 0; } .slicer-dropdown { min-width: 0; width: 100%; max-width: 100%; } .filtros-inner { flex-wrap: wrap; } }
+
+        /* ══ SEÇÃO GRID ══ */
+        .section { padding: 56px 0; }
+        .section-header { margin-bottom: 32px; }
+        .section-title { font-size: 1.9em; font-weight: 800; color: var(--dark-gray); margin-bottom: 6px; }
+        .section-subtitle { color: #6c757d; font-size: 0.95em; }
+
+        /* ══ CARDS NEGÓCIO ══ */
+        .negocios-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 22px; }
+        .negocio-card { background: var(--white); border-radius: 14px; overflow: hidden; box-shadow: 0 4px 14px var(--shadow-light); transition: transform 0.3s, box-shadow 0.3s; display: flex; flex-direction: column; border: 1.5px solid var(--medium-gray); }
+        .negocio-card:hover { transform: translateY(-5px); box-shadow: 0 10px 28px var(--shadow-medium); border-color: var(--primary); }
+        .card-foto { width: 100%; height: 0; padding-bottom: 100%; overflow: hidden; position: relative; background: #f5f5f5; }
+        .card-foto img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: contain; padding: 12px; transition: transform 0.4s; }
+        .negocio-card:hover .card-foto img { transform: scale(1.05); }
+        .badge-cat { position: absolute; top: 10px; left: 10px; background: var(--primary); color: #fff; font-size: 0.72em; font-weight: 700; padding: 3px 10px; border-radius: 20px; }
+        .card-body { padding: 16px; flex: 1; display: flex; flex-direction: column; gap: 4px; }
+        .card-body h3 { font-size: 1.05em; font-weight: 700; color: var(--dark-gray); }
+        .card-bairro { font-size: 0.88em; color: #6c757d; display: flex; align-items: center; gap: 5px; }
+        .card-bairro i { color: var(--primary); font-size: 0.85em; }
+        .btn-ver { margin-top: auto; padding-top: 12px; display: block; background: var(--primary); color: #fff; padding: 9px 18px; border-radius: 6px; font-size: 0.88em; font-weight: 700; text-align: center; transition: background 0.2s; }
+        .negocio-card:hover .btn-ver { background: var(--dark); }
+
+        /* ══ BANNER MEIO ══ */
+        .banner-meio { background: var(--light); padding: 28px 20px; text-align: center; border-top: 1px solid #ffe0b2; border-bottom: 1px solid #ffe0b2; }
+
+        /* ══ OUTRAS CATEGORIAS ══ */
+        .chips-row { display: flex; flex-wrap: wrap; gap: 10px; justify-content: center; }
+        .chip { padding: 8px 20px; border-radius: 20px; border: 2px solid var(--medium-gray); background: var(--white); color: var(--text-color); font-family: inherit; font-size: 0.9em; font-weight: 600; transition: all 0.2s; display: inline-flex; align-items: center; gap: 6px; }
+        .chip:hover { border-color: var(--primary); color: var(--primary); background: var(--light); }
+
+        /* ══ ANUNCIE ══ */
+        .anuncie-section { background: var(--dark-gray); color: #fff; padding: 64px 20px; text-align: center; }
+        .anuncie-section h2 { font-size: 2em; font-weight: 800; margin-bottom: 12px; }
+        .anuncie-section p { font-size: 1.05em; color: #ccc; margin-bottom: 30px; max-width: 560px; margin-left: auto; margin-right: auto; }
+        .btn-anuncie { display: inline-flex; align-items: center; gap: 8px; background: var(--primary); color: #fff; padding: 15px 34px; border-radius: 8px; font-size: 1.05em; font-weight: 700; transition: background 0.3s, transform 0.2s; }
+        .btn-anuncie:hover { background: var(--dark); transform: translateY(-2px); }
+
+        /* ══ FOOTER ══ */
+        footer { background: #111; color: #999; text-align: center; padding: 32px 20px; font-size: 0.88em; }
+        footer a { color: var(--primary); }
+        footer a:hover { text-decoration: underline; }
+        .footer-logo { margin-bottom: 14px; }
+        .footer-logo img { height: 36px; width: auto; opacity: 0.85; margin: 0 auto; }
+
+        /* ══ WPP FLOAT ══ */
+        .wpp-float { position: fixed; bottom: 24px; right: 24px; background: #25D366; color: #fff; width: 56px; height: 56px; border-radius: 50%; display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 20px rgba(37,211,102,0.4); z-index: 999; transition: transform 0.2s; }
+        .wpp-float:hover { transform: scale(1.1); }
+
+        /* ══ EMPTY STATE ══ */
+        .empty-state { text-align: center; color: #6c757d; padding: 60px 20px; font-size: 1.05em; }
+        .empty-state i { font-size: 2.5em; color: var(--medium-gray); display: block; margin-bottom: 14px; }
+
+        /* ══ RESPONSIVE ══ */
+        @media (max-width: 768px) {
+            body > header { padding: 16px 60px 16px 20px; flex-direction: row; justify-content: center; }
+            .header-logo img { height: 96px; }
+            nav.desktop-nav { display: none; }
+            .hamburger-btn { display: block; top: 50%; transform: translateY(-50%); }
+            .hero-section h1 { font-size: 1.9em; }
+            .section { padding: 40px 0; }
+        }
+    </style>
+</head>
+<body>
+
+<!-- HEADER -->
+<header>
+    <div class="header-logo">
+        <a href="/" aria-label="{{ hub.nome or 'Onde Tem Perto' }} — Página inicial">
+            <img src="{{ hub.logo_url or 'https://res.cloudinary.com/dhu1cqvrb/image/upload/v1782512370/Logo_for_a_Brazilian_local_directory_website_called_Onde_Tem_Perto._Modern_clean_minimalist_style._Use_orange_f4a740_as_the_primary_color._Include_a_location_pin_or_map_marker_icon_integrated_1_rgh092.png' }}"
+                 alt="{{ hub.nome or 'Onde Tem Perto' }}" height="80" loading="eager">
+        </a>
+    </div>
+    <nav class="desktop-nav" aria-label="Navegação principal">
+        <ul>
+            <li><a href="/">Início</a></li>
+            {% for cat in categorias %}
+            <li><a href="/{{ cat.slug }}/" {% if filtro_tipo == 'categoria' and filtro_valor == cat.slug %}class="ativo"{% endif %}>{{ cat.nome }}</a></li>
+            {% endfor %}
+            {% if hub.whatsapp %}<li><a href="https://wa.me/55{{ hub.whatsapp }}" target="_blank" rel="noopener">Contato</a></li>{% endif %}
+        </ul>
+    </nav>
+    <button class="hamburger-btn" id="hamburger-btn" aria-label="Abrir menu"><i class="fas fa-bars"></i></button>
+</header>
+
+<!-- MOBILE NAV -->
+<div class="mobile-nav-overlay" id="mobile-nav" role="dialog" aria-modal="true">
+    <button class="mobile-nav-close" onclick="closeMobileNav()" aria-label="Fechar menu">&#x2715;</button>
+    <nav>
+        <ul>
+            <li><a href="/" onclick="closeMobileNav()">Início</a></li>
+            {% for cat in categorias %}
+            <li><a href="/{{ cat.slug }}/" onclick="closeMobileNav()">{{ cat.nome }}</a></li>
+            {% endfor %}
+            {% if hub.whatsapp %}<li><a href="https://wa.me/55{{ hub.whatsapp }}" onclick="closeMobileNav()">Contato</a></li>{% endif %}
+        </ul>
+    </nav>
+</div>
+
+<!-- BANNER TOPO -->
+<div class="banner-topo">
+    <div id="banner-rotativo-topo" class="banner-rotativo">
+        <a id="banner-link-topo" href="#" target="_blank" rel="noopener sponsored">
+            <img id="banner-img-topo" src="" alt="Publicidade">
+        </a>
+    </div>
+    <a id="banner-placeholder-topo" class="banner-placeholder"
+       href="https://wa.me/55{{ hub.whatsapp or '11999999999' }}?text=Quero+anunciar+no+Onde+Tem+Perto"
+       target="_blank" rel="noopener">📣 Anuncie aqui — espaço disponível</a>
+</div>
+
+<!-- BREADCRUMB -->
+<div class="breadcrumb-bar">
+    <div class="container">
+        <a href="/">Início</a><span>›</span>
+        {% if filtro_tipo == 'categoria' %}
+        <span>{{ filtro_valor | capitalize }}</span>
+        {% else %}
+        <span>Bairro: {{ filtro_valor | capitalize }}</span>
+        {% endif %}
+    </div>
+</div>
+
+<!-- HERO -->
+<section class="hero-section">
+    <div class="hero-inner container">
+        <p class="hero-label"><i class="fas fa-{% if filtro_tipo == 'categoria' %}store{% else %}map-marker-alt{% endif %}"></i> {% if filtro_tipo == 'categoria' %}Categoria{% else %}Bairro{% endif %}</p>
+        <h1><em>{{ filtro_valor | capitalize }}</em><br>{% if filtro_tipo == 'categoria' %}em {{ hub.nome or 'Onde Tem Perto' }}{% else %}— {{ hub.nome or 'Onde Tem Perto' }}{% endif %}</h1>
+        <p class="hero-sub">
+            {% if filtro_tipo == 'categoria' %}
+            Encontre os melhores negócios de {{ filtro_valor }} perto de você.
+            {% else %}
+            Todos os estabelecimentos do bairro {{ filtro_valor | capitalize }}.
+            {% endif %}
+        </p>
+        <div class="hero-stats">
+            <div class="hero-stat"><strong>{{ negocios | length }}</strong><span>negócio(s)</span></div>
+            {% if filtro_tipo == 'categoria' %}
+            {% set bairros_unicos = negocios | map(attribute='bairro') | select | unique | list %}
+            <div class="hero-stat"><strong>{{ bairros_unicos | length }}</strong><span>bairro(s)</span></div>
+            {% endif %}
+            <div class="hero-stat"><strong>Grátis</strong><span>para encontrar</span></div>
+        </div>
+    </div>
+</section>
+
+<!-- FILTROS -->
+<div class="filtros-section">
+    <div class="container">
+        <div class="filtros-inner">
+            {% if filtro_tipo == 'categoria' %}
+            <span class="filtros-label">Bairro:</span>
+            <div class="slicer-wrap">
+                <button class="slicer-btn" id="slicerBtn" onclick="toggleSlicer()" type="button">
+                    <i class="fas fa-map-marker-alt" style="font-size:0.85em;color:var(--primary)"></i>
+                    <span id="slicerLabel">Todos os bairros</span>
+                    <svg class="slicer-arrow" viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"/></svg>
+                </button>
+                <div class="slicer-dropdown" id="slicerDropdown">
+                    <input class="slicer-search" type="text" placeholder="Buscar bairro..." oninput="filtrarSlicer(this.value)" autocomplete="off">
+                    <div class="slicer-list" id="slicerList">
+                        <button class="slicer-item slicer-item-all active" onclick="selecionarItem(this, '')">Todos os bairros</button>
+                        {% set bairros = negocios | map(attribute='bairro') | select | unique | sort %}
+                        {% for b in bairros %}
+                        <button class="slicer-item" data-val="{{ b | lower }}" onclick="selecionarItem(this, '{{ b | lower }}')">{{ b }}</button>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+            {% else %}
+            <span class="filtros-label">Categoria:</span>
+            <div class="slicer-wrap">
+                <button class="slicer-btn" id="slicerBtn" onclick="toggleSlicer()" type="button">
+                    <i class="fas fa-th-large" style="font-size:0.85em;color:var(--primary)"></i>
+                    <span id="slicerLabel">Todas as categorias</span>
+                    <svg class="slicer-arrow" viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"/></svg>
+                </button>
+                <div class="slicer-dropdown" id="slicerDropdown">
+                    <div class="slicer-list" id="slicerList">
+                        <button class="slicer-item slicer-item-all active" onclick="selecionarItem(this, '')">Todas as categorias</button>
+                        {% for cat in categorias %}
+                        <button class="slicer-item" data-val="{{ cat.slug }}" onclick="selecionarItem(this, '{{ cat.slug }}')">{{ cat.nome }}</button>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+            <div class="busca-input-wrap">
+                <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+                <input type="text" placeholder="Buscar negócio..." oninput="buscar(this.value)">
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- GRID DE NEGÓCIOS -->
+<section class="section">
+    <div class="container">
+        <div class="section-header">
+            <h2 class="section-title">
+                {% if filtro_tipo == 'categoria' %}{{ filtro_valor | capitalize }}{% else %}Bairro {{ filtro_valor | capitalize }}{% endif %}
+            </h2>
+            <p class="section-subtitle" id="gridSubtitulo">{{ negocios | length }} negócio(s) encontrado(s)</p>
+        </div>
+
+        <div class="negocios-grid" id="negociosGrid">
+            {% for n in negocios %}
+            <a href="/{{ n.categoria_slug }}/{{ n.slug }}/" class="negocio-card"
+               data-bairro="{{ (n.bairro or '') | lower }}"
+               data-cat="{{ n.categoria_slug }}"
+               data-nome="{{ n.nome | lower }}">
+                <div class="card-foto">
+                    <img src="{{ n.foto_url if n.foto_url and n.mostrar_foto else 'https://res.cloudinary.com/dhu1cqvrb/image/upload/v1782522274/locais_pkyekz.png' }}"
+                         alt="{{ n.nome }}" loading="lazy" width="400" height="400">
+                    <span class="badge-cat">{{ n.categoria_nome }}</span>
+                </div>
+                <div class="card-body">
+                    <h3>{{ n.nome }}</h3>
+                    {% if n.bairro %}
+                    <p class="card-bairro"><i class="fas fa-map-marker-alt"></i> {{ n.bairro }}{% if n.cidade %}, {{ n.cidade }}{% endif %}</p>
+                    {% endif %}
+                    <span class="btn-ver">Ver detalhes →</span>
+                </div>
+            </a>
+            {% else %}
+            <div class="empty-state" style="grid-column:1/-1">
+                <i class="fas fa-search"></i>
+                <p>Nenhum negócio encontrado.</p>
+            </div>
+            {% endfor %}
+        </div>
+        <div id="emptyMsg" style="display:none" class="empty-state">
+            <i class="fas fa-search"></i>
+            <p>Nenhum resultado para esse filtro.</p>
+        </div>
+    </div>
+</section>
+
+<!-- BANNER MEIO -->
+<div class="banner-meio">
+    <div id="banner-rotativo-meio" class="banner-rotativo">
+        <a id="banner-link-meio" href="#" target="_blank" rel="noopener sponsored">
+            <img id="banner-img-meio" src="" alt="Publicidade">
+        </a>
+    </div>
+    <a id="banner-placeholder-meio" class="banner-placeholder"
+       href="https://wa.me/55{{ hub.whatsapp or '11999999999' }}?text=Quero+anunciar+no+Onde+Tem+Perto"
+       target="_blank" rel="noopener">📣 Anuncie aqui — espaço disponível</a>
+</div>
+
+<!-- OUTRAS CATEGORIAS -->
+{% if filtro_tipo == 'categoria' and categorias | length > 1 %}
+<section class="section" style="background:var(--white);">
+    <div class="container">
+        <h2 class="section-title" style="text-align:center;margin-bottom:24px;">Explorar outras categorias</h2>
+        <div class="chips-row">
+            {% for cat in categorias %}
+            {% if cat.slug != filtro_valor %}
+            <a href="/{{ cat.slug }}/" class="chip"><i class="fas fa-tag"></i> {{ cat.nome }}</a>
+            {% endif %}
+            {% endfor %}
+        </div>
+    </div>
+</section>
+{% endif %}
+
+<!-- ANUNCIE -->
+<section class="anuncie-section">
+    <div class="container">
+        <h2>Seu negócio ainda não está aqui?</h2>
+        <p>Cadastre-se gratuitamente e apareça para milhares de pessoas buscando {{ filtro_valor }} perto delas.</p>
+        <a href="https://wa.me/55{{ hub.whatsapp or '11999999999' }}?text=Quero+cadastrar+meu+negócio" target="_blank" rel="noopener" class="btn-anuncie">
+            <i class="fab fa-whatsapp"></i> Quero aparecer aqui
+        </a>
+    </div>
+</section>
+
+<!-- FOOTER -->
+<footer>
+    <div class="footer-logo">
+        <img src="{{ hub.logo_url or 'https://res.cloudinary.com/dhu1cqvrb/image/upload/v1782512370/Logo_for_a_Brazilian_local_directory_website_called_Onde_Tem_Perto._Modern_clean_minimalist_style._Use_orange_f4a740_as_the_primary_color._Include_a_location_pin_or_map_marker_icon_integrated_1_rgh092.png' }}"
+             alt="{{ hub.nome or 'Onde Tem Perto' }}">
+    </div>
+    <p>© 2026 <strong>{{ hub.nome or 'Onde Tem Perto' }}</strong> — Todos os direitos reservados</p>
+    <p style="margin-top:10px;"><a href="/">Início</a> &middot; <a href="/sitemap.xml">Sitemap</a> &middot; <a href="/robots.txt">Robots.txt</a></p>
+</footer>
+
+{% if hub.whatsapp %}
+<a href="https://wa.me/55{{ hub.whatsapp }}" target="_blank" rel="noopener" class="wpp-float" aria-label="WhatsApp">
+    <svg width="28" height="28" viewBox="0 0 24 24" fill="#fff"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
+</a>
+{% endif %}
+
+<script>
+/* ══ NAV ══ */
+document.getElementById('hamburger-btn').addEventListener('click', function(){
+    document.getElementById('mobile-nav').classList.add('active');
+    document.body.style.overflow = 'hidden';
+});
+function closeMobileNav(){
+    document.getElementById('mobile-nav').classList.remove('active');
+    document.body.style.overflow = '';
+}
+document.addEventListener('keydown', function(e){ if(e.key==='Escape') closeMobileNav(); });
+
+/* ══ SLICER ══ */
+var filtroAtivo = '';
+var buscaAtiva = '';
+
+function toggleSlicer(){
+    var btn = document.getElementById('slicerBtn');
+    var drop = document.getElementById('slicerDropdown');
+    var isOpen = drop.classList.contains('open');
+    drop.classList.toggle('open', !isOpen);
+    btn.classList.toggle('open', !isOpen);
+    if(!isOpen){ var s = drop.querySelector('.slicer-search'); if(s) s.focus(); }
+}
+document.addEventListener('click', function(e){
+    if(!e.target.closest('.slicer-wrap')){
+        var d = document.getElementById('slicerDropdown');
+        var b = document.getElementById('slicerBtn');
+        if(d) d.classList.remove('open');
+        if(b) b.classList.remove('open');
+    }
+});
+function filtrarSlicer(q){
+    document.querySelectorAll('#slicerList .slicer-item').forEach(function(item){
+        item.style.display = item.textContent.toLowerCase().includes(q.toLowerCase()) ? '' : 'none';
+    });
+}
+function selecionarItem(el, val){
+    document.querySelectorAll('#slicerList .slicer-item').forEach(function(i){ i.classList.remove('active'); });
+    el.classList.add('active');
+    document.getElementById('slicerLabel').textContent = val ? el.textContent.trim() : (el.textContent.trim());
+    document.getElementById('slicerDropdown').classList.remove('open');
+    document.getElementById('slicerBtn').classList.remove('open');
+    filtroAtivo = val;
+    aplicarFiltros();
+}
+function buscar(q){
+    buscaAtiva = q.toLowerCase();
+    aplicarFiltros();
+}
+function aplicarFiltros(){
+    var cards = document.querySelectorAll('.negocio-card');
+    var visivel = 0;
+    cards.forEach(function(card){
+        var matchFiltro = !filtroAtivo || card.dataset.bairro === filtroAtivo || card.dataset.cat === filtroAtivo;
+        var matchBusca = !buscaAtiva || card.dataset.nome.includes(buscaAtiva);
+        var show = matchFiltro && matchBusca;
+        card.style.display = show ? '' : 'none';
+        if(show) visivel++;
+    });
+    document.getElementById('emptyMsg').style.display = visivel === 0 && document.querySelectorAll('.negocio-card').length > 0 ? 'block' : 'none';
+    document.getElementById('gridSubtitulo').textContent = visivel + ' negócio(s) encontrado(s)';
+}
+
+/* ══ BANNERS ══ */
+(function(){
+    {% if hub.banner1_foto_url %}
+    document.getElementById('banner-placeholder-topo').style.display='none';
+    document.getElementById('banner-rotativo-topo').style.display='block';
+    document.getElementById('banner-img-topo').src='{{ hub.banner1_foto_url }}';
+    document.getElementById('banner-link-topo').href='{{ hub.banner1_link or "#" }}';
+    {% endif %}
+    {% if hub.banner2_foto_url %}
+    document.getElementById('banner-placeholder-meio').style.display='none';
+    document.getElementById('banner-rotativo-meio').style.display='block';
+    document.getElementById('banner-img-meio').src='{{ hub.banner2_foto_url }}';
+    document.getElementById('banner-link-meio').href='{{ hub.banner2_link or "#" }}';
+    {% endif %}
+})();
+</script>
+
+{% if hub.pixel_id %}
+<script>!function(f,b,e,v,n,t,s){if(f.fbq)return;n=f.fbq=function(){n.callMethod?n.callMethod.apply(n,arguments):n.queue.push(arguments)};if(!f._fbq)f._fbq=n;n.push=n;n.loaded=!0;n.version='2.0';n.queue=[];t=b.createElement(e);t.async=!0;t.src=v;s=b.getElementsByTagName(e)[0];s.parentNode.insertBefore(t,s)}(window,document,'script','https://connect.facebook.net/en_US/fbevents.js');fbq('init','{{ hub.pixel_id }}');fbq('track','PageView');</script>
+{% endif %}
+
+</body>
+</html>
