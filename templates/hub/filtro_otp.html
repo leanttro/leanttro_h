@@ -89,7 +89,7 @@
         body > header {
             background: var(--primary); padding: 6px 24px 0;
             display: flex; flex-direction: column; align-items: center; justify-content: center;
-            position: sticky; top: 0; z-index: 900; box-shadow: 0 2px 10px rgba(0,0,0,0.15);
+            box-shadow: 0 2px 10px rgba(0,0,0,0.15);
         }
         .header-logo { margin-bottom: 0; }
         .header-logo a { display: block; text-align: center; }
@@ -100,6 +100,13 @@
         nav.desktop-nav ul li { position: relative; }
         nav.desktop-nav ul li a { color: #fff; font-weight: 600; font-size: 0.95em; padding: 12px 20px; display: block; border-bottom: 3px solid transparent; transition: border-color 0.2s, background 0.2s; }
         nav.desktop-nav ul li a:hover, nav.desktop-nav ul li a.ativo { border-bottom-color: #fff; background: rgba(0,0,0,0.08); }
+
+        /* ══ DROPDOWN ══ */
+        .dropdown { position: relative; display: inline-block; }
+        .dropdown-menu { display: none; position: absolute; background: #fff; min-width: 250px; box-shadow: 0 8px 16px rgba(0,0,0,0.16); z-index: 1; border-radius: 8px; max-height: 400px; overflow-y: auto; top: 100%; left: 0; }
+        .dropdown-menu a { display: block; color: #343a40; padding: 12px 20px; text-decoration: none; transition: all 0.2s; font-weight: 500; font-size: 0.9em; }
+        .dropdown-menu a:hover { background: #fff3e0; color: #d47a1a; }
+        .dropdown:hover .dropdown-menu { display: block; }
 
         /* ══ MOBILE NAV ══ */
         .mobile-nav-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.95); z-index: 1000; flex-direction: column; justify-content: center; align-items: center; opacity: 0; transition: opacity 0.25s; }
@@ -159,7 +166,9 @@
         .busca-input-wrap:focus-within { border-color: var(--primary); }
         .busca-input-wrap svg { width: 14px; height: 14px; stroke: #6c757d; fill: none; stroke-width: 2; flex-shrink: 0; }
         .busca-input-wrap input { border: none; outline: none; background: none; font-family: inherit; font-size: 0.88em; color: var(--dark-gray); width: 100%; }
-        @media (max-width: 768px) { .slicer-btn { min-width: 0; } .slicer-dropdown { min-width: 0; width: 100%; max-width: 100%; } .filtros-inner { flex-wrap: wrap; } }
+        .filtros-geo-btn { padding: 9px 16px; background: var(--primary); color: #fff; border: 2px solid var(--primary); border-radius: 10px; font-weight: 600; font-size: 0.88em; cursor: pointer; transition: all 0.2s; white-space: nowrap; font-family: inherit; }
+        .filtros-geo-btn:hover { background: var(--dark); border-color: var(--dark); transform: scale(1.05); }
+        @media (max-width: 768px) { .slicer-btn { min-width: 0; } .slicer-dropdown { min-width: 0; width: 100%; max-width: 100%; } .filtros-inner { flex-wrap: wrap; } .filtros-geo-btn { flex: 1; min-width: 100%; } }
 
         /* ══ SEÇÃO GRID ══ */
         .section { padding: 56px 0; }
@@ -236,9 +245,19 @@
     <nav class="desktop-nav" aria-label="Navegação principal">
         <ul>
             <li><a href="/">Início</a></li>
-            {% for cat in categorias %}
-            <li><a href="/{{ cat.slug }}/" {% if filtro_tipo == 'categoria' and filtro_valor == cat.slug %}class="ativo"{% endif %}>{{ cat.nome }}</a></li>
-            {% endfor %}
+            <li class="dropdown">
+                <a href="#">Categorias</a>
+                <div class="dropdown-menu" id="nav-dropdown-categorias">
+                    {% for cat in categorias %}
+                    <a href="/{{ cat.slug }}/">{{ cat.nome }}</a>
+                    {% endfor %}
+                </div>
+            </li>
+            <li class="dropdown">
+                <a href="#">Cidades</a>
+                <div class="dropdown-menu" id="nav-dropdown-cidades"></div>
+            </li>
+            <li><a href="/blog/">Blog</a></li>
             {% if hub.whatsapp %}<li><a href="https://wa.me/55{{ hub.whatsapp }}" target="_blank" rel="noopener">Contato</a></li>{% endif %}
         </ul>
     </nav>
@@ -254,6 +273,7 @@
             {% for cat in categorias %}
             <li><a href="/{{ cat.slug }}/" onclick="closeMobileNav()">{{ cat.nome }}</a></li>
             {% endfor %}
+            <li><a href="/blog/" onclick="closeMobileNav()">Blog</a></li>
             {% if hub.whatsapp %}<li><a href="https://wa.me/55{{ hub.whatsapp }}" onclick="closeMobileNav()">Contato</a></li>{% endif %}
         </ul>
     </nav>
@@ -351,6 +371,7 @@
                 <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
                 <input type="text" placeholder="Buscar negócio..." oninput="buscar(this.value)">
             </div>
+            <button class="filtros-geo-btn" onclick="ativarGeoFiltro()" title="Usar minha localização">📍 Localização</button>
         </div>
     </div>
 </div>
@@ -370,7 +391,9 @@
             <a href="/{{ n.categoria_slug }}/{{ n.slug }}/" class="negocio-card"
                data-bairro="{{ (n.bairro or '') | lower }}"
                data-cat="{{ n.categoria_slug }}"
-               data-nome="{{ n.nome | lower }}">
+               data-nome="{{ n.nome | lower }}"
+               data-lat="{{ n.lat or '' }}"
+               data-lng="{{ n.lng or '' }}">
                 <div class="card-foto">
                     <img src="{{ n.foto_url if n.foto_url and n.mostrar_foto else 'https://res.cloudinary.com/dhu1cqvrb/image/upload/v1782522274/locais_pkyekz.png' }}"
                          alt="{{ n.nome }}" loading="lazy" width="400" height="400">
@@ -455,6 +478,7 @@
 
 <script>
 /* ══ NAV ══ */
+var geoAtivoFiltro = false, userLatFiltro = null, userLngFiltro = null;
 document.getElementById('hamburger-btn').addEventListener('click', function(){
     document.getElementById('mobile-nav').classList.add('active');
     document.body.style.overflow = 'hidden';
@@ -464,6 +488,32 @@ function closeMobileNav(){
     document.body.style.overflow = '';
 }
 document.addEventListener('keydown', function(e){ if(e.key==='Escape') closeMobileNav(); });
+
+/* ══ GEOLOCALIZAÇÃO ══ */
+function calcDistancia(lat1, lng1, lat2, lng2) {
+    var R = 6371, dLat = (lat2 - lat1) * Math.PI / 180, dLng = (lng2 - lng1) * Math.PI / 180;
+    var a = Math.sin(dLat / 2) * Math.sin(dLat / 2) + Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) * Math.sin(dLng / 2) * Math.sin(dLng / 2);
+    return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+}
+
+function ativarGeoFiltro() {
+    if (!navigator.geolocation) {
+        alert('Geolocalização não suportada no seu navegador');
+        return;
+    }
+    navigator.geolocation.getCurrentPosition(
+        function(pos) {
+            geoAtivoFiltro = true;
+            userLatFiltro = pos.coords.latitude;
+            userLngFiltro = pos.coords.longitude;
+            aplicarFiltros();
+            alert('✓ Localização ativada! Ordenando por distância...');
+        },
+        function() {
+            alert('Não foi possível obter sua localização. Verifique as permissões.');
+        }
+    );
+}
 
 /* ══ SLICER ══ */
 var filtroAtivo = '';
@@ -505,14 +555,37 @@ function buscar(q){
 }
 function aplicarFiltros(){
     var cards = document.querySelectorAll('.negocio-card');
-    var visivel = 0;
+    var cardsVisiveis = [];
+    
     cards.forEach(function(card){
         var matchFiltro = !filtroAtivo || card.dataset.bairro === filtroAtivo || card.dataset.cat === filtroAtivo;
         var matchBusca = !buscaAtiva || card.dataset.nome.includes(buscaAtiva);
         var show = matchFiltro && matchBusca;
-        card.style.display = show ? '' : 'none';
-        if(show) visivel++;
+        
+        if(show){
+            cardsVisiveis.push(card);
+            card.style.display = '';
+        } else {
+            card.style.display = 'none';
+        }
     });
+    
+    // Se geo está ativo, ordena por distância
+    if(geoAtivoFiltro && userLatFiltro && userLngFiltro){
+        cardsVisiveis.sort(function(a, b){
+            var latA = parseFloat(a.dataset.lat || 0), lngA = parseFloat(a.dataset.lng || 0);
+            var latB = parseFloat(b.dataset.lat || 0), lngB = parseFloat(b.dataset.lng || 0);
+            var distA = (latA && lngA) ? calcDistancia(userLatFiltro, userLngFiltro, latA, lngA) : 9999;
+            var distB = (latB && lngB) ? calcDistancia(userLatFiltro, userLngFiltro, latB, lngB) : 9999;
+            return distA - distB;
+        });
+        
+        // Reordena os cards no DOM
+        var parent = cards[0].parentNode;
+        cardsVisiveis.forEach(function(card){ parent.appendChild(card); });
+    }
+    
+    var visivel = cardsVisiveis.length;
     document.getElementById('emptyMsg').style.display = visivel === 0 && document.querySelectorAll('.negocio-card').length > 0 ? 'block' : 'none';
     document.getElementById('gridSubtitulo').textContent = visivel + ' negócio(s) encontrado(s)';
 }
@@ -531,6 +604,28 @@ function aplicarFiltros(){
     document.getElementById('banner-img-meio').src='{{ hub.banner2_foto_url }}';
     document.getElementById('banner-link-meio').href='{{ hub.banner2_link or "#" }}';
     {% endif %}
+})();
+
+/* ══ CIDADES NO DROPDOWN ══ */
+(function(){
+    var cidades = {};
+    var negociosData = {{ negocios | tojson }};
+    if(!negociosData) negociosData = [];
+    
+    negociosData.forEach(function(n){
+        if(!n.cidade) return;
+        if(!cidades[n.cidade]) cidades[n.cidade] = { nome: n.cidade, count: 0, estado: n.estado || '' };
+        cidades[n.cidade].count++;
+    });
+
+    var lista = Object.values(cidades).sort(function(a, b){ return b.count - a.count; });
+    var dd = document.getElementById('nav-dropdown-cidades');
+    if(dd && lista.length){
+        dd.innerHTML = lista.map(function(c){
+            var slug = c.nome.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g,'').replace(/\s+/g,'-').replace(/[^a-z0-9-]/g,'');
+            return '<a href="/bairro/'+slug+'/">'+c.nome+'</a>';
+        }).join('');
+    }
 })();
 </script>
 
