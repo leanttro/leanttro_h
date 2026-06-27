@@ -826,6 +826,16 @@ def admin_negocios_bulk():
             (ids, hub_id), commit=True
         )
 
+    elif action == "mudar_categoria":
+        categoria_id = data.get("categoria_id")
+        if not categoria_id:
+            return jsonify({"error": "categoria_id obrigatório"}), 400
+        categoria_id = int(categoria_id)
+        query(
+            "UPDATE hub_negocios SET categoria_id = %s WHERE id = ANY(%s)",
+            (categoria_id, ids), commit=True
+        )
+
     else:
         return jsonify({"error": "Ação inválida"}), 400
 
