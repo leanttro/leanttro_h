@@ -276,6 +276,7 @@
         select.filtro-select:focus { outline: none; border-color: var(--primary); }
         .btn-limpar { padding: 8px 16px; border-radius: 8px; border: 2px solid var(--medium-gray); background: none; font-family: inherit; font-size: 0.88em; cursor: pointer; color: #6c757d; transition: all 0.2s; }
         .btn-limpar:hover { border-color: var(--primary); color: var(--primary); }
+        .btn-geo { padding: 8px 16px; border-radius: 8px; background: var(--primary); color: #fff; border: 2px solid var(--primary); font-family: inherit; font-size: 0.88em; cursor: pointer; transition: all 0.2s; font-weight: 600; white-space: nowrap; }
         .resultados-count { font-size: 0.88em; color: #6c757d; margin-left: auto; }
 
         /* ══ ANUNCIE / FOOTER ══ */
@@ -531,6 +532,7 @@
             </select>
             {% endif %}
             <button class="btn-limpar" onclick="limparFiltros()"><i class="fas fa-times"></i> Limpar</button>
+            <button class="btn-geo" onclick="buscarProximos()" title="Usar minha localização"><i class="fas fa-map-marker-alt"></i> Localização</button>
             <span class="resultados-count" id="resultados-count"></span>
         </div>
 
