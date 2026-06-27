@@ -285,6 +285,11 @@ def _slugify(texto):
     texto = "".join(c for c in texto if _uc.category(c) != "Mn")
     return texto.replace(" ", "-").strip("-")
 
+# ── Filtro Jinja slugify (remove acentos, sem espaços) ───────
+@app.template_filter("slugify")
+def _jinja_slugify(texto):
+    return _slugify(texto) if texto else ""
+
 
 def _resolve_bairro(hub_id, bairro_slug, cidade_nome=None):
     """Devolve o nome real do bairro a partir do slug."""
