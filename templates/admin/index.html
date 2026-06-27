@@ -755,6 +755,7 @@ tbody td {
           <button class="btn btn-secondary btn-sm" onclick="bulkNegocio('desativar')">Desativar</button>
           <button class="btn btn-secondary btn-sm" onclick="openHubPicker('vincular')">+ Vincular ao Hub</button>
           <button class="btn btn-secondary btn-sm" onclick="openHubPicker('desvincular')">− Desvincular do Hub</button>
+          <button class="btn btn-secondary btn-sm" onclick="openCategoriaPicker()">↷ Mudar categoria</button>
           <button class="btn btn-danger btn-sm" onclick="bulkNegocio('excluir')">Excluir</button>
         </div>
         <div class="table-wrap">
@@ -855,6 +856,20 @@ tbody td {
     <div class="hub-picker-actions">
       <button class="btn btn-secondary btn-sm" onclick="closeHubPicker()">Cancelar</button>
       <button class="btn btn-primary btn-sm" onclick="confirmHubPicker()">Confirmar</button>
+    </div>
+  </div>
+</div>
+
+<!-- Categoria picker modal (bulk) -->
+<div class="hub-picker-overlay" id="categoriaPickerOverlay">
+  <div class="hub-picker">
+    <h4>Mudar categoria</h4>
+    <select id="categoriaPickerSelect">
+      <option value="">— Selecione uma categoria —</option>
+    </select>
+    <div class="hub-picker-actions">
+      <button class="btn btn-secondary btn-sm" onclick="closeCategoriaPicker()">Cancelar</button>
+      <button class="btn btn-primary btn-sm" onclick="confirmCategoriaPicker()">Confirmar</button>
     </div>
   </div>
 </div>
@@ -1515,6 +1530,39 @@ async function confirmHubPicker() {
       await loadSection('negocios');
     } else {
       showToast('Erro ao executar ação', 'error');
+    }
+  } catch(e) { showToast('Erro de conexão', 'error'); }
+}
+
+function openCategoriaPicker() {
+  const ids = [...document.querySelectorAll('#negociosBody .negocio-cb:checked')];
+  if (!ids.length) return;
+  const sel = document.getElementById('categoriaPickerSelect');
+  sel.innerHTML = '<option value="">— Selecione uma categoria —</option>' +
+    state.data.categorias.map(c => `<option value="${c.id}">${esc(c.nome)}</option>`).join('');
+  document.getElementById('categoriaPickerOverlay').classList.add('open');
+}
+function closeCategoriaPicker() {
+  document.getElementById('categoriaPickerOverlay').classList.remove('open');
+}
+async function confirmCategoriaPicker() {
+  const categoria_id = document.getElementById('categoriaPickerSelect').value;
+  if (!categoria_id) { showToast('Selecione uma categoria', ''); return; }
+  const ids = [...document.querySelectorAll('#negociosBody .negocio-cb:checked')].map(cb => cb.value);
+  closeCategoriaPicker();
+  try {
+    const r = await fetch('/admin/negocios/bulk', {
+      method: 'POST',
+      body: JSON.stringify({ ids, action: 'mudar_categoria', categoria_id }),
+      headers: { 'Content-Type': 'application/json' }
+    });
+    if (r.ok || r.redirected) {
+      showToast(`Categoria alterada em ${ids.length} negócio(s)`, 'success');
+      state.loaded.delete('negocios');
+      state.loaded.delete('dashboard');
+      await loadSection('negocios');
+    } else {
+      showToast('Erro ao mudar categoria', 'error');
     }
   } catch(e) { showToast('Erro de conexão', 'error'); }
 }
