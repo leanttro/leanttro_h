@@ -412,7 +412,7 @@
 <!-- HERO -->
 <section class="hero-section" aria-label="Onde tem perto de você">
     <div class="hero-inner container">
-        <h1>O que tem<br><em>perto de mim?</em></h1>
+        <h1>Onde tem<br><em>perto de mim?</em></h1>
         <p class="hero-sub">Farmácias, mercados, academias, igrejas, metrô e muito mais — encontre tudo próximo a você em qualquer cidade do Brasil.</p>
         <div class="hero-btns">
             <button class="btn-hero" onclick="buscarProximos()">
@@ -429,7 +429,7 @@
 <section class="busca-section" id="busca">
     <div class="container">
         <div class="busca-topo">
-            <h2>O que tem perto de mim agora?</h2>
+            <h2>Onde tem perto de mim agora?</h2>
             <p>Ative sua localização e veja os estabelecimentos mais próximos de você primeiro</p>
             <button class="btn-geo" onclick="buscarProximos()">
                 <i class="fas fa-map-marker-alt"></i> Usar minha localização
@@ -491,7 +491,7 @@
 <section class="section" id="categorias" style="background:var(--light-gray);">
     <div class="container">
         <h2 class="section-title">O que você está procurando?</h2>
-        <p class="section-subtitle">Selecione uma categoria e veja o que tem perto de mim</p>
+        <p class="section-subtitle">Selecione uma categoria e veja onde tem perto de você agora mesmo</p>
         <div class="categorias-grid">
             {% for cat in categorias %}
             <a href="/{{ cat.slug }}/" class="categoria-card" aria-label="{{ cat.nome }} perto de mim">
