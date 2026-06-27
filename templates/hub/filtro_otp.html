@@ -293,7 +293,7 @@
 <section class="hero-section">
     <div class="hero-inner container">
         <p class="hero-label"><i class="fas fa-{% if filtro_tipo == 'categoria' %}store{% else %}map-marker-alt{% endif %}"></i> {% if filtro_tipo == 'categoria' %}Categoria{% else %}Bairro{% endif %}</p>
-        <h1><em>{{ filtro_valor | capitalize }}</em><br>{% if filtro_tipo == 'categoria' %}em {{ hub.nome or 'Onde Tem Perto' }}{% else %}— {{ hub.nome or 'Onde Tem Perto' }}{% endif %}</h1>
+        <h1><em>{{ filtro_valor | capitalize }}</em><br>{% if filtro_tipo == 'categoria' %}{{ hub.nome or 'Onde Tem Perto' }}{% else %}— {{ hub.nome or 'Onde Tem Perto' }}{% endif %}</h1>
         <p class="hero-sub">
             {% if filtro_tipo == 'categoria' %}
             Encontre os melhores negócios de {{ filtro_valor }} perto de você.
