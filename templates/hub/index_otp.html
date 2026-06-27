@@ -271,8 +271,10 @@
                 scroll-snap-type: x mandatory; scrollbar-width: none;
             }
             .carousel-track-outer::-webkit-scrollbar { display: none; }
-            .carousel-track { transform: none !important; transition: none !important; cursor: default; }
-            .carousel-track .negocio-card { scroll-snap-align: start; flex: 0 0 calc(75% - 11px); }
+            .carousel-track { transform: none !important; transition: none !important; cursor: default; gap: 14px; padding: 4px 0; }
+            .carousel-track .negocio-card { scroll-snap-align: start; flex: 0 0 78%; min-width: 0; }
+            /* Esconder arrows no mobile */
+            .carousel-nav { display: none; }
         }
         @media (max-width: 480px) {
             .carousel-track .negocio-card { flex: 0 0 calc(85%); }
@@ -641,7 +643,10 @@ function getCardWidth(){
     return card.offsetWidth+22;
 }
 
+function isMobile(){ return window.innerWidth <= 768; }
+
 function clampAndUpdate(){
+    if(isMobile()) return;
     var track=document.getElementById('negocios-track');
     var cards=track.querySelectorAll('.negocio-card');
     if(!cards.length) return;
@@ -676,17 +681,19 @@ function buildCarousel(cards){
     function onStart(x){ isDragging=true; startX=x; startPos=carouselPos; track.classList.add('dragging'); }
     function onMove(x){ if(!isDragging) return; carouselPos=startPos-(x-startX); clampAndUpdate(); }
     function onEnd(){ isDragging=false; track.classList.remove('dragging'); snapCarousel(); }
-    track.addEventListener('mousedown',function(e){ onStart(e.clientX); e.preventDefault(); });
-    window.addEventListener('mousemove',function(e){ if(isDragging) onMove(e.clientX); });
-    window.addEventListener('mouseup',function(){ if(isDragging) onEnd(); });
-    var _ty=0,_horiz=false,_det=false;
-    track.addEventListener('touchstart',function(e){ _ty=e.touches[0].clientY; _horiz=false; _det=false; onStart(e.touches[0].clientX); },{passive:true});
-    track.addEventListener('touchmove',function(e){
-        if(!isDragging) return;
-        if(!_det){ var dx=Math.abs(e.touches[0].clientX-startX),dy=Math.abs(e.touches[0].clientY-_ty); if(dx>5||dy>5){_horiz=dx>=dy;_det=true;} }
-        if(!_det||!_horiz) return; e.preventDefault(); onMove(e.touches[0].clientX);
-    },{passive:false});
-    track.addEventListener('touchend',function(e){ if(_horiz) onEnd(); else isDragging=false; });
+    if(!isMobile()){
+        track.addEventListener('mousedown',function(e){ onStart(e.clientX); e.preventDefault(); });
+        window.addEventListener('mousemove',function(e){ if(isDragging) onMove(e.clientX); });
+        window.addEventListener('mouseup',function(){ if(isDragging) onEnd(); });
+        var _ty=0,_horiz=false,_det=false;
+        track.addEventListener('touchstart',function(e){ _ty=e.touches[0].clientY; _horiz=false; _det=false; onStart(e.touches[0].clientX); },{passive:true});
+        track.addEventListener('touchmove',function(e){
+            if(!isDragging) return;
+            if(!_det){ var dx=Math.abs(e.touches[0].clientX-startX),dy=Math.abs(e.touches[0].clientY-_ty); if(dx>5||dy>5){_horiz=dx>=dy;_det=true;} }
+            if(!_det||!_horiz) return; e.preventDefault(); onMove(e.touches[0].clientX);
+        },{passive:false});
+        track.addEventListener('touchend',function(e){ if(_horiz) onEnd(); else isDragging=false; });
+    }
 }
 
 function moveCarousel(dir){
