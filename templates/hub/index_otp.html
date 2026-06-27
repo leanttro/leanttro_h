@@ -367,7 +367,7 @@ var carouselPos = 0, carouselView = 'carousel';
 // Filtrar por categoria
 function filtrarPor(slug) {
     document.querySelectorAll('.filtro-btn').forEach(b => b.classList.remove('active'));
-    event.target.classList.add('active');
+    event.target.closest('.filtro-btn').classList.add('active');
     negociosFiltrados = slug ? todosNegocios.filter(n => n.categoria_slug === slug) : todosNegocios;
     renderNegocios(negociosFiltrados);
 }
