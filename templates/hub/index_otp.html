@@ -524,9 +524,6 @@
         <!-- Grade (oculta inicialmente) -->
         <div class="negocios-grid" id="negocios-grade" style="display:none;"></div>
         <p class="info-message" id="negocios-vazio" style="display:none;">Nenhum estabelecimento encontrado.</p>
-        <!-- Sentinel invisible: quando aparecer na tela, carrega mais negócios -->
-        <div id="lazy-sentinel" style="height:1px; margin-top:10px;"></div>
-        <p id="lazy-loading" style="display:none; text-align:center; color:var(--primary); padding:20px; font-size:0.95em;"><i class="fas fa-spinner fa-spin"></i> Carregando mais estabelecimentos...</p>
     </div>
 </section>
 
@@ -675,86 +672,10 @@ document.addEventListener('keydown', function(e){ if(e.key === 'Escape') closeMo
 </script>
 
 <script>
-// ── ESTRATÉGIA: carrega HTML com primeiros 48, busca REST via API UMA vez,
-//    depois pagina localmente — sem loop, sem travar. ──────────────────────
-var _negociosCompletos = {{ negocios[:48] | tojson }};  // primeiros 48 no HTML
-var _totalNegocios     = {{ negocios | length }};
-var _apiCarregada      = false;   // controla se já buscou tudo da API
-var _apiCarregando     = false;   // evita chamada dupla
-var _renderOffset      = 48;      // quantos já foram renderizados
-var _loteSize          = 48;      // quantos renderizar por vez no scroll
-var _lazyCategoriaAtiva = null;
-
-var todosNegocios     = _negociosCompletos.slice();
+var todosNegocios = {{ negocios | tojson }};
 var negociosFiltrados = todosNegocios.slice();
 var userLat = null, userLng = null, geoAtivo = false;
 var carouselPos = 0, carouselView = 'carousel';
-
-// Busca TODOS os negócios da API uma única vez e guarda localmente
-function _carregarAPIUmaVez(callback) {
-    if (_apiCarregada) { if(callback) callback(); return; }
-    if (_apiCarregando) return;
-    _apiCarregando = true;
-    var loading = document.getElementById('lazy-loading');
-    if(loading) loading.style.display = 'block';
-    fetch('/api/hub/negocios')
-        .then(function(r){ return r.json(); })
-        .then(function(data){
-            _apiCarregada = true;
-            _apiCarregando = false;
-            if(Array.isArray(data) && data.length > 0){
-                _negociosCompletos = data;
-                if(!_lazyCategoriaAtiva){
-                    todosNegocios = data.slice();
-                    negociosFiltrados = data.slice();
-                }
-            }
-            if(loading) loading.style.display = 'none';
-            if(callback) callback();
-        })
-        .catch(function(){
-            _apiCarregada = true; // marca como tentado para não ficar tentando
-            _apiCarregando = false;
-            if(loading) loading.style.display = 'none';
-        });
-}
-
-// Renderiza o próximo lote localmente (sem API)
-function _renderizarProximoLote(){
-    var lista = negociosFiltrados;
-    if(_renderOffset >= lista.length) return; // já mostrou tudo
-    var proximo = lista.slice(_renderOffset, _renderOffset + _loteSize);
-    if(!proximo.length) return;
-    _renderOffset += proximo.length;
-    var novosCards = proximo.map(cardHTML);
-    var track = document.getElementById('negocios-track');
-    if(track){
-        var tmp = document.createElement('div');
-        tmp.innerHTML = novosCards.join('');
-        while(tmp.firstChild) track.appendChild(tmp.firstChild);
-        clampAndUpdate();
-    }
-    var gd = document.getElementById('negocios-grade');
-    if(gd && gd.style.display !== 'none') gd.innerHTML += novosCards.join('');
-}
-
-// IntersectionObserver — ao ver o sentinel, carrega API se necessário e renderiza mais
-(function(){
-    var sentinel = document.getElementById('lazy-sentinel');
-    if(!sentinel || !('IntersectionObserver' in window)) return;
-    new IntersectionObserver(function(entries){
-        if(!entries[0].isIntersecting) return;
-        if(!_apiCarregada){
-            // Primeira vez: busca tudo da API, depois renderiza mais
-            _carregarAPIUmaVez(function(){
-                _renderizarProximoLote();
-            });
-        } else {
-            // API já carregada: só renderiza o próximo lote local
-            _renderizarProximoLote();
-        }
-    }, { rootMargin: '200px' }).observe(sentinel);
-})();
 
 function calcDistancia(lat1,lng1,lat2,lng2){
     var R=6371,dLat=(lat2-lat1)*Math.PI/180,dLng=(lng2-lng1)*Math.PI/180;
@@ -766,11 +687,8 @@ function buscarProximos(){
     if(!navigator.geolocation){ alert('Geolocalização não suportada.'); return; }
     navigator.geolocation.getCurrentPosition(function(pos){
         userLat=pos.coords.latitude; userLng=pos.coords.longitude; geoAtivo=true;
-        // Garante que tem todos os dados antes de ordenar por distância
-        _carregarAPIUmaVez(function(){
-            renderNegocios(negociosFiltrados);
-            document.getElementById('busca').scrollIntoView({behavior:'smooth',block:'start'});
-        });
+        renderNegocios(negociosFiltrados);
+        document.getElementById('busca').scrollIntoView({behavior:'smooth',block:'start'});
     }, function(){ alert('Não foi possível obter sua localização. Verifique as permissões.'); });
 }
 
@@ -798,35 +716,9 @@ function filtrarCategoria(slug, btn){
     btn.classList.add('active');
     var lbl=document.getElementById('slicer-label-text');
     if(lbl) lbl.textContent=btn.textContent;
+    negociosFiltrados = slug ? todosNegocios.filter(function(n){ return n.categoria_slug===slug; }) : todosNegocios.slice();
+    renderNegocios(negociosFiltrados);
     closeCategoriaSlicer();
-
-    _lazyCategoriaAtiva = slug || null;
-
-    if(!slug){
-        // Volta para "Tudo" com dados locais
-        negociosFiltrados = (_apiCarregada ? _negociosCompletos : todosNegocios).slice();
-        _renderOffset = 48;
-        renderNegocios(negociosFiltrados);
-        return;
-    }
-
-    // Filtro por categoria: usa dados locais se já tem tudo, senão busca API
-    var filtrar = function(){
-        negociosFiltrados = _negociosCompletos.filter(function(n){ return n.categoria_slug===slug; });
-        _renderOffset = negociosFiltrados.length; // já vai mostrar tudo de uma vez via renderNegocios
-        renderNegocios(negociosFiltrados);
-        var loading = document.getElementById('lazy-loading');
-        if(loading) loading.style.display = 'none';
-    };
-
-    if(_apiCarregada){
-        filtrar();
-    } else {
-        var loading = document.getElementById('lazy-loading');
-        if(loading) loading.style.display = 'block';
-        _carregarAPIUmaVez(filtrar);
-    }
-}
 }
 
 function cardHTML(n){
@@ -925,9 +817,6 @@ function setView(mode){
 }
 
 function renderNegocios(lista){
-    // Sempre que re-renderiza, reseta o offset do lazy load local
-    negociosFiltrados = lista;
-    _renderOffset = Math.min(48, lista.length);
     var vc=document.getElementById('view-controls');
     var vazio=document.getElementById('negocios-vazio');
     if(geoAtivo&&userLat&&userLng){
@@ -935,7 +824,6 @@ function renderNegocios(lista){
             var d=(n.lat&&n.lng)?calcDistancia(userLat,userLng,parseFloat(n.lat),parseFloat(n.lng)):9999;
             return Object.assign({},n,{_dist:d});
         }).sort(function(a,b){ return a._dist-b._dist; });
-        negociosFiltrados = lista;
     }
     if(!lista.length){
         if(vc) vc.style.display='none';
@@ -1118,8 +1006,6 @@ renderNegocios(negociosFiltrados);
 })();
 </script>
 </body>
-</html>
-
 <!-- ── Google Translate (widget nativo oculto) ── -->
 <div id="google_translate_element"></div>
 <script>
