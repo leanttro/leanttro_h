@@ -342,10 +342,9 @@
             {% endif %}
         </p>
         <div class="hero-stats">
-            <div class="hero-stat"><strong>{{ negocios | length }}</strong><span>locais</span></div>
+            <div class="hero-stat"><strong>{{ total_negocios }}</strong><span>locais</span></div>
             {% if filtro_tipo == 'categoria' %}
-            {% set bairros_unicos = negocios | map(attribute='bairro') | select | unique | list %}
-            <div class="hero-stat"><strong>{{ bairros_unicos | length }}</strong><span>bairro(s)</span></div>
+            <div class="hero-stat"><strong>{{ bairros_disponiveis | length }}</strong><span>bairro(s)</span></div>
             {% endif %}
             <div class="hero-stat"><strong>Grátis</strong><span>para encontrar</span></div>
         </div>
@@ -368,8 +367,7 @@
                     <input class="slicer-search" type="text" placeholder="Buscar bairro..." oninput="filtrarSlicer(this.value)" autocomplete="off">
                     <div class="slicer-list" id="slicerList">
                         <button class="slicer-item slicer-item-all active" onclick="selecionarItem(this, '')">Todos os bairros</button>
-                        {% set bairros = negocios | map(attribute='bairro') | select | unique | sort %}
-                        {% for b in bairros %}
+                        {% for b in bairros_disponiveis %}
                         <button class="slicer-item" data-val="{{ b | lower }}" onclick="selecionarItem(this, '{{ b | lower }}')">{{ b }}</button>
                         {% endfor %}
                     </div>
@@ -399,7 +397,7 @@
             </button>
             <div class="busca-input-wrap">
                 <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-                <input type="text" placeholder="Buscar negócio..." oninput="buscar(this.value)">
+                <input type="text" placeholder="Buscar negócio..." oninput="buscarDebounce(this.value)">
             </div>
         </div>
     </div>
@@ -412,37 +410,14 @@
             <h2 class="section-title">
                 {% if filtro_tipo == 'categoria' %}{{ filtro_valor | capitalize }}{% else %}Bairro {{ filtro_valor | capitalize }}{% endif %}
             </h2>
-            <p class="section-subtitle" id="gridSubtitulo">{{ negocios | length }} negócio(s) encontrado(s)</p>
+            <p class="section-subtitle" id="gridSubtitulo">{{ total_negocios }} negócio(s) encontrado(s)</p>
         </div>
 
         <div class="negocios-grid" id="negociosGrid">
-            {% for n in negocios %}
-            <a href="/{{ n.categoria_slug }}/{{ n.slug }}/" class="negocio-card"
-               data-bairro="{{ (n.bairro or '') | lower }}"
-               data-cat="{{ n.categoria_slug }}"
-               data-nome="{{ n.nome | lower }}"
-               data-lat="{{ n.lat or '' }}"
-               data-lng="{{ n.lng or '' }}">
-                <div class="card-foto">
-                    <img src="{{ n.foto_url if n.foto_url and n.mostrar_foto else 'https://res.cloudinary.com/dhu1cqvrb/image/upload/v1782522274/locais_pkyekz.png' }}"
-                         alt="{{ n.nome }}" loading="lazy" width="400" height="400">
-                    <span class="badge-cat">{{ n.categoria_nome }}</span>
-                </div>
-                <div class="card-body">
-                    <h3>{{ n.nome }}</h3>
-                    {% if n.bairro %}
-                    <p class="card-bairro"><i class="fas fa-map-marker-alt"></i> {{ n.bairro }}{% if n.cidade %}, {{ n.cidade }}{% endif %}</p>
-                    {% endif %}
-                    <span class="btn-ver">Ver detalhes →</span>
-                </div>
-            </a>
-            {% else %}
-            <div class="empty-state" style="grid-column:1/-1">
-                <i class="fas fa-search"></i>
-                <p>Nenhum negócio encontrado.</p>
-            </div>
-            {% endfor %}
+            <!-- cards inseridos via JS -->
         </div>
+        <div id="lazy-sentinel" style="height:1px; margin-top:10px;"></div>
+        <p id="lazy-loading" style="display:none; text-align:center; color:var(--primary); padding:20px;"><i class="fas fa-spinner fa-spin"></i> Carregando mais...</p>
         <div id="emptyMsg" style="display:none" class="empty-state">
             <i class="fas fa-search"></i>
             <p>Nenhum resultado para esse filtro.</p>
@@ -518,8 +493,7 @@ function closeMobileNav(){
 document.addEventListener('keydown', function(e){ if(e.key==='Escape') closeMobileNav(); });
 
 /* ══ SLICER ══ */
-var filtroAtivo = '';
-var buscaAtiva = '';
+var filtroAtivo = ''; // bairro ativo no slicer
 
 function toggleSlicer(){
     var btn = document.getElementById('slicerBtn');
@@ -551,57 +525,162 @@ function selecionarItem(el, val){
     filtroAtivo = val;
     aplicarFiltros();
 }
-function buscar(q){
-    buscaAtiva = q.toLowerCase();
-    aplicarFiltros();
-}
-function aplicarFiltros(){
-    var cards = document.querySelectorAll('.negocio-card');
-    var visivel = 0;
-    cards.forEach(function(card){
-        var matchFiltro = !filtroAtivo || card.dataset.bairro === filtroAtivo || card.dataset.cat === filtroAtivo;
-        var matchBusca = !buscaAtiva || card.dataset.nome.includes(buscaAtiva);
-        var show = matchFiltro && matchBusca;
-        card.style.display = show ? '' : 'none';
-        if(show) visivel++;
-    });
-    document.getElementById('emptyMsg').style.display = visivel === 0 && document.querySelectorAll('.negocio-card').length > 0 ? 'block' : 'none';
-    document.getElementById('gridSubtitulo').textContent = visivel + ' negócio(s) encontrado(s)';
+// ══ LAZY LOAD PAGINADO ══
+var _filtroAtualBairro = filtroAtivo;
+var _filtroAtualBusca  = '';
+var _apiOffset  = {{ negocios | length }};
+var _loteSize   = 96;
+var _apiFim     = {{ 'true' if negocios | length < 48 else 'false' }};
+var _apiCarregando = false;
+var _totalReal  = {{ total_negocios }};
+var _totalVisivelLocal = {{ negocios | length }};
+var _userLat = null, _userLng = null;
+var _locAtiva = false;
+var _ordemOriginal = null;
+var _IMG_FALLBACK = 'https://res.cloudinary.com/dhu1cqvrb/image/upload/v1782522274/locais_pkyekz.png';
+
+// Renderiza os negócios já vindos no HTML (primeiros 48)
+(function(){
+    var grid = document.getElementById('negociosGrid');
+    var inicial = {{ negocios | tojson }};
+    grid.innerHTML = inicial.map(negocioCardHTML).join('');
+    atualizarSubtitulo(_totalReal);
+    initLazySentinel();
+})();
+
+function negocioCardHTML(n){
+    var foto = (n.foto_url && n.mostrar_foto) ? n.foto_url : _IMG_FALLBACK;
+    var bairro = n.bairro ? '<p class="card-bairro"><i class="fas fa-map-marker-alt"></i> ' + n.bairro + (n.cidade ? ', ' + n.cidade : '') + '</p>' : '';
+    return '<a href="/' + n.categoria_slug + '/' + n.slug + '/" class="negocio-card"' +
+        ' data-bairro="' + (n.bairro||'').toLowerCase() + '"' +
+        ' data-cat="' + n.categoria_slug + '"' +
+        ' data-nome="' + n.nome.toLowerCase() + '"' +
+        ' data-lat="' + (n.lat||'') + '"' +
+        ' data-lng="' + (n.lng||'') + '">' +
+        '<div class="card-foto">' +
+            '<img src="' + foto + '" alt="' + n.nome + '" loading="lazy" width="400" height="400">' +
+            '<span class="badge-cat">' + n.categoria_nome + '</span>' +
+        '</div>' +
+        '<div class="card-body">' +
+            '<h3>' + n.nome + '</h3>' +
+            bairro +
+            '<span class="btn-ver">Ver detalhes →</span>' +
+        '</div>' +
+        '</a>';
 }
 
-/* ══ LOCALIZAÇÃO ══ */
-var ordemOriginal = null;
+function atualizarSubtitulo(total){
+    var el = document.getElementById('gridSubtitulo');
+    if(el) el.textContent = total + ' negócio(s) encontrado(s)';
+}
+
+function _buildApiUrl(offset){
+    var url = '/api/hub/negocios?limit=' + _loteSize + '&offset=' + offset;
+    if(_filtroAtualBairro) url += '&bairro=' + encodeURIComponent(_filtroAtualBairro);
+    if(_filtroAtualBusca)  url += '&busca='  + encodeURIComponent(_filtroAtualBusca);
+    // passa filtro de categoria/bairro do contexto da página
+    {% if filtro_tipo == 'categoria' %}
+    url += '&categoria={{ segmento }}';
+    {% else %}
+    if(!_filtroAtualBairro) url += '&bairro={{ segmento }}';
+    {% endif %}
+    return url;
+}
+
+function _carregarLote(){
+    if(_apiFim || _apiCarregando) return;
+    _apiCarregando = true;
+    var loading = document.getElementById('lazy-loading');
+    if(loading) loading.style.display = 'block';
+    fetch(_buildApiUrl(_apiOffset))
+        .then(function(r){ return r.json(); })
+        .then(function(data){
+            _apiCarregando = false;
+            if(loading) loading.style.display = 'none';
+            if(!Array.isArray(data) || !data.length){ _apiFim = true; return; }
+            var grid = document.getElementById('negociosGrid');
+            data.forEach(function(n){ grid.insertAdjacentHTML('beforeend', negocioCardHTML(n)); });
+            _apiOffset += data.length;
+            _totalVisivelLocal += data.length;
+            if(data.length < _loteSize) _apiFim = true;
+            if(_locAtiva && _userLat) _ordenarCards();
+        })
+        .catch(function(){ _apiCarregando = false; if(loading) loading.style.display = 'none'; _apiFim = true; });
+}
+
+function initLazySentinel(){
+    var sentinel = document.getElementById('lazy-sentinel');
+    if(!sentinel || !('IntersectionObserver' in window)) return;
+    new IntersectionObserver(function(entries){
+        if(entries[0].isIntersecting) _carregarLote();
+    }, { rootMargin: '300px' }).observe(sentinel);
+}
+
+// ══ SLICER / BUSCA — agora recarregam da API ══
+function buscar(q){
+    _filtroAtualBusca = q.toLowerCase().trim();
+    _recarregarGrid();
+}
+
+function selecionarItem(el, val){
+    document.querySelectorAll('#slicerList .slicer-item').forEach(function(i){ i.classList.remove('active'); });
+    el.classList.add('active');
+    document.getElementById('slicerLabel').textContent = el.textContent.trim();
+    document.getElementById('slicerDropdown').classList.remove('open');
+    document.getElementById('slicerBtn').classList.remove('open');
+    filtroAtivo = val;
+    _filtroAtualBairro = val;
+    _recarregarGrid();
+}
+
+function _recarregarGrid(){
+    var grid = document.getElementById('negociosGrid');
+    grid.innerHTML = '';
+    _apiOffset = 0;
+    _apiFim = false;
+    _locAtiva = false;
+    _ordemOriginal = null;
+    _totalVisivelLocal = 0;
+    // Se busca/filtro vazio e sem bairro ativo, usa o total real da página
+    atualizarSubtitulo('...');
+    _carregarLote();
+}
+
+function aplicarFiltros(){ _recarregarGrid(); }
+
+// ══ BUSCA LOCAL — debounce para não disparar a cada tecla ══
+var _buscaTimer = null;
+function buscarDebounce(q){
+    clearTimeout(_buscaTimer);
+    _buscaTimer = setTimeout(function(){ buscar(q); }, 350);
+}
+
+// ══ LOCALIZAÇÃO ══
 var locAtiva = false;
 
 function usarLocalizacao(){
     var btn = document.getElementById('btnLocalizacao');
     var label = document.getElementById('btnLocLabel');
-
-    if(locAtiva){
-        // desativa — restaura ordem original
-        locAtiva = false;
+    if(_locAtiva){
+        _locAtiva = false; locAtiva = false;
         btn.classList.remove('ativo');
         label.textContent = 'Mais próximo';
-        restaurarOrdem();
+        _restaurarOrdem();
         return;
     }
-
-    if(!navigator.geolocation){
-        alert('Seu navegador não suporta geolocalização.');
-        return;
-    }
-
+    if(!navigator.geolocation){ alert('Seu navegador não suporta geolocalização.'); return; }
     label.textContent = 'Localizando...';
     btn.classList.add('ativo');
-
     navigator.geolocation.getCurrentPosition(
         function(pos){
-            locAtiva = true;
+            _locAtiva = true; locAtiva = true;
+            _userLat = pos.coords.latitude;
+            _userLng = pos.coords.longitude;
             label.textContent = 'Mais próximo ✓';
-            ordenarPorProximidade(pos.coords.latitude, pos.coords.longitude);
+            _ordenarCards();
         },
         function(){
-            locAtiva = false;
+            _locAtiva = false; locAtiva = false;
             btn.classList.remove('ativo');
             label.textContent = 'Mais próximo';
             alert('Não foi possível obter sua localização. Verifique as permissões do navegador.');
@@ -610,43 +689,31 @@ function usarLocalizacao(){
     );
 }
 
-function distancia(lat1, lng1, lat2, lng2){
-    var R = 6371;
-    var dLat = (lat2-lat1)*Math.PI/180;
-    var dLng = (lng2-lng1)*Math.PI/180;
+function _distancia(lat1, lng1, lat2, lng2){
+    var R = 6371, dLat = (lat2-lat1)*Math.PI/180, dLng = (lng2-lng1)*Math.PI/180;
     var a = Math.sin(dLat/2)*Math.sin(dLat/2) +
-            Math.cos(lat1*Math.PI/180)*Math.cos(lat2*Math.PI/180)*
-            Math.sin(dLng/2)*Math.sin(dLng/2);
+            Math.cos(lat1*Math.PI/180)*Math.cos(lat2*Math.PI/180)*Math.sin(dLng/2)*Math.sin(dLng/2);
     return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
 }
 
-function ordenarPorProximidade(userLat, userLng){
+function _ordenarCards(){
     var grid = document.getElementById('negociosGrid');
     var cards = Array.from(grid.querySelectorAll('.negocio-card'));
-
-    // salva ordem original uma única vez
-    if(!ordemOriginal) ordemOriginal = cards.slice();
-
+    if(!_ordemOriginal) _ordemOriginal = cards.slice();
     cards.sort(function(a, b){
-        var aLat = parseFloat(a.dataset.lat);
-        var aLng = parseFloat(a.dataset.lng);
-        var bLat = parseFloat(b.dataset.lat);
-        var bLng = parseFloat(b.dataset.lng);
-        var aSemCoord = isNaN(aLat) || isNaN(aLng);
-        var bSemCoord = isNaN(bLat) || isNaN(bLng);
-        if(aSemCoord && bSemCoord) return 0;
-        if(aSemCoord) return 1;
-        if(bSemCoord) return -1;
-        return distancia(userLat, userLng, aLat, aLng) - distancia(userLat, userLng, bLat, bLng);
+        var aLat = parseFloat(a.dataset.lat), aLng = parseFloat(a.dataset.lng);
+        var bLat = parseFloat(b.dataset.lat), bLng = parseFloat(b.dataset.lng);
+        var aSem = isNaN(aLat)||isNaN(aLng), bSem = isNaN(bLat)||isNaN(bLng);
+        if(aSem && bSem) return 0; if(aSem) return 1; if(bSem) return -1;
+        return _distancia(_userLat, _userLng, aLat, aLng) - _distancia(_userLat, _userLng, bLat, bLng);
     });
-
     cards.forEach(function(c){ grid.appendChild(c); });
 }
 
-function restaurarOrdem(){
-    if(!ordemOriginal) return;
+function _restaurarOrdem(){
+    if(!_ordemOriginal) return;
     var grid = document.getElementById('negociosGrid');
-    ordemOriginal.forEach(function(c){ grid.appendChild(c); });
+    _ordemOriginal.forEach(function(c){ grid.appendChild(c); });
 }
 
 /* ══ BANNERS ══ */
