@@ -7,12 +7,13 @@ import psycopg2
 import psycopg2.extras
 import os
 import glob
+import unicodedata as _uc
 from dotenv import load_dotenv
 
 load_dotenv()
 
 app = Flask(__name__)
-app.secret_key = os.getenv("SECRET_KEY", "leanttro_hub_secret_2026")
+app.secret_key = os.getenv("SECRET_KEY")
 app.wsgi_app = ProxyFix(app.wsgi_app, x_for=1, x_proto=1, x_host=1, x_prefix=1)
 app.url_map.strict_slashes = False
 
@@ -31,9 +32,9 @@ def listar_templates(tipo):
 def get_db():
     if "db" not in g:
         g.db = psycopg2.connect(
-            host     = os.getenv("DB_HOST", "213.199.56.207"),
+            host     = os.getenv("DB_HOST"),
             port     = int(os.getenv("DB_PORT", 5452)),
-            dbname   = os.getenv("DB_NAME", "postgres"),
+            dbname   = os.getenv("DB_NAME"),
             user     = os.getenv("DB_USER"),
             password = os.getenv("DB_PASS"),
             cursor_factory=psycopg2.extras.RealDictCursor
@@ -81,11 +82,26 @@ def get_hub_by_host():
         hub = query("SELECT * FROM hub_clientes WHERE hub_leanttro = %s AND ativo = true", (slug,), one=True)
     return hub
 
+# ── Slugify ───────────────────────────────────────────────────
+
+def _slugify(texto):
+    if not texto:
+        return ""
+    texto = _uc.normalize("NFD", texto.lower())
+    texto = "".join(c for c in texto if _uc.category(c) != "Mn")
+    return texto.replace(" ", "-").strip("-")
+
+@app.template_filter("slugify")
+def _jinja_slugify(texto):
+    return _slugify(texto) if texto else ""
+
+
 # ════════════════════════════════════════════════════════════
 #  ROTAS PÚBLICAS DO HUB
 # ════════════════════════════════════════════════════════════
 
-ROTAS_RESERVADAS = {"admin", "static", "favicon.ico", "robots.txt", "sitemap.xml"}
+# "blog" e "cidade" adicionados para não colidir com /<segmento>/
+ROTAS_RESERVADAS = {"admin", "static", "favicon.ico", "robots.txt", "sitemap.xml", "blog", "cidade", "api"}
 
 @app.route("/")
 def index():
@@ -129,7 +145,6 @@ def sitemap():
     base_url = f"https://{request.host}"
     hoje = datetime.now(timezone.utc).strftime("%Y-%m-%d")
 
-    # Negócios ativos com categoria e data de atualização
     negocios = query("""
         SELECT n.slug, n.bairro,
                n.criado_em as atualizado_em,
@@ -141,7 +156,6 @@ def sitemap():
         ORDER BY n.nome
     """, (hub["id"],))
 
-    # Segmentos únicos (categoria ou bairro conforme tipo do hub)
     eh_bairro = hub.get("tipo") == "bairro"
     segmentos_vistos = set()
     segmentos = []
@@ -159,15 +173,11 @@ def sitemap():
         return str(val)[:10]
 
     urls = []
-
-    # Página inicial
     urls.append({"loc": f"{base_url}/", "lastmod": hoje, "priority": "1.0", "changefreq": "weekly"})
 
-    # Páginas de filtro (categoria ou bairro)
     for seg in segmentos:
         urls.append({"loc": f"{base_url}/{seg}/", "lastmod": hoje, "priority": "0.8", "changefreq": "weekly"})
 
-    # Páginas individuais de negócio
     for n in negocios:
         seg = n["bairro"].lower() if eh_bairro and n["bairro"] else n["categoria_slug"]
         if not seg:
@@ -176,6 +186,22 @@ def sitemap():
             "loc": f"{base_url}/{seg}/{n['slug']}/",
             "lastmod": fmt_date(n["atualizado_em"]),
             "priority": "0.6",
+            "changefreq": "monthly",
+        })
+
+    # Posts de blog publicados no sitemap
+    posts = query("""
+        SELECT p.slug, p.publicado_em
+        FROM blog_posts p
+        JOIN blog_post_hubs ph ON ph.post_id = p.id
+        WHERE ph.hub_id = %s AND p.publicado = true
+        ORDER BY p.publicado_em DESC
+    """, (hub["id"],))
+    for p in posts:
+        urls.append({
+            "loc": f"{base_url}/blog/{p['slug']}/",
+            "lastmod": fmt_date(p["publicado_em"]),
+            "priority": "0.5",
             "changefreq": "monthly",
         })
 
@@ -211,7 +237,6 @@ def pagina_filtro(segmento):
         """, (hub["id"], segmento))
         filtro_tipo, filtro_valor = "bairro", segmento
     elif hub["tipo"] == "cidade":
-        # Tenta categoria primeiro, senão trata como bairro
         categoria = query(
             "SELECT * FROM hub_categorias WHERE slug = %s AND ativo = true",
             (segmento,), one=True
@@ -255,6 +280,8 @@ def pagina_filtro(segmento):
 
 @app.route("/<segmento>/<slug_negocio>/")
 def pagina_negocio(segmento, slug_negocio):
+    if segmento in ROTAS_RESERVADAS:
+        return "Não encontrado", 404
     hub = get_hub_by_host()
     if not hub:
         return "Hub não encontrado", 404
@@ -274,26 +301,10 @@ def pagina_negocio(segmento, slug_negocio):
 
 
 # ════════════════════════════════════════════════════════════
-#  ROTAS DE CIDADE — NOVAS (não tocam nas existentes)
+#  ROTAS DE CIDADE
 # ════════════════════════════════════════════════════════════
 
-import unicodedata as _uc
-
-def _slugify(texto):
-    if not texto:
-        return ""
-    texto = _uc.normalize("NFD", texto.lower())
-    texto = "".join(c for c in texto if _uc.category(c) != "Mn")
-    return texto.replace(" ", "-").strip("-")
-
-# ── Filtro Jinja slugify (remove acentos, sem espaços) ───────
-@app.template_filter("slugify")
-def _jinja_slugify(texto):
-    return _slugify(texto) if texto else ""
-
-
 def _resolve_bairro(hub_id, bairro_slug, cidade_nome=None):
-    """Devolve o nome real do bairro a partir do slug."""
     bairro_slug_norm = _slugify(bairro_slug)
     sql = """
         SELECT DISTINCT n.bairro
@@ -313,8 +324,6 @@ def _resolve_bairro(hub_id, bairro_slug, cidade_nome=None):
 
 
 def _resolve_cidade(hub_id, cidade_slug):
-    """Devolve o nome real da cidade a partir do slug."""
-    # Normaliza o slug recebido (remove acentos que o browser pode mandar)
     cidade_slug_norm = _slugify(cidade_slug)
     rows = query("""
         SELECT DISTINCT n.cidade
@@ -411,7 +420,6 @@ def pagina_cidade(cidade_slug):
 
 @app.route("/cidade/<cidade_slug>/<segundo_slug>/")
 def pagina_cidade_segundo(cidade_slug, segundo_slug):
-    """Detecta automaticamente se o segundo segmento é categoria ou bairro."""
     hub = get_hub_by_host()
     if not hub:
         return "Hub não encontrado", 404
@@ -448,15 +456,13 @@ def pagina_cidade_bairro_cat(cidade_slug, bairro_slug, cat_slug):
     cidade_nome = _resolve_cidade(hub["id"], cidade_slug)
     if not cidade_nome:
         return "Cidade não encontrada", 404
-    categoria  = query(
+    categoria   = query(
         "SELECT * FROM hub_categorias WHERE slug = %s AND ativo = true",
         (cat_slug,), one=True
     )
-    negocios   = _negocios_cidade(hub["id"], cidade_nome=cidade_nome,
-                                   cat_slug=cat_slug, bairro_slug=bairro_slug)
-    categorias = query("SELECT * FROM hub_categorias WHERE ativo = true ORDER BY nome")
-    bairros    = _bairros_cidade(hub["id"], cidade_nome)
-    cats_disp  = _categorias_cidade(hub["id"], cidade_nome)
+    categorias  = query("SELECT * FROM hub_categorias WHERE ativo = true ORDER BY nome")
+    bairros     = _bairros_cidade(hub["id"], cidade_nome)
+    cats_disp   = _categorias_cidade(hub["id"], cidade_nome)
     bairro_nome = _resolve_bairro(hub["id"], bairro_slug, cidade_nome) or bairro_slug.replace("-", " ").title()
     negocios    = _negocios_cidade(hub["id"], cidade_nome=cidade_nome,
                                    cat_slug=cat_slug, bairro_slug=bairro_nome)
@@ -469,7 +475,6 @@ def pagina_cidade_bairro_cat(cidade_slug, bairro_slug, cat_slug):
 
 @app.route("/<cat_slug>/em/<cidade_slug>/")
 def pagina_cat_cidade(cat_slug, cidade_slug):
-    """/<cat_slug>/em/<cidade_slug>/ — usa /em/ para não colidir com /<seg>/<slug_negocio>/"""
     if cat_slug in ROTAS_RESERVADAS:
         return "Não encontrado", 404
     hub = get_hub_by_host()
@@ -524,6 +529,114 @@ def pagina_cat_cidade_bairro(cat_slug, cidade_slug, bairro_slug):
 
 
 # ════════════════════════════════════════════════════════════
+#  BLOG — ROTAS PÚBLICAS
+# ════════════════════════════════════════════════════════════
+
+@app.route("/blog/")
+def blog_index():
+    hub = get_hub_by_host()
+    if not hub:
+        return "Hub não encontrado", 404
+    tag      = request.args.get("tag", "").strip()
+    page     = max(int(request.args.get("page", 1)), 1)
+    per_page = 12
+    offset   = (page - 1) * per_page
+
+    sql = """
+        SELECT p.*, array_agg(t.slug ORDER BY t.nome) FILTER (WHERE t.id IS NOT NULL) as tags
+        FROM blog_posts p
+        JOIN blog_post_hubs ph ON ph.post_id = p.id
+        LEFT JOIN blog_post_tags pt ON pt.post_id = p.id
+        LEFT JOIN blog_tags t ON t.id = pt.tag_id
+        WHERE ph.hub_id = %s AND p.publicado = true
+    """
+    params = [hub["id"]]
+    if tag:
+        sql += " AND EXISTS (SELECT 1 FROM blog_post_tags pt2 JOIN blog_tags t2 ON t2.id = pt2.tag_id WHERE pt2.post_id = p.id AND t2.slug = %s)"
+        params.append(tag)
+    sql += " GROUP BY p.id ORDER BY p.publicado_em DESC LIMIT %s OFFSET %s"
+    params += [per_page, offset]
+    posts = query(sql, params)
+
+    sql_count = """
+        SELECT COUNT(DISTINCT p.id) as n
+        FROM blog_posts p
+        JOIN blog_post_hubs ph ON ph.post_id = p.id
+        WHERE ph.hub_id = %s AND p.publicado = true
+    """
+    count_params = [hub["id"]]
+    if tag:
+        sql_count += " AND EXISTS (SELECT 1 FROM blog_post_tags pt2 JOIN blog_tags t2 ON t2.id = pt2.tag_id WHERE pt2.post_id = p.id AND t2.slug = %s)"
+        count_params.append(tag)
+    total = query(sql_count, count_params, one=True)["n"]
+    total_pages = max(1, (total + per_page - 1) // per_page)
+
+    tags_disponiveis = query("""
+        SELECT DISTINCT t.id, t.nome, t.slug
+        FROM blog_tags t
+        JOIN blog_post_tags pt ON pt.tag_id = t.id
+        JOIN blog_posts p ON p.id = pt.post_id
+        JOIN blog_post_hubs ph ON ph.post_id = p.id
+        WHERE ph.hub_id = %s AND p.publicado = true
+        ORDER BY t.nome
+    """, (hub["id"],))
+
+    categorias = query("SELECT * FROM hub_categorias WHERE ativo = true ORDER BY nome")
+    template = hub.get("template_blog") or "blog_otp"
+    return render_template(
+        f"hub/{template}.html",
+        hub=hub, posts=posts, tags=tags_disponiveis,
+        tag_ativa=tag, page=page, total_pages=total_pages,
+        categorias=categorias,
+    )
+
+
+@app.route("/blog/<slug>/")
+def blog_post(slug):
+    hub = get_hub_by_host()
+    if not hub:
+        return "Hub não encontrado", 404
+    post = query("""
+        SELECT p.*
+        FROM blog_posts p
+        JOIN blog_post_hubs ph ON ph.post_id = p.id
+        WHERE ph.hub_id = %s AND p.slug = %s AND p.publicado = true
+    """, (hub["id"], slug), one=True)
+    if not post:
+        return "Post não encontrado", 404
+
+    query("UPDATE blog_posts SET visualizacoes = visualizacoes + 1 WHERE id = %s",
+          (post["id"],), commit=True)
+
+    tags = query("""
+        SELECT t.* FROM blog_tags t
+        JOIN blog_post_tags pt ON pt.tag_id = t.id
+        WHERE pt.post_id = %s ORDER BY t.nome
+    """, (post["id"],))
+
+    relacionados = query("""
+        SELECT DISTINCT p.id, p.titulo, p.slug, p.capa_url, p.publicado_em, p.resumo
+        FROM blog_posts p
+        JOIN blog_post_hubs ph ON ph.post_id = p.id
+        JOIN blog_post_tags pt ON pt.post_id = p.id
+        WHERE ph.hub_id = %s AND p.publicado = true AND p.id <> %s
+          AND pt.tag_id IN (
+              SELECT tag_id FROM blog_post_tags WHERE post_id = %s
+          )
+        ORDER BY p.publicado_em DESC
+        LIMIT 3
+    """, (hub["id"], post["id"], post["id"]))
+
+    categorias = query("SELECT * FROM hub_categorias WHERE ativo = true ORDER BY nome")
+    template_post = hub.get("template_blog_post") or "blog_post_otp"
+    return render_template(
+        f"hub/{template_post}.html",
+        hub=hub, post=post, tags=tags,
+        relacionados=relacionados, categorias=categorias,
+    )
+
+
+# ════════════════════════════════════════════════════════════
 #  ADMIN — AUTH
 # ════════════════════════════════════════════════════════════
 
@@ -557,7 +670,7 @@ def admin_logout():
 
 
 # ════════════════════════════════════════════════════════════
-#  ADMIN — PAINEL ÚNICO (index.html)
+#  ADMIN — PAINEL
 # ════════════════════════════════════════════════════════════
 
 @app.route("/admin")
@@ -567,11 +680,13 @@ def admin_dashboard():
     total_negocios   = query("SELECT COUNT(*) as n FROM hub_negocios", one=True)["n"]
     total_categorias = query("SELECT COUNT(*) as n FROM hub_categorias", one=True)["n"]
     total_usuarios   = query("SELECT COUNT(*) as n FROM usuarios", one=True)["n"]
+    total_posts      = query("SELECT COUNT(*) as n FROM blog_posts", one=True)["n"]
     return render_template("admin/index.html",
                            total_hubs=total_hubs,
                            total_negocios=total_negocios,
                            total_categorias=total_categorias,
-                           total_usuarios=total_usuarios)
+                           total_usuarios=total_usuarios,
+                           total_posts=total_posts)
 
 
 @app.route("/admin/templates")
@@ -582,11 +697,12 @@ def admin_templates():
         "filtro":  listar_templates("filtro"),
         "negocio": listar_templates("negocio"),
         "cidade":  listar_templates("cidade"),
+        "blog":    listar_templates("blog"),
     })
 
 
 # ════════════════════════════════════════════════════════════
-#  ADMIN — HUBS  (JSON para o painel SPA)
+#  ADMIN — HUBS
 # ════════════════════════════════════════════════════════════
 
 @app.route("/admin/hubs")
@@ -775,7 +891,6 @@ def admin_negocio_editar(negocio_id):
                 VALUES (%s, %s) ON CONFLICT DO NOTHING
             """, (negocio_id, hub_id), commit=True)
         return jsonify({"ok": True})
-    # GET — retorna dados + hubs vinculados
     hubs_do_negocio = [r["hub_id"] for r in query(
         "SELECT hub_id FROM hub_negocio_hubs WHERE negocio_id = %s", (negocio_id,)
     )]
@@ -804,14 +919,11 @@ def admin_negocios_bulk():
 
     if action == "ativar":
         query("UPDATE hub_negocios SET ativo = TRUE WHERE id = ANY(%s)", (ids,), commit=True)
-
     elif action == "desativar":
         query("UPDATE hub_negocios SET ativo = FALSE WHERE id = ANY(%s)", (ids,), commit=True)
-
     elif action == "excluir":
         query("DELETE FROM hub_negocio_hubs WHERE negocio_id = ANY(%s)", (ids,), commit=True)
         query("DELETE FROM hub_negocios WHERE id = ANY(%s)", (ids,), commit=True)
-
     elif action == "vincular" and hub_id:
         hub_id = int(hub_id)
         for nid in ids:
@@ -819,14 +931,12 @@ def admin_negocios_bulk():
                 INSERT INTO hub_negocio_hubs (negocio_id, hub_id)
                 VALUES (%s, %s) ON CONFLICT (negocio_id, hub_id) DO NOTHING
             """, (nid, hub_id), commit=True)
-
     elif action == "desvincular" and hub_id:
         hub_id = int(hub_id)
         query(
             "DELETE FROM hub_negocio_hubs WHERE negocio_id = ANY(%s) AND hub_id = %s",
             (ids, hub_id), commit=True
         )
-
     elif action == "mudar_categoria":
         categoria_id = data.get("categoria_id")
         if not categoria_id:
@@ -836,7 +946,6 @@ def admin_negocios_bulk():
             "UPDATE hub_negocios SET categoria_id = %s WHERE id = ANY(%s)",
             (categoria_id, ids), commit=True
         )
-
     else:
         return jsonify({"error": "Ação inválida"}), 400
 
@@ -942,7 +1051,7 @@ def admin_usuario_editar(user_id):
         return jsonify({"ok": True})
     admin = query("SELECT * FROM admins WHERE user_id = %s", (user_id,), one=True)
     data = dict(usuario)
-    data.pop("senha_hash", None)  # nunca expõe o hash
+    data.pop("senha_hash", None)
     data["admin_nivel"] = admin["nivel"] if admin else None
     return jsonify(data)
 
@@ -1011,6 +1120,192 @@ def admin_assinatura_deletar(ass_id):
 
 
 # ════════════════════════════════════════════════════════════
+#  ADMIN — BLOG (CRUD completo)
+# ════════════════════════════════════════════════════════════
+
+@app.route("/admin/blog")
+@login_required
+def admin_blog():
+    posts = query("""
+        SELECT p.*,
+               array_agg(DISTINCT ph.hub_id) FILTER (WHERE ph.hub_id IS NOT NULL) as hub_ids,
+               array_agg(DISTINCT t.nome)    FILTER (WHERE t.id      IS NOT NULL) as tag_nomes
+        FROM blog_posts p
+        LEFT JOIN blog_post_hubs ph ON ph.post_id = p.id
+        LEFT JOIN blog_post_tags pt ON pt.post_id = p.id
+        LEFT JOIN blog_tags t ON t.id = pt.tag_id
+        GROUP BY p.id
+        ORDER BY p.criado_em DESC
+    """)
+    return jsonify([dict(p) for p in posts])
+
+
+@app.route("/admin/blog/novo", methods=["POST"])
+@login_required
+def admin_blog_novo():
+    d = request.form
+    cur = get_db().cursor()
+    cur.execute("""
+        INSERT INTO blog_posts
+            (titulo, slug, resumo, conteudo, capa_url, publicado, publicado_em)
+        VALUES (%s, %s, %s, %s, %s, %s, %s)
+        RETURNING id
+    """, (
+        d["titulo"], d["slug"],
+        d.get("resumo") or None,
+        d.get("conteudo") or None,
+        d.get("capa_url") or None,
+        "publicado" in d,
+        d.get("publicado_em") or None,
+    ))
+    post_id = cur.fetchone()["id"]
+
+    for hub_id in request.form.getlist("hubs"):
+        cur.execute("""
+            INSERT INTO blog_post_hubs (post_id, hub_id)
+            VALUES (%s, %s) ON CONFLICT DO NOTHING
+        """, (post_id, int(hub_id)))
+
+    for tag_slug in request.form.getlist("tags"):
+        tag_slug = tag_slug.strip().lower().replace(" ", "-")
+        if not tag_slug:
+            continue
+        cur.execute("""
+            INSERT INTO blog_tags (nome, slug)
+            VALUES (%s, %s)
+            ON CONFLICT (slug) DO UPDATE SET nome = EXCLUDED.nome
+            RETURNING id
+        """, (tag_slug.replace("-", " ").title(), tag_slug))
+        tag_id = cur.fetchone()["id"]
+        cur.execute("""
+            INSERT INTO blog_post_tags (post_id, tag_id)
+            VALUES (%s, %s) ON CONFLICT DO NOTHING
+        """, (post_id, tag_id))
+
+    get_db().commit()
+    return jsonify({"ok": True, "id": post_id})
+
+
+@app.route("/admin/blog/<int:post_id>/editar", methods=["GET", "POST"])
+@login_required
+def admin_blog_editar(post_id):
+    post = query("SELECT * FROM blog_posts WHERE id = %s", (post_id,), one=True)
+    if not post:
+        return jsonify({"erro": "Post não encontrado"}), 404
+
+    if request.method == "POST":
+        d = request.form
+        query("""
+            UPDATE blog_posts SET
+                titulo=%s, slug=%s, resumo=%s, conteudo=%s,
+                capa_url=%s, publicado=%s, publicado_em=%s
+            WHERE id=%s
+        """, (
+            d["titulo"], d["slug"],
+            d.get("resumo") or None,
+            d.get("conteudo") or None,
+            d.get("capa_url") or None,
+            "publicado" in d,
+            d.get("publicado_em") or None,
+            post_id,
+        ), commit=True)
+
+        query("DELETE FROM blog_post_hubs WHERE post_id = %s", (post_id,), commit=True)
+        for hub_id in request.form.getlist("hubs"):
+            query("""
+                INSERT INTO blog_post_hubs (post_id, hub_id)
+                VALUES (%s, %s) ON CONFLICT DO NOTHING
+            """, (post_id, int(hub_id)), commit=True)
+
+        query("DELETE FROM blog_post_tags WHERE post_id = %s", (post_id,), commit=True)
+        cur = get_db().cursor()
+        for tag_slug in request.form.getlist("tags"):
+            tag_slug = tag_slug.strip().lower().replace(" ", "-")
+            if not tag_slug:
+                continue
+            cur.execute("""
+                INSERT INTO blog_tags (nome, slug)
+                VALUES (%s, %s)
+                ON CONFLICT (slug) DO UPDATE SET nome = EXCLUDED.nome
+                RETURNING id
+            """, (tag_slug.replace("-", " ").title(), tag_slug))
+            tag_id = cur.fetchone()["id"]
+            cur.execute("""
+                INSERT INTO blog_post_tags (post_id, tag_id)
+                VALUES (%s, %s) ON CONFLICT DO NOTHING
+            """, (post_id, tag_id))
+        get_db().commit()
+        return jsonify({"ok": True})
+
+    hubs_do_post = [r["hub_id"] for r in query(
+        "SELECT hub_id FROM blog_post_hubs WHERE post_id = %s", (post_id,)
+    )]
+    tags_do_post = [r["slug"] for r in query("""
+        SELECT t.slug FROM blog_tags t
+        JOIN blog_post_tags pt ON pt.tag_id = t.id
+        WHERE pt.post_id = %s
+    """, (post_id,))]
+    data = dict(post)
+    data["hubs_do_post"] = hubs_do_post
+    data["tags_do_post"] = tags_do_post
+    return jsonify(data)
+
+
+@app.route("/admin/blog/<int:post_id>/deletar", methods=["POST"])
+@login_required
+def admin_blog_deletar(post_id):
+    query("DELETE FROM blog_post_tags WHERE post_id = %s", (post_id,), commit=True)
+    query("DELETE FROM blog_post_hubs WHERE post_id = %s", (post_id,), commit=True)
+    query("DELETE FROM blog_posts WHERE id = %s", (post_id,), commit=True)
+    return jsonify({"ok": True})
+
+
+@app.route("/admin/blog/tags")
+@login_required
+def admin_blog_tags():
+    tags = query("""
+        SELECT t.*, COUNT(pt.post_id) as total_posts
+        FROM blog_tags t
+        LEFT JOIN blog_post_tags pt ON pt.tag_id = t.id
+        GROUP BY t.id ORDER BY t.nome
+    """)
+    return jsonify([dict(t) for t in tags])
+
+
+@app.route("/admin/blog/tags/nova", methods=["POST"])
+@login_required
+def admin_blog_tag_nova():
+    d = request.form
+    query("""
+        INSERT INTO blog_tags (nome, slug)
+        VALUES (%s, %s) ON CONFLICT (slug) DO NOTHING
+    """, (d["nome"], d["slug"]), commit=True)
+    return jsonify({"ok": True})
+
+
+@app.route("/admin/blog/tags/<int:tag_id>/editar", methods=["GET", "POST"])
+@login_required
+def admin_blog_tag_editar(tag_id):
+    tag = query("SELECT * FROM blog_tags WHERE id = %s", (tag_id,), one=True)
+    if not tag:
+        return jsonify({"erro": "Tag não encontrada"}), 404
+    if request.method == "POST":
+        d = request.form
+        query("UPDATE blog_tags SET nome=%s, slug=%s WHERE id=%s",
+              (d["nome"], d["slug"], tag_id), commit=True)
+        return jsonify({"ok": True})
+    return jsonify(dict(tag))
+
+
+@app.route("/admin/blog/tags/<int:tag_id>/deletar", methods=["POST"])
+@login_required
+def admin_blog_tag_deletar(tag_id):
+    query("DELETE FROM blog_post_tags WHERE tag_id = %s", (tag_id,), commit=True)
+    query("DELETE FROM blog_tags WHERE id = %s", (tag_id,), commit=True)
+    return jsonify({"ok": True})
+
+
+# ════════════════════════════════════════════════════════════
 #  API pública — JSON
 # ════════════════════════════════════════════════════════════
 
@@ -1021,7 +1316,6 @@ def api_negocios():
         return jsonify({"erro": "Hub não encontrado"}), 404
     categoria = request.args.get("categoria")
     bairro    = request.args.get("bairro")
-    # Paginação: limit máx 200, offset para lazy loading
     try:
         limit  = min(int(request.args.get("limit",  96)), 200)
         offset = max(int(request.args.get("offset",  0)),   0)
@@ -1051,6 +1345,55 @@ def api_negocios():
 def api_categorias():
     categorias = query("SELECT * FROM hub_categorias WHERE ativo = true ORDER BY nome")
     return jsonify([dict(c) for c in categorias])
+
+
+@app.route("/api/hub/cidades")
+def api_cidades():
+    """Retorna todas as cidades com contagem de negócios — leve, sem trazer todos os negócios."""
+    hub = get_hub_by_host()
+    if not hub:
+        return jsonify({"erro": "Hub não encontrado"}), 404
+    cidades = query("""
+        SELECT n.cidade, COUNT(*) as total
+        FROM hub_negocios n
+        JOIN hub_negocio_hubs nh ON nh.negocio_id = n.id
+        WHERE nh.hub_id = %s AND n.ativo = true
+          AND n.cidade IS NOT NULL AND TRIM(n.cidade) != ''
+        GROUP BY n.cidade
+        ORDER BY total DESC, n.cidade
+    """, (hub["id"],))
+    return jsonify([dict(c) for c in cidades])
+
+
+@app.route("/api/hub/blog")
+def api_blog():
+    """Posts do hub atual, paginados. Aceita ?tag=slug&limit=12&offset=0"""
+    hub = get_hub_by_host()
+    if not hub:
+        return jsonify({"erro": "Hub não encontrado"}), 404
+    tag = request.args.get("tag", "").strip()
+    try:
+        limit  = min(int(request.args.get("limit",  12)), 50)
+        offset = max(int(request.args.get("offset",  0)),  0)
+    except (ValueError, TypeError):
+        limit, offset = 12, 0
+    sql = """
+        SELECT p.id, p.titulo, p.slug, p.resumo, p.capa_url, p.publicado_em,
+               array_agg(t.slug ORDER BY t.nome) FILTER (WHERE t.id IS NOT NULL) as tags
+        FROM blog_posts p
+        JOIN blog_post_hubs ph ON ph.post_id = p.id
+        LEFT JOIN blog_post_tags pt ON pt.post_id = p.id
+        LEFT JOIN blog_tags t ON t.id = pt.tag_id
+        WHERE ph.hub_id = %s AND p.publicado = true
+    """
+    params = [hub["id"]]
+    if tag:
+        sql += " AND EXISTS (SELECT 1 FROM blog_post_tags pt2 JOIN blog_tags t2 ON t2.id = pt2.tag_id WHERE pt2.post_id = p.id AND t2.slug = %s)"
+        params.append(tag)
+    sql += " GROUP BY p.id ORDER BY p.publicado_em DESC LIMIT %s OFFSET %s"
+    params += [limit, offset]
+    posts = query(sql, params)
+    return jsonify([dict(p) for p in posts])
 
 
 # ════════════════════════════════════════════════════════════
