@@ -524,6 +524,8 @@
         <!-- Grade (oculta inicialmente) -->
         <div class="negocios-grid" id="negocios-grade" style="display:none;"></div>
         <p class="info-message" id="negocios-vazio" style="display:none;">Nenhum estabelecimento encontrado.</p>
+        <div id="lazy-sentinel" style="height:1px; margin-top:10px;"></div>
+        <p id="lazy-loading" style="display:none; text-align:center; color:var(--primary); padding:20px; font-size:0.95em;"><i class="fas fa-spinner fa-spin"></i> Carregando mais estabelecimentos...</p>
     </div>
 </section>
 
@@ -672,10 +674,60 @@ document.addEventListener('keydown', function(e){ if(e.key === 'Escape') closeMo
 </script>
 
 <script>
-var todosNegocios = {{ negocios | tojson }};
+// Apenas os 10 primeiros vêm no HTML — o resto é buscado da API depois
+var todosNegocios = {{ negocios[:10] | tojson }};
+var _apiCarregada = false;
+var _apiCarregando = false;
+var _renderOffset = 10;
+var _loteSize = 48;
 var negociosFiltrados = todosNegocios.slice();
 var userLat = null, userLng = null, geoAtivo = false;
 var carouselPos = 0, carouselView = 'carousel';
+
+function _carregarAPIUmaVez(callback) {
+    if (_apiCarregada) { if(callback) callback(); return; }
+    if (_apiCarregando) return;
+    _apiCarregando = true;
+    var loading = document.getElementById('lazy-loading');
+    if(loading) loading.style.display = 'block';
+    fetch('/api/hub/negocios')
+        .then(function(r){ return r.json(); })
+        .then(function(data){
+            _apiCarregada = true;
+            _apiCarregando = false;
+            if(Array.isArray(data) && data.length > 0){
+                todosNegocios = data;
+                if(!_lazyCategoriaAtiva) negociosFiltrados = data.slice();
+            }
+            if(loading) loading.style.display = 'none';
+            if(callback) callback();
+        })
+        .catch(function(){
+            _apiCarregada = true;
+            _apiCarregando = false;
+            if(loading) loading.style.display = 'none';
+        });
+}
+
+function _renderizarProximoLote(){
+    var lista = negociosFiltrados;
+    if(_renderOffset >= lista.length) return;
+    var proximo = lista.slice(_renderOffset, _renderOffset + _loteSize);
+    if(!proximo.length) return;
+    _renderOffset += proximo.length;
+    var novosCards = proximo.map(cardHTML);
+    var track = document.getElementById('negocios-track');
+    if(track){
+        var tmp = document.createElement('div');
+        tmp.innerHTML = novosCards.join('');
+        while(tmp.firstChild) track.appendChild(tmp.firstChild);
+        clampAndUpdate();
+    }
+    var gd = document.getElementById('negocios-grade');
+    if(gd && gd.style.display !== 'none') gd.innerHTML += novosCards.join('');
+}
+
+var _lazyCategoriaAtiva = null;
 
 function calcDistancia(lat1,lng1,lat2,lng2){
     var R=6371,dLat=(lat2-lat1)*Math.PI/180,dLng=(lng2-lng1)*Math.PI/180;
@@ -716,9 +768,23 @@ function filtrarCategoria(slug, btn){
     btn.classList.add('active');
     var lbl=document.getElementById('slicer-label-text');
     if(lbl) lbl.textContent=btn.textContent;
-    negociosFiltrados = slug ? todosNegocios.filter(function(n){ return n.categoria_slug===slug; }) : todosNegocios.slice();
-    renderNegocios(negociosFiltrados);
     closeCategoriaSlicer();
+    _lazyCategoriaAtiva = slug || null;
+    var filtrar = function(){
+        negociosFiltrados = slug
+            ? todosNegocios.filter(function(n){ return n.categoria_slug===slug; })
+            : todosNegocios.slice();
+        _renderOffset = negociosFiltrados.length; // renderNegocios já mostra tudo
+        renderNegocios(negociosFiltrados);
+        var loading = document.getElementById('lazy-loading');
+        if(loading) loading.style.display = 'none';
+    };
+    if(_apiCarregada){ filtrar(); }
+    else {
+        var loading = document.getElementById('lazy-loading');
+        if(loading) loading.style.display = 'block';
+        _carregarAPIUmaVez(filtrar);
+    }
 }
 
 function cardHTML(n){
@@ -817,6 +883,8 @@ function setView(mode){
 }
 
 function renderNegocios(lista){
+    negociosFiltrados = lista;
+    _renderOffset = Math.min(48, lista.length); // primeiros 48 já renderizados pelo buildCarousel
     var vc=document.getElementById('view-controls');
     var vazio=document.getElementById('negocios-vazio');
     if(geoAtivo&&userLat&&userLng){
@@ -844,6 +912,20 @@ function renderNegocios(lista){
 }
 
 renderNegocios(negociosFiltrados);
+
+// IntersectionObserver: ao rolar, busca API (se necessário) e renderiza mais lotes
+(function(){
+    var sentinel = document.getElementById('lazy-sentinel');
+    if(!sentinel || !('IntersectionObserver' in window)) return;
+    new IntersectionObserver(function(entries){
+        if(!entries[0].isIntersecting) return;
+        if(!_apiCarregada){
+            _carregarAPIUmaVez(function(){ _renderizarProximoLote(); });
+        } else {
+            _renderizarProximoLote();
+        }
+    }, { rootMargin: '300px' }).observe(sentinel);
+})();
 </script>
 
 <script>
