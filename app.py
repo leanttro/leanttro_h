@@ -337,7 +337,7 @@ def _resolve_cidade(hub_id, cidade_slug):
     return None
 
 
-def _negocios_cidade(hub_id, cidade_nome=None, cat_slug=None, bairro_slug=None):
+def _negocios_cidade(hub_id, cidade_nome=None, cat_slug=None, bairro_slug=None, limit=None, offset=None):
     sql = """
         SELECT n.*, c.nome as categoria_nome, c.slug as categoria_slug
         FROM hub_negocios n
@@ -356,7 +356,35 @@ def _negocios_cidade(hub_id, cidade_nome=None, cat_slug=None, bairro_slug=None):
         sql += " AND LOWER(TRIM(n.bairro)) = LOWER(TRIM(%s))"
         params.append(bairro_slug)
     sql += " ORDER BY n.nome"
+    if limit is not None:
+        sql += " LIMIT %s"
+        params.append(limit)
+        if offset is not None:
+            sql += " OFFSET %s"
+            params.append(offset)
     return query(sql, params)
+
+
+def _contar_negocios_cidade(hub_id, cidade_nome=None, cat_slug=None, bairro_slug=None):
+    """COUNT(*) leve — usado para mostrar o total real mesmo quando _negocios_cidade vem limitado."""
+    sql = """
+        SELECT COUNT(*) as total
+        FROM hub_negocios n
+        JOIN hub_negocio_hubs nh ON nh.negocio_id = n.id
+        JOIN hub_categorias c ON c.id = n.categoria_id
+        WHERE nh.hub_id = %s AND n.ativo = true
+    """
+    params = [hub_id]
+    if cidade_nome:
+        sql += " AND LOWER(TRIM(n.cidade)) = LOWER(%s)"
+        params.append(cidade_nome)
+    if cat_slug:
+        sql += " AND c.slug = %s"
+        params.append(cat_slug)
+    if bairro_slug:
+        sql += " AND LOWER(TRIM(n.bairro)) = LOWER(TRIM(%s))"
+        params.append(bairro_slug)
+    return query(sql, params, one=True)["total"]
 
 
 def _bairros_cidade(hub_id, cidade_nome):
@@ -386,7 +414,8 @@ def _categorias_cidade(hub_id, cidade_nome):
 
 def _render_cidade(hub, negocios, categorias, cidade_nome,
                    bairro=None, categoria=None,
-                   bairros_disponiveis=None, categorias_disponiveis=None):
+                   bairros_disponiveis=None, categorias_disponiveis=None,
+                   total_negocios=None):
     template = hub.get("template_cidade") or "cidade_otp"
     return render_template(
         f"hub/{template}.html",
@@ -398,6 +427,7 @@ def _render_cidade(hub, negocios, categorias, cidade_nome,
         categoria=categoria,
         bairros_disponiveis=bairros_disponiveis or [],
         categorias_disponiveis=categorias_disponiveis or [],
+        total_negocios=total_negocios if total_negocios is not None else len(negocios),
     )
 
 
@@ -409,13 +439,15 @@ def pagina_cidade(cidade_slug):
     cidade_nome = _resolve_cidade(hub["id"], cidade_slug)
     if not cidade_nome:
         return "Cidade não encontrada", 404
-    negocios   = _negocios_cidade(hub["id"], cidade_nome=cidade_nome)
+    negocios   = _negocios_cidade(hub["id"], cidade_nome=cidade_nome, limit=48)
+    total      = _contar_negocios_cidade(hub["id"], cidade_nome=cidade_nome)
     categorias = query("SELECT * FROM hub_categorias WHERE ativo = true ORDER BY nome")
     bairros    = _bairros_cidade(hub["id"], cidade_nome)
     cats_disp  = _categorias_cidade(hub["id"], cidade_nome)
     return _render_cidade(hub, negocios, categorias, cidade_nome,
                           bairros_disponiveis=bairros,
-                          categorias_disponiveis=cats_disp)
+                          categorias_disponiveis=cats_disp,
+                          total_negocios=total)
 
 
 @app.route("/cidade/<cidade_slug>/<segundo_slug>/")
@@ -434,18 +466,22 @@ def pagina_cidade_segundo(cidade_slug, segundo_slug):
     bairros    = _bairros_cidade(hub["id"], cidade_nome)
     cats_disp  = _categorias_cidade(hub["id"], cidade_nome)
     if categoria:
-        negocios = _negocios_cidade(hub["id"], cidade_nome=cidade_nome, cat_slug=segundo_slug)
+        negocios = _negocios_cidade(hub["id"], cidade_nome=cidade_nome, cat_slug=segundo_slug, limit=48)
+        total    = _contar_negocios_cidade(hub["id"], cidade_nome=cidade_nome, cat_slug=segundo_slug)
         return _render_cidade(hub, negocios, categorias, cidade_nome,
                               categoria=dict(categoria),
                               bairros_disponiveis=bairros,
-                              categorias_disponiveis=cats_disp)
+                              categorias_disponiveis=cats_disp,
+                              total_negocios=total)
     else:
         bairro_nome = _resolve_bairro(hub["id"], segundo_slug, cidade_nome) or segundo_slug.replace("-", " ").title()
-        negocios    = _negocios_cidade(hub["id"], cidade_nome=cidade_nome, bairro_slug=bairro_nome)
+        negocios    = _negocios_cidade(hub["id"], cidade_nome=cidade_nome, bairro_slug=bairro_nome, limit=48)
+        total       = _contar_negocios_cidade(hub["id"], cidade_nome=cidade_nome, bairro_slug=bairro_nome)
         return _render_cidade(hub, negocios, categorias, cidade_nome,
                               bairro=bairro_nome,
                               bairros_disponiveis=bairros,
-                              categorias_disponiveis=cats_disp)
+                              categorias_disponiveis=cats_disp,
+                              total_negocios=total)
 
 
 @app.route("/cidade/<cidade_slug>/<bairro_slug>/<cat_slug>/")
@@ -465,12 +501,15 @@ def pagina_cidade_bairro_cat(cidade_slug, bairro_slug, cat_slug):
     cats_disp   = _categorias_cidade(hub["id"], cidade_nome)
     bairro_nome = _resolve_bairro(hub["id"], bairro_slug, cidade_nome) or bairro_slug.replace("-", " ").title()
     negocios    = _negocios_cidade(hub["id"], cidade_nome=cidade_nome,
-                                   cat_slug=cat_slug, bairro_slug=bairro_nome)
+                                   cat_slug=cat_slug, bairro_slug=bairro_nome, limit=48)
+    total       = _contar_negocios_cidade(hub["id"], cidade_nome=cidade_nome,
+                                          cat_slug=cat_slug, bairro_slug=bairro_nome)
     return _render_cidade(hub, negocios, categorias, cidade_nome,
                           bairro=bairro_nome,
                           categoria=dict(categoria) if categoria else None,
                           bairros_disponiveis=bairros,
-                          categorias_disponiveis=cats_disp)
+                          categorias_disponiveis=cats_disp,
+                          total_negocios=total)
 
 
 @app.route("/<cat_slug>/em/<cidade_slug>/")
@@ -489,14 +528,16 @@ def pagina_cat_cidade(cat_slug, cidade_slug):
     cidade_nome = _resolve_cidade(hub["id"], cidade_slug)
     if not cidade_nome:
         return "Cidade não encontrada", 404
-    negocios   = _negocios_cidade(hub["id"], cidade_nome=cidade_nome, cat_slug=cat_slug)
+    negocios   = _negocios_cidade(hub["id"], cidade_nome=cidade_nome, cat_slug=cat_slug, limit=48)
+    total      = _contar_negocios_cidade(hub["id"], cidade_nome=cidade_nome, cat_slug=cat_slug)
     categorias = query("SELECT * FROM hub_categorias WHERE ativo = true ORDER BY nome")
     bairros    = _bairros_cidade(hub["id"], cidade_nome)
     cats_disp  = _categorias_cidade(hub["id"], cidade_nome)
     return _render_cidade(hub, negocios, categorias, cidade_nome,
                           categoria=dict(categoria),
                           bairros_disponiveis=bairros,
-                          categorias_disponiveis=cats_disp)
+                          categorias_disponiveis=cats_disp,
+                          total_negocios=total)
 
 
 @app.route("/<cat_slug>/em/<cidade_slug>/<bairro_slug>/")
@@ -517,7 +558,9 @@ def pagina_cat_cidade_bairro(cat_slug, cidade_slug, bairro_slug):
         return "Cidade não encontrada", 404
     bairro_nome = bairro_slug.replace("-", " ").title()
     negocios    = _negocios_cidade(hub["id"], cidade_nome=cidade_nome,
-                                    cat_slug=cat_slug, bairro_slug=bairro_slug)
+                                    cat_slug=cat_slug, bairro_slug=bairro_slug, limit=48)
+    total       = _contar_negocios_cidade(hub["id"], cidade_nome=cidade_nome,
+                                          cat_slug=cat_slug, bairro_slug=bairro_slug)
     categorias  = query("SELECT * FROM hub_categorias WHERE ativo = true ORDER BY nome")
     bairros     = _bairros_cidade(hub["id"], cidade_nome)
     cats_disp   = _categorias_cidade(hub["id"], cidade_nome)
@@ -525,7 +568,8 @@ def pagina_cat_cidade_bairro(cat_slug, cidade_slug, bairro_slug):
                           bairro=bairro_nome,
                           categoria=dict(categoria),
                           bairros_disponiveis=bairros,
-                          categorias_disponiveis=cats_disp)
+                          categorias_disponiveis=cats_disp,
+                          total_negocios=total)
 
 
 # ════════════════════════════════════════════════════════════
@@ -1316,6 +1360,7 @@ def api_negocios():
         return jsonify({"erro": "Hub não encontrado"}), 404
     categoria = request.args.get("categoria")
     bairro    = request.args.get("bairro")
+    cidade    = request.args.get("cidade")
     try:
         limit  = min(int(request.args.get("limit",  96)), 200)
         offset = max(int(request.args.get("offset",  0)),   0)
@@ -1335,6 +1380,9 @@ def api_negocios():
     if bairro:
         sql += " AND LOWER(n.bairro) = LOWER(%s)"
         params.append(bairro)
+    if cidade:
+        sql += " AND LOWER(TRIM(n.cidade)) = LOWER(%s)"
+        params.append(cidade)
     sql += " ORDER BY n.nome LIMIT %s OFFSET %s"
     params += [limit, offset]
     negocios = query(sql, params)
