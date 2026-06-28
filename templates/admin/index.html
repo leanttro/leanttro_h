@@ -743,12 +743,19 @@ tbody td {
             <select class="filter-select" id="filterBairro" onchange="filterNegocios()">
               <option value="">Todos os bairros</option>
             </select>
+            <select class="filter-select" id="limitNegocios" onchange="renderNegocios(state.data.negocios)" title="Limite de exibição">
+              <option value="300">300 por vez</option>
+              <option value="1000">1.000 por vez</option>
+              <option value="5000">5.000 por vez</option>
+              <option value="0">Todos</option>
+            </select>
             <button class="btn btn-primary" onclick="openDrawer('negocio')">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
               Novo negócio
             </button>
           </div>
         </div>
+        <div style="padding: 6px 16px; font-size: 12px; color: var(--text3);" id="negociosTotalInfo"></div>
         <div class="bulk-bar" id="negociosBulkBar">
           <span id="negociosBulkCount">0 selecionados</span>
           <button class="btn btn-secondary btn-sm" onclick="bulkNegocio('ativar')">Ativar</button>
@@ -984,8 +991,14 @@ function renderHubs(data) {
 
 function renderNegocios(data) {
   const tbody = document.getElementById('negociosBody');
-  if (!data.length) { tbody.innerHTML = emptyRow(8); return; }
-  tbody.innerHTML = data.map(n => `
+  if (!data || !data.length) { tbody.innerHTML = emptyRow(8); return; }
+  const limite = parseInt(document.getElementById('limitNegocios')?.value || '300');
+  const slice = limite === 0 ? data : data.slice(0, limite);
+  const totalEl = document.getElementById('negociosTotalInfo');
+  if (totalEl) totalEl.textContent = limite === 0 || data.length <= limite
+    ? `${data.length} negócios`
+    : `Exibindo ${slice.length} de ${data.length} negócios`;
+  tbody.innerHTML = slice.map(n => `
     <tr data-search="${esc(n.nome).toLowerCase()}" data-categoria="${esc(n.categoria_nome || '').toLowerCase()}" data-bairro="${esc(n.bairro || '').toLowerCase()}" data-id="${n.id}">
       <td><input type="checkbox" class="negocio-cb" value="${n.id}" onchange="updateNegociosBulk()"></td>
       <td><strong>${esc(n.nome)}</strong></td>
