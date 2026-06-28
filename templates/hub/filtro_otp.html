@@ -342,7 +342,7 @@
             {% endif %}
         </p>
         <div class="hero-stats">
-            <div class="hero-stat"><strong>{{ negocios | length }}</strong><span>negócio(s)</span></div>
+            <div class="hero-stat"><strong>{{ negocios | length }}</strong><span>locais</span></div>
             {% if filtro_tipo == 'categoria' %}
             {% set bairros_unicos = negocios | map(attribute='bairro') | select | unique | list %}
             <div class="hero-stat"><strong>{{ bairros_unicos | length }}</strong><span>bairro(s)</span></div>
