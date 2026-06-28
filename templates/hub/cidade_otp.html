@@ -521,9 +521,9 @@
             {% if bairro %} em {{ bairro }}{% else %} em {{ cidade }}{% endif %}
         </h2>
         <p class="section-subtitle">
-            {% if negocios | length == 0 %}Nenhum resultado encontrado.
-            {% elif negocios | length == 1 %}1 estabelecimento encontrado
-            {% else %}{{ negocios | length }} estabelecimentos encontrados{% endif %}
+            {% if total_negocios == 0 %}Nenhum resultado encontrado.
+            {% elif total_negocios == 1 %}1 estabelecimento encontrado
+            {% else %}{{ total_negocios }} estabelecimentos encontrados{% endif %}
         </p>
 
         <!-- Filtros -->
@@ -575,6 +575,8 @@
         </div>
         <div class="negocios-grid" id="negocios-grade" style="display:none;"></div>
         <p class="info-message" id="negocios-vazio" style="display:none;">Nenhum estabelecimento encontrado com esses filtros.</p>
+        <div id="lazy-sentinel" style="height:1px; margin-top:10px;"></div>
+        <p id="lazy-loading" style="display:none; text-align:center; color:var(--primary); padding:20px; font-size:0.95em;"><i class="fas fa-spinner fa-spin"></i> Carregando mais estabelecimentos...</p>
     </div>
 </section>
 
@@ -715,10 +717,23 @@ window.addEventListener('resize', function(){ genClamp('bairros'); genClamp('cat
 
 <script>
 /* ══ NEGÓCIOS ══ */
-var todosNegocios = {{ negocios | tojson }};
+// Igual ao index_otp.html: só os 48 primeiros vêm no HTML — o resto é buscado
+// em lotes via API com offset. Aqui também filtramos por cidade (e bairro/categoria
+// quando o usuário troca o filtro), porque o resto dos negócios não está no navegador.
+var _cidadeAtual    = {{ cidade | tojson }};
+var _totalServidor  = {{ total_negocios | tojson }};
+var todosNegocios   = {{ negocios | tojson }};
+var _apiOffset       = 48;
+var _apiFim          = todosNegocios.length >= _totalServidor;
+var _apiCarregando   = false;
+var _loteSize        = 96;
 var negociosFiltrados = todosNegocios.slice();
 var userLat=null, userLng=null, geoAtivo=false;
 var carouselPos=0, carouselView='carousel';
+
+// Filtros de bairro/categoria ativos AGORA (começam com o que já veio da URL/Jinja)
+var _filtroBairroAtivo    = {{ (bairro or '') | tojson }} || null;
+var _filtroCategoriaAtiva = {{ (categoria.slug if categoria else '') | tojson }} || null;
 
 function calcDistancia(lat1,lng1,lat2,lng2){
     var R=6371,dLat=(lat2-lat1)*Math.PI/180,dLng=(lng2-lng1)*Math.PI/180;
@@ -811,6 +826,7 @@ function setView(mode){
 }
 
 function renderNegocios(lista){
+    negociosFiltrados = lista;
     var vc=document.getElementById('view-controls');
     var vazio=document.getElementById('negocios-vazio');
     var count=document.getElementById('resultados-count');
@@ -820,7 +836,8 @@ function renderNegocios(lista){
             return Object.assign({},n,{_dist:d});
         }).sort(function(a,b){ return a._dist-b._dist; });
     }
-    if(count) count.textContent=lista.length+' resultado'+(lista.length!==1?'s':'');
+    // Mostra "+" enquanto ainda houver mais páginas pra carregar da API
+    if(count) count.textContent = lista.length + (!_apiFim ? '+' : '') + ' resultado' + (lista.length!==1?'s':'');
     if(!lista.length){
         if(vc) vc.style.display='none';
         var cw=document.getElementById('negocios-carousel-wrapper');
@@ -837,13 +854,109 @@ function renderNegocios(lista){
     setView(carouselView);
 }
 
+// Monta a URL da API sempre com a cidade atual + filtros de bairro/categoria ativos
+function _buildApiUrl(offset, limit){
+    var url = '/api/hub/negocios?limit='+limit+'&offset='+offset+'&cidade='+encodeURIComponent(_cidadeAtual);
+    if(_filtroCategoriaAtiva) url += '&categoria='+encodeURIComponent(_filtroCategoriaAtiva);
+    if(_filtroBairroAtivo)    url += '&bairro='+encodeURIComponent(_filtroBairroAtivo);
+    return url;
+}
+
+// Quando o filtro de bairro/categoria muda, recomeça do zero buscando da API
+// (porque o restante dos negócios da cidade não está carregado no navegador)
+function _resetEFiltrar(){
+    _apiOffset = 0;
+    _apiFim = false;
+    _apiCarregando = true;
+    var loading = document.getElementById('lazy-loading');
+    if(loading) loading.style.display = 'block';
+    fetch(_buildApiUrl(0, _loteSize))
+        .then(function(r){ return r.json(); })
+        .then(function(data){
+            _apiCarregando = false;
+            if(loading) loading.style.display = 'none';
+            if(Array.isArray(data)){
+                todosNegocios = data;
+                _apiOffset = data.length;
+                if(data.length < _loteSize) _apiFim = true;
+            } else {
+                todosNegocios = [];
+                _apiFim = true;
+            }
+            renderNegocios(todosNegocios.slice());
+        })
+        .catch(function(){
+            _apiCarregando = false;
+            _apiFim = true;
+            if(loading) loading.style.display = 'none';
+            renderNegocios([]);
+        });
+}
+
+// Busca o próximo lote da API (rolagem) com paginação por offset
+var _apiCallbacksProximoLote = [];
+function _carregarAPIUmaVez(callback){
+    if(_apiFim){ if(callback) callback(); return; }
+    if(callback) _apiCallbacksProximoLote.push(callback);
+    if(_apiCarregando) return;
+    _apiCarregando = true;
+    var loading = document.getElementById('lazy-loading');
+    if(loading) loading.style.display = 'block';
+    fetch(_buildApiUrl(_apiOffset, _loteSize))
+        .then(function(r){ return r.json(); })
+        .then(function(data){
+            _apiCarregando = false;
+            if(Array.isArray(data) && data.length > 0){
+                _apiOffset += data.length;
+                todosNegocios = todosNegocios.concat(data);
+                negociosFiltrados = todosNegocios.slice();
+            } else {
+                _apiFim = true;
+            }
+            if(loading) loading.style.display = 'none';
+            var cbs = _apiCallbacksProximoLote.slice(); _apiCallbacksProximoLote = [];
+            cbs.forEach(function(cb){ cb(); });
+        })
+        .catch(function(){
+            _apiCarregando = false;
+            _apiFim = true;
+            if(loading) loading.style.display = 'none';
+            var cbs = _apiCallbacksProximoLote.slice(); _apiCallbacksProximoLote = [];
+            cbs.forEach(function(cb){ cb(); });
+        });
+}
+
+function _renderizarProximoLote(){
+    var lista = negociosFiltrados;
+    var trackCards = document.getElementById('negocios-track') ? document.getElementById('negocios-track').querySelectorAll('.negocio-card').length : 0;
+    if(trackCards < lista.length){
+        var proximo = lista.slice(trackCards, trackCards + _loteSize);
+        if(!proximo.length) return;
+        var novosCards = proximo.map(cardHTML);
+        var track = document.getElementById('negocios-track');
+        if(track){
+            var tmp = document.createElement('div');
+            tmp.innerHTML = novosCards.join('');
+            while(tmp.firstChild) track.appendChild(tmp.firstChild);
+            clampAndUpdate();
+        }
+        var gd = document.getElementById('negocios-grade');
+        if(gd && gd.style.display !== 'none') gd.innerHTML += novosCards.join('');
+        var count=document.getElementById('resultados-count');
+        if(count) count.textContent = lista.length + (!_apiFim ? '+' : '') + ' resultado' + (lista.length!==1?'s':'');
+        return;
+    }
+    if(!_apiFim){
+        _carregarAPIUmaVez(function(){ _renderizarProximoLote(); });
+    }
+}
+
 function aplicarFiltros(){
     var bVal=document.getElementById('filtro-bairro')?document.getElementById('filtro-bairro').value:'';
     var cVal=document.getElementById('filtro-categoria')?document.getElementById('filtro-categoria').value:'';
-    negociosFiltrados=todosNegocios.filter(function(n){
-        return (!bVal||(n.bairro&&n.bairro.toLowerCase()===bVal.toLowerCase())) && (!cVal||n.categoria_slug===cVal);
-    });
-    renderNegocios(negociosFiltrados);
+    _filtroBairroAtivo    = bVal || null;
+    _filtroCategoriaAtiva = cVal || null;
+    _resetEFiltrar();
 }
 
 function limparFiltros(){
@@ -851,20 +964,32 @@ function limparFiltros(){
     var c=document.getElementById('filtro-categoria'); if(c) c.value='';
     document.querySelectorAll('.chip').forEach(function(ch){ ch.classList.remove('active'); });
     var first=document.querySelector('.chip'); if(first) first.classList.add('active');
-    negociosFiltrados=todosNegocios.slice(); renderNegocios(negociosFiltrados);
+    _filtroBairroAtivo = null;
+    _filtroCategoriaAtiva = null;
+    _resetEFiltrar();
 }
 
 function filtrarCategoriaChip(slug, btn){
     document.querySelectorAll('.chip').forEach(function(c){ c.classList.remove('active'); });
     btn.classList.add('active');
     var catSel=document.getElementById('filtro-categoria'); if(catSel) catSel.value=slug||'';
-    negociosFiltrados=slug?todosNegocios.filter(function(n){ return n.categoria_slug===slug; }):todosNegocios.slice();
+    _filtroCategoriaAtiva = slug || null;
     var bSel=document.getElementById('filtro-bairro');
-    if(bSel&&bSel.value){ var bv=bSel.value; negociosFiltrados=negociosFiltrados.filter(function(n){ return n.bairro&&n.bairro.toLowerCase()===bv.toLowerCase(); }); }
-    renderNegocios(negociosFiltrados);
+    _filtroBairroAtivo = (bSel && bSel.value) ? bSel.value : null;
+    _resetEFiltrar();
 }
 
 renderNegocios(negociosFiltrados);
+
+// IntersectionObserver: ao rolar até o fim, busca o próximo lote (igual ao index)
+(function(){
+    var sentinel = document.getElementById('lazy-sentinel');
+    if(!sentinel || !('IntersectionObserver' in window)) return;
+    new IntersectionObserver(function(entries){
+        if(!entries[0].isIntersecting) return;
+        _renderizarProximoLote();
+    }, { rootMargin: '400px' }).observe(sentinel);
+})();
 </script>
 
 <script>
