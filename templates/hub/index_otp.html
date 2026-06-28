@@ -372,6 +372,38 @@
         }
         .nav-dropdown a:hover { background: var(--light) !important; color: var(--primary) !important; }
 
+        /* ══ SEÇÃO BLOG ══ */
+        .blog-section { background: var(--light-gray); }
+        .blog-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 22px; }
+        .blog-card {
+            background: var(--white); border-radius: 14px; overflow: hidden;
+            box-shadow: 0 4px 14px var(--shadow-light);
+            transition: transform 0.3s, box-shadow 0.3s;
+            display: flex; flex-direction: column; text-decoration: none; color: inherit;
+        }
+        .blog-card:hover { transform: translateY(-5px); box-shadow: 0 10px 28px var(--shadow-medium); }
+        .blog-card-foto { width: 100%; height: 180px; overflow: hidden; background: var(--light); }
+        .blog-card-foto img { width: 100%; height: 100%; object-fit: cover; transition: transform 0.4s; }
+        .blog-card:hover .blog-card-foto img { transform: scale(1.06); }
+        .blog-card-foto-placeholder { width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; background: var(--light); }
+        .blog-card-foto-placeholder i { font-size: 2.5em; color: var(--primary); opacity: 0.4; }
+        .blog-card-body { padding: 16px; flex: 1; display: flex; flex-direction: column; gap: 6px; }
+        .blog-card-tags { display: flex; flex-wrap: wrap; gap: 5px; margin-bottom: 4px; }
+        .blog-card-tag { background: var(--light); color: var(--dark); font-size: 0.72em; font-weight: 700; padding: 2px 9px; border-radius: 20px; }
+        .blog-card-body h3 { font-size: 1em; font-weight: 700; color: var(--dark-gray); line-height: 1.35; }
+        .blog-card-body p { font-size: 0.85em; color: #6c757d; line-height: 1.5; flex: 1; }
+        .blog-card-data { font-size: 0.78em; color: #adb5bd; display: flex; align-items: center; gap: 5px; margin-top: 4px; }
+        .blog-card-btn { margin-top: 10px; display: inline-block; background: var(--primary); color: #fff; padding: 8px 16px; border-radius: 6px; font-size: 0.85em; font-weight: 700; text-align: center; transition: background 0.2s; }
+        .blog-card:hover .blog-card-btn { background: var(--dark); }
+        .blog-section-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; flex-wrap: wrap; gap: 12px; }
+        .blog-section-header .section-title { margin-bottom: 0; text-align: left; }
+        .btn-ver-blog { display: inline-flex; align-items: center; gap: 6px; background: var(--primary); color: #fff; padding: 10px 22px; border-radius: 8px; font-size: 0.92em; font-weight: 700; transition: background 0.2s, transform 0.15s; white-space: nowrap; }
+        .btn-ver-blog:hover { background: var(--dark); transform: translateY(-1px); }
+        @media (max-width: 600px) {
+            .blog-section-header { flex-direction: column; align-items: flex-start; }
+            .blog-section-header .section-title { font-size: 1.4em; }
+        }
+
         /* ══ SEÇÃO CIDADES ══ */
         .cidades-section { background: var(--white); }
         .cidades-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 18px; }
@@ -589,6 +621,24 @@
         {% else %}
         <p class="info-message">Nenhuma categoria cadastrada.</p>
         {% endif %}
+    </div>
+</section>
+
+<!-- BLOG -->
+<section class="section blog-section" id="blog">
+    <div class="container">
+        <div class="blog-section-header">
+            <h2 class="section-title">Do nosso blog</h2>
+            <a href="/blog/" class="btn-ver-blog"><i class="fas fa-newspaper"></i> Ver todos os posts</a>
+        </div>
+        <p class="section-subtitle" style="text-align:left; margin-bottom:28px;">Dicas, guias e novidades para você</p>
+        <div class="blog-grid" id="blog-carrossel-grid">
+            <!-- populado via JS com /api/hub/blog -->
+        </div>
+        <p id="blog-vazio" style="display:none; text-align:center; color:#6c757d; padding:30px 0;">Nenhum post publicado ainda.</p>
+        <div id="blog-loading" style="display:none; text-align:center; color:var(--primary); padding:20px;">
+            <i class="fas fa-spinner fa-spin"></i> Carregando posts...
+        </div>
     </div>
 </section>
 
@@ -1079,29 +1129,85 @@ renderNegocios(negociosFiltrados);
 
 
 <script>
-// Popula seção de cidades e dropdown com base nos negócios disponíveis
-function renderCidades(fonte) {
-    var cidades = {};
-    fonte.forEach(function(n){
-        if(!n.cidade) return;
-        if(!cidades[n.cidade]) cidades[n.cidade] = { nome: n.cidade, count: 0, estado: n.estado || '' };
-        cidades[n.cidade].count++;
-    });
+// Carrega até 6 posts do blog via API — rápido, sem bloquear o carregamento
+(function(){
+    var grid    = document.getElementById('blog-carrossel-grid');
+    var vazio   = document.getElementById('blog-vazio');
+    var loading = document.getElementById('blog-loading');
+    if(!grid) return;
 
-    var lista = Object.values(cidades).sort(function(a,b){ return b.count - a.count; });
-    if(!lista.length) return;
+    loading.style.display = 'block';
+
+    function fmtData(iso){
+        if(!iso) return '';
+        var d = new Date(iso);
+        return d.toLocaleDateString('pt-BR', {day:'2-digit', month:'short', year:'numeric'});
+    }
+
+    function blogCardHTML(p){
+        var foto = p.capa_url
+            ? '<img src="'+p.capa_url+'" alt="'+p.titulo+'" loading="lazy" width="600" height="180">'
+            : '<div class="blog-card-foto-placeholder"><i class="fas fa-newspaper"></i></div>';
+        var tags = (Array.isArray(p.tags) && p.tags.length)
+            ? '<div class="blog-card-tags">' + p.tags.slice(0,3).map(function(t){
+                return '<span class="blog-card-tag">#'+t+'</span>';
+              }).join('') + '</div>'
+            : '';
+        var resumo = p.resumo ? '<p>'+p.resumo.substring(0,100)+(p.resumo.length>100?'…':'')+'</p>' : '';
+        var data = p.publicado_em ? '<span class="blog-card-data"><i class="fas fa-calendar-alt"></i> '+fmtData(p.publicado_em)+'</span>' : '';
+        return '<a href="/blog/'+p.slug+'/" class="blog-card">'+
+            '<div class="blog-card-foto">'+foto+'</div>'+
+            '<div class="blog-card-body">'+
+                tags+
+                '<h3>'+p.titulo+'</h3>'+
+                resumo+
+                data+
+                '<span class="blog-card-btn">Ler post →</span>'+
+            '</div>'+
+        '</a>';
+    }
+
+    fetch('/api/hub/blog?limit=6')
+        .then(function(r){ return r.json(); })
+        .then(function(data){
+            loading.style.display = 'none';
+            if(!Array.isArray(data) || !data.length){
+                // Esconde a seção inteira se não há posts
+                var section = document.getElementById('blog');
+                if(section) section.style.display = 'none';
+                return;
+            }
+            grid.innerHTML = data.map(blogCardHTML).join('');
+        })
+        .catch(function(){
+            loading.style.display = 'none';
+            var section = document.getElementById('blog');
+            if(section) section.style.display = 'none';
+        });
+})();
+</script>
+
+<script>
+// Popula seção de cidades e dropdown via API dedicada (contagem real do banco, sem carregar todos os negócios)
+function _slugCidade(nome) {
+    return nome.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/\s+/g,'-').replace(/[^a-z0-9-]/g,'');
+}
+
+function renderCidades(lista) {
+    if(!lista || !lista.length) return;
 
     var grid = document.getElementById('cidades-grid');
     if(grid){
+        var foto = 'https://res.cloudinary.com/dhu1cqvrb/image/upload/v1782521985/cidade_krf7xk.png';
         grid.innerHTML = lista.map(function(c){
-            var foto = 'https://res.cloudinary.com/dhu1cqvrb/image/upload/v1782521985/cidade_krf7xk.png';
-            var slug = c.nome.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g,'').replace(/\s+/g,'-').replace(/[^a-z0-9-]/g,'');
+            var slug = _slugCidade(c.cidade || c.nome || '');
+            var total = c.total || c.count || 0;
+            var nome  = c.cidade || c.nome || '';
             return '<a href="/cidade/'+slug+'/" class="cidade-card">'+
-                '<div class="cidade-foto"><img src="'+foto+'" alt="'+c.nome+'" loading="lazy" width="400" height="130"></div>'+
+                '<div class="cidade-foto"><img src="'+foto+'" alt="'+nome+'" loading="lazy" width="400" height="130"></div>'+
                 '<div class="cidade-body">'+
-                    '<h3>'+c.nome+'</h3>'+
-                    (c.estado ? '<p class="cidade-estado">'+c.estado+'</p>' : '')+
-                    '<p class="cidade-count">'+c.count+' estabelecimento'+(c.count>1?'s':'')+'</p>'+
+                    '<h3>'+nome+'</h3>'+
+                    '<p class="cidade-count">'+total+' estabelecimento'+(total!==1?'s':'')+'</p>'+
                 '</div>'+
             '</a>';
         }).join('');
@@ -1110,15 +1216,19 @@ function renderCidades(fonte) {
     var dd = document.getElementById('nav-dropdown-cidades');
     if(dd){
         dd.innerHTML = lista.map(function(c){
-            var slug = c.nome.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g,'').replace(/\s+/g,'-').replace(/[^a-z0-9-]/g,'');
-            return '<a href="/cidade/'+slug+'/">'+c.nome+'</a>';
+            var slug = _slugCidade(c.cidade || c.nome || '');
+            var nome = c.cidade || c.nome || '';
+            return '<a href="/cidade/'+slug+'/">'+nome+'</a>';
         }).join('');
     }
 }
 
-// Renderiza com os 10 iniciais imediatamente, atualiza quando API carregar
-renderCidades(todosNegocios);
-_carregarAPIUmaVez(function(){ renderCidades(todosNegocios); });
+// Busca cidades direto da API dedicada — query leve (só COUNT no banco, não traz todos os negócios)
+fetch('/api/hub/cidades')
+    .then(function(r){ return r.json(); })
+    .then(function(data){ if(Array.isArray(data)) renderCidades(data); })
+    .catch(function(){});
+
 </script>
 </body>
 <!-- ── Google Translate (widget nativo oculto) ── -->
