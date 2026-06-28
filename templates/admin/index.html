@@ -250,7 +250,7 @@ body {
 /* ── Dashboard ── */
 .stats-grid {
   display: grid;
-  grid-template-columns: repeat(4, 1fr);
+  grid-template-columns: repeat(5, 1fr);
   gap: 16px;
   margin-bottom: 24px;
 }
@@ -630,6 +630,18 @@ tbody td {
       <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="5" width="20" height="14" rx="2"/><path d="M2 10h20"/></svg>
       Assinaturas
     </button>
+
+    <div class="nav-section">Blog</div>
+
+    <button class="nav-item" data-section="blog">
+      <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><line x1="10" y1="9" x2="8" y2="9"/></svg>
+      Posts
+    </button>
+
+    <button class="nav-item" data-section="blog-tags">
+      <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M20.59 13.41l-7.17 7.17a2 2 0 01-2.83 0L2 12V2h10l8.59 8.59a2 2 0 010 2.82z"/><line x1="7" y1="7" x2="7.01" y2="7"/></svg>
+      Tags
+    </button>
   </nav>
 
   <div class="sidebar-footer">
@@ -685,6 +697,13 @@ tbody td {
           </div>
           <div class="stat-label">Usuários</div>
           <div class="stat-value" id="stat-usuarios">{{ total_usuarios }}</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-icon" style="background:#e8f4ff;color:#1a6fa8;">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><line x1="10" y1="9" x2="8" y2="9"/></svg>
+          </div>
+          <div class="stat-label">Posts do blog</div>
+          <div class="stat-value" id="stat-posts">{{ total_posts }}</div>
         </div>
       </div>
 
@@ -834,6 +853,50 @@ tbody td {
       </div>
     </section>
 
+    <!-- ═══ BLOG — POSTS ═══ -->
+    <section class="section" id="sec-blog">
+      <div class="card">
+        <div class="card-header">
+          <span class="card-title">Posts do blog</span>
+          <div style="display:flex;gap:8px;align-items:center;">
+            <div class="search-bar">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+              <input type="text" placeholder="Buscar post..." id="searchBlog" oninput="filterTable('blogBody', this.value)">
+            </div>
+            <button class="btn btn-primary" onclick="openDrawer('blog')">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+              Novo post
+            </button>
+          </div>
+        </div>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>Título</th><th>Slug</th><th>Tags</th><th>Hubs</th><th>Publicado</th><th>Status</th><th>Visualizações</th><th>Ações</th></tr></thead>
+            <tbody id="blogBody"><tr><td colspan="8"><div class="loading"><div class="spinner"></div>Carregando...</div></td></tr></tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <!-- ═══ BLOG — TAGS ═══ -->
+    <section class="section" id="sec-blog-tags">
+      <div class="card">
+        <div class="card-header">
+          <span class="card-title">Tags do blog</span>
+          <button class="btn btn-primary" onclick="openDrawer('blog-tag')">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+            Nova tag
+          </button>
+        </div>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>Nome</th><th>Slug</th><th>Posts</th><th>Ações</th></tr></thead>
+            <tbody id="blogTagsBody"><tr><td colspan="4"><div class="loading"><div class="spinner"></div>Carregando...</div></td></tr></tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
   </main>
 </div>
 
@@ -886,7 +949,7 @@ tbody td {
 const state = {
   section: 'dashboard',
   loaded: new Set(),
-  data: { hubs: [], negocios: [], categorias: [], usuarios: [], assinaturas: [] },
+  data: { hubs: [], negocios: [], categorias: [], usuarios: [], assinaturas: [], blog: [], 'blog-tags': [] },
   editId: null,
   editType: null,
 };
@@ -899,7 +962,8 @@ function navigate(section) {
   document.getElementById(`sec-${section}`).classList.add('active');
   document.getElementById('topbarTitle').textContent = {
     dashboard: 'Dashboard', hubs: 'Hub clientes', negocios: 'Negócios',
-    categorias: 'Categorias', usuarios: 'Usuários', assinaturas: 'Assinaturas'
+    categorias: 'Categorias', usuarios: 'Usuários', assinaturas: 'Assinaturas',
+    blog: 'Posts do blog', 'blog-tags': 'Tags do blog'
   }[section];
   state.section = section;
   if (!state.loaded.has(section)) loadSection(section);
@@ -934,6 +998,8 @@ async function loadData(section) {
     categorias:  '/admin/categorias',
     usuarios:    '/admin/usuarios',
     assinaturas: '/admin/assinaturas',
+    blog:        '/admin/blog',
+    'blog-tags': '/admin/blog/tags',
   };
   try {
     const r = await fetch(endpoints[section], { headers: { 'X-Requested-With': 'XMLHttpRequest' } });
@@ -956,6 +1022,8 @@ function render(section) {
   else if (section === 'categorias') renderCategorias(data);
   else if (section === 'usuarios') renderUsuarios(data);
   else if (section === 'assinaturas') renderAssinaturas(data);
+  else if (section === 'blog') renderBlog(data);
+  else if (section === 'blog-tags') renderBlogTags(data);
 }
 
 function renderDashHubs() {
@@ -1059,6 +1127,36 @@ function renderAssinaturas(data) {
   `).join('');
 }
 
+function renderBlog(data) {
+  const tbody = document.getElementById('blogBody');
+  if (!data || !data.length) { tbody.innerHTML = emptyRow(8); return; }
+  tbody.innerHTML = data.map(p => `
+    <tr data-search="${esc(p.titulo).toLowerCase()}">
+      <td><strong>${esc(p.titulo)}</strong></td>
+      <td class="td-mono">${esc(p.slug)}</td>
+      <td class="td-muted">${(p.tag_nomes || []).filter(Boolean).map(t => `<span class="badge badge-purple" style="margin:1px 2px;">${esc(t)}</span>`).join('') || '—'}</td>
+      <td class="td-mono">${(p.hub_ids || []).filter(Boolean).length || '0'}</td>
+      <td class="td-muted">${esc(p.publicado_em) ? esc(String(p.publicado_em).slice(0,10)) : '—'}</td>
+      <td>${p.publicado ? '<span class="badge badge-green">Publicado</span>' : '<span class="badge badge-amber">Rascunho</span>'}</td>
+      <td class="td-mono">${esc(p.visualizacoes) || '0'}</td>
+      <td>${actionBtns('blog', p.id)}</td>
+    </tr>
+  `).join('');
+}
+
+function renderBlogTags(data) {
+  const tbody = document.getElementById('blogTagsBody');
+  if (!data || !data.length) { tbody.innerHTML = emptyRow(4); return; }
+  tbody.innerHTML = data.map(t => `
+    <tr>
+      <td><strong>${esc(t.nome)}</strong></td>
+      <td class="td-mono">${esc(t.slug)}</td>
+      <td class="td-mono">${esc(t.total_posts) || '0'}</td>
+      <td>${actionBtns('blog-tag', t.id)}</td>
+    </tr>
+  `).join('');
+}
+
 // ── Helpers ──────────────────────────────────────────────────
 function esc(s) {
   if (s == null) return '';
@@ -1109,8 +1207,12 @@ function closeDrawerOnOverlay(e) {
 }
 
 async function editItem(type, id) {
-  // Carrega formulário de edição direto da rota Flask
-  const urls = { hub: `/admin/hubs/${id}/editar`, negocio: `/admin/negocios/${id}/editar`, categoria: `/admin/categorias/${id}/editar`, usuario: `/admin/usuarios/${id}/editar`, assinatura: `/admin/assinaturas/${id}/editar` };
+  const urls = {
+    hub: `/admin/hubs/${id}/editar`, negocio: `/admin/negocios/${id}/editar`,
+    categoria: `/admin/categorias/${id}/editar`, usuario: `/admin/usuarios/${id}/editar`,
+    assinatura: `/admin/assinaturas/${id}/editar`,
+    blog: `/admin/blog/${id}/editar`, 'blog-tag': `/admin/blog/tags/${id}/editar`,
+  };
   document.getElementById('drawerTitle').textContent = 'Carregando...';
   document.getElementById('drawerBody').innerHTML = '<div class="loading"><div class="spinner"></div>Carregando...</div>';
   openDrawer(type, id);
@@ -1118,12 +1220,10 @@ async function editItem(type, id) {
     const r = await fetch(urls[type]);
     const data = await r.json();
     if (type === 'hub') {
-      // Hub retorna JSON — monta o form de criação e preenche os campos
       document.getElementById('drawerTitle').textContent = 'Editar hub';
       document.getElementById('drawerBody').innerHTML = formHub();
       const form = document.getElementById('drawerForm');
       form.action = urls[type];
-      // Preenche campos
       for (const [key, val] of Object.entries(data)) {
         const el = form.elements[key];
         if (!el || val == null) continue;
@@ -1132,33 +1232,59 @@ async function editItem(type, id) {
         else { el.value = val; }
       }
       await populateTemplateSelects({
-        template_index:   data.template_index,
-        template_filtro:  data.template_filtro,
-        template_negocio: data.template_negocio,
-        template_cidade:  data.template_cidade,
+        template_index:     data.template_index,
+        template_filtro:    data.template_filtro,
+        template_negocio:   data.template_negocio,
+        template_cidade:    data.template_cidade,
+        template_blog:      data.template_blog,
+        template_blog_post: data.template_blog_post,
       });
       setupFormSubmit(form);
-    } else {
-      // Outros tipos: usa JSON retornado e monta o form local
-      const titles = { negocio:'Editar negócio', categoria:'Editar categoria', usuario:'Editar usuário', assinatura:'Editar assinatura' };
-      const formFns = { negocio: formNegocio, categoria: formCategoria, usuario: formUsuario, assinatura: formAssinatura };
-      document.getElementById('drawerTitle').textContent = titles[type];
-      document.getElementById('drawerBody').innerHTML = formFns[type]();
+    } else if (type === 'blog') {
+      document.getElementById('drawerTitle').textContent = 'Editar post';
+      document.getElementById('drawerBody').innerHTML = formBlog();
       const form = document.getElementById('drawerForm');
       form.action = urls[type];
-      // Preenche campos simples (input, select, textarea)
       for (const [key, val] of Object.entries(data)) {
         const el = form.elements[key];
         if (!el || val == null) continue;
         if (el.type === 'checkbox') { el.checked = val === true || val === 'true' || val === 't'; }
         else { el.value = val; }
       }
-      // Preenche checkboxes múltiplos (ex: hubs vinculados)
+      // Hubs vinculados ao post
+      const hubIds = Array.isArray(data.hubs_do_post) ? data.hubs_do_post.map(String) : [];
+      form.querySelectorAll('input[name="hubs"]').forEach(cb => { cb.checked = hubIds.includes(String(cb.value)); });
+      // Tags: campo texto com slugs separados por vírgula
+      const tagsInput = form.elements['tags'];
+      if (tagsInput && Array.isArray(data.tags_do_post)) tagsInput.value = data.tags_do_post.join(', ');
+      setupFormSubmit(form);
+    } else if (type === 'blog-tag') {
+      document.getElementById('drawerTitle').textContent = 'Editar tag';
+      document.getElementById('drawerBody').innerHTML = formBlogTag();
+      const form = document.getElementById('drawerForm');
+      form.action = urls[type];
+      for (const [key, val] of Object.entries(data)) {
+        const el = form.elements[key];
+        if (!el || val == null) continue;
+        el.value = val;
+      }
+      setupFormSubmit(form);
+    } else {
+      const titles = { negocio:'Editar negócio', categoria:'Editar categoria', usuario:'Editar usuário', assinatura:'Editar assinatura' };
+      const formFns = { negocio: formNegocio, categoria: formCategoria, usuario: formUsuario, assinatura: formAssinatura };
+      document.getElementById('drawerTitle').textContent = titles[type];
+      document.getElementById('drawerBody').innerHTML = formFns[type]();
+      const form = document.getElementById('drawerForm');
+      form.action = urls[type];
+      for (const [key, val] of Object.entries(data)) {
+        const el = form.elements[key];
+        if (!el || val == null) continue;
+        if (el.type === 'checkbox') { el.checked = val === true || val === 'true' || val === 't'; }
+        else { el.value = val; }
+      }
       if (type === 'negocio') {
-        // Checkboxes de hubs
         const hubIds = Array.isArray(data.hubs) ? data.hubs.map(h => String(h.id ?? h)) : [];
         form.querySelectorAll('input[name="hubs"]').forEach(cb => { cb.checked = hubIds.includes(String(cb.value)); });
-        // Checkboxes de mostrar_*
         const boolFields = ['mostrar_foto','mostrar_descricao','mostrar_whatsapp','mostrar_instagram','mostrar_telefone','mostrar_site','mostrar_endereco','mostrar_mapa','ativo'];
         boolFields.forEach(f => {
           const cb = form.elements[f];
@@ -1171,9 +1297,9 @@ async function editItem(type, id) {
 }
 
 function buildForm(type, id) {
-  const titles = { hub: 'Novo hub', negocio: 'Novo negócio', categoria: 'Nova categoria', usuario: 'Novo usuário', assinatura: 'Nova assinatura' };
+  const titles = { hub: 'Novo hub', negocio: 'Novo negócio', categoria: 'Nova categoria', usuario: 'Novo usuário', assinatura: 'Nova assinatura', blog: 'Novo post', 'blog-tag': 'Nova tag' };
   document.getElementById('drawerTitle').textContent = titles[type];
-  const forms = { hub: formHub, negocio: formNegocio, categoria: formCategoria, usuario: formUsuario, assinatura: formAssinatura };
+  const forms = { hub: formHub, negocio: formNegocio, categoria: formCategoria, usuario: formUsuario, assinatura: formAssinatura, blog: formBlog, 'blog-tag': formBlogTag };
   document.getElementById('drawerBody').innerHTML = forms[type]();
   const form = document.getElementById('drawerForm');
   if (form) setupFormSubmit(form);
@@ -1219,7 +1345,12 @@ function setupFormSubmit(form) {
 
 async function deleteItem(type, id) {
   if (!confirm('Confirma a exclusão?')) return;
-  const urls = { hub: `/admin/hubs/${id}/deletar`, negocio: `/admin/negocios/${id}/deletar`, categoria: `/admin/categorias/${id}/deletar`, usuario: `/admin/usuarios/${id}/deletar`, assinatura: `/admin/assinaturas/${id}/deletar` };
+  const urls = {
+    hub: `/admin/hubs/${id}/deletar`, negocio: `/admin/negocios/${id}/deletar`,
+    categoria: `/admin/categorias/${id}/deletar`, usuario: `/admin/usuarios/${id}/deletar`,
+    assinatura: `/admin/assinaturas/${id}/deletar`,
+    blog: `/admin/blog/${id}/deletar`, 'blog-tag': `/admin/blog/tags/${id}/deletar`,
+  };
   try {
     const fd = new FormData();
     const r = await fetch(urls[type], { method: 'POST', body: fd });
@@ -1272,6 +1403,12 @@ function formHub() {
 </div>
         <div class="field"><label>Template cidade</label>
         <select name="template_cidade" id="sel_template_cidade"><option value="">Carregando...</option></select>
+      </div>
+      <div class="field"><label>Template blog (listagem)</label>
+        <select name="template_blog" id="sel_template_blog"><option value="">Carregando...</option></select>
+      </div>
+      <div class="field"><label>Template blog post</label>
+        <select name="template_blog_post" id="sel_template_blog_post"><option value="">Carregando...</option></select>
       </div>
       <div class="field form-full"><label>Título</label><input name="titulo"></div>
       <div class="field form-full"><label>Descrição</label><textarea name="descricao"></textarea></div>
@@ -1419,6 +1556,53 @@ function formAssinatura() {
     <div class="form-actions">
       <button type="button" class="btn btn-secondary" onclick="closeDrawer()">Cancelar</button>
       <button type="submit" class="btn btn-primary">Salvar assinatura</button>
+    </div>
+  </form>`;
+}
+
+function formBlog() {
+  const hubs = state.data.hubs.map(h => `<label class="checkbox-label"><input type="checkbox" name="hubs" value="${h.id}"> ${esc(h.nome)}</label>`).join('');
+  return `
+  <form id="drawerForm" action="/admin/blog/novo" method="POST">
+    <div class="form-grid">
+      <div class="field form-full"><label>Título *</label><input name="titulo" required placeholder="Título do post"></div>
+      <div class="field"><label>Slug *</label><input name="slug" required placeholder="titulo-do-post"></div>
+      <div class="field"><label>Data de publicação</label><input name="publicado_em" type="date"></div>
+      <div class="field form-full"><label>Resumo (max ~160 chars para SEO)</label><textarea name="resumo" rows="2" placeholder="Breve descrição do post..."></textarea></div>
+      <div class="field form-full"><label>URL da capa</label><input name="capa_url" placeholder="https://...jpg"></div>
+      <div class="field form-full">
+        <label>Tags <span style="font-weight:400;color:var(--text3)">(slugs separados por vírgula — ex: dicas, alimentacao, bairro)</span></label>
+        <input name="tags" placeholder="dicas, alimentacao, bairro-verde">
+      </div>
+      <div class="field form-full">
+        <label>Conteúdo (HTML) *</label>
+        <textarea name="conteudo" rows="14" style="font-family:monospace;font-size:12px;" placeholder="<p>Escreva o conteúdo do post em HTML...</p>"></textarea>
+      </div>
+      <div class="field form-full">
+        <label>Hubs onde este post aparece</label>
+        <div class="checkbox-group">${hubs || '<span class="td-muted">Nenhum hub disponível</span>'}</div>
+      </div>
+      <div class="field form-full">
+        <label class="checkbox-label"><input type="checkbox" name="publicado"> Publicado (visível no site)</label>
+      </div>
+    </div>
+    <div class="form-actions">
+      <button type="button" class="btn btn-secondary" onclick="closeDrawer()">Cancelar</button>
+      <button type="submit" class="btn btn-primary">Salvar post</button>
+    </div>
+  </form>`;
+}
+
+function formBlogTag() {
+  return `
+  <form id="drawerForm" action="/admin/blog/tags/nova" method="POST">
+    <div class="form-grid">
+      <div class="field"><label>Nome *</label><input name="nome" required placeholder="Dicas"></div>
+      <div class="field"><label>Slug *</label><input name="slug" required placeholder="dicas"></div>
+    </div>
+    <div class="form-actions">
+      <button type="button" class="btn btn-secondary" onclick="closeDrawer()">Cancelar</button>
+      <button type="submit" class="btn btn-primary">Salvar tag</button>
     </div>
   </form>`;
 }
@@ -1591,15 +1775,20 @@ async function populateTemplateSelects(currentValues = {}) {
       const r = await fetch('/admin/templates');
       state.templates = await r.json();
     } catch(e) {
-      state.templates = { index: ['index_padrao'], filtro: ['filtro_padrao'], negocio: ['negocio_padrao'], cidade: ['cidade_padrao'] };
+      state.templates = { index: ['index_padrao'], filtro: ['filtro_padrao'], negocio: ['negocio_padrao'], cidade: ['cidade_padrao'], blog: ['blog_otp'], blog_post: ['blog_post_otp'] };
     }
   }
-  const map = { index: 'sel_template_index', filtro: 'sel_template_filtro', negocio: 'sel_template_negocio', cidade: 'sel_template_cidade' };
+  const map = {
+    index: 'sel_template_index', filtro: 'sel_template_filtro',
+    negocio: 'sel_template_negocio', cidade: 'sel_template_cidade',
+    blog: 'sel_template_blog', blog_post: 'sel_template_blog_post',
+  };
   for (const [tipo, selId] of Object.entries(map)) {
     const sel = document.getElementById(selId);
     if (!sel) continue;
-    const current = currentValues[`template_${tipo}`] || state.templates[tipo]?.[0] || '';
-    sel.innerHTML = state.templates[tipo].map(t => {
+    const keyName = tipo === 'blog_post' ? 'template_blog_post' : `template_${tipo}`;
+    const current = currentValues[keyName] || state.templates[tipo]?.[0] || '';
+    sel.innerHTML = (state.templates[tipo] || [current]).map(t => {
       const label = t.replace(`${tipo}_`, '').replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
       return `<option value="${t}"${t === current ? ' selected' : ''}>${label}</option>`;
     }).join('');
@@ -1609,10 +1798,11 @@ async function populateTemplateSelects(currentValues = {}) {
 // ── Init ─────────────────────────────────────────────────────
 (async function init() {
   await loadSection('dashboard');
-  // Pré-carrega categorias e usuários em paralelo para os selects dos formulários
+  // Pré-carrega categorias, usuários e hubs em paralelo para os selects dos formulários
   await Promise.all([
     !state.loaded.has('categorias') ? loadData('categorias') : Promise.resolve(),
     !state.loaded.has('usuarios')   ? loadData('usuarios')   : Promise.resolve(),
+    !state.loaded.has('hubs')       ? loadData('hubs')       : Promise.resolve(),
   ]);
 })();
 </script>
