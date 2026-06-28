@@ -181,15 +181,48 @@
         .btn-geo { background: var(--primary); color: #fff; border: none; padding: 13px 28px; border-radius: 8px; font-size: 1em; font-weight: 700; cursor: pointer; display: inline-flex; align-items: center; gap: 8px; transition: background 0.3s; }
         .btn-geo:hover { background: var(--dark); }
 
-        /* Chips de categoria */
-        .filtros-categoria { display: flex; flex-wrap: wrap; gap: 10px; justify-content: center; margin-bottom: 28px; }
+        /* Chips de categoria (usados dentro do painel do slicer) */
         .chip-cat { padding: 7px 20px; border-radius: 20px; border: 2px solid var(--medium-gray); background: var(--white); color: var(--text-color); font-family: inherit; font-size: 0.9em; font-weight: 600; cursor: pointer; transition: all 0.2s; }
         .chip-cat:hover { border-color: var(--primary); color: var(--primary); }
         .chip-cat.active { background: var(--primary); border-color: var(--primary); color: #fff; }
+
+        /* ══ SLICER DE CATEGORIA (botão que abre a lista) ══ */
+        .categoria-slicer { position: relative; max-width: 480px; margin: 0 auto 28px; z-index: 20; }
+        .slicer-toggle {
+            width: 100%; display: flex; align-items: center; justify-content: space-between; gap: 12px;
+            background: var(--white); border: 2px solid var(--medium-gray); border-radius: 10px;
+            padding: 13px 18px; font-family: inherit; font-size: 0.98em; font-weight: 600;
+            color: var(--text-color); cursor: pointer; transition: all 0.2s;
+        }
+        .slicer-toggle:hover { border-color: var(--primary); }
+        .slicer-toggle.open { border-color: var(--primary); }
+        .slicer-label { display: flex; align-items: center; gap: 9px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+        .slicer-label i.fa-filter { color: var(--primary); flex-shrink: 0; }
+        .slicer-label strong { color: var(--dark-gray); font-weight: 700; }
+        .slicer-toggle.open .slicer-label strong { color: var(--primary); }
+        .slicer-chevron { transition: transform 0.25s; color: #adb5bd; flex-shrink: 0; }
+        .slicer-toggle.open .slicer-chevron { transform: rotate(180deg); color: var(--primary); }
+
+        .slicer-panel {
+            display: none; flex-direction: column; gap: 3px;
+            position: absolute; top: calc(100% + 8px); left: 0; right: 0;
+            background: var(--white); border: 1px solid var(--medium-gray); border-radius: 12px;
+            box-shadow: 0 14px 38px var(--shadow-medium);
+            max-height: 340px; overflow-y: auto; z-index: 21; padding: 8px;
+        }
+        .slicer-panel.open { display: flex; }
+        .slicer-panel .chip-cat {
+            width: 100%; text-align: left; border: none; border-radius: 8px;
+            padding: 11px 14px; background: transparent; color: var(--text-color);
+            display: flex; align-items: center; gap: 10px; flex-shrink: 0;
+        }
+        .slicer-panel .chip-cat:hover { background: var(--light); color: var(--primary); }
+        .slicer-panel .chip-cat.active { background: var(--light); color: var(--primary); }
+        .slicer-panel .chip-cat.active::after { content: '\f00c'; font-family: 'Font Awesome 6 Free'; font-weight: 900; margin-left: auto; }
+        .slicer-backdrop { display: none; position: fixed; inset: 0; background: transparent; z-index: 15; }
+        .slicer-backdrop.open { display: block; }
         @media (max-width: 600px) {
-            .filtros-categoria { flex-wrap: nowrap; overflow-x: auto; justify-content: flex-start; -webkit-overflow-scrolling: touch; scrollbar-width: none; padding-bottom: 4px; }
-            .filtros-categoria::-webkit-scrollbar { display: none; }
-            .chip-cat { flex-shrink: 0; }
+            .categoria-slicer { max-width: 100%; }
         }
 
         /* Cards negócio */
@@ -272,11 +305,11 @@
             will-change: transform; cursor: grab; user-select: none;
         }
         .carousel-track.dragging { transition: none; cursor: grabbing; }
-        .carousel-track .negocio-card {
+        .carousel-track .negocio-card, .carousel-track .categoria-card {
             flex: 0 0 calc(25% - 17px); min-width: 0;
         }
         @media (max-width: 900px) {
-            .carousel-track .negocio-card { flex: 0 0 calc(50% - 11px); }
+            .carousel-track .negocio-card, .carousel-track .categoria-card { flex: 0 0 calc(50% - 11px); }
         }
         @media (max-width: 768px) {
             .carousel-track-outer {
@@ -286,12 +319,12 @@
             }
             .carousel-track-outer::-webkit-scrollbar { display: none; }
             .carousel-track { transform: none !important; transition: none !important; cursor: default; gap: 14px; padding: 4px 0; }
-            .carousel-track .negocio-card { scroll-snap-align: start; flex: 0 0 78%; min-width: 0; }
+            .carousel-track .negocio-card, .carousel-track .categoria-card { scroll-snap-align: start; flex: 0 0 78%; min-width: 0; }
             /* Esconder arrows no mobile */
             .carousel-nav { display: none; }
         }
         @media (max-width: 480px) {
-            .carousel-track .negocio-card { flex: 0 0 calc(85%); }
+            .carousel-track .negocio-card, .carousel-track .categoria-card { flex: 0 0 calc(85%); }
         }
         .carousel-nav {
             display: flex; align-items: center; justify-content: center;
@@ -450,12 +483,19 @@
             </button>
         </div>
 
-        <!-- Filtros de categoria -->
-        <div class="filtros-categoria" id="filtros-categoria" role="group" aria-label="Filtrar por categoria">
-            <button class="chip-cat active" onclick="filtrarCategoria(null, this)">Tudo</button>
-            {% for cat in categorias %}
-            <button class="chip-cat" onclick="filtrarCategoria('{{ cat.slug }}', this)">{{ cat.nome }}</button>
-            {% endfor %}
+        <!-- Filtro de categoria (slicer) -->
+        <div class="categoria-slicer" id="categoria-slicer">
+            <button type="button" class="slicer-toggle" id="slicer-toggle" onclick="toggleCategoriaSlicer()" aria-haspopup="listbox" aria-expanded="false" aria-controls="filtros-categoria">
+                <span class="slicer-label"><i class="fas fa-filter"></i> Categoria: <strong id="slicer-label-text">Tudo</strong></span>
+                <i class="fas fa-chevron-down slicer-chevron" aria-hidden="true"></i>
+            </button>
+            <div class="slicer-panel" id="filtros-categoria" role="listbox" aria-label="Filtrar por categoria">
+                <button class="chip-cat active" onclick="filtrarCategoria(null, this)">Tudo</button>
+                {% for cat in categorias %}
+                <button class="chip-cat" onclick="filtrarCategoria('{{ cat.slug }}', this)">{{ cat.nome }}</button>
+                {% endfor %}
+            </div>
+            <div class="slicer-backdrop" id="slicer-backdrop" onclick="closeCategoriaSlicer()"></div>
         </div>
 
         <!-- Controles de visualização -->
@@ -506,20 +546,47 @@
     <div class="container">
         <h2 class="section-title">O que você está procurando?</h2>
         <p class="section-subtitle">Selecione uma categoria e veja onde tem perto de você agora mesmo</p>
-        <div class="categorias-grid">
-            {% for cat in categorias %}
-            <a href="/{{ cat.slug }}/" class="categoria-card" aria-label="{{ cat.nome }} perto de mim">
-                <div class="cat-photo">
-                    <img src="{{ cat.icone_url or 'https://res.cloudinary.com/dhu1cqvrb/image/upload/v1782522274/locais_pkyekz.png' }}"
-                         alt="{{ cat.nome }} perto de mim" loading="lazy" width="400" height="400">
-                </div>
-                <h3>{{ cat.nome }}</h3>
-                <span class="btn-ver">Ver todos →</span>
-            </a>
-            {% else %}
-            <p class="info-message">Nenhuma categoria cadastrada.</p>
-            {% endfor %}
+
+        {% if categorias %}
+        <!-- Controles de visualização -->
+        <div class="view-controls" id="categorias-view-controls">
+            <span>Ver como:</span>
+            <button class="view-btn active" id="btn-cat-carousel" title="Carrossel" onclick="setViewCategorias('carousel')">
+                <i class="fas fa-grip-lines"></i>
+            </button>
+            <button class="view-btn" id="btn-cat-grade" title="Grade" onclick="setViewCategorias('grade')">
+                <i class="fas fa-th"></i>
+            </button>
         </div>
+
+        <!-- Carrossel de categorias -->
+        <div id="categorias-carousel-wrapper" class="carousel-wrapper">
+            <div class="carousel-track-outer">
+                <div class="carousel-track" id="categorias-track">
+                    {% for cat in categorias %}
+                    <a href="/{{ cat.slug }}/" class="categoria-card" aria-label="{{ cat.nome }} perto de mim">
+                        <div class="cat-photo">
+                            <img src="{{ cat.icone_url or 'https://res.cloudinary.com/dhu1cqvrb/image/upload/v1782522274/locais_pkyekz.png' }}"
+                                 alt="{{ cat.nome }} perto de mim" loading="lazy" width="400" height="400">
+                        </div>
+                        <h3>{{ cat.nome }}</h3>
+                        <span class="btn-ver">Ver todos →</span>
+                    </a>
+                    {% endfor %}
+                </div>
+            </div>
+            <div class="carousel-nav" id="categorias-carousel-nav">
+                <button class="carousel-arrow" id="categorias-prev" onclick="moveCarouselCategorias(-1)"><i class="fas fa-chevron-left"></i></button>
+                <div class="carousel-progress-bar"><div class="carousel-progress-fill" id="categorias-progress-fill"></div></div>
+                <button class="carousel-arrow" id="categorias-next" onclick="moveCarouselCategorias(1)"><i class="fas fa-chevron-right"></i></button>
+            </div>
+        </div>
+
+        <!-- Grade (oculta inicialmente, populada via JS a partir do carrossel) -->
+        <div class="categorias-grid" id="categorias-grade" style="display:none;"></div>
+        {% else %}
+        <p class="info-message">Nenhuma categoria cadastrada.</p>
+        {% endif %}
     </div>
 </section>
 
@@ -625,11 +692,33 @@ function buscarProximos(){
     }, function(){ alert('Não foi possível obter sua localização. Verifique as permissões.'); });
 }
 
+function toggleCategoriaSlicer(){
+    var panel=document.getElementById('filtros-categoria');
+    if(panel.classList.contains('open')) closeCategoriaSlicer();
+    else openCategoriaSlicer();
+}
+function openCategoriaSlicer(){
+    document.getElementById('filtros-categoria').classList.add('open');
+    document.getElementById('slicer-backdrop').classList.add('open');
+    document.getElementById('slicer-toggle').classList.add('open');
+    document.getElementById('slicer-toggle').setAttribute('aria-expanded','true');
+}
+function closeCategoriaSlicer(){
+    document.getElementById('filtros-categoria').classList.remove('open');
+    document.getElementById('slicer-backdrop').classList.remove('open');
+    document.getElementById('slicer-toggle').classList.remove('open');
+    document.getElementById('slicer-toggle').setAttribute('aria-expanded','false');
+}
+document.addEventListener('keydown', function(e){ if(e.key==='Escape') closeCategoriaSlicer(); });
+
 function filtrarCategoria(slug, btn){
     document.querySelectorAll('.chip-cat').forEach(function(c){ c.classList.remove('active'); });
     btn.classList.add('active');
+    var lbl=document.getElementById('slicer-label-text');
+    if(lbl) lbl.textContent=btn.textContent;
     negociosFiltrados = slug ? todosNegocios.filter(function(n){ return n.categoria_slug===slug; }) : todosNegocios.slice();
     renderNegocios(negociosFiltrados);
+    closeCategoriaSlicer();
 }
 
 function cardHTML(n){
@@ -755,6 +844,98 @@ function renderNegocios(lista){
 }
 
 renderNegocios(negociosFiltrados);
+</script>
+
+<script>
+// Carrossel + grade independente para a seção de CATEGORIAS (ícones)
+(function(){
+    var catPos = 0, catView = 'carousel';
+
+    function isMobileCat(){ return window.innerWidth <= 768; }
+
+    function catCardWidth(){
+        var track = document.getElementById('categorias-track');
+        var card = track && track.querySelector('.categoria-card');
+        return card ? card.offsetWidth + 22 : 200;
+    }
+
+    function clampCat(){
+        var track = document.getElementById('categorias-track');
+        if(!track || isMobileCat()) return;
+        var cards = track.querySelectorAll('.categoria-card');
+        if(!cards.length) return;
+        var maxPos = Math.max(0, cards.length*catCardWidth() - track.parentElement.offsetWidth);
+        catPos = Math.max(0, Math.min(catPos, maxPos));
+        track.style.transform = 'translateX(-'+catPos+'px)';
+        var fill = document.getElementById('categorias-progress-fill');
+        var prev = document.getElementById('categorias-prev');
+        var next = document.getElementById('categorias-next');
+        if(fill) fill.style.width = maxPos>0 ? Math.min(100,(catPos/maxPos)*100)+'%' : '0%';
+        if(prev) prev.disabled = catPos<=0;
+        if(next) next.disabled = maxPos<=0 || catPos>=maxPos;
+    }
+
+    function snapCat(){
+        var w=catCardWidth(); if(!w) return;
+        catPos = Math.round(catPos/w)*w;
+        clampCat();
+    }
+
+    function initCatCarousel(){
+        var track = document.getElementById('categorias-track');
+        if(!track) return;
+        catPos = 0;
+        track.style.transform = 'translateX(0)';
+        clampCat();
+        var isDragging=false, startX=0, startPos=0;
+        var newTrack = track.cloneNode(true);
+        track.parentNode.replaceChild(newTrack, track);
+        track = document.getElementById('categorias-track');
+        function onStart(x){ isDragging=true; startX=x; startPos=catPos; track.classList.add('dragging'); }
+        function onMove(x){ if(!isDragging) return; catPos = startPos-(x-startX); clampCat(); }
+        function onEnd(){ isDragging=false; track.classList.remove('dragging'); snapCat(); }
+        if(!isMobileCat()){
+            track.addEventListener('mousedown', function(e){ onStart(e.clientX); e.preventDefault(); });
+            window.addEventListener('mousemove', function(e){ if(isDragging) onMove(e.clientX); });
+            window.addEventListener('mouseup', function(){ if(isDragging) onEnd(); });
+            var _ty=0,_horiz=false,_det=false;
+            track.addEventListener('touchstart', function(e){ _ty=e.touches[0].clientY; _horiz=false; _det=false; onStart(e.touches[0].clientX); }, {passive:true});
+            track.addEventListener('touchmove', function(e){
+                if(!isDragging) return;
+                if(!_det){ var dx=Math.abs(e.touches[0].clientX-startX), dy=Math.abs(e.touches[0].clientY-_ty); if(dx>5||dy>5){_horiz=dx>=dy;_det=true;} }
+                if(!_det||!_horiz) return; e.preventDefault(); onMove(e.touches[0].clientX);
+            }, {passive:false});
+            track.addEventListener('touchend', function(e){ if(_horiz) onEnd(); else isDragging=false; });
+        }
+    }
+
+    window.moveCarouselCategorias = function(dir){
+        var track = document.getElementById('categorias-track');
+        if(!track) return;
+        var visivel = Math.max(1, Math.floor(track.parentElement.offsetWidth/catCardWidth()));
+        catPos += dir*visivel*catCardWidth();
+        clampCat();
+    };
+
+    window.setViewCategorias = function(mode){
+        catView = mode;
+        var cw = document.getElementById('categorias-carousel-wrapper');
+        var gd = document.getElementById('categorias-grade');
+        var bc = document.getElementById('btn-cat-carousel');
+        var bg = document.getElementById('btn-cat-grade');
+        if(bc) bc.classList.toggle('active', mode==='carousel');
+        if(bg) bg.classList.toggle('active', mode==='grade');
+        if(cw) cw.style.display = mode==='carousel' ? '' : 'none';
+        if(gd) gd.style.display = mode==='grade' ? 'grid' : 'none';
+    };
+
+    var track = document.getElementById('categorias-track');
+    var grade = document.getElementById('categorias-grade');
+    if(track && grade) grade.innerHTML = track.innerHTML; // popula a grade sem duplicar o loop no template
+
+    initCatCarousel();
+    setViewCategorias(catView);
+})();
 </script>
 
 <script>
