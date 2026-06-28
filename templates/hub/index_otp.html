@@ -524,6 +524,9 @@
         <!-- Grade (oculta inicialmente) -->
         <div class="negocios-grid" id="negocios-grade" style="display:none;"></div>
         <p class="info-message" id="negocios-vazio" style="display:none;">Nenhum estabelecimento encontrado.</p>
+        <!-- Sentinel invisible: quando aparecer na tela, carrega mais negócios -->
+        <div id="lazy-sentinel" style="height:1px; margin-top:10px;"></div>
+        <p id="lazy-loading" style="display:none; text-align:center; color:var(--primary); padding:20px; font-size:0.95em;"><i class="fas fa-spinner fa-spin"></i> Carregando mais estabelecimentos...</p>
     </div>
 </section>
 
@@ -672,10 +675,86 @@ document.addEventListener('keydown', function(e){ if(e.key === 'Escape') closeMo
 </script>
 
 <script>
-var todosNegocios = {{ negocios | tojson }};
+// ── ESTRATÉGIA: carrega HTML com primeiros 48, busca REST via API UMA vez,
+//    depois pagina localmente — sem loop, sem travar. ──────────────────────
+var _negociosCompletos = {{ negocios[:48] | tojson }};  // primeiros 48 no HTML
+var _totalNegocios     = {{ negocios | length }};
+var _apiCarregada      = false;   // controla se já buscou tudo da API
+var _apiCarregando     = false;   // evita chamada dupla
+var _renderOffset      = 48;      // quantos já foram renderizados
+var _loteSize          = 48;      // quantos renderizar por vez no scroll
+var _lazyCategoriaAtiva = null;
+
+var todosNegocios     = _negociosCompletos.slice();
 var negociosFiltrados = todosNegocios.slice();
 var userLat = null, userLng = null, geoAtivo = false;
 var carouselPos = 0, carouselView = 'carousel';
+
+// Busca TODOS os negócios da API uma única vez e guarda localmente
+function _carregarAPIUmaVez(callback) {
+    if (_apiCarregada) { if(callback) callback(); return; }
+    if (_apiCarregando) return;
+    _apiCarregando = true;
+    var loading = document.getElementById('lazy-loading');
+    if(loading) loading.style.display = 'block';
+    fetch('/api/hub/negocios')
+        .then(function(r){ return r.json(); })
+        .then(function(data){
+            _apiCarregada = true;
+            _apiCarregando = false;
+            if(Array.isArray(data) && data.length > 0){
+                _negociosCompletos = data;
+                if(!_lazyCategoriaAtiva){
+                    todosNegocios = data.slice();
+                    negociosFiltrados = data.slice();
+                }
+            }
+            if(loading) loading.style.display = 'none';
+            if(callback) callback();
+        })
+        .catch(function(){
+            _apiCarregada = true; // marca como tentado para não ficar tentando
+            _apiCarregando = false;
+            if(loading) loading.style.display = 'none';
+        });
+}
+
+// Renderiza o próximo lote localmente (sem API)
+function _renderizarProximoLote(){
+    var lista = negociosFiltrados;
+    if(_renderOffset >= lista.length) return; // já mostrou tudo
+    var proximo = lista.slice(_renderOffset, _renderOffset + _loteSize);
+    if(!proximo.length) return;
+    _renderOffset += proximo.length;
+    var novosCards = proximo.map(cardHTML);
+    var track = document.getElementById('negocios-track');
+    if(track){
+        var tmp = document.createElement('div');
+        tmp.innerHTML = novosCards.join('');
+        while(tmp.firstChild) track.appendChild(tmp.firstChild);
+        clampAndUpdate();
+    }
+    var gd = document.getElementById('negocios-grade');
+    if(gd && gd.style.display !== 'none') gd.innerHTML += novosCards.join('');
+}
+
+// IntersectionObserver — ao ver o sentinel, carrega API se necessário e renderiza mais
+(function(){
+    var sentinel = document.getElementById('lazy-sentinel');
+    if(!sentinel || !('IntersectionObserver' in window)) return;
+    new IntersectionObserver(function(entries){
+        if(!entries[0].isIntersecting) return;
+        if(!_apiCarregada){
+            // Primeira vez: busca tudo da API, depois renderiza mais
+            _carregarAPIUmaVez(function(){
+                _renderizarProximoLote();
+            });
+        } else {
+            // API já carregada: só renderiza o próximo lote local
+            _renderizarProximoLote();
+        }
+    }, { rootMargin: '200px' }).observe(sentinel);
+})();
 
 function calcDistancia(lat1,lng1,lat2,lng2){
     var R=6371,dLat=(lat2-lat1)*Math.PI/180,dLng=(lng2-lng1)*Math.PI/180;
@@ -687,8 +766,11 @@ function buscarProximos(){
     if(!navigator.geolocation){ alert('Geolocalização não suportada.'); return; }
     navigator.geolocation.getCurrentPosition(function(pos){
         userLat=pos.coords.latitude; userLng=pos.coords.longitude; geoAtivo=true;
-        renderNegocios(negociosFiltrados);
-        document.getElementById('busca').scrollIntoView({behavior:'smooth',block:'start'});
+        // Garante que tem todos os dados antes de ordenar por distância
+        _carregarAPIUmaVez(function(){
+            renderNegocios(negociosFiltrados);
+            document.getElementById('busca').scrollIntoView({behavior:'smooth',block:'start'});
+        });
     }, function(){ alert('Não foi possível obter sua localização. Verifique as permissões.'); });
 }
 
@@ -716,9 +798,35 @@ function filtrarCategoria(slug, btn){
     btn.classList.add('active');
     var lbl=document.getElementById('slicer-label-text');
     if(lbl) lbl.textContent=btn.textContent;
-    negociosFiltrados = slug ? todosNegocios.filter(function(n){ return n.categoria_slug===slug; }) : todosNegocios.slice();
-    renderNegocios(negociosFiltrados);
     closeCategoriaSlicer();
+
+    _lazyCategoriaAtiva = slug || null;
+
+    if(!slug){
+        // Volta para "Tudo" com dados locais
+        negociosFiltrados = (_apiCarregada ? _negociosCompletos : todosNegocios).slice();
+        _renderOffset = 48;
+        renderNegocios(negociosFiltrados);
+        return;
+    }
+
+    // Filtro por categoria: usa dados locais se já tem tudo, senão busca API
+    var filtrar = function(){
+        negociosFiltrados = _negociosCompletos.filter(function(n){ return n.categoria_slug===slug; });
+        _renderOffset = negociosFiltrados.length; // já vai mostrar tudo de uma vez via renderNegocios
+        renderNegocios(negociosFiltrados);
+        var loading = document.getElementById('lazy-loading');
+        if(loading) loading.style.display = 'none';
+    };
+
+    if(_apiCarregada){
+        filtrar();
+    } else {
+        var loading = document.getElementById('lazy-loading');
+        if(loading) loading.style.display = 'block';
+        _carregarAPIUmaVez(filtrar);
+    }
+}
 }
 
 function cardHTML(n){
@@ -1007,3 +1115,197 @@ renderNegocios(negociosFiltrados);
 </script>
 </body>
 </html>
+
+<!-- ── Google Translate (widget nativo oculto) ── -->
+<div id="google_translate_element"></div>
+<script>
+function googleTranslateElementInit() {
+    new google.translate.TranslateElement({ pageLanguage: 'pt', autoDisplay: false }, 'google_translate_element');
+}
+</script>
+<script src="//translate.google.com/translate_a/element.js?cb=googleTranslateElementInit"></script>
+
+<!-- ── Botão flutuante de tradução ── -->
+<button id="translate-btn" onclick="toggleTranslateDrawer()">
+    <i class="fas fa-language"></i> Traduzir
+</button>
+
+<!-- ── Drawer de idiomas ── -->
+<div id="translate-drawer">
+    <div class="td-header">
+        <input class="td-search" id="td-search" type="text" placeholder="Buscar idioma…" oninput="filterLangs(this.value)">
+        <button class="td-close" onclick="toggleTranslateDrawer()">&#10005;</button>
+    </div>
+    <div class="td-list" id="td-list"></div>
+</div>
+
+<style>
+    #google_translate_element { position: absolute; visibility: hidden; pointer-events: none; }
+    .goog-te-banner-frame, .skiptranslate { display: none !important; }
+    body { top: 0 !important; }
+
+    #translate-btn {
+        position: fixed; bottom: 20px; right: 20px; z-index: 999;
+        background: var(--white); border: none; border-radius: 50px;
+        padding: 10px 18px; display: flex; align-items: center; gap: 8px;
+        font-family: 'Roboto', sans-serif; font-size: 14px; font-weight: 600;
+        color: var(--dark); cursor: pointer;
+        box-shadow: 0 4px 20px rgba(0,0,0,0.18);
+        transition: box-shadow 0.2s, transform 0.15s;
+    }
+    #translate-btn:hover { box-shadow: 0 6px 28px rgba(0,0,0,0.25); transform: translateY(-1px); }
+    #translate-btn i { color: var(--primary); font-size: 16px; }
+
+    #translate-drawer {
+        position: fixed; bottom: 70px; right: 20px; z-index: 1000;
+        background: var(--white); border-radius: 16px;
+        box-shadow: 0 8px 40px rgba(0,0,0,0.2);
+        width: 280px; max-height: 420px;
+        display: none; flex-direction: column;
+        overflow: hidden;
+    }
+    #translate-drawer.open { display: flex; }
+    .td-header {
+        padding: 12px 14px; border-bottom: 1px solid var(--medium-gray);
+        display: flex; align-items: center; gap: 8px;
+    }
+    .td-search {
+        flex: 1; border: 1.5px solid var(--medium-gray);
+        border-radius: 8px; padding: 8px 12px;
+        font-family: 'Roboto', sans-serif; font-size: 13px;
+        outline: none; transition: border-color 0.2s;
+    }
+    .td-search:focus { border-color: var(--primary); }
+    .td-close {
+        background: none; border: none; color: #aaa;
+        font-size: 18px; cursor: pointer; line-height: 1; padding: 2px 4px;
+    }
+    .td-close:hover { color: var(--dark-gray); }
+    .td-list { overflow-y: auto; flex: 1; padding: 6px 0; }
+    .td-item {
+        padding: 9px 18px; font-size: 14px; cursor: pointer;
+        color: var(--text-color); transition: background 0.1s;
+        display: flex; align-items: center; gap: 10px;
+    }
+    .td-item:hover { background: var(--light); color: var(--dark); }
+    .td-item.active { color: var(--primary); font-weight: 600; background: #fff3e0; }
+    .td-item .flag { font-size: 18px; flex-shrink: 0; }
+    .td-empty { padding: 24px; text-align: center; color: #bbb; font-size: 13px; }
+
+    @media (max-width: 480px) {
+        #translate-drawer { width: calc(100vw - 32px); right: 16px; bottom: 72px; max-height: 55vh; }
+        #translate-btn { bottom: 16px; right: 16px; }
+    }
+</style>
+
+<script>
+const LANGS = [
+    {code:'af',name:'Afrikaans',flag:'🇿🇦'},{code:'sq',name:'Albanian',flag:'🇦🇱'},{code:'am',name:'Amharic',flag:'🇪🇹'},
+    {code:'ar',name:'Arabic',flag:'🇸🇦'},{code:'hy',name:'Armenian',flag:'🇦🇲'},{code:'az',name:'Azerbaijani',flag:'🇦🇿'},
+    {code:'eu',name:'Basque',flag:'🏴'},{code:'be',name:'Belarusian',flag:'🇧🇾'},{code:'bn',name:'Bengali',flag:'🇧🇩'},
+    {code:'bs',name:'Bosnian',flag:'🇧🇦'},{code:'bg',name:'Bulgarian',flag:'🇧🇬'},{code:'ca',name:'Catalan',flag:'🏴'},
+    {code:'ceb',name:'Cebuano',flag:'🇵🇭'},{code:'zh-CN',name:'Chinese (Simplified)',flag:'🇨🇳'},{code:'zh-TW',name:'Chinese (Traditional)',flag:'🇹🇼'},
+    {code:'co',name:'Corsican',flag:'🇫🇷'},{code:'hr',name:'Croatian',flag:'🇭🇷'},{code:'cs',name:'Czech',flag:'🇨🇿'},
+    {code:'da',name:'Danish',flag:'🇩🇰'},{code:'nl',name:'Dutch',flag:'🇳🇱'},{code:'en',name:'English',flag:'🇬🇧'},
+    {code:'eo',name:'Esperanto',flag:'🌍'},{code:'et',name:'Estonian',flag:'🇪🇪'},{code:'fi',name:'Finnish',flag:'🇫🇮'},
+    {code:'fr',name:'French',flag:'🇫🇷'},{code:'fy',name:'Frisian',flag:'🏴'},{code:'gl',name:'Galician',flag:'🏴'},
+    {code:'ka',name:'Georgian',flag:'🇬🇪'},{code:'de',name:'German',flag:'🇩🇪'},{code:'el',name:'Greek',flag:'🇬🇷'},
+    {code:'gu',name:'Gujarati',flag:'🇮🇳'},{code:'ht',name:'Haitian Creole',flag:'🇭🇹'},{code:'ha',name:'Hausa',flag:'🇳🇬'},
+    {code:'haw',name:'Hawaiian',flag:'🇺🇸'},{code:'he',name:'Hebrew',flag:'🇮🇱'},{code:'hi',name:'Hindi',flag:'🇮🇳'},
+    {code:'hmn',name:'Hmong',flag:'🌏'},{code:'hu',name:'Hungarian',flag:'🇭🇺'},{code:'is',name:'Icelandic',flag:'🇮🇸'},
+    {code:'ig',name:'Igbo',flag:'🇳🇬'},{code:'id',name:'Indonesian',flag:'🇮🇩'},{code:'ga',name:'Irish',flag:'🇮🇪'},
+    {code:'it',name:'Italian',flag:'🇮🇹'},{code:'ja',name:'Japanese',flag:'🇯🇵'},{code:'jv',name:'Javanese',flag:'🇮🇩'},
+    {code:'kn',name:'Kannada',flag:'🇮🇳'},{code:'kk',name:'Kazakh',flag:'🇰🇿'},{code:'km',name:'Khmer',flag:'🇰🇭'},
+    {code:'rw',name:'Kinyarwanda',flag:'🇷🇼'},{code:'ko',name:'Korean',flag:'🇰🇷'},{code:'ku',name:'Kurdish',flag:'🌍'},
+    {code:'ky',name:'Kyrgyz',flag:'🇰🇬'},{code:'lo',name:'Lao',flag:'🇱🇦'},{code:'la',name:'Latin',flag:'🏛️'},
+    {code:'lv',name:'Latvian',flag:'🇱🇻'},{code:'lt',name:'Lithuanian',flag:'🇱🇹'},{code:'lb',name:'Luxembourgish',flag:'🇱🇺'},
+    {code:'mk',name:'Macedonian',flag:'🇲🇰'},{code:'mg',name:'Malagasy',flag:'🇲🇬'},{code:'ms',name:'Malay',flag:'🇲🇾'},
+    {code:'ml',name:'Malayalam',flag:'🇮🇳'},{code:'mt',name:'Maltese',flag:'🇲🇹'},{code:'mi',name:'Maori',flag:'🇳🇿'},
+    {code:'mr',name:'Marathi',flag:'🇮🇳'},{code:'mn',name:'Mongolian',flag:'🇲🇳'},{code:'my',name:'Myanmar (Burmese)',flag:'🇲🇲'},
+    {code:'ne',name:'Nepali',flag:'🇳🇵'},{code:'no',name:'Norwegian',flag:'🇳🇴'},{code:'ny',name:'Nyanja (Chichewa)',flag:'🇲🇼'},
+    {code:'or',name:'Odia (Oriya)',flag:'🇮🇳'},{code:'ps',name:'Pashto',flag:'🇦🇫'},{code:'fa',name:'Persian',flag:'🇮🇷'},
+    {code:'pl',name:'Polish',flag:'🇵🇱'},{code:'pt',name:'Português',flag:'🇧🇷'},{code:'pa',name:'Punjabi',flag:'🇮🇳'},
+    {code:'ro',name:'Romanian',flag:'🇷🇴'},{code:'ru',name:'Russian',flag:'🇷🇺'},{code:'sm',name:'Samoan',flag:'🇼🇸'},
+    {code:'gd',name:'Scots Gaelic',flag:'🏴󠁧󠁢󠁳󠁣󠁴󠁿'},{code:'sr',name:'Serbian',flag:'🇷🇸'},{code:'st',name:'Sesotho',flag:'🇱🇸'},
+    {code:'sn',name:'Shona',flag:'🇿🇼'},{code:'sd',name:'Sindhi',flag:'🇵🇰'},{code:'si',name:'Sinhala',flag:'🇱🇰'},
+    {code:'sk',name:'Slovak',flag:'🇸🇰'},{code:'sl',name:'Slovenian',flag:'🇸🇮'},{code:'so',name:'Somali',flag:'🇸🇴'},
+    {code:'es',name:'Spanish',flag:'🇪🇸'},{code:'su',name:'Sundanese',flag:'🇮🇩'},{code:'sw',name:'Swahili',flag:'🇰🇪'},
+    {code:'sv',name:'Swedish',flag:'🇸🇪'},{code:'tl',name:'Tagalog (Filipino)',flag:'🇵🇭'},{code:'tg',name:'Tajik',flag:'🇹🇯'},
+    {code:'ta',name:'Tamil',flag:'🇮🇳'},{code:'tt',name:'Tatar',flag:'🇷🇺'},{code:'te',name:'Telugu',flag:'🇮🇳'},
+    {code:'th',name:'Thai',flag:'🇹🇭'},{code:'tr',name:'Turkish',flag:'🇹🇷'},{code:'tk',name:'Turkmen',flag:'🇹🇲'},
+    {code:'uk',name:'Ukrainian',flag:'🇺🇦'},{code:'ur',name:'Urdu',flag:'🇵🇰'},{code:'ug',name:'Uyghur',flag:'🇨🇳'},
+    {code:'uz',name:'Uzbek',flag:'🇺🇿'},{code:'vi',name:'Vietnamese',flag:'🇻🇳'},{code:'cy',name:'Welsh',flag:'🏴󠁧󠁢󠁷󠁬󠁳󠁿'},
+    {code:'xh',name:'Xhosa',flag:'🇿🇦'},{code:'yi',name:'Yiddish',flag:'🌍'},{code:'yo',name:'Yoruba',flag:'🇳🇬'},
+    {code:'zu',name:'Zulu',flag:'🇿🇦'}
+];
+
+let currentLang = 'pt';
+let drawerOpen  = false;
+
+function renderLangs(list) {
+    const el = document.getElementById('td-list');
+    if (!list.length) {
+        el.innerHTML = '<div class="td-empty">Nenhum idioma encontrado</div>';
+        return;
+    }
+    el.innerHTML = list.map(l =>
+        '<div class="td-item ' + (l.code === currentLang ? 'active' : '') + '" onclick="selectLang(\'' + l.code + '\',\'' + l.name + '\')"><span class="flag">' + l.flag + '</span> ' + l.name + '</div>'
+    ).join('');
+}
+
+function filterLangs(q) {
+    const filtered = LANGS.filter(function(l){ return l.name.toLowerCase().includes(q.toLowerCase()); });
+    renderLangs(filtered);
+}
+
+function selectLang(code, name) {
+    currentLang = code;
+    drawerOpen  = false;
+    document.getElementById('translate-drawer').classList.remove('open');
+
+    var lang = LANGS.find(function(l){ return l.code === code; });
+    document.getElementById('translate-btn').innerHTML =
+        '<i class="fas fa-language"></i> ' + (lang ? lang.flag + ' ' + name : name);
+
+    if (code === 'pt') {
+        var sel = document.querySelector('.goog-te-combo');
+        if (sel) { sel.value = ''; sel.dispatchEvent(new Event('change')); }
+        document.getElementById('translate-btn').innerHTML = '<i class="fas fa-language"></i> Traduzir';
+        return;
+    }
+
+    var tryTranslate = function(attempts) {
+        var sel = document.querySelector('.goog-te-combo');
+        if (sel) {
+            sel.value = code;
+            sel.dispatchEvent(new Event('change'));
+        } else if (attempts > 0) {
+            setTimeout(function(){ tryTranslate(attempts - 1); }, 300);
+        }
+    };
+    tryTranslate(10);
+}
+
+function toggleTranslateDrawer() {
+    drawerOpen = !drawerOpen;
+    var drawer = document.getElementById('translate-drawer');
+    if (drawerOpen) {
+        drawer.classList.add('open');
+        renderLangs(LANGS);
+        var search = document.getElementById('td-search');
+        search.value = '';
+        setTimeout(function(){ search.focus(); }, 50);
+    } else {
+        drawer.classList.remove('open');
+    }
+}
+
+document.addEventListener('click', function(e) {
+    if (drawerOpen &&
+        !document.getElementById('translate-drawer').contains(e.target) &&
+        !document.getElementById('translate-btn').contains(e.target)) {
+        drawerOpen = false;
+        document.getElementById('translate-drawer').classList.remove('open');
+    }
+});
+</script>
