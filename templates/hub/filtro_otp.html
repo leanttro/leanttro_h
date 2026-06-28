@@ -113,6 +113,22 @@
         nav.desktop-nav ul li a { color: #fff; font-weight: 600; font-size: 0.95em; padding: 12px 20px; display: block; border-bottom: 3px solid transparent; transition: border-color 0.2s, background 0.2s; }
         nav.desktop-nav ul li a:hover, nav.desktop-nav ul li a.ativo { border-bottom-color: #fff; background: rgba(0,0,0,0.08); }
 
+        /* ══ DROPDOWN NAV ══ */
+        .nav-dropdown {
+            display: none; position: absolute; top: 100%; left: 50%; transform: translateX(-50%);
+            background: #fff; border-radius: 12px; box-shadow: 0 8px 32px rgba(0,0,0,0.15);
+            min-width: 220px; max-height: 360px; overflow-y: auto;
+            z-index: 999; padding: 8px 0;
+        }
+        nav.desktop-nav ul li:hover .nav-dropdown { display: block; }
+        .nav-dropdown a {
+            display: block; padding: 10px 20px; color: var(--dark-gray) !important;
+            font-size: 0.9em; font-weight: 500; border-bottom: none !important;
+            background: none !important; transition: background 0.15s;
+            white-space: nowrap;
+        }
+        .nav-dropdown a:hover, .nav-dropdown a.ativo { background: var(--light) !important; color: var(--primary) !important; }
+
         /* ══ MOBILE NAV ══ */
         .mobile-nav-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.95); z-index: 1000; flex-direction: column; justify-content: center; align-items: center; opacity: 0; transition: opacity 0.25s; }
         .mobile-nav-overlay.active { display: flex; opacity: 1; }
@@ -254,9 +270,21 @@
     <nav class="desktop-nav" aria-label="Navegação principal">
         <ul>
             <li><a href="/">Início</a></li>
-            {% for cat in categorias %}
-            <li><a href="/{{ cat.slug }}/" {% if filtro_tipo == 'categoria' and filtro_valor == cat.slug %}class="ativo"{% endif %}>{{ cat.nome }}</a></li>
-            {% endfor %}
+            <li>
+                <a href="/#categorias" {% if filtro_tipo == 'categoria' %}class="ativo"{% endif %}>Categorias ▾</a>
+                <div class="nav-dropdown">
+                    {% for cat in categorias %}
+                    <a href="/{{ cat.slug }}/" {% if filtro_tipo == 'categoria' and filtro_valor == cat.slug %}class="ativo"{% endif %}>{{ cat.nome }}</a>
+                    {% endfor %}
+                </div>
+            </li>
+            <li>
+                <a href="/#cidades" {% if filtro_tipo == 'bairro' %}class="ativo"{% endif %}>Cidades ▾</a>
+                <div class="nav-dropdown">
+                    <a href="/#cidades">Ver todas as cidades</a>
+                </div>
+            </li>
+            <li><a href="/blog/">Blog</a></li>
             {% if hub.whatsapp %}<li><a href="https://wa.me/55{{ hub.whatsapp }}" target="_blank" rel="noopener">Contato</a></li>{% endif %}
         </ul>
     </nav>
@@ -269,9 +297,9 @@
     <nav>
         <ul>
             <li><a href="/" onclick="closeMobileNav()">Início</a></li>
-            {% for cat in categorias %}
-            <li><a href="/{{ cat.slug }}/" onclick="closeMobileNav()">{{ cat.nome }}</a></li>
-            {% endfor %}
+            <li><a href="/#categorias" onclick="closeMobileNav()">Categorias</a></li>
+            <li><a href="/#cidades" onclick="closeMobileNav()">Cidades</a></li>
+            <li><a href="/blog/" onclick="closeMobileNav()">Blog</a></li>
             {% if hub.whatsapp %}<li><a href="https://wa.me/55{{ hub.whatsapp }}" onclick="closeMobileNav()">Contato</a></li>{% endif %}
         </ul>
     </nav>
