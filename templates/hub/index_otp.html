@@ -675,18 +675,20 @@ document.addEventListener('keydown', function(e){ if(e.key === 'Escape') closeMo
 
 <script>
 // Apenas os 10 primeiros vêm no HTML — o resto é buscado da API depois
-var todosNegocios = {{ negocios[:10] | tojson }};
+var todosNegocios = {{ negocios[:1000] | tojson }};
 var _apiCarregada = false;
 var _apiCarregando = false;
-var _renderOffset = 10;
+var _renderOffset = 1000;
 var _loteSize = 48;
 var negociosFiltrados = todosNegocios.slice();
 var userLat = null, userLng = null, geoAtivo = false;
 var carouselPos = 0, carouselView = 'carousel';
 
+var _apiCallbacks = [];
 function _carregarAPIUmaVez(callback) {
     if (_apiCarregada) { if(callback) callback(); return; }
-    if (_apiCarregando) return;
+    if (callback) _apiCallbacks.push(callback);
+    if (_apiCarregando) return; // já buscando — callback foi enfileirado, vai executar
     _apiCarregando = true;
     var loading = document.getElementById('lazy-loading');
     if(loading) loading.style.display = 'block';
@@ -700,7 +702,9 @@ function _carregarAPIUmaVez(callback) {
                 if(!_lazyCategoriaAtiva) negociosFiltrados = data.slice();
             }
             if(loading) loading.style.display = 'none';
-            if(callback) callback();
+            // Executa todos os callbacks enfileirados
+            var cbs = _apiCallbacks.slice(); _apiCallbacks = [];
+            cbs.forEach(function(cb){ cb(); });
         })
         .catch(function(){
             _apiCarregada = true;
