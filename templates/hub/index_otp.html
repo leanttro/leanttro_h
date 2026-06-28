@@ -1049,9 +1049,9 @@ renderNegocios(negociosFiltrados);
 
 <script>
 // Popula seção de cidades e dropdown com base nos negócios disponíveis
-(function(){
+function renderCidades(fonte) {
     var cidades = {};
-    todosNegocios.forEach(function(n){
+    fonte.forEach(function(n){
         if(!n.cidade) return;
         if(!cidades[n.cidade]) cidades[n.cidade] = { nome: n.cidade, count: 0, estado: n.estado || '' };
         cidades[n.cidade].count++;
@@ -1060,7 +1060,6 @@ renderNegocios(negociosFiltrados);
     var lista = Object.values(cidades).sort(function(a,b){ return b.count - a.count; });
     if(!lista.length) return;
 
-    // Grid de cidades
     var grid = document.getElementById('cidades-grid');
     if(grid){
         grid.innerHTML = lista.map(function(c){
@@ -1077,7 +1076,6 @@ renderNegocios(negociosFiltrados);
         }).join('');
     }
 
-    // Dropdown cidades no nav
     var dd = document.getElementById('nav-dropdown-cidades');
     if(dd){
         dd.innerHTML = lista.map(function(c){
@@ -1085,7 +1083,11 @@ renderNegocios(negociosFiltrados);
             return '<a href="/cidade/'+slug+'/">'+c.nome+'</a>';
         }).join('');
     }
-})();
+}
+
+// Renderiza com os 10 iniciais imediatamente, atualiza quando API carregar
+renderCidades(todosNegocios);
+_carregarAPIUmaVez(function(){ renderCidades(todosNegocios); });
 </script>
 </body>
 <!-- ── Google Translate (widget nativo oculto) ── -->
