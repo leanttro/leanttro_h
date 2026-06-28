@@ -227,13 +227,18 @@ def pagina_filtro(segmento):
     if not hub:
         return "Hub não encontrado", 404
     if hub["tipo"] == "bairro":
+        total = query("""
+            SELECT COUNT(*) as total FROM hub_negocios n
+            JOIN hub_negocio_hubs nh ON nh.negocio_id = n.id
+            WHERE nh.hub_id = %s AND n.ativo = true AND LOWER(n.bairro) = LOWER(%s)
+        """, (hub["id"], segmento), one=True)["total"]
         negocios = query("""
             SELECT n.*, c.nome as categoria_nome, c.slug as categoria_slug
             FROM hub_negocios n
             JOIN hub_negocio_hubs nh ON nh.negocio_id = n.id
             JOIN hub_categorias c ON c.id = n.categoria_id
             WHERE nh.hub_id = %s AND n.ativo = true AND LOWER(n.bairro) = LOWER(%s)
-            ORDER BY n.nome
+            ORDER BY n.nome LIMIT 48
         """, (hub["id"], segmento))
         filtro_tipo, filtro_valor = "bairro", segmento
     elif hub["tipo"] == "cidade":
@@ -242,40 +247,71 @@ def pagina_filtro(segmento):
             (segmento,), one=True
         )
         if categoria:
+            total = query("""
+                SELECT COUNT(*) as total FROM hub_negocios n
+                JOIN hub_negocio_hubs nh ON nh.negocio_id = n.id
+                JOIN hub_categorias c ON c.id = n.categoria_id
+                WHERE nh.hub_id = %s AND n.ativo = true AND c.slug = %s
+            """, (hub["id"], segmento), one=True)["total"]
             negocios = query("""
                 SELECT n.*, c.nome as categoria_nome, c.slug as categoria_slug
                 FROM hub_negocios n
                 JOIN hub_negocio_hubs nh ON nh.negocio_id = n.id
                 JOIN hub_categorias c ON c.id = n.categoria_id
                 WHERE nh.hub_id = %s AND n.ativo = true AND c.slug = %s
-                ORDER BY n.nome
+                ORDER BY n.nome LIMIT 48
             """, (hub["id"], segmento))
             filtro_tipo, filtro_valor = "categoria", segmento
         else:
+            total = query("""
+                SELECT COUNT(*) as total FROM hub_negocios n
+                JOIN hub_negocio_hubs nh ON nh.negocio_id = n.id
+                WHERE nh.hub_id = %s AND n.ativo = true AND LOWER(n.bairro) = LOWER(%s)
+            """, (hub["id"], segmento), one=True)["total"]
             negocios = query("""
                 SELECT n.*, c.nome as categoria_nome, c.slug as categoria_slug
                 FROM hub_negocios n
                 JOIN hub_negocio_hubs nh ON nh.negocio_id = n.id
                 JOIN hub_categorias c ON c.id = n.categoria_id
                 WHERE nh.hub_id = %s AND n.ativo = true AND LOWER(n.bairro) = LOWER(%s)
-                ORDER BY n.nome
+                ORDER BY n.nome LIMIT 48
             """, (hub["id"], segmento))
             filtro_tipo, filtro_valor = "bairro", segmento
     else:
+        total = query("""
+            SELECT COUNT(*) as total FROM hub_negocios n
+            JOIN hub_negocio_hubs nh ON nh.negocio_id = n.id
+            JOIN hub_categorias c ON c.id = n.categoria_id
+            WHERE nh.hub_id = %s AND n.ativo = true AND c.slug = %s
+        """, (hub["id"], segmento), one=True)["total"]
         negocios = query("""
             SELECT n.*, c.nome as categoria_nome, c.slug as categoria_slug
             FROM hub_negocios n
             JOIN hub_negocio_hubs nh ON nh.negocio_id = n.id
             JOIN hub_categorias c ON c.id = n.categoria_id
             WHERE nh.hub_id = %s AND n.ativo = true AND c.slug = %s
-            ORDER BY n.nome
+            ORDER BY n.nome LIMIT 48
         """, (hub["id"], segmento))
         filtro_tipo, filtro_valor = "categoria", segmento
     categorias = query("SELECT * FROM hub_categorias WHERE ativo = true ORDER BY nome")
+    # Bairros únicos para o slicer — query leve só com DISTINCT
+    bairros_disponiveis = []
+    if filtro_tipo == "categoria":
+        rows = query("""
+            SELECT DISTINCT n.bairro FROM hub_negocios n
+            JOIN hub_negocio_hubs nh ON nh.negocio_id = n.id
+            JOIN hub_categorias c ON c.id = n.categoria_id
+            WHERE nh.hub_id = %s AND n.ativo = true AND c.slug = %s
+              AND n.bairro IS NOT NULL AND n.bairro <> ''
+            ORDER BY n.bairro
+        """, (hub["id"], segmento))
+        bairros_disponiveis = [r["bairro"] for r in rows]
     template = hub.get("template_filtro") or "filtro_padrao"
     return render_template(f"hub/{template}.html", hub=hub, negocios=negocios,
                            categorias=categorias, filtro_tipo=filtro_tipo,
-                           filtro_valor=filtro_valor, segmento=segmento)
+                           filtro_valor=filtro_valor, segmento=segmento,
+                           total_negocios=total,
+                           bairros_disponiveis=bairros_disponiveis)
 
 
 @app.route("/<segmento>/<slug_negocio>/")
