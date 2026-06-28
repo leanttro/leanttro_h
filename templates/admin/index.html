@@ -1194,9 +1194,7 @@ function setupFormSubmit(form) {
         closeDrawer();
         showToast('Salvo com sucesso!', 'success');
         state.loaded.delete(state.section);
-        state.loaded.delete('dashboard');
         await loadSection(state.section);
-        if (state.section !== 'dashboard') await loadDashboard();
       } else {
         showToast('Erro ao salvar', 'error');
       }
@@ -1215,7 +1213,6 @@ async function deleteItem(type, id) {
     if (r.ok || r.redirected) {
       showToast('Excluído com sucesso', 'success');
       state.loaded.delete(state.section);
-      state.loaded.delete('dashboard');
       await loadSection(state.section);
     } else { showToast('Erro ao excluir', 'error'); }
   } catch(e) { showToast('Erro de conexão', 'error'); }
@@ -1488,7 +1485,6 @@ async function bulkNegocio(action) {
     if (r.ok || r.redirected) {
       showToast(`Ação "${action}" aplicada a ${ids.length} negócio(s)`, 'success');
       state.loaded.delete('negocios');
-      state.loaded.delete('dashboard');
       await loadSection('negocios');
     } else {
       showToast('Erro ao executar ação em massa', 'error');
@@ -1526,7 +1522,6 @@ async function confirmHubPicker() {
     if (r.ok || r.redirected) {
       showToast(`${_hubPickerAction === 'vincular' ? 'Vinculado' : 'Desvinculado'}: ${ids.length} negócio(s)`, 'success');
       state.loaded.delete('negocios');
-      state.loaded.delete('dashboard');
       await loadSection('negocios');
     } else {
       showToast('Erro ao executar ação', 'error');
@@ -1559,7 +1554,6 @@ async function confirmCategoriaPicker() {
     if (r.ok || r.redirected) {
       showToast(`Categoria alterada em ${ids.length} negócio(s)`, 'success');
       state.loaded.delete('negocios');
-      state.loaded.delete('dashboard');
       await loadSection('negocios');
     } else {
       showToast('Erro ao mudar categoria', 'error');
@@ -1602,9 +1596,11 @@ async function populateTemplateSelects(currentValues = {}) {
 // ── Init ─────────────────────────────────────────────────────
 (async function init() {
   await loadSection('dashboard');
-  // Pré-carrega categorias, hubs e usuários para os selects dos formulários
-  if (!state.loaded.has('categorias')) await loadData('categorias');
-  if (!state.loaded.has('usuarios')) await loadData('usuarios');
+  // Pré-carrega categorias e usuários em paralelo para os selects dos formulários
+  await Promise.all([
+    !state.loaded.has('categorias') ? loadData('categorias') : Promise.resolve(),
+    !state.loaded.has('usuarios')   ? loadData('usuarios')   : Promise.resolve(),
+  ]);
 })();
 </script>
 </body>
