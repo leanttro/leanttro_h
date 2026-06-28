@@ -34,8 +34,8 @@ def get_db():
             host     = os.getenv("DB_HOST", "213.199.56.207"),
             port     = int(os.getenv("DB_PORT", 5452)),
             dbname   = os.getenv("DB_NAME", "postgres"),
-            user     = os.getenv("DB_USER", "leanttro"),
-            password = os.getenv("DB_PASS", "Fin@2021"),
+            user     = os.getenv("DB_USER"),
+            password = os.getenv("DB_PASS"),
             cursor_factory=psycopg2.extras.RealDictCursor
         )
     return g.db
