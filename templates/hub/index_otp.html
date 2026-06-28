@@ -305,11 +305,11 @@
             will-change: transform; cursor: grab; user-select: none;
         }
         .carousel-track.dragging { transition: none; cursor: grabbing; }
-        .carousel-track .negocio-card, .carousel-track .categoria-card {
+        .carousel-track .negocio-card, .carousel-track .categoria-card, .carousel-track .blog-card {
             flex: 0 0 calc(25% - 17px); min-width: 0;
         }
         @media (max-width: 900px) {
-            .carousel-track .negocio-card, .carousel-track .categoria-card { flex: 0 0 calc(50% - 11px); }
+            .carousel-track .negocio-card, .carousel-track .categoria-card, .carousel-track .blog-card { flex: 0 0 calc(50% - 11px); }
         }
         @media (max-width: 768px) {
             .carousel-track-outer {
@@ -319,7 +319,7 @@
             }
             .carousel-track-outer::-webkit-scrollbar { display: none; }
             .carousel-track { transform: none !important; transition: none !important; cursor: default; gap: 14px; padding: 4px 0; }
-            .carousel-track .negocio-card, .carousel-track .categoria-card { scroll-snap-align: start; flex: 0 0 78%; min-width: 0; }
+            .carousel-track .negocio-card, .carousel-track .categoria-card, .carousel-track .blog-card { scroll-snap-align: start; flex: 0 0 78%; min-width: 0; }
             /* Esconder arrows no mobile */
             .carousel-nav { display: none; }
         }
@@ -632,11 +632,23 @@
             <a href="/blog/" class="btn-ver-blog"><i class="fas fa-newspaper"></i> Ver todos os posts</a>
         </div>
         <p class="section-subtitle" style="text-align:left; margin-bottom:28px;">Dicas, guias e novidades para você</p>
-        <div class="blog-grid" id="blog-carrossel-grid">
-            <!-- populado via JS com /api/hub/blog -->
+
+        <!-- Carrossel de posts (populado via JS) -->
+        <div class="carousel-wrapper" id="blog-carousel-wrapper">
+            <div class="carousel-track-outer">
+                <div class="carousel-track" id="blog-track">
+                    <!-- cards inseridos via JS -->
+                </div>
+            </div>
+            <div class="carousel-nav" id="blog-carousel-nav">
+                <button class="carousel-arrow" id="blog-prev" onclick="moveCarouselBlog(-1)"><i class="fas fa-chevron-left"></i></button>
+                <div class="carousel-progress-bar"><div class="carousel-progress-fill" id="blog-progress-fill"></div></div>
+                <button class="carousel-arrow" id="blog-next" onclick="moveCarouselBlog(1)"><i class="fas fa-chevron-right"></i></button>
+            </div>
         </div>
+
         <p id="blog-vazio" style="display:none; text-align:center; color:#6c757d; padding:30px 0;">Nenhum post publicado ainda.</p>
-        <div id="blog-loading" style="display:none; text-align:center; color:var(--primary); padding:20px;">
+        <div id="blog-loading" style="text-align:center; color:var(--primary); padding:20px;">
             <i class="fas fa-spinner fa-spin"></i> Carregando posts...
         </div>
     </div>
