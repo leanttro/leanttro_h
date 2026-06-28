@@ -100,6 +100,7 @@ def index():
         JOIN hub_categorias c ON c.id = n.categoria_id
         WHERE nh.hub_id = %s AND n.ativo = true
         ORDER BY n.nome
+        LIMIT 48
     """, (hub["id"],))
     template = hub.get("template_index") or "index_padrao"
     return render_template(f"hub/{template}.html", hub=hub, negocios=negocios, categorias=categorias)
@@ -1020,6 +1021,12 @@ def api_negocios():
         return jsonify({"erro": "Hub não encontrado"}), 404
     categoria = request.args.get("categoria")
     bairro    = request.args.get("bairro")
+    # Paginação: limit máx 200, offset para lazy loading
+    try:
+        limit  = min(int(request.args.get("limit",  96)), 200)
+        offset = max(int(request.args.get("offset",  0)),   0)
+    except (ValueError, TypeError):
+        limit, offset = 96, 0
     sql = """
         SELECT n.*, c.nome as categoria_nome, c.slug as categoria_slug
         FROM hub_negocios n
@@ -1034,7 +1041,8 @@ def api_negocios():
     if bairro:
         sql += " AND LOWER(n.bairro) = LOWER(%s)"
         params.append(bairro)
-    sql += " ORDER BY n.nome"
+    sql += " ORDER BY n.nome LIMIT %s OFFSET %s"
+    params += [limit, offset]
     negocios = query(sql, params)
     return jsonify([dict(n) for n in negocios])
 
