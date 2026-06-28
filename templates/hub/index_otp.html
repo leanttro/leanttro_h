@@ -925,6 +925,9 @@ function setView(mode){
 }
 
 function renderNegocios(lista){
+    // Sempre que re-renderiza, reseta o offset do lazy load local
+    negociosFiltrados = lista;
+    _renderOffset = Math.min(48, lista.length);
     var vc=document.getElementById('view-controls');
     var vazio=document.getElementById('negocios-vazio');
     if(geoAtivo&&userLat&&userLng){
@@ -932,6 +935,7 @@ function renderNegocios(lista){
             var d=(n.lat&&n.lng)?calcDistancia(userLat,userLng,parseFloat(n.lat),parseFloat(n.lng)):9999;
             return Object.assign({},n,{_dist:d});
         }).sort(function(a,b){ return a._dist-b._dist; });
+        negociosFiltrados = lista;
     }
     if(!lista.length){
         if(vc) vc.style.display='none';
