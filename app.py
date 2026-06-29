@@ -414,8 +414,17 @@ def pagina_negocio(segmento, slug_negocio):
         return "Negócio não encontrado", 404
     query("UPDATE hub_negocios SET visualizacoes = visualizacoes + 1 WHERE id = %s",
           (negocio["id"],), commit=True)
+    anuncio_topo = _get_anuncios(hub["id"], "topo",
+                                 categoria_slug=negocio["categoria_slug"],
+                                 cidade=negocio.get("cidade"),
+                                 bairro=negocio.get("bairro"))
+    anuncio_meio = _get_anuncios(hub["id"], "meio",
+                                 categoria_slug=negocio["categoria_slug"],
+                                 cidade=negocio.get("cidade"),
+                                 bairro=negocio.get("bairro"))
     template = hub.get("template_negocio") or "negocio_padrao"
-    return render_template(f"hub/{template}.html", hub=hub, negocio=negocio, segmento=segmento)
+    return render_template(f"hub/{template}.html", hub=hub, negocio=negocio, segmento=segmento,
+                           anuncio_topo=anuncio_topo, anuncio_meio=anuncio_meio)
 
 
 # ════════════════════════════════════════════════════════════
@@ -795,11 +804,14 @@ def blog_post(slug):
     """, (hub["id"], post["id"], post["id"]))
 
     categorias = query("SELECT * FROM hub_categorias WHERE ativo = true ORDER BY nome")
+    anuncio_topo = _get_anuncios(hub["id"], "topo")
+    anuncio_meio = _get_anuncios(hub["id"], "meio")
     template_post = hub.get("template_blog_post") or "blog_post_otp"
     return render_template(
         f"hub/{template_post}.html",
         hub=hub, post=post, tags=tags,
         relacionados=relacionados, categorias=categorias,
+        anuncio_topo=anuncio_topo, anuncio_meio=anuncio_meio,
     )
 
 
