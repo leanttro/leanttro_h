@@ -101,7 +101,8 @@ def _jinja_slugify(texto):
 # ════════════════════════════════════════════════════════════
 
 # "blog" e "cidade" adicionados para não colidir com /<segmento>/
-ROTAS_RESERVADAS = {"admin", "static", "favicon.ico", "robots.txt", "sitemap.xml", "sitemap-1.xml", "sitemap-2.xml", "sitemap-3.xml", "blog", "cidade", "api"}
+ROTAS_RESERVADAS = {"admin", "static", "favicon.ico", "robots.txt", "sitemap.xml", "blog", "cidade", "api"}
+
 @app.route("/")
 def index():
     hub = get_hub_by_host()
@@ -158,7 +159,7 @@ def sitemap():
     linhas.append('<sitemapindex xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">')
     for i in range(1, num_partes + 1):
         linhas.append("  <sitemap>")
-        linhas.append(f"    <loc>{base_url}/sitemap-{i}.xml</loc>")
+        linhas.append(f"    <loc>{base_url}/sitemap{i}.xml</loc>")
         linhas.append(f"    <lastmod>{hoje}</lastmod>")
         linhas.append("  </sitemap>")
     linhas.append("</sitemapindex>")
@@ -166,7 +167,7 @@ def sitemap():
     return Response("\n".join(linhas), mimetype="application/xml")
 
 
-@app.route("/sitemap-<int:parte>.xml")
+@app.route("/sitemap<int:parte>.xml")
 def sitemap_parte(parte):
     hub = get_hub_by_host()
     if not hub:
