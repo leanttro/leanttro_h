@@ -980,7 +980,7 @@ tbody td {
 const state = {
   section: 'dashboard',
   loaded: new Set(),
-  data: { hubs: [], negocios: [], categorias: [], usuarios: [], assinaturas: [], blog: [], 'blog-tags': [] },
+  data: { hubs: [], negocios: [], categorias: [], usuarios: [], assinaturas: [], blog: [], 'blog-tags': [], anuncios: [] },
   editId: null,
   editType: null,
 };
@@ -994,7 +994,7 @@ function navigate(section) {
   document.getElementById('topbarTitle').textContent = {
     dashboard: 'Dashboard', hubs: 'Hub clientes', negocios: 'Negócios',
     categorias: 'Categorias', usuarios: 'Usuários', assinaturas: 'Assinaturas',
-    blog: 'Posts do blog', 'blog-tags': 'Tags do blog'
+    blog: 'Posts do blog', 'blog-tags': 'Tags do blog', anuncios: 'Anúncios'
   }[section];
   state.section = section;
   if (!state.loaded.has(section)) loadSection(section);
@@ -1208,7 +1208,8 @@ function renderAnuncios(data) {
       <td>${badgeAtivo(a.ativo)}</td>
       <td>${actionBtns('anuncio', a.id)}</td>
     </tr>
-  `).join('');
+  `;
+  }).join('');
 }
 
 // ── Helpers ──────────────────────────────────────────────────
@@ -1266,6 +1267,7 @@ async function editItem(type, id) {
     categoria: `/admin/categorias/${id}/editar`, usuario: `/admin/usuarios/${id}/editar`,
     assinatura: `/admin/assinaturas/${id}/editar`,
     blog: `/admin/blog/${id}/editar`, 'blog-tag': `/admin/blog/tags/${id}/editar`,
+    anuncio: `/admin/anuncios/${id}/editar`,
   };
   document.getElementById('drawerTitle').textContent = 'Carregando...';
   document.getElementById('drawerBody').innerHTML = '<div class="loading"><div class="spinner"></div>Carregando...</div>';
@@ -1324,8 +1326,8 @@ async function editItem(type, id) {
       }
       setupFormSubmit(form);
     } else {
-      const titles = { negocio:'Editar negócio', categoria:'Editar categoria', usuario:'Editar usuário', assinatura:'Editar assinatura' };
-      const formFns = { negocio: formNegocio, categoria: formCategoria, usuario: formUsuario, assinatura: formAssinatura };
+      const titles = { negocio:'Editar negócio', categoria:'Editar categoria', usuario:'Editar usuário', assinatura:'Editar assinatura', anuncio:'Editar anúncio' };
+      const formFns = { negocio: formNegocio, categoria: formCategoria, usuario: formUsuario, assinatura: formAssinatura, anuncio: formAnuncio };
       document.getElementById('drawerTitle').textContent = titles[type];
       document.getElementById('drawerBody').innerHTML = formFns[type]();
       const form = document.getElementById('drawerForm');
@@ -1351,9 +1353,9 @@ async function editItem(type, id) {
 }
 
 function buildForm(type, id) {
-  const titles = { hub: 'Novo hub', negocio: 'Novo negócio', categoria: 'Nova categoria', usuario: 'Novo usuário', assinatura: 'Nova assinatura', blog: 'Novo post', 'blog-tag': 'Nova tag' };
+  const titles = { hub: 'Novo hub', negocio: 'Novo negócio', categoria: 'Nova categoria', usuario: 'Novo usuário', assinatura: 'Nova assinatura', blog: 'Novo post', 'blog-tag': 'Nova tag', anuncio: 'Novo anúncio' };
   document.getElementById('drawerTitle').textContent = titles[type];
-  const forms = { hub: formHub, negocio: formNegocio, categoria: formCategoria, usuario: formUsuario, assinatura: formAssinatura, blog: formBlog, 'blog-tag': formBlogTag };
+  const forms = { hub: formHub, negocio: formNegocio, categoria: formCategoria, usuario: formUsuario, assinatura: formAssinatura, blog: formBlog, 'blog-tag': formBlogTag, anuncio: formAnuncio };
   document.getElementById('drawerBody').innerHTML = forms[type]();
   const form = document.getElementById('drawerForm');
   if (form) setupFormSubmit(form);
@@ -1404,6 +1406,7 @@ async function deleteItem(type, id) {
     categoria: `/admin/categorias/${id}/deletar`, usuario: `/admin/usuarios/${id}/deletar`,
     assinatura: `/admin/assinaturas/${id}/deletar`,
     blog: `/admin/blog/${id}/deletar`, 'blog-tag': `/admin/blog/tags/${id}/deletar`,
+    anuncio: `/admin/anuncios/${id}/deletar`,
   };
   try {
     const fd = new FormData();
