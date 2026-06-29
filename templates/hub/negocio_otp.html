@@ -375,6 +375,11 @@ footer p { margin: 8px 0; }
   .negocio-hero h1 { font-size: 1.5em; }
   .wpp-float { width: 50px; height: 50px; bottom: 20px; right: 20px; }
 }
+/* ══ BANNERS ══ */
+.banner-topo { background: var(--white); border-bottom: 1px solid var(--medium-gray); padding: 10px 20px; text-align: center; }
+.banner-meio { background: var(--light); padding: 28px 20px; text-align: center; border-top: 1px solid #ffe0b2; border-bottom: 1px solid #ffe0b2; }
+.banner-placeholder { display: inline-block; background: var(--light-gray); border: 2px dashed var(--medium-gray); border-radius: 8px; padding: 12px 36px; color: #aaa; font-size: 0.9em; font-weight: 500; transition: all 0.2s; }
+.banner-placeholder:hover { border-color: var(--primary); color: var(--primary); }
 </style>
 </head>
 <body>
@@ -413,6 +418,25 @@ footer p { margin: 8px 0; }
       <li><a href="/contato/" onclick="document.getElementById('mobile-nav').classList.remove('active')">Contato</a></li>
     </ul>
   </nav>
+</div>
+
+<!-- BANNER TOPO -->
+<div class="banner-topo">
+    {% if anuncio_topo %}
+    <a href="{{ anuncio_topo.link }}" target="_blank" rel="noopener sponsored">
+        <img src="{{ anuncio_topo.foto_url }}" alt="{{ anuncio_topo.titulo or 'Publicidade' }}"
+             style="max-height:90px; width:auto; max-width:100%; border-radius:8px;">
+    </a>
+    {% elif hub.banner1_foto_url %}
+    <a href="{{ hub.banner1_link or '#' }}" target="_blank" rel="noopener sponsored">
+        <img src="{{ hub.banner1_foto_url }}" alt="Publicidade"
+             style="max-height:90px; width:auto; max-width:100%; border-radius:8px;">
+    </a>
+    {% else %}
+    <a class="banner-placeholder"
+       href="https://wa.me/55{{ hub.whatsapp or '11999999999' }}?text=Quero+anunciar+no+Onde+Tem+Perto"
+       target="_blank" rel="noopener">📣 Anuncie aqui — espaço disponível</a>
+    {% endif %}
 </div>
 
 <!-- HERO -->
@@ -561,6 +585,25 @@ footer p { margin: 8px 0; }
     </div>
 
   </div>
+</div>
+
+<!-- BANNER MEIO -->
+<div class="banner-meio">
+    {% if anuncio_meio %}
+    <a href="{{ anuncio_meio.link }}" target="_blank" rel="noopener sponsored">
+        <img src="{{ anuncio_meio.foto_url }}" alt="{{ anuncio_meio.titulo or 'Publicidade' }}"
+             style="max-height:120px; width:auto; max-width:100%; border-radius:8px;">
+    </a>
+    {% elif hub.banner2_foto_url %}
+    <a href="{{ hub.banner2_link or '#' }}" target="_blank" rel="noopener sponsored">
+        <img src="{{ hub.banner2_foto_url }}" alt="Publicidade"
+             style="max-height:120px; width:auto; max-width:100%; border-radius:8px;">
+    </a>
+    {% else %}
+    <a class="banner-placeholder"
+       href="https://wa.me/55{{ hub.whatsapp or '11999999999' }}?text=Quero+anunciar+no+Onde+Tem+Perto"
+       target="_blank" rel="noopener">📣 Anuncie aqui — espaço disponível</a>
+    {% endif %}
 </div>
 
 <!-- FOOTER -->
