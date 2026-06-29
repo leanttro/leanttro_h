@@ -1485,6 +1485,87 @@ def admin_blog_tag_deletar(tag_id):
 
 
 # ════════════════════════════════════════════════════════════
+#  Admin — Anúncios
+# ════════════════════════════════════════════════════════════
+
+@app.route("/admin/anuncios")
+@login_required
+def admin_anuncios():
+    anuncios = query("""
+        SELECT a.*, h.nome as hub_nome
+        FROM anuncios a
+        LEFT JOIN hubs h ON h.id = a.hub_id
+        ORDER BY a.id DESC
+    """)
+    return jsonify([dict(a) for a in anuncios])
+
+
+@app.route("/admin/anuncios/novo", methods=["POST"])
+@login_required
+def admin_anuncio_novo():
+    f = request.form
+    ativo = f.get("ativo") in ("on", "true", "1", True)
+    query("""
+        INSERT INTO anuncios (hub_id, titulo, foto_url, link, posicao,
+                              categoria_slug, cidade, bairro, data_inicio, data_fim, ativo)
+        VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+    """, (
+        f.get("hub_id") or None,
+        f.get("titulo"),
+        f.get("foto_url"),
+        f.get("link"),
+        f.get("posicao", "topo"),
+        f.get("categoria_slug") or None,
+        f.get("cidade") or None,
+        f.get("bairro") or None,
+        f.get("data_inicio") or None,
+        f.get("data_fim") or None,
+        ativo,
+    ), commit=True)
+    return jsonify({"ok": True})
+
+
+@app.route("/admin/anuncios/<int:anuncio_id>/editar", methods=["GET", "POST"])
+@login_required
+def admin_anuncio_editar(anuncio_id):
+    if request.method == "GET":
+        row = query("SELECT * FROM anuncios WHERE id = %s", (anuncio_id,), one=True)
+        if not row:
+            return jsonify({"erro": "Não encontrado"}), 404
+        return jsonify(dict(row))
+    f = request.form
+    ativo = f.get("ativo") in ("on", "true", "1", True)
+    query("""
+        UPDATE anuncios SET
+            hub_id = %s, titulo = %s, foto_url = %s, link = %s, posicao = %s,
+            categoria_slug = %s, cidade = %s, bairro = %s,
+            data_inicio = %s, data_fim = %s, ativo = %s
+        WHERE id = %s
+    """, (
+        f.get("hub_id") or None,
+        f.get("titulo"),
+        f.get("foto_url"),
+        f.get("link"),
+        f.get("posicao", "topo"),
+        f.get("categoria_slug") or None,
+        f.get("cidade") or None,
+        f.get("bairro") or None,
+        f.get("data_inicio") or None,
+        f.get("data_fim") or None,
+        ativo,
+        anuncio_id,
+    ), commit=True)
+    return jsonify({"ok": True})
+
+
+@app.route("/admin/anuncios/<int:anuncio_id>/deletar", methods=["POST"])
+@login_required
+def admin_anuncio_deletar(anuncio_id):
+    query("DELETE FROM anuncios WHERE id = %s", (anuncio_id,), commit=True)
+    return jsonify({"ok": True})
+
+
+# ════════════════════════════════════════════════════════════
 #  API pública — JSON
 # ════════════════════════════════════════════════════════════
 
