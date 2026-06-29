@@ -317,11 +317,11 @@
             will-change: transform; cursor: grab; user-select: none;
         }
         .carousel-track.dragging { transition: none; cursor: grabbing; }
-        .carousel-track .negocio-card, .carousel-track .categoria-card, .carousel-track .blog-card {
+        .carousel-track .negocio-card, .carousel-track .categoria-card, .carousel-track .blog-card, .carousel-track .cidade-card {
             flex: 0 0 calc(25% - 17px); min-width: 0;
         }
         @media (max-width: 900px) {
-            .carousel-track .negocio-card, .carousel-track .categoria-card, .carousel-track .blog-card { flex: 0 0 calc(50% - 11px); }
+            .carousel-track .negocio-card, .carousel-track .categoria-card, .carousel-track .blog-card, .carousel-track .cidade-card { flex: 0 0 calc(50% - 11px); }
         }
         @media (max-width: 768px) {
             .carousel-track-outer {
@@ -331,12 +331,12 @@
             }
             .carousel-track-outer::-webkit-scrollbar { display: none; }
             .carousel-track { transform: none !important; transition: none !important; cursor: default; gap: 14px; padding: 4px 0; }
-            .carousel-track .negocio-card, .carousel-track .categoria-card, .carousel-track .blog-card { scroll-snap-align: start; flex: 0 0 78%; min-width: 0; }
+            .carousel-track .negocio-card, .carousel-track .categoria-card, .carousel-track .blog-card, .carousel-track .cidade-card { scroll-snap-align: start; flex: 0 0 78%; min-width: 0; }
             /* Esconder arrows no mobile */
             .carousel-nav { display: none; }
         }
         @media (max-width: 480px) {
-            .carousel-track .negocio-card, .carousel-track .categoria-card { flex: 0 0 calc(85%); }
+            .carousel-track .negocio-card, .carousel-track .categoria-card, .carousel-track .cidade-card { flex: 0 0 calc(85%); }
         }
         .carousel-nav {
             display: flex; align-items: center; justify-content: center;
@@ -1372,12 +1372,11 @@ renderNegocios(negociosFiltrados);
 </script>
 
 <script>
-// ══ SEÇÃO CIDADES — carrossel + grade + busca + slicer ══
+// ══ SEÇÃO CIDADES — mesmo padrão do carrossel de categorias ══
 (function(){
     var _todasCidades = [];
-    var _cidadesFiltradas = [];
     var cidPos = 0, cidView = 'carousel';
-    var foto = 'https://res.cloudinary.com/dhu1cqvrb/image/upload/v1782521985/cidade_krf7xk.png';
+    var fotoBase = 'https://res.cloudinary.com/dhu1cqvrb/image/upload/v1782521985/cidade_krf7xk.png';
 
     function _slugCidade(nome){
         return nome.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/\s+/g,'-').replace(/[^a-z0-9-]/g,'');
@@ -1388,7 +1387,7 @@ renderNegocios(negociosFiltrados);
         var total = c.total || c.count || 0;
         var nome  = c.cidade || c.nome || '';
         return '<a href="/cidade/'+slug+'/" class="cidade-card">'+
-            '<div class="cidade-foto"><img src="'+foto+'" alt="'+nome+'" loading="lazy" width="400" height="130"></div>'+
+            '<div class="cidade-foto"><img src="'+fotoBase+'" alt="'+nome+'" loading="lazy" width="400" height="130"></div>'+
             '<div class="cidade-body">'+
                 '<h3>'+nome+'</h3>'+
                 '<p class="cidade-count">'+total+' estabelecimento'+(total!==1?'s':'')+'</p>'+
@@ -1396,18 +1395,20 @@ renderNegocios(negociosFiltrados);
         '</a>';
     }
 
-    /* ── carrossel ── */
+    /* ── idêntico ao de categorias ── */
     function isMobileCid(){ return window.innerWidth <= 768; }
 
     function cidCardWidth(){
         var track = document.getElementById('cidades-track');
-        var card = track && track.querySelector('.cidade-card');
-        return card ? card.offsetWidth + 18 : 220;
+        var card  = track && track.querySelector('.cidade-card');
+        if(!card) return 280;
+        return card.offsetWidth + 22;
     }
 
     function clampCid(){
+        if(isMobileCid()) return;
         var track = document.getElementById('cidades-track');
-        if(!track || isMobileCid()) return;
+        if(!track) return;
         var cards = track.querySelectorAll('.cidade-card');
         if(!cards.length) return;
         var maxPos = Math.max(0, cards.length * cidCardWidth() - track.parentElement.offsetWidth);
@@ -1416,9 +1417,9 @@ renderNegocios(negociosFiltrados);
         var fill = document.getElementById('cidades-progress-fill');
         var prev = document.getElementById('cidades-prev');
         var next = document.getElementById('cidades-next');
-        if(fill) fill.style.width = maxPos > 0 ? Math.min(100,(cidPos/maxPos)*100)+'%' : '0%';
-        if(prev) prev.disabled = cidPos <= 0;
-        if(next) next.disabled = maxPos <= 0 || cidPos >= maxPos;
+        if(fill) fill.style.width = maxPos>0 ? Math.min(100,(cidPos/maxPos)*100)+'%' : '0%';
+        if(prev) prev.disabled = cidPos<=0;
+        if(next) next.disabled = maxPos<=0 || cidPos>=maxPos;
     }
 
     function snapCid(){
@@ -1434,24 +1435,25 @@ renderNegocios(negociosFiltrados);
         track.style.transform = 'translateX(0)';
         clampCid();
         var isDragging=false, startX=0, startPos=0;
+        // Recria o track para limpar listeners anteriores
         var newTrack = track.cloneNode(true);
         track.parentNode.replaceChild(newTrack, track);
         track = document.getElementById('cidades-track');
         function onStart(x){ isDragging=true; startX=x; startPos=cidPos; track.classList.add('dragging'); }
-        function onMove(x){ if(!isDragging) return; cidPos = startPos-(x-startX); clampCid(); }
+        function onMove(x){ if(!isDragging) return; cidPos=startPos-(x-startX); clampCid(); }
         function onEnd(){ isDragging=false; track.classList.remove('dragging'); snapCid(); }
         if(!isMobileCid()){
-            track.addEventListener('mousedown', function(e){ onStart(e.clientX); e.preventDefault(); });
-            window.addEventListener('mousemove', function(e){ if(isDragging) onMove(e.clientX); });
-            window.addEventListener('mouseup', function(){ if(isDragging) onEnd(); });
-            var _ty=0, _horiz=false, _det=false;
-            track.addEventListener('touchstart', function(e){ _ty=e.touches[0].clientY; _horiz=false; _det=false; onStart(e.touches[0].clientX); }, {passive:true});
-            track.addEventListener('touchmove', function(e){
+            track.addEventListener('mousedown',function(e){ onStart(e.clientX); e.preventDefault(); });
+            window.addEventListener('mousemove',function(e){ if(isDragging) onMove(e.clientX); });
+            window.addEventListener('mouseup',function(){ if(isDragging) onEnd(); });
+            var _ty=0,_horiz=false,_det=false;
+            track.addEventListener('touchstart',function(e){ _ty=e.touches[0].clientY; _horiz=false; _det=false; onStart(e.touches[0].clientX); },{passive:true});
+            track.addEventListener('touchmove',function(e){
                 if(!isDragging) return;
-                if(!_det){ var dx=Math.abs(e.touches[0].clientX-startX), dy=Math.abs(e.touches[0].clientY-_ty); if(dx>5||dy>5){_horiz=dx>=dy;_det=true;} }
+                if(!_det){ var dx=Math.abs(e.touches[0].clientX-startX),dy=Math.abs(e.touches[0].clientY-_ty); if(dx>5||dy>5){_horiz=dx>=dy;_det=true;} }
                 if(!_det||!_horiz) return; e.preventDefault(); onMove(e.touches[0].clientX);
-            }, {passive:false});
-            track.addEventListener('touchend', function(e){ if(_horiz) onEnd(); else isDragging=false; });
+            },{passive:false});
+            track.addEventListener('touchend',function(e){ if(_horiz) onEnd(); else isDragging=false; });
         }
     }
 
@@ -1475,66 +1477,56 @@ renderNegocios(negociosFiltrados);
         if(gd) gd.style.display = mode==='grade' ? 'grid' : 'none';
     };
 
-    /* ── render ── */
+    /* ── render principal — igual ao setViewCategorias ── */
     function renderCidadesUI(lista){
         var track = document.getElementById('cidades-track');
         var grade = document.getElementById('cidades-grade');
         var vazio = document.getElementById('cidades-vazio');
         var vc    = document.getElementById('cidades-view-controls');
-        var cw    = document.getElementById('cidades-carousel-wrapper');
 
         if(!lista || !lista.length){
-            if(cw) cw.style.display = 'none';
-            if(grade) grade.style.display = 'none';
-            if(vc) vc.style.display = 'none';
-            if(vazio) vazio.style.display = '';
+            var cw = document.getElementById('cidades-carousel-wrapper');
+            if(cw) cw.style.display='none';
+            if(grade) grade.style.display='none';
+            if(vc) vc.style.display='none';
+            if(vazio) vazio.style.display='';
             return;
         }
-        if(vazio) vazio.style.display = 'none';
-        if(vc) vc.style.display = 'flex';
+        if(vazio) vazio.style.display='none';
+        if(vc) vc.style.display='flex';
 
         var html = lista.map(cidadeCardHTML).join('');
-        if(track) track.innerHTML = html;
-        if(grade) grade.innerHTML = html;
-        cidPos = 0;
+        if(track){ track.innerHTML = html; }
+        if(grade){ grade.innerHTML = html; }
 
-        // Aguarda o browser renderizar os cards antes de calcular larguras
-        requestAnimationFrame(function(){
-            requestAnimationFrame(function(){
-                initCidCarousel();
-                setViewCidades(cidView);
-            });
-        });
+        cidPos = 0;
+        initCidCarousel();
+        setViewCidades(cidView);
     }
 
-    /* ── busca inline ── */
+    /* ── busca inline (filtra carrossel e grade ao digitar) ── */
     window.filtrarCidadesCarrossel = function(q){
         var termo = (q||'').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'');
         var filtradas = !termo ? _todasCidades : _todasCidades.filter(function(c){
             var nome = (c.cidade||c.nome||'').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'');
             return nome.includes(termo);
         });
-        _cidadesFiltradas = filtradas;
         renderCidadesUI(filtradas);
     };
 
-    /* ── slicer dropdown ── */
+    /* ── slicer dropdown (lista completa de cidades) ── */
     var _slicerAberto = false;
 
     function renderSlicerList(lista){
         var el = document.getElementById('cidades-slicer-list');
         if(!el) return;
-        if(!lista.length){
-            el.innerHTML = '<div class="cidades-slicer-empty">Nenhuma cidade encontrada</div>';
-            return;
-        }
+        if(!lista.length){ el.innerHTML='<div class="cidades-slicer-empty">Nenhuma cidade encontrada</div>'; return; }
         el.innerHTML = lista.map(function(c){
             var slug  = _slugCidade(c.cidade || c.nome || '');
             var nome  = c.cidade || c.nome || '';
             var total = c.total || c.count || 0;
             return '<a href="/cidade/'+slug+'/" class="cidades-slicer-item">'+
-                '<span>'+nome+'</span>'+
-                '<span class="cidade-slicer-count">'+total+' est.</span>'+
+                '<span>'+nome+'</span><span class="cidade-slicer-count">'+total+' est.</span>'+
             '</a>';
         }).join('');
     }
@@ -1542,7 +1534,7 @@ renderNegocios(negociosFiltrados);
     window.filtrarCidadesSlicer = function(q){
         var termo = (q||'').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'');
         var filtradas = !termo ? _todasCidades : _todasCidades.filter(function(c){
-            var nome = (c.cidade||c.nome||'').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'');
+            var nome=(c.cidade||c.nome||'').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'');
             return nome.includes(termo);
         });
         renderSlicerList(filtradas);
@@ -1550,51 +1542,43 @@ renderNegocios(negociosFiltrados);
 
     window.toggleCidadesSlicer = function(){
         _slicerAberto = !_slicerAberto;
-        var panel    = document.getElementById('cidades-slicer-panel');
-        var toggle   = document.getElementById('cidades-slicer-toggle');
-        var backdrop = document.getElementById('cidades-slicer-backdrop');
+        var panel=document.getElementById('cidades-slicer-panel');
+        var toggle=document.getElementById('cidades-slicer-toggle');
+        var backdrop=document.getElementById('cidades-slicer-backdrop');
         if(_slicerAberto){
-            panel.classList.add('open');
-            toggle.classList.add('open');
-            backdrop.classList.add('open');
+            panel.classList.add('open'); toggle.classList.add('open'); backdrop.classList.add('open');
             renderSlicerList(_todasCidades);
-            var inp = document.getElementById('cidades-slicer-input');
-            if(inp){ inp.value=''; setTimeout(function(){ inp.focus(); }, 50); }
-        } else {
-            closeCidadesSlicer();
-        }
+            var inp=document.getElementById('cidades-slicer-input');
+            if(inp){ inp.value=''; setTimeout(function(){ inp.focus(); },50); }
+        } else { closeCidadesSlicer(); }
     };
 
     window.closeCidadesSlicer = function(){
-        _slicerAberto = false;
-        var panel    = document.getElementById('cidades-slicer-panel');
-        var toggle   = document.getElementById('cidades-slicer-toggle');
-        var backdrop = document.getElementById('cidades-slicer-backdrop');
-        if(panel)    panel.classList.remove('open');
-        if(toggle)   toggle.classList.remove('open');
-        if(backdrop) backdrop.classList.remove('open');
+        _slicerAberto=false;
+        ['cidades-slicer-panel','cidades-slicer-toggle','cidades-slicer-backdrop'].forEach(function(id){
+            var el=document.getElementById(id); if(el) el.classList.remove('open');
+        });
     };
 
-    document.addEventListener('keydown', function(e){ if(e.key==='Escape') closeCidadesSlicer(); });
+    document.addEventListener('keydown',function(e){ if(e.key==='Escape') closeCidadesSlicer(); });
 
-    /* ── função legada para dropdown nav ── */
+    /* ── popula dropdown nav do header ── */
     function populateNavDropdown(lista){
-        var dd = document.getElementById('nav-dropdown-cidades');
+        var dd=document.getElementById('nav-dropdown-cidades');
         if(!dd) return;
-        dd.innerHTML = lista.map(function(c){
-            var slug = _slugCidade(c.cidade || c.nome || '');
-            var nome = c.cidade || c.nome || '';
+        dd.innerHTML=lista.map(function(c){
+            var slug=_slugCidade(c.cidade||c.nome||'');
+            var nome=c.cidade||c.nome||'';
             return '<a href="/cidade/'+slug+'/">'+nome+'</a>';
         }).join('');
     }
 
-    /* ── fetch cidades ── */
+    /* ── fetch ── */
     fetch('/api/hub/cidades')
         .then(function(r){ return r.json(); })
         .then(function(data){
             if(!Array.isArray(data)) return;
             _todasCidades = data;
-            _cidadesFiltradas = data;
             renderCidadesUI(data);
             populateNavDropdown(data);
         })
