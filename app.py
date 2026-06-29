@@ -2,7 +2,7 @@ from flask import Flask, render_template, request, jsonify, redirect, session, g
 from werkzeug.security import generate_password_hash, check_password_hash
 from werkzeug.middleware.proxy_fix import ProxyFix
 from functools import wraps
-from datetime import datetime, timezone
+from datetime import datetime, timezone, date
 import psycopg2
 import psycopg2.extras
 import os
@@ -97,6 +97,36 @@ def _jinja_slugify(texto):
 
 
 # ════════════════════════════════════════════════════════════
+#  ANÚNCIOS PAGOS
+# ════════════════════════════════════════════════════════════
+
+def _get_anuncios(hub_id, posicao, categoria_slug=None, cidade=None, bairro=None):
+    """Retorna até 1 anúncio ativo que case com o contexto da página.
+    Prioriza anúncios mais segmentados; desempate por RANDOM().
+    """
+    hoje = date.today()
+    sql = """
+        SELECT * FROM anuncios
+        WHERE hub_id = %s AND ativo = true AND posicao = %s
+          AND (data_inicio IS NULL OR data_inicio <= %s)
+          AND (data_fim   IS NULL OR data_fim   >= %s)
+          AND (categoria_slug IS NULL OR categoria_slug = %s)
+          AND (cidade         IS NULL OR LOWER(cidade)  = LOWER(%s))
+          AND (bairro         IS NULL OR LOWER(bairro)  = LOWER(%s))
+        ORDER BY
+          (categoria_slug IS NOT NULL)::int +
+          (cidade         IS NOT NULL)::int +
+          (bairro         IS NOT NULL)::int DESC,
+          RANDOM()
+        LIMIT 1
+    """
+    return query(sql, (
+        hub_id, posicao, hoje, hoje,
+        categoria_slug or '', cidade or '', bairro or ''
+    ), one=True)
+
+
+# ════════════════════════════════════════════════════════════
 #  ROTAS PÚBLICAS DO HUB
 # ════════════════════════════════════════════════════════════
 
@@ -117,8 +147,11 @@ def index():
         ORDER BY n.nome
         LIMIT 48
     """, (hub["id"],))
+    anuncio_topo = _get_anuncios(hub["id"], "topo")
+    anuncio_meio = _get_anuncios(hub["id"], "meio")
     template = hub.get("template_index") or "index_padrao"
-    return render_template(f"hub/{template}.html", hub=hub, negocios=negocios, categorias=categorias)
+    return render_template(f"hub/{template}.html", hub=hub, negocios=negocios, categorias=categorias,
+                           anuncio_topo=anuncio_topo, anuncio_meio=anuncio_meio)
 
 
 @app.route("/robots.txt")
@@ -353,11 +386,14 @@ def pagina_filtro(segmento):
         """, (hub["id"], segmento))
         bairros_disponiveis = [r["bairro"] for r in rows]
     template = hub.get("template_filtro") or "filtro_padrao"
+    anuncio_topo = _get_anuncios(hub["id"], "topo", categoria_slug=(segmento if filtro_tipo == "categoria" else None))
+    anuncio_meio = _get_anuncios(hub["id"], "meio", categoria_slug=(segmento if filtro_tipo == "categoria" else None))
     return render_template(f"hub/{template}.html", hub=hub, negocios=negocios,
                            categorias=categorias, filtro_tipo=filtro_tipo,
                            filtro_valor=filtro_valor, segmento=segmento,
                            total_negocios=total,
-                           bairros_disponiveis=bairros_disponiveis)
+                           bairros_disponiveis=bairros_disponiveis,
+                           anuncio_topo=anuncio_topo, anuncio_meio=anuncio_meio)
 
 
 @app.route("/<segmento>/<slug_negocio>/")
@@ -499,6 +535,9 @@ def _render_cidade(hub, negocios, categorias, cidade_nome,
                    bairros_disponiveis=None, categorias_disponiveis=None,
                    total_negocios=None):
     template = hub.get("template_cidade") or "cidade_otp"
+    cat_slug = categoria["slug"] if categoria else None
+    anuncio_topo = _get_anuncios(hub["id"], "topo", categoria_slug=cat_slug, cidade=cidade_nome, bairro=bairro)
+    anuncio_meio = _get_anuncios(hub["id"], "meio", categoria_slug=cat_slug, cidade=cidade_nome, bairro=bairro)
     return render_template(
         f"hub/{template}.html",
         hub=hub,
@@ -510,6 +549,8 @@ def _render_cidade(hub, negocios, categorias, cidade_nome,
         bairros_disponiveis=bairros_disponiveis or [],
         categorias_disponiveis=categorias_disponiveis or [],
         total_negocios=total_negocios if total_negocios is not None else len(negocios),
+        anuncio_topo=anuncio_topo,
+        anuncio_meio=anuncio_meio,
     )
 
 
