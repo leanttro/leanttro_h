@@ -1,4 +1,4 @@
-from flask import Flask, render_template, request, jsonify, redirect, session, g, Response
+from flask import Flask, render_template, request, jsonify, redirect, session, g, Response, stream_with_context
 from werkzeug.security import generate_password_hash, check_password_hash
 from werkzeug.middleware.proxy_fix import ProxyFix
 from functools import wraps
@@ -101,8 +101,7 @@ def _jinja_slugify(texto):
 # ════════════════════════════════════════════════════════════
 
 # "blog" e "cidade" adicionados para não colidir com /<segmento>/
-ROTAS_RESERVADAS = {"admin", "static", "favicon.ico", "robots.txt", "sitemap.xml", "blog", "cidade", "api"}
-
+ROTAS_RESERVADAS = {"admin", "static", "favicon.ico", "robots.txt", "sitemap.xml", "sitemap-1.xml", "sitemap-2.xml", "sitemap-3.xml", "blog", "cidade", "api"}
 @app.route("/")
 def index():
     hub = get_hub_by_host()
@@ -152,14 +151,14 @@ def sitemap():
         WHERE nh.hub_id = %s AND n.ativo = true
     """, (hub["id"],), one=True)["total"]
 
-    LIMITE = 49000
+    LIMITE = 5000
     num_partes = max(1, -(-total // LIMITE))
 
     linhas = ['<?xml version="1.0" encoding="UTF-8"?>']
     linhas.append('<sitemapindex xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">')
     for i in range(1, num_partes + 1):
         linhas.append("  <sitemap>")
-        linhas.append(f"    <loc>{base_url}/sitemap{i}.xml</loc>")
+        linhas.append(f"    <loc>{base_url}/sitemap-{i}.xml</loc>")
         linhas.append(f"    <lastmod>{hoje}</lastmod>")
         linhas.append("  </sitemap>")
     linhas.append("</sitemapindex>")
@@ -167,7 +166,7 @@ def sitemap():
     return Response("\n".join(linhas), mimetype="application/xml")
 
 
-@app.route("/sitemap<int:parte>.xml")
+@app.route("/sitemap-<int:parte>.xml")
 def sitemap_parte(parte):
     hub = get_hub_by_host()
     if not hub:
@@ -176,7 +175,7 @@ def sitemap_parte(parte):
     base_url = f"https://{request.host}"
     hoje = datetime.now(timezone.utc).strftime("%Y-%m-%d")
 
-    LIMITE = 49000
+    LIMITE = 5000
     offset = (parte - 1) * LIMITE
 
     negocios = query("""
@@ -203,57 +202,67 @@ def sitemap_parte(parte):
             return val.strftime("%Y-%m-%d")
         return str(val)[:10]
 
-    linhas = ['<?xml version="1.0" encoding="UTF-8"?>']
-    linhas.append('<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">')
+    def gerar():
+        yield '<?xml version="1.0" encoding="UTF-8"?>\n'
+        yield '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n'
 
-    if parte == 1:
-        linhas.append("  <url>")
-        linhas.append(f"    <loc>{base_url}/</loc>")
-        linhas.append(f"    <lastmod>{hoje}</lastmod>")
-        linhas.append("    <changefreq>weekly</changefreq>")
-        linhas.append("    <priority>1.0</priority>")
-        linhas.append("  </url>")
+        if parte == 1:
+            yield (
+                "  <url>\n"
+                f"    <loc>{base_url}/</loc>\n"
+                f"    <lastmod>{hoje}</lastmod>\n"
+                "    <changefreq>weekly</changefreq>\n"
+                "    <priority>1.0</priority>\n"
+                "  </url>\n"
+            )
 
-        segmentos_vistos = set()
+            segmentos_vistos = set()
+            for n in negocios:
+                seg = n["bairro"].lower() if eh_bairro and n["bairro"] else n["categoria_slug"]
+                if seg and seg not in segmentos_vistos:
+                    segmentos_vistos.add(seg)
+                    yield (
+                        "  <url>\n"
+                        f"    <loc>{base_url}/{seg}/</loc>\n"
+                        f"    <lastmod>{hoje}</lastmod>\n"
+                        "    <changefreq>weekly</changefreq>\n"
+                        "    <priority>0.8</priority>\n"
+                        "  </url>\n"
+                    )
+
+            posts = query("""
+                SELECT p.slug, p.publicado_em
+                FROM blog_posts p
+                JOIN blog_post_hubs ph ON ph.post_id = p.id
+                WHERE ph.hub_id = %s AND p.publicado = true
+                ORDER BY p.publicado_em DESC
+            """, (hub["id"],))
+            for p in posts:
+                yield (
+                    "  <url>\n"
+                    f"    <loc>{base_url}/blog/{p['slug']}/</loc>\n"
+                    f"    <lastmod>{fmt_date(p['publicado_em'])}</lastmod>\n"
+                    "    <changefreq>monthly</changefreq>\n"
+                    "    <priority>0.5</priority>\n"
+                    "  </url>\n"
+                )
+
         for n in negocios:
             seg = n["bairro"].lower() if eh_bairro and n["bairro"] else n["categoria_slug"]
-            if seg and seg not in segmentos_vistos:
-                segmentos_vistos.add(seg)
-                linhas.append("  <url>")
-                linhas.append(f"    <loc>{base_url}/{seg}/</loc>")
-                linhas.append(f"    <lastmod>{hoje}</lastmod>")
-                linhas.append("    <changefreq>weekly</changefreq>")
-                linhas.append("    <priority>0.8</priority>")
-                linhas.append("  </url>")
+            if not seg:
+                continue
+            yield (
+                "  <url>\n"
+                f"    <loc>{base_url}/{seg}/{n['slug']}/</loc>\n"
+                f"    <lastmod>{fmt_date(n['atualizado_em'])}</lastmod>\n"
+                "    <changefreq>monthly</changefreq>\n"
+                "    <priority>0.6</priority>\n"
+                "  </url>\n"
+            )
 
-        posts = query("""
-            SELECT p.slug, p.publicado_em
-            FROM blog_posts p
-            JOIN blog_post_hubs ph ON ph.post_id = p.id
-            WHERE ph.hub_id = %s AND p.publicado = true
-            ORDER BY p.publicado_em DESC
-        """, (hub["id"],))
-        for p in posts:
-            linhas.append("  <url>")
-            linhas.append(f"    <loc>{base_url}/blog/{p['slug']}/</loc>")
-            linhas.append(f"    <lastmod>{fmt_date(p['publicado_em'])}</lastmod>")
-            linhas.append("    <changefreq>monthly</changefreq>")
-            linhas.append("    <priority>0.5</priority>")
-            linhas.append("  </url>")
+        yield "</urlset>"
 
-    for n in negocios:
-        seg = n["bairro"].lower() if eh_bairro and n["bairro"] else n["categoria_slug"]
-        if not seg:
-            continue
-        linhas.append("  <url>")
-        linhas.append(f"    <loc>{base_url}/{seg}/{n['slug']}/</loc>")
-        linhas.append(f"    <lastmod>{fmt_date(n['atualizado_em'])}</lastmod>")
-        linhas.append("    <changefreq>monthly</changefreq>")
-        linhas.append("    <priority>0.6</priority>")
-        linhas.append("  </url>")
-
-    linhas.append("</urlset>")
-    return Response("\n".join(linhas), mimetype="application/xml")
+    return Response(stream_with_context(gerar()), mimetype="application/xml")
 
 
 @app.route("/<segmento>/")
