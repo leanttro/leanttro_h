@@ -642,6 +642,12 @@ tbody td {
       <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M20.59 13.41l-7.17 7.17a2 2 0 01-2.83 0L2 12V2h10l8.59 8.59a2 2 0 010 2.82z"/><line x1="7" y1="7" x2="7.01" y2="7"/></svg>
       Tags
     </button>
+
+    <div class="nav-section">Monetização</div>
+    <button class="nav-item" data-section="anuncios">
+      <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="3" width="20" height="14" rx="2" ry="2"/><line x1="2" y1="17" x2="22" y2="17"/><line x1="6" y1="20" x2="6" y2="23"/><line x1="10" y1="20" x2="10" y2="23"/><line x1="14" y1="20" x2="14" y2="23"/><line x1="18" y1="20" x2="18" y2="23"/></svg>
+      Anúncios
+    </button>
   </nav>
 
   <div class="sidebar-footer">
@@ -897,6 +903,31 @@ tbody td {
       </div>
     </section>
 
+    <!-- ═══ ANÚNCIOS ═══ -->
+    <section class="section" id="sec-anuncios">
+      <div class="card">
+        <div class="card-header">
+          <span class="card-title">Anúncios Pagos</span>
+          <div style="display:flex;gap:8px;align-items:center;">
+            <div class="search-bar">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+              <input type="text" placeholder="Buscar anúncio..." id="searchAnuncios" oninput="filterTable('anunciosBody', this.value)">
+            </div>
+            <button class="btn btn-primary" onclick="openDrawer('anuncio')">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+              Novo anúncio
+            </button>
+          </div>
+        </div>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>Título</th><th>Hub</th><th>Posição</th><th>Segmentação</th><th>Vigência</th><th>Status</th><th>Ações</th></tr></thead>
+            <tbody id="anunciosBody"><tr><td colspan="7"><div class="loading"><div class="spinner"></div>Carregando...</div></td></tr></tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
   </main>
 </div>
 
@@ -1000,6 +1031,7 @@ async function loadData(section) {
     assinaturas: '/admin/assinaturas',
     blog:        '/admin/blog',
     'blog-tags': '/admin/blog/tags',
+    anuncios:    '/admin/anuncios',
   };
   try {
     const r = await fetch(endpoints[section], { headers: { 'X-Requested-With': 'XMLHttpRequest' } });
@@ -1024,6 +1056,7 @@ function render(section) {
   else if (section === 'assinaturas') renderAssinaturas(data);
   else if (section === 'blog') renderBlog(data);
   else if (section === 'blog-tags') renderBlogTags(data);
+  else if (section === 'anuncios') renderAnuncios(data);
 }
 
 function renderDashHubs() {
@@ -1153,6 +1186,27 @@ function renderBlogTags(data) {
       <td class="td-mono">${esc(t.slug)}</td>
       <td class="td-mono">${esc(t.total_posts) || '0'}</td>
       <td>${actionBtns('blog-tag', t.id)}</td>
+    </tr>
+  `).join('');
+}
+
+function renderAnuncios(data) {
+  const tbody = document.getElementById('anunciosBody');
+  if (!data || !data.length) { tbody.innerHTML = emptyRow(7); return; }
+  tbody.innerHTML = data.map(a => {
+    const seg = [a.categoria_slug, a.cidade, a.bairro].filter(Boolean).join(' / ') || 'Todas as páginas';
+    const vig = [];
+    if (a.data_inicio) vig.push(`De ${String(a.data_inicio).slice(0,10)}`);
+    if (a.data_fim) vig.push(`Até ${String(a.data_fim).slice(0,10)}`);
+    return `
+    <tr data-search="${esc(a.titulo).toLowerCase()}">
+      <td><strong>${esc(a.titulo)}</strong></td>
+      <td class="td-muted">${esc(state.data.hubs?.find(h => h.id === a.hub_id)?.nome) || '—'}</td>
+      <td><span class="badge badge-purple">${a.posicao === 'topo' ? '↑ Topo' : '⬇ Meio'}</span></td>
+      <td class="td-muted" style="font-size:12px;">${esc(seg)}</td>
+      <td class="td-muted" style="font-size:12px;">${vig.join(' ') || '—'}</td>
+      <td>${badgeAtivo(a.ativo)}</td>
+      <td>${actionBtns('anuncio', a.id)}</td>
     </tr>
   `).join('');
 }
@@ -1603,6 +1657,37 @@ function formBlogTag() {
     <div class="form-actions">
       <button type="button" class="btn btn-secondary" onclick="closeDrawer()">Cancelar</button>
       <button type="submit" class="btn btn-primary">Salvar tag</button>
+    </div>
+  </form>`;
+}
+
+function formAnuncio() {
+  const hubs = state.data.hubs.map(h => `<option value="${h.id}">${esc(h.nome)}</option>`).join('');
+  return `
+  <form id="drawerForm" action="/admin/anuncios/novo" method="POST">
+    <div class="form-grid">
+      <div class="field"><label>Título *</label><input name="titulo" required placeholder="Promoção especial"></div>
+      <div class="field"><label>Hub *</label><select name="hub_id" required><option value="">— Selecione —</option>${hubs}</select></div>
+      <div class="field"><label>Posição *</label>
+        <select name="posicao" required>
+          <option value="topo">Topo</option>
+          <option value="meio">Meio</option>
+        </select>
+      </div>
+      <div class="field"><label>URL da imagem (Cloudinary) *</label><input name="foto_url" required placeholder="https://res.cloudinary.com/..."></div>
+      <div class="field"><label>Link ao clicar (URL) *</label><input name="link" required placeholder="https://example.com"></div>
+      <div class="field"><label>Categoria (opcional)</label><input name="categoria_slug" placeholder="restaurante — deixe vazio para todas"></div>
+      <div class="field"><label>Cidade (opcional)</label><input name="cidade" placeholder="São Paulo — deixe vazio para todas"></div>
+      <div class="field"><label>Bairro (opcional)</label><input name="bairro" placeholder="Vila Mariana — deixe vazio para todas"></div>
+      <div class="field"><label>Data início</label><input type="date" name="data_inicio"></div>
+      <div class="field"><label>Data fim</label><input type="date" name="data_fim"></div>
+      <div class="field form-full">
+        <label class="checkbox-label"><input type="checkbox" name="ativo" checked> Ativo</label>
+      </div>
+    </div>
+    <div class="form-actions">
+      <button type="button" class="btn btn-secondary" onclick="closeDrawer()">Cancelar</button>
+      <button type="submit" class="btn btn-primary">Salvar anúncio</button>
     </div>
   </form>`;
 }
