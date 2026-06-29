@@ -1494,7 +1494,7 @@ def admin_anuncios():
     anuncios = query("""
         SELECT a.*, h.nome as hub_nome
         FROM anuncios a
-        LEFT JOIN hubs h ON h.id = a.hub_id
+        LEFT JOIN hub_clientes h ON h.id = a.hub_id
         ORDER BY a.id DESC
     """)
     return jsonify([dict(a) for a in anuncios])
