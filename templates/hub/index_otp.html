@@ -1497,8 +1497,14 @@ renderNegocios(negociosFiltrados);
         if(track) track.innerHTML = html;
         if(grade) grade.innerHTML = html;
         cidPos = 0;
-        initCidCarousel();
-        setViewCidades(cidView);
+
+        // Aguarda o browser renderizar os cards antes de calcular larguras
+        requestAnimationFrame(function(){
+            requestAnimationFrame(function(){
+                initCidCarousel();
+                setViewCidades(cidView);
+            });
+        });
     }
 
     /* ── busca inline ── */
