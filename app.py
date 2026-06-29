@@ -145,6 +145,40 @@ def sitemap():
     base_url = f"https://{request.host}"
     hoje = datetime.now(timezone.utc).strftime("%Y-%m-%d")
 
+    total = query("""
+        SELECT COUNT(*) as total
+        FROM hub_negocios n
+        JOIN hub_negocio_hubs nh ON nh.negocio_id = n.id
+        WHERE nh.hub_id = %s AND n.ativo = true
+    """, (hub["id"],), one=True)["total"]
+
+    LIMITE = 49000
+    num_partes = max(1, -(-total // LIMITE))
+
+    linhas = ['<?xml version="1.0" encoding="UTF-8"?>']
+    linhas.append('<sitemapindex xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">')
+    for i in range(1, num_partes + 1):
+        linhas.append("  <sitemap>")
+        linhas.append(f"    <loc>{base_url}/sitemap-{i}.xml</loc>")
+        linhas.append(f"    <lastmod>{hoje}</lastmod>")
+        linhas.append("  </sitemap>")
+    linhas.append("</sitemapindex>")
+
+    return Response("\n".join(linhas), mimetype="application/xml")
+
+
+@app.route("/sitemap-<int:parte>.xml")
+def sitemap_parte(parte):
+    hub = get_hub_by_host()
+    if not hub:
+        return "Hub não encontrado", 404
+
+    base_url = f"https://{request.host}"
+    hoje = datetime.now(timezone.utc).strftime("%Y-%m-%d")
+
+    LIMITE = 49000
+    offset = (parte - 1) * LIMITE
+
     negocios = query("""
         SELECT n.slug, n.bairro,
                n.criado_em as atualizado_em,
@@ -154,16 +188,13 @@ def sitemap():
         JOIN hub_categorias c ON c.id = n.categoria_id
         WHERE nh.hub_id = %s AND n.ativo = true
         ORDER BY n.nome
-    """, (hub["id"],))
+        LIMIT %s OFFSET %s
+    """, (hub["id"], LIMITE, offset))
+
+    if not negocios:
+        return "Não encontrado", 404
 
     eh_bairro = hub.get("tipo") == "bairro"
-    segmentos_vistos = set()
-    segmentos = []
-    for n in negocios:
-        seg = n["bairro"].lower() if eh_bairro and n["bairro"] else n["categoria_slug"]
-        if seg and seg not in segmentos_vistos:
-            segmentos_vistos.add(seg)
-            segmentos.append(seg)
 
     def fmt_date(val):
         if not val:
@@ -172,50 +203,56 @@ def sitemap():
             return val.strftime("%Y-%m-%d")
         return str(val)[:10]
 
-    urls = []
-    urls.append({"loc": f"{base_url}/", "lastmod": hoje, "priority": "1.0", "changefreq": "weekly"})
+    linhas = ['<?xml version="1.0" encoding="UTF-8"?>']
+    linhas.append('<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">')
 
-    for seg in segmentos:
-        urls.append({"loc": f"{base_url}/{seg}/", "lastmod": hoje, "priority": "0.8", "changefreq": "weekly"})
+    if parte == 1:
+        linhas.append("  <url>")
+        linhas.append(f"    <loc>{base_url}/</loc>")
+        linhas.append(f"    <lastmod>{hoje}</lastmod>")
+        linhas.append("    <changefreq>weekly</changefreq>")
+        linhas.append("    <priority>1.0</priority>")
+        linhas.append("  </url>")
+
+        segmentos_vistos = set()
+        for n in negocios:
+            seg = n["bairro"].lower() if eh_bairro and n["bairro"] else n["categoria_slug"]
+            if seg and seg not in segmentos_vistos:
+                segmentos_vistos.add(seg)
+                linhas.append("  <url>")
+                linhas.append(f"    <loc>{base_url}/{seg}/</loc>")
+                linhas.append(f"    <lastmod>{hoje}</lastmod>")
+                linhas.append("    <changefreq>weekly</changefreq>")
+                linhas.append("    <priority>0.8</priority>")
+                linhas.append("  </url>")
+
+        posts = query("""
+            SELECT p.slug, p.publicado_em
+            FROM blog_posts p
+            JOIN blog_post_hubs ph ON ph.post_id = p.id
+            WHERE ph.hub_id = %s AND p.publicado = true
+            ORDER BY p.publicado_em DESC
+        """, (hub["id"],))
+        for p in posts:
+            linhas.append("  <url>")
+            linhas.append(f"    <loc>{base_url}/blog/{p['slug']}/</loc>")
+            linhas.append(f"    <lastmod>{fmt_date(p['publicado_em'])}</lastmod>")
+            linhas.append("    <changefreq>monthly</changefreq>")
+            linhas.append("    <priority>0.5</priority>")
+            linhas.append("  </url>")
 
     for n in negocios:
         seg = n["bairro"].lower() if eh_bairro and n["bairro"] else n["categoria_slug"]
         if not seg:
             continue
-        urls.append({
-            "loc": f"{base_url}/{seg}/{n['slug']}/",
-            "lastmod": fmt_date(n["atualizado_em"]),
-            "priority": "0.6",
-            "changefreq": "monthly",
-        })
-
-    # Posts de blog publicados no sitemap
-    posts = query("""
-        SELECT p.slug, p.publicado_em
-        FROM blog_posts p
-        JOIN blog_post_hubs ph ON ph.post_id = p.id
-        WHERE ph.hub_id = %s AND p.publicado = true
-        ORDER BY p.publicado_em DESC
-    """, (hub["id"],))
-    for p in posts:
-        urls.append({
-            "loc": f"{base_url}/blog/{p['slug']}/",
-            "lastmod": fmt_date(p["publicado_em"]),
-            "priority": "0.5",
-            "changefreq": "monthly",
-        })
-
-    linhas = ['<?xml version="1.0" encoding="UTF-8"?>']
-    linhas.append('<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">')
-    for u in urls:
         linhas.append("  <url>")
-        linhas.append(f"    <loc>{u['loc']}</loc>")
-        linhas.append(f"    <lastmod>{u['lastmod']}</lastmod>")
-        linhas.append(f"    <changefreq>{u['changefreq']}</changefreq>")
-        linhas.append(f"    <priority>{u['priority']}</priority>")
+        linhas.append(f"    <loc>{base_url}/{seg}/{n['slug']}/</loc>")
+        linhas.append(f"    <lastmod>{fmt_date(n['atualizado_em'])}</lastmod>")
+        linhas.append("    <changefreq>monthly</changefreq>")
+        linhas.append("    <priority>0.6</priority>")
         linhas.append("  </url>")
-    linhas.append("</urlset>")
 
+    linhas.append("</urlset>")
     return Response("\n".join(linhas), mimetype="application/xml")
 
 
