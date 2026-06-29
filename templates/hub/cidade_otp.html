@@ -359,14 +359,21 @@
 
 <!-- BANNER TOPO -->
 <div class="banner-topo">
-    <div id="banner-rotativo-topo" class="banner-rotativo">
-        <a id="banner-link-topo" href="#" target="_blank" rel="noopener sponsored">
-            <img id="banner-img-topo" src="" alt="Publicidade">
-        </a>
-    </div>
-    <a id="banner-placeholder-topo" class="banner-placeholder"
+    {% if anuncio_topo %}
+    <a href="{{ anuncio_topo.link }}" target="_blank" rel="noopener sponsored">
+        <img src="{{ anuncio_topo.foto_url }}" alt="{{ anuncio_topo.titulo or 'Publicidade' }}"
+             style="max-height:90px; width:auto; max-width:100%; border-radius:8px;">
+    </a>
+    {% elif hub.banner1_foto_url %}
+    <a href="{{ hub.banner1_link or '#' }}" target="_blank" rel="noopener sponsored">
+        <img src="{{ hub.banner1_foto_url }}" alt="Publicidade"
+             style="max-height:90px; width:auto; max-width:100%; border-radius:8px;">
+    </a>
+    {% else %}
+    <a class="banner-placeholder"
        href="https://wa.me/55{{ hub.whatsapp or '11999999999' }}?text=Quero+anunciar+no+Onde+Tem+Perto"
        target="_blank" rel="noopener">📣 Anuncie aqui — espaço disponível</a>
+    {% endif %}
 </div>
 
 <!-- BREADCRUMB -->
@@ -503,14 +510,21 @@
 
 <!-- BANNER MEIO -->
 <div class="banner-meio">
-    <div id="banner-rotativo-meio" class="banner-rotativo">
-        <a id="banner-link-meio" href="#" target="_blank" rel="noopener sponsored">
-            <img id="banner-img-meio" src="" alt="Publicidade">
-        </a>
-    </div>
-    <a id="banner-placeholder-meio" class="banner-placeholder"
+    {% if anuncio_meio %}
+    <a href="{{ anuncio_meio.link }}" target="_blank" rel="noopener sponsored">
+        <img src="{{ anuncio_meio.foto_url }}" alt="{{ anuncio_meio.titulo or 'Publicidade' }}"
+             style="max-height:120px; width:auto; max-width:100%; border-radius:8px;">
+    </a>
+    {% elif hub.banner2_foto_url %}
+    <a href="{{ hub.banner2_link or '#' }}" target="_blank" rel="noopener sponsored">
+        <img src="{{ hub.banner2_foto_url }}" alt="Publicidade"
+             style="max-height:120px; width:auto; max-width:100%; border-radius:8px;">
+    </a>
+    {% else %}
+    <a class="banner-placeholder"
        href="https://wa.me/55{{ hub.whatsapp or '11999999999' }}?text=Quero+anunciar+no+Onde+Tem+Perto"
        target="_blank" rel="noopener">📣 Anuncie aqui — espaço disponível</a>
+    {% endif %}
 </div>
 
 <!-- NEGÓCIOS -->
@@ -992,22 +1006,7 @@ renderNegocios(negociosFiltrados);
 })();
 </script>
 
-<script>
-(function(){
-    {% if hub.banner1_foto_url %}
-    document.getElementById('banner-placeholder-topo').style.display='none';
-    document.getElementById('banner-rotativo-topo').style.display='block';
-    document.getElementById('banner-img-topo').src='{{ hub.banner1_foto_url }}';
-    document.getElementById('banner-link-topo').href='{{ hub.banner1_link or "#" }}';
-    {% endif %}
-    {% if hub.banner2_foto_url %}
-    document.getElementById('banner-placeholder-meio').style.display='none';
-    document.getElementById('banner-rotativo-meio').style.display='block';
-    document.getElementById('banner-img-meio').src='{{ hub.banner2_foto_url }}';
-    document.getElementById('banner-link-meio').href='{{ hub.banner2_link or "#" }}';
-    {% endif %}
-})();
-</script>
+
 
 {% if hub.ga4_id %}
 <script async src="https://www.googletagmanager.com/gtag/js?id={{ hub.ga4_id }}"></script>
