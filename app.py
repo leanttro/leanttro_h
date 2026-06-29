@@ -101,8 +101,7 @@ def _jinja_slugify(texto):
 # ════════════════════════════════════════════════════════════
 
 # "blog" e "cidade" adicionados para não colidir com /<segmento>/
-ROTAS_RESERVADAS = {"admin", "static", "favicon.ico", "robots.txt", "sitemap.xml", "blog", "cidade", "api"}
-
+ROTAS_RESERVADAS = {"admin", "static", "favicon.ico", "robots.txt", "sitemap.xml", "sitemap-1.xml", "sitemap-2.xml", "sitemap-3.xml", "blog", "cidade", "api"}
 @app.route("/")
 def index():
     hub = get_hub_by_host()
