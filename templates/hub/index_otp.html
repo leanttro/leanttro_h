@@ -173,6 +173,32 @@
         .btn-hero-outline { display: inline-flex; align-items: center; gap: 8px; background: transparent; color: #fff; padding: 15px 34px; border-radius: 8px; font-size: 1.1em; font-weight: 700; border: 2px solid rgba(255,255,255,0.8); transition: all 0.2s; }
         .btn-hero-outline:hover { background: rgba(255,255,255,0.15); }
 
+        /* ══ HERO STATS ══ */
+        .hero-stats {
+            display: flex; align-items: center; justify-content: center;
+            gap: 0; margin-top: 36px; flex-wrap: wrap;
+        }
+        .hero-stat {
+            display: flex; flex-direction: column; align-items: center;
+            padding: 0 28px;
+        }
+        .hero-stat-num {
+            font-size: 1.8em; font-weight: 900; color: var(--primary);
+            line-height: 1; letter-spacing: -0.5px;
+            text-shadow: 0 2px 8px rgba(0,0,0,0.4);
+        }
+        .hero-stat-label {
+            font-size: 0.82em; font-weight: 500; color: rgba(255,255,255,0.85);
+            margin-top: 4px; text-transform: uppercase; letter-spacing: 0.5px;
+        }
+        .hero-stat-divider {
+            width: 1px; height: 36px; background: rgba(255,255,255,0.3);
+        }
+        @media (max-width: 480px) {
+            .hero-stat { padding: 0 16px; }
+            .hero-stat-num { font-size: 1.4em; }
+        }
+
         /* ══ BUSCA ══ */
         .busca-section { background: var(--white); padding: 52px 0; }
         .busca-topo { text-align: center; margin-bottom: 32px; }
@@ -586,6 +612,22 @@
             <a href="#categorias" class="btn-hero-outline">
                 <i class="fas fa-th-large"></i> Explorar categorias
             </a>
+        </div>
+        <div class="hero-stats">
+            <div class="hero-stat">
+                <span class="hero-stat-num" id="stat-negocios">—</span>
+                <span class="hero-stat-label">estabelecimentos</span>
+            </div>
+            <div class="hero-stat-divider"></div>
+            <div class="hero-stat">
+                <span class="hero-stat-num" id="stat-cidades">—</span>
+                <span class="hero-stat-label">cidades</span>
+            </div>
+            <div class="hero-stat-divider"></div>
+            <div class="hero-stat">
+                <span class="hero-stat-num" id="stat-categorias">—</span>
+                <span class="hero-stat-label">categorias</span>
+            </div>
         </div>
     </div>
 </section>
@@ -1573,6 +1615,21 @@ renderNegocios(negociosFiltrados);
         }).join('');
     }
 
+    function formatNum(n){
+        if(n>=1000000) return (n/1000000).toFixed(1).replace('.',',')+'M';
+        if(n>=1000) return (n/1000).toFixed(0)+'K+';
+        return n.toLocaleString('pt-BR');
+    }
+
+    function atualizarHeroStats(cidades){
+        // Total de negócios = soma dos totais de cada cidade
+        var totalNegocios = cidades.reduce(function(acc,c){ return acc + (c.total||c.count||0); }, 0);
+        var elN = document.getElementById('stat-negocios');
+        var elC = document.getElementById('stat-cidades');
+        if(elN) elN.textContent = formatNum(totalNegocios);
+        if(elC) elC.textContent = formatNum(cidades.length);
+    }
+
     /* ── fetch ── */
     fetch('/api/hub/cidades')
         .then(function(r){ return r.json(); })
@@ -1581,8 +1638,16 @@ renderNegocios(negociosFiltrados);
             _todasCidades = data;
             renderCidadesUI(data);
             populateNavDropdown(data);
+            atualizarHeroStats(data);
         })
         .catch(function(){});
+})();
+
+// Conta categorias do template e preenche o stat
+(function(){
+    var cats = document.querySelectorAll('#categorias-track .categoria-card');
+    var el   = document.getElementById('stat-categorias');
+    if(el && cats.length) el.textContent = cats.length;
 })();
 </script>
 </body>
