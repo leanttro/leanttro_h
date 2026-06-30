@@ -760,19 +760,24 @@ tbody td {
           <div class="filter-bar">
             <div class="search-bar">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-              <input type="text" placeholder="Buscar negócio..." id="searchNegocios" oninput="filterNegocios()">
+              <input type="text" placeholder="Buscar negócio..." id="searchNegocios" oninput="onNegociosFilterChange()">
             </div>
-            <select class="filter-select" id="filterCategoria" onchange="filterNegocios()">
+            <select class="filter-select" id="filterCategoria" onchange="onNegociosFilterChange()">
               <option value="">Todas as categorias</option>
             </select>
-            <select class="filter-select" id="filterBairro" onchange="filterNegocios()">
+            <select class="filter-select" id="filterBairro" onchange="onNegociosFilterChange()">
               <option value="">Todos os bairros</option>
             </select>
-            <select class="filter-select" id="limitNegocios" onchange="renderNegocios(state.data.negocios)" title="Limite de exibição">
-              <option value="300">300 por vez</option>
-              <option value="1000">1.000 por vez</option>
-              <option value="5000">5.000 por vez</option>
-              <option value="0">Todos</option>
+            <select class="filter-select" id="filterStatusNegocio" onchange="onNegociosFilterChange()">
+              <option value="">Ativos e inativos</option>
+              <option value="ativo">Somente ativos</option>
+              <option value="inativo">Somente inativos</option>
+            </select>
+            <select class="filter-select" id="limitNegocios" onchange="onNegociosFilterChange()" title="Itens por página">
+              <option value="50">50 por página</option>
+              <option value="100">100 por página</option>
+              <option value="200">200 por página</option>
+              <option value="500">500 por página</option>
             </select>
             <button class="btn btn-primary" onclick="openDrawer('negocio')">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
@@ -798,6 +803,11 @@ tbody td {
             </tr></thead>
             <tbody id="negociosBody"><tr><td colspan="8"><div class="loading"><div class="spinner"></div>Carregando...</div></td></tr></tbody>
           </table>
+          <div class="pagination-bar" id="negociosPaginacao" style="display:flex; align-items:center; justify-content:space-between; gap:10px; padding:10px 16px; border-top:1px solid var(--border);">
+            <button class="btn btn-secondary btn-sm" id="negociosPrevBtn" onclick="negociosMudarPagina(-1)">← Anterior</button>
+            <span id="negociosPaginaInfo" style="font-size:12px; color: var(--text2);"></span>
+            <button class="btn btn-secondary btn-sm" id="negociosNextBtn" onclick="negociosMudarPagina(1)">Próxima →</button>
+          </div>
         </div>
       </div>
     </section>
@@ -983,7 +993,13 @@ const state = {
   data: { hubs: [], negocios: [], categorias: [], usuarios: [], assinaturas: [], blog: [], 'blog-tags': [], anuncios: [] },
   editId: null,
   editType: null,
+  negocios: { q: '', categoria_id: '', bairro: '', status: '', limit: 50, offset: 0, total: 0, filtrosCarregados: false },
 };
+
+function debounce(fn, ms) {
+  let t;
+  return function(...args) { clearTimeout(t); t = setTimeout(() => fn.apply(this, args), ms); };
+}
 
 // ── Navigation ───────────────────────────────────────────────
 function navigate(section) {
@@ -1014,6 +1030,7 @@ if (nm && nm !== '{{ session.admin_nome }}') {
 async function loadSection(section) {
   state.loaded.add(section);
   if (section === 'dashboard') { await loadDashboard(); return; }
+  if (section === 'negocios') { await initNegociosSection(); return; }
   await loadData(section);
 }
 
@@ -1090,17 +1107,102 @@ function renderHubs(data) {
   `).join('');
 }
 
+// ── Negócios: carregamento server-side (busca/filtros/paginação) ─────
+async function initNegociosSection() {
+  // popula os selects de categoria/bairro só uma vez (não dependem dos negócios carregados)
+  if (!state.negocios.filtrosCarregados) {
+    await popularFiltrosNegocios();
+    state.negocios.filtrosCarregados = true;
+  }
+  await loadNegocios();
+}
+
+async function popularFiltrosNegocios() {
+  try {
+    const [categorias, bairros] = await Promise.all([
+      fetch('/api/hub/categorias').then(r => r.json()).catch(() => []),
+      fetch('/admin/negocios/bairros').then(r => r.json()).catch(() => []),
+    ]);
+    const selCat = document.getElementById('filterCategoria');
+    const selBairro = document.getElementById('filterBairro');
+    if (selCat) {
+      selCat.innerHTML = '<option value="">Todas as categorias</option>' +
+        categorias.map(c => `<option value="${c.id}">${esc(c.nome)}</option>`).join('');
+    }
+    if (selBairro) {
+      selBairro.innerHTML = '<option value="">Todos os bairros</option>' +
+        bairros.map(b => `<option value="${esc(b)}">${esc(b)}</option>`).join('');
+    }
+  } catch (e) { console.error(e); }
+}
+
+const onNegociosFilterChange = debounce(function() {
+  state.negocios.q = document.getElementById('searchNegocios')?.value.trim() || '';
+  state.negocios.categoria_id = document.getElementById('filterCategoria')?.value || '';
+  state.negocios.bairro = document.getElementById('filterBairro')?.value || '';
+  state.negocios.status = document.getElementById('filterStatusNegocio')?.value || '';
+  state.negocios.limit = parseInt(document.getElementById('limitNegocios')?.value || '50');
+  state.negocios.offset = 0; // qualquer mudança de filtro volta para a primeira página
+  loadNegocios();
+}, 350);
+
+function negociosMudarPagina(direcao) {
+  const novo = state.negocios.offset + direcao * state.negocios.limit;
+  if (novo < 0 || novo >= state.negocios.total) return;
+  state.negocios.offset = novo;
+  loadNegocios();
+}
+
+async function loadNegocios() {
+  const tbody = document.getElementById('negociosBody');
+  tbody.innerHTML = `<tr><td colspan="8"><div class="loading"><div class="spinner"></div>Carregando...</div></td></tr>`;
+  const { q, categoria_id, bairro, status, limit, offset } = state.negocios;
+  const params = new URLSearchParams({ limit, offset });
+  if (q) params.set('q', q);
+  if (categoria_id) params.set('categoria_id', categoria_id);
+  if (bairro) params.set('bairro', bairro);
+  if (status) params.set('status', status);
+  try {
+    const r = await fetch(`/admin/negocios?${params.toString()}`, { headers: { 'X-Requested-With': 'XMLHttpRequest' } });
+    const data = await r.json();
+    state.data.negocios = data.negocios;
+    state.negocios.total = data.total;
+    renderNegocios(data.negocios);
+    renderNegociosPaginacao();
+  } catch (e) {
+    console.error(e);
+    showToast('Erro ao carregar negócios', 'error');
+  }
+}
+
+function renderNegociosPaginacao() {
+  const { total, limit, offset } = state.negocios;
+  const totalEl = document.getElementById('negociosTotalInfo');
+  const infoEl = document.getElementById('negociosPaginaInfo');
+  const prevBtn = document.getElementById('negociosPrevBtn');
+  const nextBtn = document.getElementById('negociosNextBtn');
+  if (!total) {
+    if (totalEl) totalEl.textContent = '0 negócios';
+    if (infoEl) infoEl.textContent = '';
+    if (prevBtn) prevBtn.disabled = true;
+    if (nextBtn) nextBtn.disabled = true;
+    return;
+  }
+  const inicio = offset + 1;
+  const fim = Math.min(offset + limit, total);
+  const paginaAtual = Math.floor(offset / limit) + 1;
+  const totalPaginas = Math.ceil(total / limit);
+  if (totalEl) totalEl.textContent = `${total.toLocaleString('pt-BR')} negócios`;
+  if (infoEl) infoEl.textContent = `${inicio}–${fim} de ${total.toLocaleString('pt-BR')} (página ${paginaAtual} de ${totalPaginas})`;
+  if (prevBtn) prevBtn.disabled = offset <= 0;
+  if (nextBtn) nextBtn.disabled = offset + limit >= total;
+}
+
 function renderNegocios(data) {
   const tbody = document.getElementById('negociosBody');
   if (!data || !data.length) { tbody.innerHTML = emptyRow(8); return; }
-  const limite = parseInt(document.getElementById('limitNegocios')?.value || '300');
-  const slice = limite === 0 ? data : data.slice(0, limite);
-  const totalEl = document.getElementById('negociosTotalInfo');
-  if (totalEl) totalEl.textContent = limite === 0 || data.length <= limite
-    ? `${data.length} negócios`
-    : `Exibindo ${slice.length} de ${data.length} negócios`;
-  tbody.innerHTML = slice.map(n => `
-    <tr data-search="${esc(n.nome).toLowerCase()}" data-categoria="${esc(n.categoria_nome || '').toLowerCase()}" data-bairro="${esc(n.bairro || '').toLowerCase()}" data-id="${n.id}">
+  tbody.innerHTML = data.map(n => `
+    <tr data-id="${n.id}">
       <td><input type="checkbox" class="negocio-cb" value="${n.id}" onchange="updateNegociosBulk()"></td>
       <td><strong>${esc(n.nome)}</strong></td>
       <td class="td-mono">${esc(n.slug)}</td>
@@ -1111,8 +1213,7 @@ function renderNegocios(data) {
       <td>${actionBtns('negocio', n.id)}</td>
     </tr>
   `).join('');
-  populateNegocioFilters();
-  filterNegocios();
+  updateNegociosBulk();
 }
 
 function renderCategorias(data) {
@@ -1695,46 +1796,9 @@ function formAnuncio() {
   </form>`;
 }
 
-// ── Negócios: filtros e seleção em massa ─────────────────────
-function populateNegocioFilters() {
-  const data = state.data.negocios;
-  const cats = [...new Set(data.map(n => n.categoria_nome).filter(Boolean))].sort();
-  const bairros = [...new Set(data.map(n => n.bairro).filter(Boolean))].sort();
-  const selCat = document.getElementById('filterCategoria');
-  const selBairro = document.getElementById('filterBairro');
-  if (!selCat || !selBairro) return;
-  const prevCat = selCat.value;
-  const prevBairro = selBairro.value;
-  selCat.innerHTML = '<option value="">Todas as categorias</option>' + cats.map(c => `<option value="${c.toLowerCase()}"${c.toLowerCase() === prevCat ? ' selected' : ''}>${esc(c)}</option>`).join('');
-  selBairro.innerHTML = '<option value="">Todos os bairros</option>' + bairros.map(b => `<option value="${b.toLowerCase()}"${b.toLowerCase() === prevBairro ? ' selected' : ''}>${esc(b)}</option>`).join('');
-}
-
-function filterNegocios() {
-  const q = (document.getElementById('searchNegocios')?.value || '').toLowerCase();
-  const cat = (document.getElementById('filterCategoria')?.value || '').toLowerCase();
-  const bairro = (document.getElementById('filterBairro')?.value || '').toLowerCase();
-  const tbody = document.getElementById('negociosBody');
-  if (!tbody) return;
-  tbody.querySelectorAll('tr[data-search]').forEach(tr => {
-    const matchSearch = !q || tr.dataset.search.includes(q);
-    const matchCat = !cat || (tr.dataset.categoria || '') === cat;
-    const matchBairro = !bairro || (tr.dataset.bairro || '') === bairro;
-    const visible = matchSearch && matchCat && matchBairro;
-    tr.style.display = visible ? '' : 'none';
-    if (!visible) { const cb = tr.querySelector('.negocio-cb'); if (cb) cb.checked = false; }
-  });
-  updateNegociosBulk();
-}
-
+// ── Negócios: seleção em massa (sobre a página atual) ─────────
 function toggleSelectAllNegocios(checked) {
-  const tbody = document.getElementById('negociosBody');
-  if (!tbody) return;
-  tbody.querySelectorAll('tr[data-search]').forEach(tr => {
-    if (tr.style.display !== 'none') {
-      const cb = tr.querySelector('.negocio-cb');
-      if (cb) cb.checked = checked;
-    }
-  });
+  document.querySelectorAll('#negociosBody .negocio-cb').forEach(cb => cb.checked = checked);
   updateNegociosBulk();
 }
 
@@ -1743,8 +1807,8 @@ function updateNegociosBulk() {
   const countEl = document.getElementById('negociosBulkCount');
   const selectAll = document.getElementById('selectAllNegocios');
   if (!bar) return;
-  const visibleRows = [...document.querySelectorAll('#negociosBody tr[data-search]')].filter(tr => tr.style.display !== 'none');
-  const checkedCbs = [...document.querySelectorAll('#negociosBody .negocio-cb:checked')];
+  const allCbs = [...document.querySelectorAll('#negociosBody .negocio-cb')];
+  const checkedCbs = allCbs.filter(cb => cb.checked);
   if (checkedCbs.length > 0) {
     bar.classList.add('visible');
     countEl.textContent = `${checkedCbs.length} selecionado${checkedCbs.length > 1 ? 's' : ''}`;
@@ -1752,8 +1816,8 @@ function updateNegociosBulk() {
     bar.classList.remove('visible');
   }
   if (selectAll) {
-    selectAll.indeterminate = checkedCbs.length > 0 && checkedCbs.length < visibleRows.length;
-    selectAll.checked = visibleRows.length > 0 && checkedCbs.length === visibleRows.length;
+    selectAll.indeterminate = checkedCbs.length > 0 && checkedCbs.length < allCbs.length;
+    selectAll.checked = allCbs.length > 0 && checkedCbs.length === allCbs.length;
   }
 }
 
