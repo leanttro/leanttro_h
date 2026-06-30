@@ -1063,12 +1063,13 @@ def admin_negocio_editar(negocio_id):
             "mostrar_endereco"  in d, "mostrar_mapa"      in d,
             "ativo"             in d, negocio_id
         ), commit=True)
-        query("DELETE FROM hub_negocio_hubs WHERE negocio_id = %s", (negocio_id,), commit=True)
-        for hub_id in request.form.getlist("hubs"):
-            query("""
-                INSERT INTO hub_negocio_hubs (negocio_id, hub_id)
-                VALUES (%s, %s) ON CONFLICT DO NOTHING
-            """, (negocio_id, hub_id), commit=True)
+        if "hubs" in request.form:
+            query("DELETE FROM hub_negocio_hubs WHERE negocio_id = %s", (negocio_id,), commit=True)
+            for hub_id in request.form.getlist("hubs"):
+                query("""
+                    INSERT INTO hub_negocio_hubs (negocio_id, hub_id)
+                    VALUES (%s, %s) ON CONFLICT DO NOTHING
+                """, (negocio_id, hub_id), commit=True)
         return jsonify({"ok": True})
     hubs_do_negocio = [r["hub_id"] for r in query(
         "SELECT hub_id FROM hub_negocio_hubs WHERE negocio_id = %s", (negocio_id,)
