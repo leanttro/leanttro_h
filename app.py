@@ -1,1667 +1,1962 @@
-from flask import Flask, render_template, request, jsonify, redirect, session, g, Response, stream_with_context
-from werkzeug.security import generate_password_hash, check_password_hash
-from werkzeug.middleware.proxy_fix import ProxyFix
-from functools import wraps
-from datetime import datetime, timezone, date
-import psycopg2
-import psycopg2.extras
-import os
-import glob
-import unicodedata as _uc
-from dotenv import load_dotenv
-
-load_dotenv()
-
-app = Flask(__name__)
-app.secret_key = os.getenv("SECRET_KEY")
-app.wsgi_app = ProxyFix(app.wsgi_app, x_for=1, x_proto=1, x_host=1, x_prefix=1)
-app.url_map.strict_slashes = False
-
-DOMINIO_BASE = os.getenv("DOMINIO_BASE", "leanttro.com")
-
-# ── Templates dinâmicos ───────────────────────────────────────
-
-def listar_templates(tipo):
-    """Retorna os slugs dos templates disponíveis para index/filtro/negocio"""
-    pasta = os.path.join(app.root_path, "templates", "hub")
-    arquivos = glob.glob(os.path.join(pasta, f"{tipo}_*.html"))
-    return [os.path.basename(f).replace(".html", "") for f in sorted(arquivos)]
-
-# ── Banco ─────────────────────────────────────────────────────
-
-def get_db():
-    if "db" not in g:
-        g.db = psycopg2.connect(
-            host     = os.getenv("DB_HOST"),
-            port     = int(os.getenv("DB_PORT", 5452)),
-            dbname   = os.getenv("DB_NAME"),
-            user     = os.getenv("DB_USER"),
-            password = os.getenv("DB_PASS"),
-            cursor_factory=psycopg2.extras.RealDictCursor
-        )
-    return g.db
-
-@app.teardown_appcontext
-def close_db(e=None):
-    db = g.pop("db", None)
-    if db:
-        db.close()
-
-def query(sql, params=(), one=False, commit=False):
-    db = get_db()
-    cur = db.cursor()
-    cur.execute(sql, params)
-    if commit:
-        db.commit()
-        return cur.rowcount
-    result = cur.fetchone() if one else cur.fetchall()
-    return result
-
-# ── Auth ──────────────────────────────────────────────────────
-
-def login_required(f):
-    @wraps(f)
-    def decorated(*args, **kwargs):
-        if not session.get("admin_id"):
-            return redirect("/admin/login")
-        return f(*args, **kwargs)
-    return decorated
-
-def is_ajax():
-    return request.headers.get("X-Requested-With") == "XMLHttpRequest"
-
-# ── Hub pelo host ─────────────────────────────────────────────
-
-def get_hub_by_host():
-    host = request.host.split(":")[0].lower().replace("www.", "")
-    hub = query("SELECT * FROM hub_clientes WHERE dominio_proprio = %s AND ativo = true", (host,), one=True)
-    if hub:
-        return hub
-    if host.endswith(f".{DOMINIO_BASE}"):
-        slug = host.replace(f".{DOMINIO_BASE}", "")
-        hub = query("SELECT * FROM hub_clientes WHERE hub_leanttro = %s AND ativo = true", (slug,), one=True)
-    return hub
-
-# ── Slugify ───────────────────────────────────────────────────
-
-def _slugify(texto):
-    if not texto:
-        return ""
-    texto = _uc.normalize("NFD", texto.lower())
-    texto = "".join(c for c in texto if _uc.category(c) != "Mn")
-    return texto.replace(" ", "-").strip("-")
-
-@app.template_filter("slugify")
-def _jinja_slugify(texto):
-    return _slugify(texto) if texto else ""
-
-
-# ════════════════════════════════════════════════════════════
-#  ANÚNCIOS PAGOS
-# ════════════════════════════════════════════════════════════
-
-def _get_anuncios(hub_id, posicao, categoria_slug=None, cidade=None, bairro=None):
-    """Retorna até 1 anúncio ativo que case com o contexto da página.
-    Prioriza anúncios mais segmentados; desempate por RANDOM().
-    """
-    hoje = date.today()
-    sql = """
-        SELECT * FROM anuncios
-        WHERE hub_id = %s AND ativo = true AND posicao = %s
-          AND (data_inicio IS NULL OR data_inicio <= %s)
-          AND (data_fim   IS NULL OR data_fim   >= %s)
-          AND (categoria_slug IS NULL OR categoria_slug = %s)
-          AND (cidade         IS NULL OR LOWER(cidade)  = LOWER(%s))
-          AND (bairro         IS NULL OR LOWER(bairro)  = LOWER(%s))
-        ORDER BY
-          (categoria_slug IS NOT NULL)::int +
-          (cidade         IS NOT NULL)::int +
-          (bairro         IS NOT NULL)::int DESC,
-          RANDOM()
-        LIMIT 1
-    """
-    return query(sql, (
-        hub_id, posicao, hoje, hoje,
-        categoria_slug or '', cidade or '', bairro or ''
-    ), one=True)
-
-
-# ════════════════════════════════════════════════════════════
-#  ROTAS PÚBLICAS DO HUB
-# ════════════════════════════════════════════════════════════
-
-# "blog" e "cidade" adicionados para não colidir com /<segmento>/
-ROTAS_RESERVADAS = {"admin", "static", "favicon.ico", "robots.txt", "sitemap.xml", "sitemap-1.xml", "sitemap-2.xml", "sitemap-3.xml", "blog", "cidade", "api"}
-@app.route("/")
-def index():
-    hub = get_hub_by_host()
-    if not hub:
-        return "Hub não encontrado", 404
-    categorias = query("SELECT * FROM hub_categorias WHERE ativo = true ORDER BY nome")
-    negocios = query("""
-        SELECT n.*, c.nome as categoria_nome, c.slug as categoria_slug
-        FROM hub_negocios n
-        JOIN hub_negocio_hubs nh ON nh.negocio_id = n.id
-        JOIN hub_categorias c ON c.id = n.categoria_id
-        WHERE nh.hub_id = %s AND n.ativo = true
-        ORDER BY n.nome
-        LIMIT 48
-    """, (hub["id"],))
-    anuncio_topo = _get_anuncios(hub["id"], "topo")
-    anuncio_meio = _get_anuncios(hub["id"], "meio")
-    template = hub.get("template_index") or "index_padrao"
-    return render_template(f"hub/{template}.html", hub=hub, negocios=negocios, categorias=categorias,
-                           anuncio_topo=anuncio_topo, anuncio_meio=anuncio_meio)
-
-
-@app.route("/robots.txt")
-def robots():
-    hub = get_hub_by_host()
-    base_url = f"https://{request.host}"
-    linhas = [
-        "User-agent: *",
-        "Allow: /",
-        f"Sitemap: {base_url}/sitemap.xml",
-    ]
-    if not hub:
-        linhas.insert(1, "Disallow: /")
-    return Response("\n".join(linhas), mimetype="text/plain")
-
-
-@app.route("/sitemap.xml")
-def sitemap():
-    hub = get_hub_by_host()
-    if not hub:
-        return "Hub não encontrado", 404
-
-    base_url = f"https://{request.host}"
-    hoje = datetime.now(timezone.utc).strftime("%Y-%m-%d")
-
-    total = query("""
-        SELECT COUNT(*) as total
-        FROM hub_negocios n
-        JOIN hub_negocio_hubs nh ON nh.negocio_id = n.id
-        WHERE nh.hub_id = %s AND n.ativo = true
-    """, (hub["id"],), one=True)["total"]
-
-    LIMITE = 5000
-    num_partes = max(1, -(-total // LIMITE))
-
-    linhas = ['<?xml version="1.0" encoding="UTF-8"?>']
-    linhas.append('<sitemapindex xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">')
-    for i in range(1, num_partes + 1):
-        linhas.append("  <sitemap>")
-        linhas.append(f"    <loc>{base_url}/sitemap-{i}.xml</loc>")
-        linhas.append(f"    <lastmod>{hoje}</lastmod>")
-        linhas.append("  </sitemap>")
-    linhas.append("</sitemapindex>")
-
-    return Response("\n".join(linhas), mimetype="application/xml")
-
-
-@app.route("/sitemap-<int:parte>.xml")
-def sitemap_parte(parte):
-    hub = get_hub_by_host()
-    if not hub:
-        return "Hub não encontrado", 404
-
-    base_url = f"https://{request.host}"
-    hoje = datetime.now(timezone.utc).strftime("%Y-%m-%d")
-
-    LIMITE = 5000
-    offset = (parte - 1) * LIMITE
-
-    negocios = query("""
-        SELECT n.slug, n.bairro,
-               n.criado_em as atualizado_em,
-               c.slug as categoria_slug
-        FROM hub_negocios n
-        JOIN hub_negocio_hubs nh ON nh.negocio_id = n.id
-        JOIN hub_categorias c ON c.id = n.categoria_id
-        WHERE nh.hub_id = %s AND n.ativo = true
-        ORDER BY n.nome
-        LIMIT %s OFFSET %s
-    """, (hub["id"], LIMITE, offset))
-
-    if not negocios:
-        return "Não encontrado", 404
-
-    eh_bairro = hub.get("tipo") == "bairro"
-
-    def fmt_date(val):
-        if not val:
-            return hoje
-        if hasattr(val, "strftime"):
-            return val.strftime("%Y-%m-%d")
-        return str(val)[:10]
-
-    def gerar():
-        yield '<?xml version="1.0" encoding="UTF-8"?>\n'
-        yield '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n'
-
-        if parte == 1:
-            yield (
-                "  <url>\n"
-                f"    <loc>{base_url}/</loc>\n"
-                f"    <lastmod>{hoje}</lastmod>\n"
-                "    <changefreq>weekly</changefreq>\n"
-                "    <priority>1.0</priority>\n"
-                "  </url>\n"
-            )
-
-            segmentos_vistos = set()
-            for n in negocios:
-                seg = n["bairro"].lower() if eh_bairro and n["bairro"] else n["categoria_slug"]
-                if seg and seg not in segmentos_vistos:
-                    segmentos_vistos.add(seg)
-                    yield (
-                        "  <url>\n"
-                        f"    <loc>{base_url}/{seg}/</loc>\n"
-                        f"    <lastmod>{hoje}</lastmod>\n"
-                        "    <changefreq>weekly</changefreq>\n"
-                        "    <priority>0.8</priority>\n"
-                        "  </url>\n"
-                    )
-
-            posts = query("""
-                SELECT p.slug, p.publicado_em
-                FROM blog_posts p
-                JOIN blog_post_hubs ph ON ph.post_id = p.id
-                WHERE ph.hub_id = %s AND p.publicado = true
-                ORDER BY p.publicado_em DESC
-            """, (hub["id"],))
-            for p in posts:
-                yield (
-                    "  <url>\n"
-                    f"    <loc>{base_url}/blog/{p['slug']}/</loc>\n"
-                    f"    <lastmod>{fmt_date(p['publicado_em'])}</lastmod>\n"
-                    "    <changefreq>monthly</changefreq>\n"
-                    "    <priority>0.5</priority>\n"
-                    "  </url>\n"
-                )
-
-        for n in negocios:
-            seg = n["bairro"].lower() if eh_bairro and n["bairro"] else n["categoria_slug"]
-            if not seg:
-                continue
-            yield (
-                "  <url>\n"
-                f"    <loc>{base_url}/{seg}/{n['slug']}/</loc>\n"
-                f"    <lastmod>{fmt_date(n['atualizado_em'])}</lastmod>\n"
-                "    <changefreq>monthly</changefreq>\n"
-                "    <priority>0.6</priority>\n"
-                "  </url>\n"
-            )
-
-        yield "</urlset>"
-
-    return Response(stream_with_context(gerar()), mimetype="application/xml")
-
-
-@app.route("/<segmento>/")
-def pagina_filtro(segmento):
-    if segmento in ROTAS_RESERVADAS:
-        return "Não encontrado", 404
-    hub = get_hub_by_host()
-    if not hub:
-        return "Hub não encontrado", 404
-    if hub["tipo"] == "bairro":
-        total = query("""
-            SELECT COUNT(*) as total FROM hub_negocios n
-            JOIN hub_negocio_hubs nh ON nh.negocio_id = n.id
-            WHERE nh.hub_id = %s AND n.ativo = true AND LOWER(n.bairro) = LOWER(%s)
-        """, (hub["id"], segmento), one=True)["total"]
-        negocios = query("""
-            SELECT n.*, c.nome as categoria_nome, c.slug as categoria_slug
-            FROM hub_negocios n
-            JOIN hub_negocio_hubs nh ON nh.negocio_id = n.id
-            JOIN hub_categorias c ON c.id = n.categoria_id
-            WHERE nh.hub_id = %s AND n.ativo = true AND LOWER(n.bairro) = LOWER(%s)
-            ORDER BY n.nome LIMIT 48
-        """, (hub["id"], segmento))
-        filtro_tipo, filtro_valor = "bairro", segmento
-    elif hub["tipo"] == "cidade":
-        categoria = query(
-            "SELECT * FROM hub_categorias WHERE slug = %s AND ativo = true",
-            (segmento,), one=True
-        )
-        if categoria:
-            total = query("""
-                SELECT COUNT(*) as total FROM hub_negocios n
-                JOIN hub_negocio_hubs nh ON nh.negocio_id = n.id
-                JOIN hub_categorias c ON c.id = n.categoria_id
-                WHERE nh.hub_id = %s AND n.ativo = true AND c.slug = %s
-            """, (hub["id"], segmento), one=True)["total"]
-            negocios = query("""
-                SELECT n.*, c.nome as categoria_nome, c.slug as categoria_slug
-                FROM hub_negocios n
-                JOIN hub_negocio_hubs nh ON nh.negocio_id = n.id
-                JOIN hub_categorias c ON c.id = n.categoria_id
-                WHERE nh.hub_id = %s AND n.ativo = true AND c.slug = %s
-                ORDER BY n.nome LIMIT 48
-            """, (hub["id"], segmento))
-            filtro_tipo, filtro_valor = "categoria", segmento
-        else:
-            total = query("""
-                SELECT COUNT(*) as total FROM hub_negocios n
-                JOIN hub_negocio_hubs nh ON nh.negocio_id = n.id
-                WHERE nh.hub_id = %s AND n.ativo = true AND LOWER(n.bairro) = LOWER(%s)
-            """, (hub["id"], segmento), one=True)["total"]
-            negocios = query("""
-                SELECT n.*, c.nome as categoria_nome, c.slug as categoria_slug
-                FROM hub_negocios n
-                JOIN hub_negocio_hubs nh ON nh.negocio_id = n.id
-                JOIN hub_categorias c ON c.id = n.categoria_id
-                WHERE nh.hub_id = %s AND n.ativo = true AND LOWER(n.bairro) = LOWER(%s)
-                ORDER BY n.nome LIMIT 48
-            """, (hub["id"], segmento))
-            filtro_tipo, filtro_valor = "bairro", segmento
-    else:
-        total = query("""
-            SELECT COUNT(*) as total FROM hub_negocios n
-            JOIN hub_negocio_hubs nh ON nh.negocio_id = n.id
-            JOIN hub_categorias c ON c.id = n.categoria_id
-            WHERE nh.hub_id = %s AND n.ativo = true AND c.slug = %s
-        """, (hub["id"], segmento), one=True)["total"]
-        negocios = query("""
-            SELECT n.*, c.nome as categoria_nome, c.slug as categoria_slug
-            FROM hub_negocios n
-            JOIN hub_negocio_hubs nh ON nh.negocio_id = n.id
-            JOIN hub_categorias c ON c.id = n.categoria_id
-            WHERE nh.hub_id = %s AND n.ativo = true AND c.slug = %s
-            ORDER BY n.nome LIMIT 48
-        """, (hub["id"], segmento))
-        filtro_tipo, filtro_valor = "categoria", segmento
-    categorias = query("SELECT * FROM hub_categorias WHERE ativo = true ORDER BY nome")
-    # Bairros únicos para o slicer — query leve só com DISTINCT
-    bairros_disponiveis = []
-    if filtro_tipo == "categoria":
-        rows = query("""
-            SELECT DISTINCT n.bairro FROM hub_negocios n
-            JOIN hub_negocio_hubs nh ON nh.negocio_id = n.id
-            JOIN hub_categorias c ON c.id = n.categoria_id
-            WHERE nh.hub_id = %s AND n.ativo = true AND c.slug = %s
-              AND n.bairro IS NOT NULL AND n.bairro <> ''
-            ORDER BY n.bairro
-        """, (hub["id"], segmento))
-        bairros_disponiveis = [r["bairro"] for r in rows]
-    template = hub.get("template_filtro") or "filtro_padrao"
-    anuncio_topo = _get_anuncios(hub["id"], "topo", categoria_slug=(segmento if filtro_tipo == "categoria" else None))
-    anuncio_meio = _get_anuncios(hub["id"], "meio", categoria_slug=(segmento if filtro_tipo == "categoria" else None))
-    return render_template(f"hub/{template}.html", hub=hub, negocios=negocios,
-                           categorias=categorias, filtro_tipo=filtro_tipo,
-                           filtro_valor=filtro_valor, segmento=segmento,
-                           total_negocios=total,
-                           bairros_disponiveis=bairros_disponiveis,
-                           anuncio_topo=anuncio_topo, anuncio_meio=anuncio_meio)
-
-
-@app.route("/<segmento>/<slug_negocio>/")
-def pagina_negocio(segmento, slug_negocio):
-    if segmento in ROTAS_RESERVADAS:
-        return "Não encontrado", 404
-    hub = get_hub_by_host()
-    if not hub:
-        return "Hub não encontrado", 404
-    negocio = query("""
-        SELECT n.*, c.nome as categoria_nome, c.slug as categoria_slug
-        FROM hub_negocios n
-        JOIN hub_negocio_hubs nh ON nh.negocio_id = n.id
-        JOIN hub_categorias c ON c.id = n.categoria_id
-        WHERE nh.hub_id = %s AND n.slug = %s AND n.ativo = true
-    """, (hub["id"], slug_negocio), one=True)
-    if not negocio:
-        return "Negócio não encontrado", 404
-    query("UPDATE hub_negocios SET visualizacoes = visualizacoes + 1 WHERE id = %s",
-          (negocio["id"],), commit=True)
-    anuncio_topo = _get_anuncios(hub["id"], "topo",
-                                 categoria_slug=negocio["categoria_slug"],
-                                 cidade=negocio.get("cidade"),
-                                 bairro=negocio.get("bairro"))
-    anuncio_meio = _get_anuncios(hub["id"], "meio",
-                                 categoria_slug=negocio["categoria_slug"],
-                                 cidade=negocio.get("cidade"),
-                                 bairro=negocio.get("bairro"))
-    template = hub.get("template_negocio") or "negocio_padrao"
-    return render_template(f"hub/{template}.html", hub=hub, negocio=negocio, segmento=segmento,
-                           anuncio_topo=anuncio_topo, anuncio_meio=anuncio_meio)
-
-
-# ════════════════════════════════════════════════════════════
-#  ROTAS DE CIDADE
-# ════════════════════════════════════════════════════════════
-
-def _resolve_bairro(hub_id, bairro_slug, cidade_nome=None):
-    bairro_slug_norm = _slugify(bairro_slug)
-    sql = """
-        SELECT DISTINCT n.bairro
-        FROM hub_negocios n
-        JOIN hub_negocio_hubs nh ON nh.negocio_id = n.id
-        WHERE nh.hub_id = %s AND n.ativo = true AND n.bairro IS NOT NULL
-    """
-    params = [hub_id]
-    if cidade_nome:
-        sql += " AND LOWER(TRIM(n.cidade)) = LOWER(%s)"
-        params.append(cidade_nome)
-    rows = query(sql, params)
-    for row in rows:
-        if _slugify(row["bairro"]) == bairro_slug_norm:
-            return row["bairro"]
-    return None
-
-
-def _resolve_cidade(hub_id, cidade_slug):
-    cidade_slug_norm = _slugify(cidade_slug)
-    rows = query("""
-        SELECT DISTINCT n.cidade
-        FROM hub_negocios n
-        JOIN hub_negocio_hubs nh ON nh.negocio_id = n.id
-        WHERE nh.hub_id = %s AND n.ativo = true AND n.cidade IS NOT NULL
-    """, (hub_id,))
-    for row in rows:
-        if _slugify(row["cidade"]) == cidade_slug_norm:
-            return row["cidade"]
-    return None
-
-
-def _negocios_cidade(hub_id, cidade_nome=None, cat_slug=None, bairro_slug=None, limit=None, offset=None):
-    sql = """
-        SELECT n.*, c.nome as categoria_nome, c.slug as categoria_slug
-        FROM hub_negocios n
-        JOIN hub_negocio_hubs nh ON nh.negocio_id = n.id
-        JOIN hub_categorias c ON c.id = n.categoria_id
-        WHERE nh.hub_id = %s AND n.ativo = true
-    """
-    params = [hub_id]
-    if cidade_nome:
-        sql += " AND LOWER(TRIM(n.cidade)) = LOWER(%s)"
-        params.append(cidade_nome)
-    if cat_slug:
-        sql += " AND c.slug = %s"
-        params.append(cat_slug)
-    if bairro_slug:
-        sql += " AND LOWER(TRIM(n.bairro)) = LOWER(TRIM(%s))"
-        params.append(bairro_slug)
-    sql += " ORDER BY n.nome"
-    if limit is not None:
-        sql += " LIMIT %s"
-        params.append(limit)
-        if offset is not None:
-            sql += " OFFSET %s"
-            params.append(offset)
-    return query(sql, params)
-
-
-def _contar_negocios_cidade(hub_id, cidade_nome=None, cat_slug=None, bairro_slug=None):
-    """COUNT(*) leve — usado para mostrar o total real mesmo quando _negocios_cidade vem limitado."""
-    sql = """
-        SELECT COUNT(*) as total
-        FROM hub_negocios n
-        JOIN hub_negocio_hubs nh ON nh.negocio_id = n.id
-        JOIN hub_categorias c ON c.id = n.categoria_id
-        WHERE nh.hub_id = %s AND n.ativo = true
-    """
-    params = [hub_id]
-    if cidade_nome:
-        sql += " AND LOWER(TRIM(n.cidade)) = LOWER(%s)"
-        params.append(cidade_nome)
-    if cat_slug:
-        sql += " AND c.slug = %s"
-        params.append(cat_slug)
-    if bairro_slug:
-        sql += " AND LOWER(TRIM(n.bairro)) = LOWER(TRIM(%s))"
-        params.append(bairro_slug)
-    return query(sql, params, one=True)["total"]
-
-
-def _bairros_cidade(hub_id, cidade_nome):
-    rows = query("""
-        SELECT DISTINCT n.bairro
-        FROM hub_negocios n
-        JOIN hub_negocio_hubs nh ON nh.negocio_id = n.id
-        WHERE nh.hub_id = %s AND n.ativo = true
-          AND n.bairro IS NOT NULL AND TRIM(n.bairro) != ''
-          AND LOWER(TRIM(n.cidade)) = LOWER(%s)
-        ORDER BY n.bairro
-    """, (hub_id, cidade_nome))
-    return [r["bairro"] for r in rows]
-
-
-def _categorias_cidade(hub_id, cidade_nome):
-    return query("""
-        SELECT DISTINCT c.id, c.nome, c.slug, c.icone_url
-        FROM hub_categorias c
-        JOIN hub_negocios n ON n.categoria_id = c.id
-        JOIN hub_negocio_hubs nh ON nh.negocio_id = n.id
-        WHERE nh.hub_id = %s AND n.ativo = true AND c.ativo = true
-          AND LOWER(TRIM(n.cidade)) = LOWER(%s)
-        ORDER BY c.nome
-    """, (hub_id, cidade_nome))
-
-
-def _render_cidade(hub, negocios, categorias, cidade_nome,
-                   bairro=None, categoria=None,
-                   bairros_disponiveis=None, categorias_disponiveis=None,
-                   total_negocios=None):
-    template = hub.get("template_cidade") or "cidade_otp"
-    cat_slug = categoria["slug"] if categoria else None
-    anuncio_topo = _get_anuncios(hub["id"], "topo", categoria_slug=cat_slug, cidade=cidade_nome, bairro=bairro)
-    anuncio_meio = _get_anuncios(hub["id"], "meio", categoria_slug=cat_slug, cidade=cidade_nome, bairro=bairro)
-    return render_template(
-        f"hub/{template}.html",
-        hub=hub,
-        negocios=negocios,
-        categorias=categorias,
-        cidade=cidade_nome,
-        bairro=bairro,
-        categoria=categoria,
-        bairros_disponiveis=bairros_disponiveis or [],
-        categorias_disponiveis=categorias_disponiveis or [],
-        total_negocios=total_negocios if total_negocios is not None else len(negocios),
-        anuncio_topo=anuncio_topo,
-        anuncio_meio=anuncio_meio,
-    )
-
-
-@app.route("/cidade/<cidade_slug>/")
-def pagina_cidade(cidade_slug):
-    hub = get_hub_by_host()
-    if not hub:
-        return "Hub não encontrado", 404
-    cidade_nome = _resolve_cidade(hub["id"], cidade_slug)
-    if not cidade_nome:
-        return "Cidade não encontrada", 404
-    negocios   = _negocios_cidade(hub["id"], cidade_nome=cidade_nome, limit=48)
-    total      = _contar_negocios_cidade(hub["id"], cidade_nome=cidade_nome)
-    categorias = query("SELECT * FROM hub_categorias WHERE ativo = true ORDER BY nome")
-    bairros    = _bairros_cidade(hub["id"], cidade_nome)
-    cats_disp  = _categorias_cidade(hub["id"], cidade_nome)
-    return _render_cidade(hub, negocios, categorias, cidade_nome,
-                          bairros_disponiveis=bairros,
-                          categorias_disponiveis=cats_disp,
-                          total_negocios=total)
-
-
-@app.route("/cidade/<cidade_slug>/<segundo_slug>/")
-def pagina_cidade_segundo(cidade_slug, segundo_slug):
-    hub = get_hub_by_host()
-    if not hub:
-        return "Hub não encontrado", 404
-    cidade_nome = _resolve_cidade(hub["id"], cidade_slug)
-    if not cidade_nome:
-        return "Cidade não encontrada", 404
-    categoria = query(
-        "SELECT * FROM hub_categorias WHERE slug = %s AND ativo = true",
-        (segundo_slug,), one=True
-    )
-    categorias = query("SELECT * FROM hub_categorias WHERE ativo = true ORDER BY nome")
-    bairros    = _bairros_cidade(hub["id"], cidade_nome)
-    cats_disp  = _categorias_cidade(hub["id"], cidade_nome)
-    if categoria:
-        negocios = _negocios_cidade(hub["id"], cidade_nome=cidade_nome, cat_slug=segundo_slug, limit=48)
-        total    = _contar_negocios_cidade(hub["id"], cidade_nome=cidade_nome, cat_slug=segundo_slug)
-        return _render_cidade(hub, negocios, categorias, cidade_nome,
-                              categoria=dict(categoria),
-                              bairros_disponiveis=bairros,
-                              categorias_disponiveis=cats_disp,
-                              total_negocios=total)
-    else:
-        bairro_nome = _resolve_bairro(hub["id"], segundo_slug, cidade_nome) or segundo_slug.replace("-", " ").title()
-        negocios    = _negocios_cidade(hub["id"], cidade_nome=cidade_nome, bairro_slug=bairro_nome, limit=48)
-        total       = _contar_negocios_cidade(hub["id"], cidade_nome=cidade_nome, bairro_slug=bairro_nome)
-        return _render_cidade(hub, negocios, categorias, cidade_nome,
-                              bairro=bairro_nome,
-                              bairros_disponiveis=bairros,
-                              categorias_disponiveis=cats_disp,
-                              total_negocios=total)
-
-
-@app.route("/cidade/<cidade_slug>/<bairro_slug>/<cat_slug>/")
-def pagina_cidade_bairro_cat(cidade_slug, bairro_slug, cat_slug):
-    hub = get_hub_by_host()
-    if not hub:
-        return "Hub não encontrado", 404
-    cidade_nome = _resolve_cidade(hub["id"], cidade_slug)
-    if not cidade_nome:
-        return "Cidade não encontrada", 404
-    categoria   = query(
-        "SELECT * FROM hub_categorias WHERE slug = %s AND ativo = true",
-        (cat_slug,), one=True
-    )
-    categorias  = query("SELECT * FROM hub_categorias WHERE ativo = true ORDER BY nome")
-    bairros     = _bairros_cidade(hub["id"], cidade_nome)
-    cats_disp   = _categorias_cidade(hub["id"], cidade_nome)
-    bairro_nome = _resolve_bairro(hub["id"], bairro_slug, cidade_nome) or bairro_slug.replace("-", " ").title()
-    negocios    = _negocios_cidade(hub["id"], cidade_nome=cidade_nome,
-                                   cat_slug=cat_slug, bairro_slug=bairro_nome, limit=48)
-    total       = _contar_negocios_cidade(hub["id"], cidade_nome=cidade_nome,
-                                          cat_slug=cat_slug, bairro_slug=bairro_nome)
-    return _render_cidade(hub, negocios, categorias, cidade_nome,
-                          bairro=bairro_nome,
-                          categoria=dict(categoria) if categoria else None,
-                          bairros_disponiveis=bairros,
-                          categorias_disponiveis=cats_disp,
-                          total_negocios=total)
-
-
-@app.route("/<cat_slug>/em/<cidade_slug>/")
-def pagina_cat_cidade(cat_slug, cidade_slug):
-    if cat_slug in ROTAS_RESERVADAS:
-        return "Não encontrado", 404
-    hub = get_hub_by_host()
-    if not hub:
-        return "Hub não encontrado", 404
-    categoria = query(
-        "SELECT * FROM hub_categorias WHERE slug = %s AND ativo = true",
-        (cat_slug,), one=True
-    )
-    if not categoria:
-        return "Categoria não encontrada", 404
-    cidade_nome = _resolve_cidade(hub["id"], cidade_slug)
-    if not cidade_nome:
-        return "Cidade não encontrada", 404
-    negocios   = _negocios_cidade(hub["id"], cidade_nome=cidade_nome, cat_slug=cat_slug, limit=48)
-    total      = _contar_negocios_cidade(hub["id"], cidade_nome=cidade_nome, cat_slug=cat_slug)
-    categorias = query("SELECT * FROM hub_categorias WHERE ativo = true ORDER BY nome")
-    bairros    = _bairros_cidade(hub["id"], cidade_nome)
-    cats_disp  = _categorias_cidade(hub["id"], cidade_nome)
-    return _render_cidade(hub, negocios, categorias, cidade_nome,
-                          categoria=dict(categoria),
-                          bairros_disponiveis=bairros,
-                          categorias_disponiveis=cats_disp,
-                          total_negocios=total)
-
-
-@app.route("/<cat_slug>/em/<cidade_slug>/<bairro_slug>/")
-def pagina_cat_cidade_bairro(cat_slug, cidade_slug, bairro_slug):
-    if cat_slug in ROTAS_RESERVADAS:
-        return "Não encontrado", 404
-    hub = get_hub_by_host()
-    if not hub:
-        return "Hub não encontrado", 404
-    categoria = query(
-        "SELECT * FROM hub_categorias WHERE slug = %s AND ativo = true",
-        (cat_slug,), one=True
-    )
-    if not categoria:
-        return "Categoria não encontrada", 404
-    cidade_nome = _resolve_cidade(hub["id"], cidade_slug)
-    if not cidade_nome:
-        return "Cidade não encontrada", 404
-    bairro_nome = bairro_slug.replace("-", " ").title()
-    negocios    = _negocios_cidade(hub["id"], cidade_nome=cidade_nome,
-                                    cat_slug=cat_slug, bairro_slug=bairro_slug, limit=48)
-    total       = _contar_negocios_cidade(hub["id"], cidade_nome=cidade_nome,
-                                          cat_slug=cat_slug, bairro_slug=bairro_slug)
-    categorias  = query("SELECT * FROM hub_categorias WHERE ativo = true ORDER BY nome")
-    bairros     = _bairros_cidade(hub["id"], cidade_nome)
-    cats_disp   = _categorias_cidade(hub["id"], cidade_nome)
-    return _render_cidade(hub, negocios, categorias, cidade_nome,
-                          bairro=bairro_nome,
-                          categoria=dict(categoria),
-                          bairros_disponiveis=bairros,
-                          categorias_disponiveis=cats_disp,
-                          total_negocios=total)
-
-
-# ════════════════════════════════════════════════════════════
-#  BLOG — ROTAS PÚBLICAS
-# ════════════════════════════════════════════════════════════
-
-@app.route("/blog/")
-def blog_index():
-    hub = get_hub_by_host()
-    if not hub:
-        return "Hub não encontrado", 404
-    tag      = request.args.get("tag", "").strip()
-    page     = max(int(request.args.get("page", 1)), 1)
-    per_page = 12
-    offset   = (page - 1) * per_page
-
-    sql = """
-        SELECT p.*, array_agg(t.slug ORDER BY t.nome) FILTER (WHERE t.id IS NOT NULL) as tags
-        FROM blog_posts p
-        JOIN blog_post_hubs ph ON ph.post_id = p.id
-        LEFT JOIN blog_post_tags pt ON pt.post_id = p.id
-        LEFT JOIN blog_tags t ON t.id = pt.tag_id
-        WHERE ph.hub_id = %s AND p.publicado = true
-    """
-    params = [hub["id"]]
-    if tag:
-        sql += " AND EXISTS (SELECT 1 FROM blog_post_tags pt2 JOIN blog_tags t2 ON t2.id = pt2.tag_id WHERE pt2.post_id = p.id AND t2.slug = %s)"
-        params.append(tag)
-    sql += " GROUP BY p.id ORDER BY p.publicado_em DESC LIMIT %s OFFSET %s"
-    params += [per_page, offset]
-    posts = query(sql, params)
-
-    sql_count = """
-        SELECT COUNT(DISTINCT p.id) as n
-        FROM blog_posts p
-        JOIN blog_post_hubs ph ON ph.post_id = p.id
-        WHERE ph.hub_id = %s AND p.publicado = true
-    """
-    count_params = [hub["id"]]
-    if tag:
-        sql_count += " AND EXISTS (SELECT 1 FROM blog_post_tags pt2 JOIN blog_tags t2 ON t2.id = pt2.tag_id WHERE pt2.post_id = p.id AND t2.slug = %s)"
-        count_params.append(tag)
-    total = query(sql_count, count_params, one=True)["n"]
-    total_pages = max(1, (total + per_page - 1) // per_page)
-
-    tags_disponiveis = query("""
-        SELECT DISTINCT t.id, t.nome, t.slug
-        FROM blog_tags t
-        JOIN blog_post_tags pt ON pt.tag_id = t.id
-        JOIN blog_posts p ON p.id = pt.post_id
-        JOIN blog_post_hubs ph ON ph.post_id = p.id
-        WHERE ph.hub_id = %s AND p.publicado = true
-        ORDER BY t.nome
-    """, (hub["id"],))
-
-    categorias = query("SELECT * FROM hub_categorias WHERE ativo = true ORDER BY nome")
-    template = hub.get("template_blog") or "blog_otp"
-    return render_template(
-        f"hub/{template}.html",
-        hub=hub, posts=posts, tags=tags_disponiveis,
-        tag_ativa=tag, page=page, total_pages=total_pages,
-        categorias=categorias,
-    )
-
-
-@app.route("/blog/<slug>/")
-def blog_post(slug):
-    hub = get_hub_by_host()
-    if not hub:
-        return "Hub não encontrado", 404
-    post = query("""
-        SELECT p.*
-        FROM blog_posts p
-        JOIN blog_post_hubs ph ON ph.post_id = p.id
-        WHERE ph.hub_id = %s AND p.slug = %s AND p.publicado = true
-    """, (hub["id"], slug), one=True)
-    if not post:
-        return "Post não encontrado", 404
-
-    query("UPDATE blog_posts SET visualizacoes = visualizacoes + 1 WHERE id = %s",
-          (post["id"],), commit=True)
-
-    tags = query("""
-        SELECT t.* FROM blog_tags t
-        JOIN blog_post_tags pt ON pt.tag_id = t.id
-        WHERE pt.post_id = %s ORDER BY t.nome
-    """, (post["id"],))
-
-    relacionados = query("""
-        SELECT DISTINCT p.id, p.titulo, p.slug, p.capa_url, p.publicado_em, p.resumo
-        FROM blog_posts p
-        JOIN blog_post_hubs ph ON ph.post_id = p.id
-        JOIN blog_post_tags pt ON pt.post_id = p.id
-        WHERE ph.hub_id = %s AND p.publicado = true AND p.id <> %s
-          AND pt.tag_id IN (
-              SELECT tag_id FROM blog_post_tags WHERE post_id = %s
-          )
-        ORDER BY p.publicado_em DESC
-        LIMIT 3
-    """, (hub["id"], post["id"], post["id"]))
-
-    categorias = query("SELECT * FROM hub_categorias WHERE ativo = true ORDER BY nome")
-    anuncio_topo = _get_anuncios(hub["id"], "topo")
-    anuncio_meio = _get_anuncios(hub["id"], "meio")
-    template_post = hub.get("template_blog_post") or "blog_post_otp"
-    return render_template(
-        f"hub/{template_post}.html",
-        hub=hub, post=post, tags=tags,
-        relacionados=relacionados, categorias=categorias,
-        anuncio_topo=anuncio_topo, anuncio_meio=anuncio_meio,
-    )
-
-
-# ════════════════════════════════════════════════════════════
-#  ADMIN — AUTH
-# ════════════════════════════════════════════════════════════
-
-@app.route("/admin/login", methods=["GET", "POST"])
-def admin_login():
-    if request.method == "POST":
-        email = request.form.get("email", "").strip()
-        senha = request.form.get("senha", "")
-        user = query("SELECT * FROM usuarios WHERE email = %s", (email,), one=True)
-        if not user:
-            return render_template("admin/login.html", erro="Usuário não encontrado")
-        admin = query("SELECT * FROM admins WHERE user_id = %s", (user["id"],), one=True)
-        if not admin:
-            return render_template("admin/login.html", erro="Sem permissão de admin")
-        senha_hash = user.get("senha_hash") or ""
-        if not senha_hash:
-            return render_template("admin/login.html", erro="Senha não configurada. Redefina pelo banco.")
-        if not check_password_hash(senha_hash, senha):
-            return render_template("admin/login.html", erro="Senha incorreta")
-        session["admin_id"]    = user["id"]
-        session["admin_nome"]  = user["nome"]
-        session["admin_nivel"] = admin["nivel"]
-        return redirect("/admin")
-    return render_template("admin/login.html")
-
-
-@app.route("/admin/logout")
-def admin_logout():
-    session.clear()
-    return redirect("/admin/login")
-
-
-# ════════════════════════════════════════════════════════════
-#  ADMIN — PAINEL
-# ════════════════════════════════════════════════════════════
-
-@app.route("/admin")
-@login_required
-def admin_dashboard():
-    total_hubs       = query("SELECT COUNT(*) as n FROM hub_clientes", one=True)["n"]
-    total_negocios   = query("SELECT COUNT(*) as n FROM hub_negocios", one=True)["n"]
-    total_categorias = query("SELECT COUNT(*) as n FROM hub_categorias", one=True)["n"]
-    total_usuarios   = query("SELECT COUNT(*) as n FROM usuarios", one=True)["n"]
-    total_posts      = query("SELECT COUNT(*) as n FROM blog_posts", one=True)["n"]
-    return render_template("admin/index.html",
-                           total_hubs=total_hubs,
-                           total_negocios=total_negocios,
-                           total_categorias=total_categorias,
-                           total_usuarios=total_usuarios,
-                           total_posts=total_posts)
-
-
-@app.route("/admin/templates")
-@login_required
-def admin_templates():
-    return jsonify({
-        "index":   listar_templates("index"),
-        "filtro":  listar_templates("filtro"),
-        "negocio": listar_templates("negocio"),
-        "cidade":  listar_templates("cidade"),
-        "blog":    listar_templates("blog"),
-    })
-
-
-# ════════════════════════════════════════════════════════════
-#  ADMIN — HUBS
-# ════════════════════════════════════════════════════════════
-
-@app.route("/admin/hubs")
-@login_required
-def admin_hubs():
-    hubs = query("""
-        SELECT h.*, u.nome as usuario_nome,
-               (SELECT COUNT(*) FROM hub_negocio_hubs nh WHERE nh.hub_id = h.id) as total_negocios
-        FROM hub_clientes h
-        LEFT JOIN usuarios u ON u.id = h.user_id
-        ORDER BY h.criado_em DESC
-    """)
-    return jsonify([dict(h) for h in hubs])
-
-
-@app.route("/admin/hubs/novo", methods=["POST"])
-@login_required
-def admin_hub_novo():
-    d = request.form
-    query("""
-        INSERT INTO hub_clientes
-        (user_id, nome, slug, dominio_proprio, hub_leanttro, tipo,
-         bairro_fixo, categoria_fixa, logo_url, cor_primaria, cor_secundaria,
-         titulo, descricao, ga4_id, pixel_id, instagram_url, whatsapp,
-         template_index, template_filtro, template_negocio, template_cidade,
-         banner_fundo_url, banner1_foto_url, banner1_link, banner2_foto_url, banner2_link,
-         ativo)
-        VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)
-    """, (
-        d.get("user_id") or None, d["nome"], d["slug"],
-        d.get("dominio_proprio") or None, d.get("hub_leanttro") or None,
-        d.get("tipo", "bairro"), d.get("bairro_fixo") or None,
-        d.get("categoria_fixa") or None, d.get("logo_url") or None,
-        d.get("cor_primaria", "#7943e2"), d.get("cor_secundaria", "#5c2ec2"),
-        d.get("titulo") or None, d.get("descricao") or None,
-        d.get("ga4_id") or None, d.get("pixel_id") or None,
-        d.get("instagram_url") or None, d.get("whatsapp") or None,
-        d.get("template_index", "index_padrao"),
-        d.get("template_filtro", "filtro_padrao"),
-        d.get("template_negocio", "negocio_padrao"),
-        d.get("template_cidade", "cidade_otp"),
-        d.get("banner_fundo_url") or None,
-        d.get("banner1_foto_url") or None, d.get("banner1_link") or None,
-        d.get("banner2_foto_url") or None, d.get("banner2_link") or None,
-        "ativo" in d
-    ), commit=True)
-    return jsonify({"ok": True})
-
-
-@app.route("/admin/hubs/<int:hub_id>/editar", methods=["GET", "POST"])
-@login_required
-def admin_hub_editar(hub_id):
-    hub = query("SELECT * FROM hub_clientes WHERE id = %s", (hub_id,), one=True)
-    if not hub:
-        return jsonify({"erro": "Hub não encontrado"}), 404
-    if request.method == "POST":
-        d = request.form
-        query("""
-            UPDATE hub_clientes SET
-            user_id=%s, nome=%s, slug=%s, dominio_proprio=%s, hub_leanttro=%s,
-            tipo=%s, bairro_fixo=%s, categoria_fixa=%s, logo_url=%s,
-            cor_primaria=%s, cor_secundaria=%s, titulo=%s, descricao=%s,
-            ga4_id=%s, pixel_id=%s, instagram_url=%s, whatsapp=%s,
-            template_index=%s, template_filtro=%s, template_negocio=%s, template_cidade=%s,
-            banner_fundo_url=%s, banner1_foto_url=%s, banner1_link=%s,
-            banner2_foto_url=%s, banner2_link=%s, ativo=%s
-            WHERE id=%s
-        """, (
-            d.get("user_id") or None, d["nome"], d["slug"],
-            d.get("dominio_proprio") or None, d.get("hub_leanttro") or None,
-            d.get("tipo", "bairro"), d.get("bairro_fixo") or None,
-            d.get("categoria_fixa") or None, d.get("logo_url") or None,
-            d.get("cor_primaria", "#7943e2"), d.get("cor_secundaria", "#5c2ec2"),
-            d.get("titulo") or None, d.get("descricao") or None,
-            d.get("ga4_id") or None, d.get("pixel_id") or None,
-            d.get("instagram_url") or None, d.get("whatsapp") or None,
-            d.get("template_index", "index_padrao"),
-            d.get("template_filtro", "filtro_padrao"),
-            d.get("template_negocio", "negocio_padrao"),
-            d.get("template_cidade", "cidade_otp"),
-            d.get("banner_fundo_url") or None,
-            d.get("banner1_foto_url") or None, d.get("banner1_link") or None,
-            d.get("banner2_foto_url") or None, d.get("banner2_link") or None,
-            "ativo" in d, hub_id
-        ), commit=True)
-        return jsonify({"ok": True})
-    return jsonify(dict(hub))
-
-
-@app.route("/admin/hubs/<int:hub_id>/deletar", methods=["POST"])
-@login_required
-def admin_hub_deletar(hub_id):
-    query("DELETE FROM hub_clientes WHERE id = %s", (hub_id,), commit=True)
-    return jsonify({"ok": True})
-
-
-# ════════════════════════════════════════════════════════════
-#  ADMIN — NEGÓCIOS
-# ════════════════════════════════════════════════════════════
-
-@app.route("/admin/negocios")
-@login_required
-def admin_negocios():
-    negocios = query("""
-        SELECT n.*, c.nome as categoria_nome
-        FROM hub_negocios n
-        LEFT JOIN hub_categorias c ON c.id = n.categoria_id
-        ORDER BY n.criado_em DESC
-    """)
-    return jsonify([dict(n) for n in negocios])
-
-
-@app.route("/admin/negocios/novo", methods=["POST"])
-@login_required
-def admin_negocio_novo():
-    d = request.form
-    cur = get_db().cursor()
-    cur.execute("""
-        INSERT INTO hub_negocios
-        (categoria_id, nome, slug, descricao, foto_url, endereco, bairro, cidade,
-         lat, lng, whatsapp, telefone, instagram, site_url,
-         mostrar_foto, mostrar_descricao, mostrar_whatsapp,
-         mostrar_instagram, mostrar_telefone, mostrar_site,
-         mostrar_endereco, mostrar_mapa, ativo)
-        VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)
-        RETURNING id
-    """, (
-        d.get("categoria_id") or None, d["nome"], d["slug"],
-        d.get("descricao") or None, d.get("foto_url") or None,
-        d.get("endereco") or None, d.get("bairro") or None,
-        d.get("cidade", "São Paulo"),
-        d.get("lat") or None, d.get("lng") or None,
-        d.get("whatsapp") or None, d.get("telefone") or None,
-        d.get("instagram") or None, d.get("site_url") or None,
-        "mostrar_foto"      in d, "mostrar_descricao" in d,
-        "mostrar_whatsapp"  in d, "mostrar_instagram" in d,
-        "mostrar_telefone"  in d, "mostrar_site"      in d,
-        "mostrar_endereco"  in d, "mostrar_mapa"      in d,
-        "ativo"             in d,
-    ))
-    negocio_id = cur.fetchone()["id"]
-    for hub_id in request.form.getlist("hubs"):
-        cur.execute("""
-            INSERT INTO hub_negocio_hubs (negocio_id, hub_id)
-            VALUES (%s, %s) ON CONFLICT DO NOTHING
-        """, (negocio_id, hub_id))
-    get_db().commit()
-    return jsonify({"ok": True})
-
-
-@app.route("/admin/negocios/<int:negocio_id>/editar", methods=["GET", "POST"])
-@login_required
-def admin_negocio_editar(negocio_id):
-    negocio = query("SELECT * FROM hub_negocios WHERE id = %s", (negocio_id,), one=True)
-    if not negocio:
-        return jsonify({"erro": "Negócio não encontrado"}), 404
-    if request.method == "POST":
-        d = request.form
-        query("""
-            UPDATE hub_negocios SET
-            categoria_id=%s, nome=%s, slug=%s, descricao=%s, foto_url=%s,
-            endereco=%s, bairro=%s, cidade=%s, lat=%s, lng=%s,
-            whatsapp=%s, telefone=%s, instagram=%s, site_url=%s,
-            mostrar_foto=%s, mostrar_descricao=%s, mostrar_whatsapp=%s,
-            mostrar_instagram=%s, mostrar_telefone=%s, mostrar_site=%s,
-            mostrar_endereco=%s, mostrar_mapa=%s, ativo=%s
-            WHERE id=%s
-        """, (
-            d.get("categoria_id") or None, d["nome"], d["slug"],
-            d.get("descricao") or None, d.get("foto_url") or None,
-            d.get("endereco") or None, d.get("bairro") or None,
-            d.get("cidade", "São Paulo"),
-            d.get("lat") or None, d.get("lng") or None,
-            d.get("whatsapp") or None, d.get("telefone") or None,
-            d.get("instagram") or None, d.get("site_url") or None,
-            "mostrar_foto"      in d, "mostrar_descricao" in d,
-            "mostrar_whatsapp"  in d, "mostrar_instagram" in d,
-            "mostrar_telefone"  in d, "mostrar_site"      in d,
-            "mostrar_endereco"  in d, "mostrar_mapa"      in d,
-            "ativo"             in d, negocio_id
-        ), commit=True)
-        if "hubs" in request.form:
-            query("DELETE FROM hub_negocio_hubs WHERE negocio_id = %s", (negocio_id,), commit=True)
-            for hub_id in request.form.getlist("hubs"):
-                query("""
-                    INSERT INTO hub_negocio_hubs (negocio_id, hub_id)
-                    VALUES (%s, %s) ON CONFLICT DO NOTHING
-                """, (negocio_id, hub_id), commit=True)
-        return jsonify({"ok": True})
-    hubs_do_negocio = [r["hub_id"] for r in query(
-        "SELECT hub_id FROM hub_negocio_hubs WHERE negocio_id = %s", (negocio_id,)
-    )]
-    data = dict(negocio)
-    data["hubs_do_negocio"] = hubs_do_negocio
-    return jsonify(data)
-
-
-@app.route("/admin/negocios/<int:negocio_id>/deletar", methods=["POST"])
-@login_required
-def admin_negocio_deletar(negocio_id):
-    query("DELETE FROM hub_negocios WHERE id = %s", (negocio_id,), commit=True)
-    return jsonify({"ok": True})
-
-
-@app.route("/admin/negocios/bulk", methods=["POST"])
-@login_required
-def admin_negocios_bulk():
-    data   = request.get_json(force=True)
-    ids    = [int(i) for i in data.get("ids", []) if str(i).isdigit()]
-    action = data.get("action", "")
-    hub_id = data.get("hub_id")
-
-    if not ids:
-        return jsonify({"error": "Nenhum negócio selecionado"}), 400
-
-    if action == "ativar":
-        query("UPDATE hub_negocios SET ativo = TRUE WHERE id = ANY(%s)", (ids,), commit=True)
-    elif action == "desativar":
-        query("UPDATE hub_negocios SET ativo = FALSE WHERE id = ANY(%s)", (ids,), commit=True)
-    elif action == "excluir":
-        query("DELETE FROM hub_negocio_hubs WHERE negocio_id = ANY(%s)", (ids,), commit=True)
-        query("DELETE FROM hub_negocios WHERE id = ANY(%s)", (ids,), commit=True)
-    elif action == "vincular" and hub_id:
-        hub_id = int(hub_id)
-        for nid in ids:
-            query("""
-                INSERT INTO hub_negocio_hubs (negocio_id, hub_id)
-                VALUES (%s, %s) ON CONFLICT (negocio_id, hub_id) DO NOTHING
-            """, (nid, hub_id), commit=True)
-    elif action == "desvincular" and hub_id:
-        hub_id = int(hub_id)
-        query(
-            "DELETE FROM hub_negocio_hubs WHERE negocio_id = ANY(%s) AND hub_id = %s",
-            (ids, hub_id), commit=True
-        )
-    elif action == "mudar_categoria":
-        categoria_id = data.get("categoria_id")
-        if not categoria_id:
-            return jsonify({"error": "categoria_id obrigatório"}), 400
-        categoria_id = int(categoria_id)
-        query(
-            "UPDATE hub_negocios SET categoria_id = %s WHERE id = ANY(%s)",
-            (categoria_id, ids), commit=True
-        )
-    else:
-        return jsonify({"error": "Ação inválida"}), 400
-
-    return jsonify({"ok": True, "affected": len(ids)})
-
-
-# ════════════════════════════════════════════════════════════
-#  ADMIN — CATEGORIAS
-# ════════════════════════════════════════════════════════════
-
-@app.route("/admin/categorias")
-@login_required
-def admin_categorias():
-    categorias = query("SELECT * FROM hub_categorias ORDER BY nome")
-    return jsonify([dict(c) for c in categorias])
-
-
-@app.route("/admin/categorias/nova", methods=["POST"])
-@login_required
-def admin_categoria_nova():
-    d = request.form
-    query("""
-        INSERT INTO hub_categorias (nome, slug, icone_url, ativo)
-        VALUES (%s, %s, %s, %s)
-    """, (d["nome"], d["slug"], d.get("icone_url") or None, "ativo" in d), commit=True)
-    return jsonify({"ok": True})
-
-
-@app.route("/admin/categorias/<int:cat_id>/editar", methods=["GET", "POST"])
-@login_required
-def admin_categoria_editar(cat_id):
-    cat = query("SELECT * FROM hub_categorias WHERE id = %s", (cat_id,), one=True)
-    if not cat:
-        return jsonify({"erro": "Categoria não encontrada"}), 404
-    if request.method == "POST":
-        d = request.form
-        query("""
-            UPDATE hub_categorias SET nome=%s, slug=%s, icone_url=%s, ativo=%s
-            WHERE id=%s
-        """, (d["nome"], d["slug"], d.get("icone_url") or None, "ativo" in d, cat_id), commit=True)
-        return jsonify({"ok": True})
-    return jsonify(dict(cat))
-
-
-@app.route("/admin/categorias/<int:cat_id>/deletar", methods=["POST"])
-@login_required
-def admin_categoria_deletar(cat_id):
-    query("DELETE FROM hub_categorias WHERE id = %s", (cat_id,), commit=True)
-    return jsonify({"ok": True})
-
-
-# ════════════════════════════════════════════════════════════
-#  ADMIN — USUÁRIOS
-# ════════════════════════════════════════════════════════════
-
-@app.route("/admin/usuarios")
-@login_required
-def admin_usuarios():
-    usuarios = query("""
-        SELECT u.id, u.nome, u.email, u.whatsapp, u.criado_em, a.nivel as admin_nivel
-        FROM usuarios u
-        LEFT JOIN admins a ON a.user_id = u.id
-        ORDER BY u.criado_em DESC
-    """)
-    return jsonify([dict(u) for u in usuarios])
-
-
-@app.route("/admin/usuarios/novo", methods=["POST"])
-@login_required
-def admin_usuario_novo():
-    d = request.form
-    senha_hash = generate_password_hash(d["senha"])
-    cur = get_db().cursor()
-    cur.execute("""
-        INSERT INTO usuarios (nome, email, senha_hash, whatsapp)
-        VALUES (%s, %s, %s, %s) RETURNING id
-    """, (d["nome"], d["email"], senha_hash, d.get("whatsapp") or None))
-    user_id = cur.fetchone()["id"]
-    if d.get("nivel"):
-        cur.execute("INSERT INTO admins (user_id, nivel) VALUES (%s, %s)", (user_id, d["nivel"]))
-    get_db().commit()
-    return jsonify({"ok": True})
-
-
-@app.route("/admin/usuarios/<int:user_id>/editar", methods=["GET", "POST"])
-@login_required
-def admin_usuario_editar(user_id):
-    usuario = query("SELECT * FROM usuarios WHERE id = %s", (user_id,), one=True)
-    if not usuario:
-        return jsonify({"erro": "Usuário não encontrado"}), 404
-    if request.method == "POST":
-        d = request.form
-        if d.get("senha"):
-            senha_hash = generate_password_hash(d["senha"])
-            query("UPDATE usuarios SET nome=%s, email=%s, senha_hash=%s, whatsapp=%s WHERE id=%s",
-                  (d["nome"], d["email"], senha_hash, d.get("whatsapp") or None, user_id), commit=True)
-        else:
-            query("UPDATE usuarios SET nome=%s, email=%s, whatsapp=%s WHERE id=%s",
-                  (d["nome"], d["email"], d.get("whatsapp") or None, user_id), commit=True)
-        query("DELETE FROM admins WHERE user_id = %s", (user_id,), commit=True)
-        if d.get("nivel"):
-            query("INSERT INTO admins (user_id, nivel) VALUES (%s, %s)", (user_id, d["nivel"]), commit=True)
-        return jsonify({"ok": True})
-    admin = query("SELECT * FROM admins WHERE user_id = %s", (user_id,), one=True)
-    data = dict(usuario)
-    data.pop("senha_hash", None)
-    data["admin_nivel"] = admin["nivel"] if admin else None
-    return jsonify(data)
-
-
-@app.route("/admin/usuarios/<int:user_id>/deletar", methods=["POST"])
-@login_required
-def admin_usuario_deletar(user_id):
-    query("DELETE FROM usuarios WHERE id = %s", (user_id,), commit=True)
-    return jsonify({"ok": True})
-
-
-# ════════════════════════════════════════════════════════════
-#  ADMIN — ASSINATURAS
-# ════════════════════════════════════════════════════════════
-
-@app.route("/admin/assinaturas")
-@login_required
-def admin_assinaturas():
-    assinaturas = query("""
-        SELECT a.*, u.nome as usuario_nome, u.email as usuario_email
-        FROM assinaturas a
-        JOIN usuarios u ON u.id = a.user_id
-        ORDER BY a.criado_em DESC
-    """)
-    return jsonify([dict(a) for a in assinaturas])
-
-
-@app.route("/admin/assinaturas/nova", methods=["POST"])
-@login_required
-def admin_assinatura_nova():
-    d = request.form
-    query("""
-        INSERT INTO assinaturas (user_id, plano, status, valido_ate, mp_sub_id)
-        VALUES (%s, %s, %s, %s, %s)
-    """, (
-        d["user_id"], d["plano"], d.get("status", "ativo"),
-        d.get("valido_ate") or None, d.get("mp_sub_id") or None
-    ), commit=True)
-    return jsonify({"ok": True})
-
-
-@app.route("/admin/assinaturas/<int:ass_id>/editar", methods=["GET", "POST"])
-@login_required
-def admin_assinatura_editar(ass_id):
-    ass = query("SELECT * FROM assinaturas WHERE id = %s", (ass_id,), one=True)
-    if not ass:
-        return jsonify({"erro": "Assinatura não encontrada"}), 404
-    if request.method == "POST":
-        d = request.form
-        query("""
-            UPDATE assinaturas SET user_id=%s, plano=%s, status=%s, valido_ate=%s, mp_sub_id=%s
-            WHERE id=%s
-        """, (
-            d["user_id"], d["plano"], d.get("status", "ativo"),
-            d.get("valido_ate") or None, d.get("mp_sub_id") or None, ass_id
-        ), commit=True)
-        return jsonify({"ok": True})
-    return jsonify(dict(ass))
-
-
-@app.route("/admin/assinaturas/<int:ass_id>/deletar", methods=["POST"])
-@login_required
-def admin_assinatura_deletar(ass_id):
-    query("DELETE FROM assinaturas WHERE id = %s", (ass_id,), commit=True)
-    return jsonify({"ok": True})
-
-
-# ════════════════════════════════════════════════════════════
-#  ADMIN — BLOG (CRUD completo)
-# ════════════════════════════════════════════════════════════
-
-@app.route("/admin/blog")
-@login_required
-def admin_blog():
-    posts = query("""
-        SELECT p.*,
-               array_agg(DISTINCT ph.hub_id) FILTER (WHERE ph.hub_id IS NOT NULL) as hub_ids,
-               array_agg(DISTINCT t.nome)    FILTER (WHERE t.id      IS NOT NULL) as tag_nomes
-        FROM blog_posts p
-        LEFT JOIN blog_post_hubs ph ON ph.post_id = p.id
-        LEFT JOIN blog_post_tags pt ON pt.post_id = p.id
-        LEFT JOIN blog_tags t ON t.id = pt.tag_id
-        GROUP BY p.id
-        ORDER BY p.criado_em DESC
-    """)
-    return jsonify([dict(p) for p in posts])
-
-
-@app.route("/admin/blog/novo", methods=["POST"])
-@login_required
-def admin_blog_novo():
-    d = request.form
-    cur = get_db().cursor()
-    cur.execute("""
-        INSERT INTO blog_posts
-            (titulo, slug, resumo, conteudo, capa_url, publicado, publicado_em)
-        VALUES (%s, %s, %s, %s, %s, %s, %s)
-        RETURNING id
-    """, (
-        d["titulo"], d["slug"],
-        d.get("resumo") or None,
-        d.get("conteudo") or None,
-        d.get("capa_url") or None,
-        "publicado" in d,
-        d.get("publicado_em") or None,
-    ))
-    post_id = cur.fetchone()["id"]
-
-    for hub_id in request.form.getlist("hubs"):
-        cur.execute("""
-            INSERT INTO blog_post_hubs (post_id, hub_id)
-            VALUES (%s, %s) ON CONFLICT DO NOTHING
-        """, (post_id, int(hub_id)))
-
-    for tag_slug in request.form.getlist("tags"):
-        tag_slug = tag_slug.strip().lower().replace(" ", "-")
-        if not tag_slug:
-            continue
-        cur.execute("""
-            INSERT INTO blog_tags (nome, slug)
-            VALUES (%s, %s)
-            ON CONFLICT (slug) DO UPDATE SET nome = EXCLUDED.nome
-            RETURNING id
-        """, (tag_slug.replace("-", " ").title(), tag_slug))
-        tag_id = cur.fetchone()["id"]
-        cur.execute("""
-            INSERT INTO blog_post_tags (post_id, tag_id)
-            VALUES (%s, %s) ON CONFLICT DO NOTHING
-        """, (post_id, tag_id))
-
-    get_db().commit()
-    return jsonify({"ok": True, "id": post_id})
-
-
-@app.route("/admin/blog/<int:post_id>/editar", methods=["GET", "POST"])
-@login_required
-def admin_blog_editar(post_id):
-    post = query("SELECT * FROM blog_posts WHERE id = %s", (post_id,), one=True)
-    if not post:
-        return jsonify({"erro": "Post não encontrado"}), 404
-
-    if request.method == "POST":
-        d = request.form
-        query("""
-            UPDATE blog_posts SET
-                titulo=%s, slug=%s, resumo=%s, conteudo=%s,
-                capa_url=%s, publicado=%s, publicado_em=%s
-            WHERE id=%s
-        """, (
-            d["titulo"], d["slug"],
-            d.get("resumo") or None,
-            d.get("conteudo") or None,
-            d.get("capa_url") or None,
-            "publicado" in d,
-            d.get("publicado_em") or None,
-            post_id,
-        ), commit=True)
-
-        query("DELETE FROM blog_post_hubs WHERE post_id = %s", (post_id,), commit=True)
-        for hub_id in request.form.getlist("hubs"):
-            query("""
-                INSERT INTO blog_post_hubs (post_id, hub_id)
-                VALUES (%s, %s) ON CONFLICT DO NOTHING
-            """, (post_id, int(hub_id)), commit=True)
-
-        query("DELETE FROM blog_post_tags WHERE post_id = %s", (post_id,), commit=True)
-        cur = get_db().cursor()
-        for tag_slug in request.form.getlist("tags"):
-            tag_slug = tag_slug.strip().lower().replace(" ", "-")
-            if not tag_slug:
-                continue
-            cur.execute("""
-                INSERT INTO blog_tags (nome, slug)
-                VALUES (%s, %s)
-                ON CONFLICT (slug) DO UPDATE SET nome = EXCLUDED.nome
-                RETURNING id
-            """, (tag_slug.replace("-", " ").title(), tag_slug))
-            tag_id = cur.fetchone()["id"]
-            cur.execute("""
-                INSERT INTO blog_post_tags (post_id, tag_id)
-                VALUES (%s, %s) ON CONFLICT DO NOTHING
-            """, (post_id, tag_id))
-        get_db().commit()
-        return jsonify({"ok": True})
-
-    hubs_do_post = [r["hub_id"] for r in query(
-        "SELECT hub_id FROM blog_post_hubs WHERE post_id = %s", (post_id,)
-    )]
-    tags_do_post = [r["slug"] for r in query("""
-        SELECT t.slug FROM blog_tags t
-        JOIN blog_post_tags pt ON pt.tag_id = t.id
-        WHERE pt.post_id = %s
-    """, (post_id,))]
-    data = dict(post)
-    data["hubs_do_post"] = hubs_do_post
-    data["tags_do_post"] = tags_do_post
-    return jsonify(data)
-
-
-@app.route("/admin/blog/<int:post_id>/deletar", methods=["POST"])
-@login_required
-def admin_blog_deletar(post_id):
-    query("DELETE FROM blog_post_tags WHERE post_id = %s", (post_id,), commit=True)
-    query("DELETE FROM blog_post_hubs WHERE post_id = %s", (post_id,), commit=True)
-    query("DELETE FROM blog_posts WHERE id = %s", (post_id,), commit=True)
-    return jsonify({"ok": True})
-
-
-@app.route("/admin/blog/tags")
-@login_required
-def admin_blog_tags():
-    tags = query("""
-        SELECT t.*, COUNT(pt.post_id) as total_posts
-        FROM blog_tags t
-        LEFT JOIN blog_post_tags pt ON pt.tag_id = t.id
-        GROUP BY t.id ORDER BY t.nome
-    """)
-    return jsonify([dict(t) for t in tags])
-
-
-@app.route("/admin/blog/tags/nova", methods=["POST"])
-@login_required
-def admin_blog_tag_nova():
-    d = request.form
-    query("""
-        INSERT INTO blog_tags (nome, slug)
-        VALUES (%s, %s) ON CONFLICT (slug) DO NOTHING
-    """, (d["nome"], d["slug"]), commit=True)
-    return jsonify({"ok": True})
-
-
-@app.route("/admin/blog/tags/<int:tag_id>/editar", methods=["GET", "POST"])
-@login_required
-def admin_blog_tag_editar(tag_id):
-    tag = query("SELECT * FROM blog_tags WHERE id = %s", (tag_id,), one=True)
-    if not tag:
-        return jsonify({"erro": "Tag não encontrada"}), 404
-    if request.method == "POST":
-        d = request.form
-        query("UPDATE blog_tags SET nome=%s, slug=%s WHERE id=%s",
-              (d["nome"], d["slug"], tag_id), commit=True)
-        return jsonify({"ok": True})
-    return jsonify(dict(tag))
-
-
-@app.route("/admin/blog/tags/<int:tag_id>/deletar", methods=["POST"])
-@login_required
-def admin_blog_tag_deletar(tag_id):
-    query("DELETE FROM blog_post_tags WHERE tag_id = %s", (tag_id,), commit=True)
-    query("DELETE FROM blog_tags WHERE id = %s", (tag_id,), commit=True)
-    return jsonify({"ok": True})
-
-
-# ════════════════════════════════════════════════════════════
-#  Admin — Anúncios
-# ════════════════════════════════════════════════════════════
-
-@app.route("/admin/anuncios")
-@login_required
-def admin_anuncios():
-    anuncios = query("""
-        SELECT a.*, h.nome as hub_nome
-        FROM anuncios a
-        LEFT JOIN hub_clientes h ON h.id = a.hub_id
-        ORDER BY a.id DESC
-    """)
-    return jsonify([dict(a) for a in anuncios])
-
-
-@app.route("/admin/anuncios/novo", methods=["POST"])
-@login_required
-def admin_anuncio_novo():
-    f = request.form
-    ativo = f.get("ativo") in ("on", "true", "1", True)
-    query("""
-        INSERT INTO anuncios (hub_id, titulo, foto_url, link, posicao,
-                              categoria_slug, cidade, bairro, data_inicio, data_fim, ativo)
-        VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
-    """, (
-        f.get("hub_id") or None,
-        f.get("titulo"),
-        f.get("foto_url"),
-        f.get("link"),
-        f.get("posicao", "topo"),
-        f.get("categoria_slug") or None,
-        f.get("cidade") or None,
-        f.get("bairro") or None,
-        f.get("data_inicio") or None,
-        f.get("data_fim") or None,
-        ativo,
-    ), commit=True)
-    return jsonify({"ok": True})
-
-
-@app.route("/admin/anuncios/<int:anuncio_id>/editar", methods=["GET", "POST"])
-@login_required
-def admin_anuncio_editar(anuncio_id):
-    if request.method == "GET":
-        row = query("SELECT * FROM anuncios WHERE id = %s", (anuncio_id,), one=True)
-        if not row:
-            return jsonify({"erro": "Não encontrado"}), 404
-        return jsonify(dict(row))
-    f = request.form
-    ativo = f.get("ativo") in ("on", "true", "1", True)
-    query("""
-        UPDATE anuncios SET
-            hub_id = %s, titulo = %s, foto_url = %s, link = %s, posicao = %s,
-            categoria_slug = %s, cidade = %s, bairro = %s,
-            data_inicio = %s, data_fim = %s, ativo = %s
-        WHERE id = %s
-    """, (
-        f.get("hub_id") or None,
-        f.get("titulo"),
-        f.get("foto_url"),
-        f.get("link"),
-        f.get("posicao", "topo"),
-        f.get("categoria_slug") or None,
-        f.get("cidade") or None,
-        f.get("bairro") or None,
-        f.get("data_inicio") or None,
-        f.get("data_fim") or None,
-        ativo,
-        anuncio_id,
-    ), commit=True)
-    return jsonify({"ok": True})
-
-
-@app.route("/admin/anuncios/<int:anuncio_id>/deletar", methods=["POST"])
-@login_required
-def admin_anuncio_deletar(anuncio_id):
-    query("DELETE FROM anuncios WHERE id = %s", (anuncio_id,), commit=True)
-    return jsonify({"ok": True})
-
-
-# ════════════════════════════════════════════════════════════
-#  API pública — JSON
-# ════════════════════════════════════════════════════════════
-
-@app.route("/api/hub/negocios")
-def api_negocios():
-    hub = get_hub_by_host()
-    if not hub:
-        return jsonify({"erro": "Hub não encontrado"}), 404
-    categoria = request.args.get("categoria")
-    bairro    = request.args.get("bairro")
-    cidade    = request.args.get("cidade")
-    try:
-        limit  = min(int(request.args.get("limit",  96)), 200)
-        offset = max(int(request.args.get("offset",  0)),   0)
-    except (ValueError, TypeError):
-        limit, offset = 96, 0
-    sql = """
-        SELECT n.*, c.nome as categoria_nome, c.slug as categoria_slug
-        FROM hub_negocios n
-        JOIN hub_negocio_hubs nh ON nh.negocio_id = n.id
-        JOIN hub_categorias c ON c.id = n.categoria_id
-        WHERE nh.hub_id = %s AND n.ativo = true
-    """
-    params = [hub["id"]]
-    if categoria:
-        sql += " AND c.slug = %s"
-        params.append(categoria)
-    if bairro:
-        sql += " AND LOWER(n.bairro) = LOWER(%s)"
-        params.append(bairro)
-    if cidade:
-        sql += " AND LOWER(TRIM(n.cidade)) = LOWER(%s)"
-        params.append(cidade)
-    sql += " ORDER BY n.nome LIMIT %s OFFSET %s"
-    params += [limit, offset]
-    negocios = query(sql, params)
-    return jsonify([dict(n) for n in negocios])
-
-
-@app.route("/api/hub/categorias")
-def api_categorias():
-    categorias = query("SELECT * FROM hub_categorias WHERE ativo = true ORDER BY nome")
-    return jsonify([dict(c) for c in categorias])
-
-
-@app.route("/api/hub/cidades")
-def api_cidades():
-    """Retorna todas as cidades com contagem de negócios — leve, sem trazer todos os negócios."""
-    hub = get_hub_by_host()
-    if not hub:
-        return jsonify({"erro": "Hub não encontrado"}), 404
-    cidades = query("""
-        SELECT n.cidade, COUNT(*) as total
-        FROM hub_negocios n
-        JOIN hub_negocio_hubs nh ON nh.negocio_id = n.id
-        WHERE nh.hub_id = %s AND n.ativo = true
-          AND n.cidade IS NOT NULL AND TRIM(n.cidade) != ''
-        GROUP BY n.cidade
-        ORDER BY total DESC, n.cidade
-    """, (hub["id"],))
-    return jsonify([dict(c) for c in cidades])
-
-
-@app.route("/api/hub/blog")
-def api_blog():
-    """Posts do hub atual, paginados. Aceita ?tag=slug&limit=12&offset=0"""
-    hub = get_hub_by_host()
-    if not hub:
-        return jsonify({"erro": "Hub não encontrado"}), 404
-    tag = request.args.get("tag", "").strip()
-    try:
-        limit  = min(int(request.args.get("limit",  12)), 50)
-        offset = max(int(request.args.get("offset",  0)),  0)
-    except (ValueError, TypeError):
-        limit, offset = 12, 0
-    sql = """
-        SELECT p.id, p.titulo, p.slug, p.resumo, p.capa_url, p.publicado_em,
-               array_agg(t.slug ORDER BY t.nome) FILTER (WHERE t.id IS NOT NULL) as tags
-        FROM blog_posts p
-        JOIN blog_post_hubs ph ON ph.post_id = p.id
-        LEFT JOIN blog_post_tags pt ON pt.post_id = p.id
-        LEFT JOIN blog_tags t ON t.id = pt.tag_id
-        WHERE ph.hub_id = %s AND p.publicado = true
-    """
-    params = [hub["id"]]
-    if tag:
-        sql += " AND EXISTS (SELECT 1 FROM blog_post_tags pt2 JOIN blog_tags t2 ON t2.id = pt2.tag_id WHERE pt2.post_id = p.id AND t2.slug = %s)"
-        params.append(tag)
-    sql += " GROUP BY p.id ORDER BY p.publicado_em DESC LIMIT %s OFFSET %s"
-    params += [limit, offset]
-    posts = query(sql, params)
-    return jsonify([dict(p) for p in posts])
-
-
-# ════════════════════════════════════════════════════════════
-
-if __name__ == "__main__":
-    app.run(debug=True, port=5000)
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Leanttro Hub — Admin</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --bg: #f5f4f1;
+  --surface: #ffffff;
+  --surface2: #f0ede8;
+  --border: #e2ddd6;
+  --border2: #d0cbc2;
+  --text: #1a1816;
+  --text2: #6b655d;
+  --text3: #9e9890;
+  --accent: #7943e2;
+  --accent-light: #ede8fb;
+  --accent-dark: #5c2ec2;
+  --green: #1a7f5a;
+  --green-light: #e4f5ee;
+  --red: #c0392b;
+  --red-light: #fcecea;
+  --amber: #b45309;
+  --amber-light: #fef3c7;
+  --sidebar-w: 220px;
+  --radius: 10px;
+  --radius-sm: 6px;
+  --shadow: 0 1px 3px rgba(0,0,0,0.06), 0 4px 16px rgba(0,0,0,0.04);
+  --shadow-md: 0 4px 24px rgba(0,0,0,0.08);
+  --font: 'DM Sans', sans-serif;
+  --mono: 'DM Mono', monospace;
+  --transition: 0.18s ease;
+}
+
+body {
+  font-family: var(--font);
+  background: var(--bg);
+  color: var(--text);
+  min-height: 100vh;
+  display: flex;
+  font-size: 14px;
+  line-height: 1.6;
+}
+
+/* ── Sidebar ── */
+#sidebar {
+  width: var(--sidebar-w);
+  background: var(--surface);
+  border-right: 1px solid var(--border);
+  display: flex;
+  flex-direction: column;
+  position: fixed;
+  top: 0; left: 0; bottom: 0;
+  z-index: 100;
+  transition: transform var(--transition);
+}
+
+.sidebar-logo {
+  padding: 22px 20px 18px;
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.logo-mark {
+  width: 32px; height: 32px;
+  background: var(--accent);
+  border-radius: 8px;
+  display: flex; align-items: center; justify-content: center;
+  color: #fff;
+  font-weight: 600;
+  font-size: 15px;
+  flex-shrink: 0;
+  letter-spacing: -0.5px;
+}
+
+.logo-text {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text);
+  letter-spacing: -0.2px;
+  line-height: 1.2;
+}
+.logo-text span {
+  display: block;
+  font-size: 11px;
+  font-weight: 400;
+  color: var(--text3);
+  letter-spacing: 0;
+}
+
+.sidebar-nav {
+  flex: 1;
+  padding: 12px 10px;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.nav-section {
+  font-size: 10px;
+  font-weight: 600;
+  color: var(--text3);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  padding: 10px 10px 4px;
+  margin-top: 4px;
+}
+
+.nav-item {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  padding: 8px 10px;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  color: var(--text2);
+  font-size: 13.5px;
+  font-weight: 400;
+  transition: background var(--transition), color var(--transition);
+  border: none;
+  background: none;
+  width: 100%;
+  text-align: left;
+  text-decoration: none;
+}
+.nav-item:hover { background: var(--surface2); color: var(--text); }
+.nav-item.active { background: var(--accent-light); color: var(--accent); font-weight: 500; }
+.nav-item .nav-icon {
+  width: 18px; height: 18px;
+  flex-shrink: 0;
+  opacity: 0.7;
+}
+.nav-item.active .nav-icon { opacity: 1; }
+
+.sidebar-footer {
+  padding: 14px 10px;
+  border-top: 1px solid var(--border);
+}
+
+.user-chip {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  padding: 8px 10px;
+  border-radius: var(--radius-sm);
+  background: var(--surface2);
+}
+.user-avatar {
+  width: 28px; height: 28px;
+  background: var(--accent);
+  border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  color: #fff;
+  font-size: 12px;
+  font-weight: 600;
+  flex-shrink: 0;
+}
+.user-info { flex: 1; min-width: 0; }
+.user-name { font-size: 12.5px; font-weight: 500; color: var(--text); line-height: 1.3; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.user-role { font-size: 11px; color: var(--text3); }
+
+.logout-btn {
+  background: none; border: none; cursor: pointer;
+  color: var(--text3); padding: 2px;
+  display: flex; align-items: center;
+  transition: color var(--transition);
+}
+.logout-btn:hover { color: var(--red); }
+
+/* ── Main ── */
+#main {
+  margin-left: var(--sidebar-w);
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+}
+
+.topbar {
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
+  padding: 0 28px;
+  height: 56px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  position: sticky;
+  top: 0;
+  z-index: 50;
+}
+
+.topbar-title {
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--text);
+  letter-spacing: -0.2px;
+}
+
+.topbar-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+/* ── Content ── */
+.content {
+  padding: 28px;
+  flex: 1;
+}
+
+/* ── Sections ── */
+.section { display: none; animation: fadeIn 0.18s ease; }
+.section.active { display: block; }
+@keyframes fadeIn { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
+
+/* ── Cards ── */
+.card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+}
+
+.card-header {
+  padding: 16px 20px;
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.card-title {
+  font-size: 13.5px;
+  font-weight: 600;
+  color: var(--text);
+  letter-spacing: -0.1px;
+}
+
+.card-body { padding: 20px; }
+
+/* ── Dashboard ── */
+.stats-grid {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 16px;
+  margin-bottom: 24px;
+}
+
+.stat-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 20px;
+  box-shadow: var(--shadow);
+}
+
+.stat-label {
+  font-size: 11.5px;
+  font-weight: 500;
+  color: var(--text3);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  margin-bottom: 8px;
+}
+
+.stat-value {
+  font-size: 28px;
+  font-weight: 600;
+  color: var(--text);
+  letter-spacing: -1px;
+  line-height: 1;
+  font-family: var(--mono);
+}
+
+.stat-icon {
+  width: 36px; height: 36px;
+  border-radius: 8px;
+  display: flex; align-items: center; justify-content: center;
+  margin-bottom: 12px;
+}
+.stat-icon svg { width: 18px; height: 18px; }
+.stat-icon.purple { background: var(--accent-light); color: var(--accent); }
+.stat-icon.green { background: var(--green-light); color: var(--green); }
+.stat-icon.amber { background: var(--amber-light); color: var(--amber); }
+.stat-icon.blue { background: #e8f4ff; color: #1a6fa8; }
+
+/* ── Buttons ── */
+.btn {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 7px 14px;
+  border-radius: var(--radius-sm);
+  font-family: var(--font);
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  border: 1px solid transparent;
+  transition: all var(--transition);
+  text-decoration: none;
+  line-height: 1.4;
+  white-space: nowrap;
+}
+.btn svg { width: 15px; height: 15px; flex-shrink: 0; }
+.btn-primary { background: var(--accent); color: #fff; border-color: var(--accent); }
+.btn-primary:hover { background: var(--accent-dark); border-color: var(--accent-dark); }
+.btn-secondary { background: var(--surface); color: var(--text2); border-color: var(--border2); }
+.btn-secondary:hover { background: var(--surface2); color: var(--text); }
+.btn-danger { background: var(--red-light); color: var(--red); border-color: #f5c6c2; }
+.btn-danger:hover { background: #f9d7d4; }
+.btn-sm { padding: 5px 10px; font-size: 12px; }
+
+/* ── Filters ── */
+.filter-bar {
+  display: flex; align-items: center; gap: 8px; flex-wrap: wrap;
+}
+.filter-select {
+  padding: 7px 12px;
+  border: 1px solid var(--border2);
+  border-radius: var(--radius-sm);
+  background: var(--surface);
+  color: var(--text);
+  font-family: var(--font);
+  font-size: 13px;
+  cursor: pointer;
+  outline: none;
+  transition: border-color var(--transition);
+}
+.filter-select:focus { border-color: var(--accent); }
+
+/* ── Bulk bar ── */
+.bulk-bar {
+  display: none;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 20px;
+  background: var(--accent-light);
+  border-bottom: 1px solid var(--accent);
+  font-size: 13px;
+  color: var(--accent);
+  font-weight: 500;
+}
+.bulk-bar.visible { display: flex; }
+
+/* ── Hub picker (bulk) ── */
+.hub-picker-overlay {
+  position: fixed; inset: 0;
+  background: rgba(26,24,22,0.4);
+  backdrop-filter: blur(2px);
+  z-index: 300;
+  display: none; align-items: center; justify-content: center;
+}
+.hub-picker-overlay.open { display: flex; }
+.hub-picker {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow-md);
+  padding: 24px;
+  width: 360px; max-width: 95vw;
+}
+.hub-picker h4 { font-size: 14px; font-weight: 600; margin-bottom: 14px; color: var(--text); }
+.hub-picker select {
+  width: 100%; padding: 9px 12px;
+  border: 1px solid var(--border2); border-radius: var(--radius-sm);
+  background: var(--surface); color: var(--text);
+  font-family: var(--font); font-size: 13.5px; outline: none; margin-bottom: 14px;
+}
+.hub-picker select:focus { border-color: var(--accent); }
+.hub-picker-actions { display: flex; gap: 8px; justify-content: flex-end; }
+
+/* ── Table ── */
+.table-wrap { overflow-x: auto; }
+table { width: 100%; border-collapse: collapse; }
+thead th {
+  font-size: 11px; font-weight: 600; color: var(--text3);
+  text-transform: uppercase; letter-spacing: 0.06em;
+  padding: 10px 16px;
+  background: var(--surface2);
+  text-align: left;
+  white-space: nowrap;
+}
+thead th:first-child { border-radius: 8px 0 0 8px; }
+thead th:last-child { border-radius: 0 8px 8px 0; }
+tbody tr {
+  border-bottom: 1px solid var(--border);
+  transition: background var(--transition);
+}
+tbody tr:last-child { border-bottom: none; }
+tbody tr:hover { background: var(--surface2); }
+tbody td {
+  padding: 12px 16px;
+  font-size: 13.5px;
+  color: var(--text);
+  vertical-align: middle;
+}
+.td-muted { color: var(--text3); font-size: 12.5px; }
+.td-mono { font-family: var(--mono); font-size: 12px; color: var(--text2); }
+
+/* ── Badges ── */
+.badge {
+  display: inline-flex; align-items: center;
+  padding: 2px 8px;
+  border-radius: 20px;
+  font-size: 11.5px;
+  font-weight: 500;
+  line-height: 1.6;
+}
+.badge-green { background: var(--green-light); color: var(--green); }
+.badge-red { background: var(--red-light); color: var(--red); }
+.badge-amber { background: var(--amber-light); color: var(--amber); }
+.badge-purple { background: var(--accent-light); color: var(--accent); }
+.badge-gray { background: var(--surface2); color: var(--text2); }
+
+/* ── Forms ── */
+.form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+.form-grid.cols-3 { grid-template-columns: 1fr 1fr 1fr; }
+.form-full { grid-column: 1 / -1; }
+
+.field { display: flex; flex-direction: column; gap: 5px; }
+.field label {
+  font-size: 12px; font-weight: 500; color: var(--text2);
+  letter-spacing: 0.01em;
+}
+.field input, .field select, .field textarea {
+  padding: 8px 12px;
+  border: 1px solid var(--border2);
+  border-radius: var(--radius-sm);
+  background: var(--surface);
+  color: var(--text);
+  font-family: var(--font);
+  font-size: 13.5px;
+  transition: border-color var(--transition), box-shadow var(--transition);
+  outline: none;
+  width: 100%;
+}
+.field input:focus, .field select:focus, .field textarea:focus {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px rgba(121,67,226,0.1);
+}
+.field textarea { resize: vertical; min-height: 80px; }
+.field input[type="color"] { padding: 4px 6px; height: 38px; cursor: pointer; }
+
+.checkbox-group { display: flex; flex-wrap: wrap; gap: 10px; }
+.checkbox-label {
+  display: flex; align-items: center; gap: 7px;
+  font-size: 13px; cursor: pointer;
+  padding: 6px 10px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  transition: all var(--transition);
+  background: var(--surface);
+}
+.checkbox-label:hover { border-color: var(--accent); background: var(--accent-light); }
+.checkbox-label input { width: 14px; height: 14px; accent-color: var(--accent); }
+.checkbox-label.checked { border-color: var(--accent); background: var(--accent-light); color: var(--accent); }
+
+.form-actions {
+  display: flex; gap: 10px; justify-content: flex-end;
+  padding-top: 16px;
+  border-top: 1px solid var(--border);
+  margin-top: 20px;
+}
+
+/* ── Modal / Drawer ── */
+.modal-overlay {
+  position: fixed; inset: 0;
+  background: rgba(26,24,22,0.35);
+  backdrop-filter: blur(2px);
+  z-index: 200;
+  display: none;
+  align-items: flex-start;
+  justify-content: flex-end;
+}
+.modal-overlay.open { display: flex; }
+
+.drawer {
+  background: var(--surface);
+  width: 520px;
+  max-width: 95vw;
+  height: 100vh;
+  overflow-y: auto;
+  box-shadow: var(--shadow-md);
+  animation: slideIn 0.22s ease;
+}
+@keyframes slideIn { from { transform: translateX(100%); } to { transform: translateX(0); } }
+
+.drawer-header {
+  padding: 20px 24px 16px;
+  border-bottom: 1px solid var(--border);
+  display: flex; align-items: center; justify-content: space-between;
+  position: sticky; top: 0; background: var(--surface); z-index: 10;
+}
+.drawer-title { font-size: 15px; font-weight: 600; letter-spacing: -0.2px; }
+.drawer-close {
+  background: none; border: none; cursor: pointer;
+  color: var(--text3); padding: 4px;
+  border-radius: 4px;
+  transition: color var(--transition), background var(--transition);
+  display: flex; align-items: center;
+}
+.drawer-close:hover { color: var(--text); background: var(--surface2); }
+.drawer-body { padding: 24px; }
+
+/* ── Toast ── */
+.toast-wrap {
+  position: fixed; bottom: 24px; right: 24px;
+  z-index: 999;
+  display: flex; flex-direction: column; gap: 8px;
+}
+.toast {
+  padding: 12px 16px;
+  border-radius: var(--radius-sm);
+  font-size: 13.5px;
+  font-weight: 500;
+  background: var(--text);
+  color: #fff;
+  box-shadow: var(--shadow-md);
+  animation: toastIn 0.2s ease;
+  display: flex; align-items: center; gap: 8px;
+}
+.toast.success { background: var(--green); }
+.toast.error { background: var(--red); }
+@keyframes toastIn { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: translateY(0); } }
+
+/* ── Search bar ── */
+.search-bar {
+  display: flex; align-items: center; gap: 8px;
+  padding: 7px 12px;
+  border: 1px solid var(--border2);
+  border-radius: var(--radius-sm);
+  background: var(--surface);
+  transition: border-color var(--transition);
+}
+.search-bar:focus-within { border-color: var(--accent); }
+.search-bar svg { width: 15px; height: 15px; color: var(--text3); flex-shrink: 0; }
+.search-bar input {
+  border: none; outline: none; background: none;
+  font-family: var(--font); font-size: 13px; color: var(--text);
+  width: 200px;
+}
+
+/* ── Empty state ── */
+.empty-state {
+  text-align: center;
+  padding: 60px 20px;
+  color: var(--text3);
+}
+.empty-state svg { width: 40px; height: 40px; margin-bottom: 12px; opacity: 0.4; }
+.empty-state p { font-size: 13.5px; }
+
+/* ── Loading ── */
+.loading {
+  display: flex; align-items: center; justify-content: center;
+  padding: 60px;
+  color: var(--text3);
+  font-size: 13px;
+}
+.spinner {
+  width: 20px; height: 20px;
+  border: 2px solid var(--border2);
+  border-top-color: var(--accent);
+  border-radius: 50%;
+  animation: spin 0.7s linear infinite;
+  margin-right: 10px;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* ── Responsive ── */
+@media (max-width: 900px) {
+  :root { --sidebar-w: 0px; }
+  #sidebar { transform: translateX(-220px); width: 220px; }
+  #sidebar.open { transform: translateX(0); }
+  .stats-grid { grid-template-columns: repeat(2, 1fr); }
+  .form-grid { grid-template-columns: 1fr; }
+  .form-grid.cols-3 { grid-template-columns: 1fr; }
+}
+</style>
+</head>
+<body>
+
+<!-- Sidebar -->
+<aside id="sidebar">
+  <div class="sidebar-logo">
+    <div class="logo-mark">L</div>
+    <div class="logo-text">
+      Leanttro Hub
+      <span>Painel Admin</span>
+    </div>
+  </div>
+
+  <nav class="sidebar-nav">
+    <button class="nav-item active" data-section="dashboard">
+      <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
+      Dashboard
+    </button>
+
+    <div class="nav-section">Gestão</div>
+
+    <button class="nav-item" data-section="hubs">
+      <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M12 1v4M12 19v4M4.22 4.22l2.83 2.83M16.95 16.95l2.83 2.83M1 12h4M19 12h4M4.22 19.78l2.83-2.83M16.95 7.05l2.83-2.83"/></svg>
+      Hubs
+    </button>
+
+    <button class="nav-item" data-section="negocios">
+      <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+      Negócios
+    </button>
+
+    <button class="nav-item" data-section="categorias">
+      <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 6h16M4 10h16M4 14h16M4 18h16"/></svg>
+      Categorias
+    </button>
+
+    <div class="nav-section">Contas</div>
+
+    <button class="nav-item" data-section="usuarios">
+      <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87M16 3.13a4 4 0 010 7.75"/></svg>
+      Usuários
+    </button>
+
+    <button class="nav-item" data-section="assinaturas">
+      <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="5" width="20" height="14" rx="2"/><path d="M2 10h20"/></svg>
+      Assinaturas
+    </button>
+
+    <div class="nav-section">Blog</div>
+
+    <button class="nav-item" data-section="blog">
+      <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><line x1="10" y1="9" x2="8" y2="9"/></svg>
+      Posts
+    </button>
+
+    <button class="nav-item" data-section="blog-tags">
+      <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M20.59 13.41l-7.17 7.17a2 2 0 01-2.83 0L2 12V2h10l8.59 8.59a2 2 0 010 2.82z"/><line x1="7" y1="7" x2="7.01" y2="7"/></svg>
+      Tags
+    </button>
+
+    <div class="nav-section">Monetização</div>
+    <button class="nav-item" data-section="anuncios">
+      <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="3" width="20" height="14" rx="2" ry="2"/><line x1="2" y1="17" x2="22" y2="17"/><line x1="6" y1="20" x2="6" y2="23"/><line x1="10" y1="20" x2="10" y2="23"/><line x1="14" y1="20" x2="14" y2="23"/><line x1="18" y1="20" x2="18" y2="23"/></svg>
+      Anúncios
+    </button>
+  </nav>
+
+  <div class="sidebar-footer">
+    <div class="user-chip">
+      <div class="user-avatar" id="userAvatar">A</div>
+      <div class="user-info">
+        <div class="user-name" id="userName">{{ session.admin_nome }}</div>
+        <div class="user-role" id="userRole">{{ session.admin_nivel }}</div>
+      </div>
+      <a href="/admin/logout" class="logout-btn" title="Sair">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+      </a>
+    </div>
+  </div>
+</aside>
+
+<!-- Main -->
+<div id="main">
+  <header class="topbar">
+    <span class="topbar-title" id="topbarTitle">Dashboard</span>
+    <div class="topbar-actions" id="topbarActions"></div>
+  </header>
+
+  <main class="content">
+
+    <!-- ═══ DASHBOARD ═══ -->
+    <section class="section active" id="sec-dashboard">
+      <div class="stats-grid" id="statsGrid">
+        <div class="stat-card">
+          <div class="stat-icon purple">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="3"/><path d="M12 1v4M12 19v4M4.22 4.22l2.83 2.83M16.95 16.95l2.83 2.83M1 12h4M19 12h4"/></svg>
+          </div>
+          <div class="stat-label">Hubs ativos</div>
+          <div class="stat-value" id="stat-hubs">{{ total_hubs }}</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-icon green">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+          </div>
+          <div class="stat-label">Negócios</div>
+          <div class="stat-value" id="stat-negocios">{{ total_negocios }}</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-icon amber">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 6h16M4 10h16M4 14h16M4 18h16"/></svg>
+          </div>
+          <div class="stat-label">Categorias</div>
+          <div class="stat-value" id="stat-categorias">{{ total_categorias }}</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-icon blue">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/></svg>
+          </div>
+          <div class="stat-label">Usuários</div>
+          <div class="stat-value" id="stat-usuarios">{{ total_usuarios }}</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-icon" style="background:#e8f4ff;color:#1a6fa8;">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><line x1="10" y1="9" x2="8" y2="9"/></svg>
+          </div>
+          <div class="stat-label">Posts do blog</div>
+          <div class="stat-value" id="stat-posts">{{ total_posts }}</div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-header">
+          <span class="card-title">Hubs recentes</span>
+          <button class="btn btn-secondary btn-sm" onclick="navigate('hubs')">Ver todos</button>
+        </div>
+        <div class="table-wrap">
+          <table id="dashHubsTable">
+            <thead><tr><th>Nome</th><th>Subdomínio</th><th>Tipo</th><th>Negócios</th><th>Status</th></tr></thead>
+            <tbody id="dashHubsBody"><tr><td colspan="5"><div class="loading"><div class="spinner"></div>Carregando...</div></td></tr></tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <!-- ═══ HUBS ═══ -->
+    <section class="section" id="sec-hubs">
+      <div class="card">
+        <div class="card-header">
+          <span class="card-title">Hub clientes</span>
+          <div style="display:flex;gap:8px;align-items:center;">
+            <div class="search-bar">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+              <input type="text" placeholder="Buscar hub..." id="searchHubs" oninput="filterTable('hubsBody', this.value)">
+            </div>
+            <button class="btn btn-primary" onclick="openDrawer('hub')">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+              Novo hub
+            </button>
+          </div>
+        </div>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>Nome</th><th>Subdomínio / Domínio</th><th>Tipo</th><th>Dono</th><th>Negócios</th><th>Status</th><th>Ações</th></tr></thead>
+            <tbody id="hubsBody"><tr><td colspan="7"><div class="loading"><div class="spinner"></div>Carregando...</div></td></tr></tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <!-- ═══ NEGÓCIOS ═══ -->
+    <section class="section" id="sec-negocios">
+      <div class="card">
+        <div class="card-header">
+          <span class="card-title">Negócios</span>
+          <div class="filter-bar">
+            <div class="search-bar">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+              <input type="text" placeholder="Buscar negócio..." id="searchNegocios" oninput="onNegociosFilterChange()">
+            </div>
+            <select class="filter-select" id="filterCategoria" onchange="onNegociosFilterChange()">
+              <option value="">Todas as categorias</option>
+            </select>
+            <select class="filter-select" id="filterBairro" onchange="onNegociosFilterChange()">
+              <option value="">Todos os bairros</option>
+            </select>
+            <select class="filter-select" id="filterStatusNegocio" onchange="onNegociosFilterChange()">
+              <option value="">Ativos e inativos</option>
+              <option value="ativo">Somente ativos</option>
+              <option value="inativo">Somente inativos</option>
+            </select>
+            <select class="filter-select" id="limitNegocios" onchange="onNegociosFilterChange()" title="Itens por página">
+              <option value="50">50 por página</option>
+              <option value="100">100 por página</option>
+              <option value="200">200 por página</option>
+              <option value="500">500 por página</option>
+            </select>
+            <button class="btn btn-primary" onclick="openDrawer('negocio')">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+              Novo negócio
+            </button>
+          </div>
+        </div>
+        <div style="padding: 6px 16px; font-size: 12px; color: var(--text3);" id="negociosTotalInfo"></div>
+        <div class="bulk-bar" id="negociosBulkBar">
+          <span id="negociosBulkCount">0 selecionados</span>
+          <button class="btn btn-secondary btn-sm" onclick="bulkNegocio('ativar')">Ativar</button>
+          <button class="btn btn-secondary btn-sm" onclick="bulkNegocio('desativar')">Desativar</button>
+          <button class="btn btn-secondary btn-sm" onclick="openHubPicker('vincular')">+ Vincular ao Hub</button>
+          <button class="btn btn-secondary btn-sm" onclick="openHubPicker('desvincular')">− Desvincular do Hub</button>
+          <button class="btn btn-secondary btn-sm" onclick="openCategoriaPicker()">↷ Mudar categoria</button>
+          <button class="btn btn-danger btn-sm" onclick="bulkNegocio('excluir')">Excluir</button>
+        </div>
+        <div class="table-wrap">
+          <table>
+            <thead><tr>
+              <th style="width:36px;"><input type="checkbox" id="selectAllNegocios" onchange="toggleSelectAllNegocios(this.checked)" title="Selecionar todos visíveis"></th>
+              <th>Nome</th><th>Slug</th><th>Categoria</th><th>Bairro</th><th>Visualizações</th><th>Status</th><th>Ações</th>
+            </tr></thead>
+            <tbody id="negociosBody"><tr><td colspan="8"><div class="loading"><div class="spinner"></div>Carregando...</div></td></tr></tbody>
+          </table>
+          <div class="pagination-bar" id="negociosPaginacao" style="display:flex; align-items:center; justify-content:space-between; gap:10px; padding:10px 16px; border-top:1px solid var(--border);">
+            <button class="btn btn-secondary btn-sm" id="negociosPrevBtn" onclick="negociosMudarPagina(-1)">← Anterior</button>
+            <span id="negociosPaginaInfo" style="font-size:12px; color: var(--text2);"></span>
+            <button class="btn btn-secondary btn-sm" id="negociosNextBtn" onclick="negociosMudarPagina(1)">Próxima →</button>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ═══ CATEGORIAS ═══ -->
+    <section class="section" id="sec-categorias">
+      <div class="card">
+        <div class="card-header">
+          <span class="card-title">Categorias</span>
+          <button class="btn btn-primary" onclick="openDrawer('categoria')">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+            Nova categoria
+          </button>
+        </div>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>Nome</th><th>Slug</th><th>Ícone</th><th>Status</th><th>Ações</th></tr></thead>
+            <tbody id="categoriasBody"><tr><td colspan="5"><div class="loading"><div class="spinner"></div>Carregando...</div></td></tr></tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <!-- ═══ USUÁRIOS ═══ -->
+    <section class="section" id="sec-usuarios">
+      <div class="card">
+        <div class="card-header">
+          <span class="card-title">Usuários</span>
+          <button class="btn btn-primary" onclick="openDrawer('usuario')">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+            Novo usuário
+          </button>
+        </div>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>Nome</th><th>E-mail</th><th>WhatsApp</th><th>Nível admin</th><th>Criado em</th><th>Ações</th></tr></thead>
+            <tbody id="usuariosBody"><tr><td colspan="6"><div class="loading"><div class="spinner"></div>Carregando...</div></td></tr></tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <!-- ═══ ASSINATURAS ═══ -->
+    <section class="section" id="sec-assinaturas">
+      <div class="card">
+        <div class="card-header">
+          <span class="card-title">Assinaturas</span>
+          <button class="btn btn-primary" onclick="openDrawer('assinatura')">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+            Nova assinatura
+          </button>
+        </div>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>Usuário</th><th>Plano</th><th>Status</th><th>Válido até</th><th>MP Sub ID</th><th>Criado em</th><th>Ações</th></tr></thead>
+            <tbody id="assinaturasBody"><tr><td colspan="7"><div class="loading"><div class="spinner"></div>Carregando...</div></td></tr></tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <!-- ═══ BLOG — POSTS ═══ -->
+    <section class="section" id="sec-blog">
+      <div class="card">
+        <div class="card-header">
+          <span class="card-title">Posts do blog</span>
+          <div style="display:flex;gap:8px;align-items:center;">
+            <div class="search-bar">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+              <input type="text" placeholder="Buscar post..." id="searchBlog" oninput="filterTable('blogBody', this.value)">
+            </div>
+            <button class="btn btn-primary" onclick="openDrawer('blog')">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+              Novo post
+            </button>
+          </div>
+        </div>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>Título</th><th>Slug</th><th>Tags</th><th>Hubs</th><th>Publicado</th><th>Status</th><th>Visualizações</th><th>Ações</th></tr></thead>
+            <tbody id="blogBody"><tr><td colspan="8"><div class="loading"><div class="spinner"></div>Carregando...</div></td></tr></tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <!-- ═══ BLOG — TAGS ═══ -->
+    <section class="section" id="sec-blog-tags">
+      <div class="card">
+        <div class="card-header">
+          <span class="card-title">Tags do blog</span>
+          <button class="btn btn-primary" onclick="openDrawer('blog-tag')">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+            Nova tag
+          </button>
+        </div>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>Nome</th><th>Slug</th><th>Posts</th><th>Ações</th></tr></thead>
+            <tbody id="blogTagsBody"><tr><td colspan="4"><div class="loading"><div class="spinner"></div>Carregando...</div></td></tr></tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <!-- ═══ ANÚNCIOS ═══ -->
+    <section class="section" id="sec-anuncios">
+      <div class="card">
+        <div class="card-header">
+          <span class="card-title">Anúncios Pagos</span>
+          <div style="display:flex;gap:8px;align-items:center;">
+            <div class="search-bar">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+              <input type="text" placeholder="Buscar anúncio..." id="searchAnuncios" oninput="filterTable('anunciosBody', this.value)">
+            </div>
+            <button class="btn btn-primary" onclick="openDrawer('anuncio')">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+              Novo anúncio
+            </button>
+          </div>
+        </div>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>Título</th><th>Hub</th><th>Posição</th><th>Segmentação</th><th>Vigência</th><th>Status</th><th>Ações</th></tr></thead>
+            <tbody id="anunciosBody"><tr><td colspan="7"><div class="loading"><div class="spinner"></div>Carregando...</div></td></tr></tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+  </main>
+</div>
+
+<!-- ═══ MODAL / DRAWER ═══ -->
+<div class="modal-overlay" id="modalOverlay" onclick="closeDrawerOnOverlay(event)">
+  <div class="drawer" id="drawer">
+    <div class="drawer-header">
+      <span class="drawer-title" id="drawerTitle">Novo registro</span>
+      <button class="drawer-close" onclick="closeDrawer()">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      </button>
+    </div>
+    <div class="drawer-body" id="drawerBody"></div>
+  </div>
+</div>
+
+<!-- Toast container -->
+<div class="toast-wrap" id="toastWrap"></div>
+
+<!-- Hub picker modal (bulk) -->
+<div class="hub-picker-overlay" id="hubPickerOverlay">
+  <div class="hub-picker">
+    <h4 id="hubPickerTitle">Vincular ao Hub</h4>
+    <select id="hubPickerSelect">
+      <option value="">— Selecione um hub —</option>
+    </select>
+    <div class="hub-picker-actions">
+      <button class="btn btn-secondary btn-sm" onclick="closeHubPicker()">Cancelar</button>
+      <button class="btn btn-primary btn-sm" onclick="confirmHubPicker()">Confirmar</button>
+    </div>
+  </div>
+</div>
+
+<!-- Categoria picker modal (bulk) -->
+<div class="hub-picker-overlay" id="categoriaPickerOverlay">
+  <div class="hub-picker">
+    <h4>Mudar categoria</h4>
+    <select id="categoriaPickerSelect">
+      <option value="">— Selecione uma categoria —</option>
+    </select>
+    <div class="hub-picker-actions">
+      <button class="btn btn-secondary btn-sm" onclick="closeCategoriaPicker()">Cancelar</button>
+      <button class="btn btn-primary btn-sm" onclick="confirmCategoriaPicker()">Confirmar</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ── State ────────────────────────────────────────────────────
+const state = {
+  section: 'dashboard',
+  loaded: new Set(),
+  data: { hubs: [], negocios: [], categorias: [], usuarios: [], assinaturas: [], blog: [], 'blog-tags': [], anuncios: [] },
+  editId: null,
+  editType: null,
+  negocios: { q: '', categoria_id: '', bairro: '', status: '', limit: 50, offset: 0, total: 0, filtrosCarregados: false },
+};
+
+function debounce(fn, ms) {
+  let t;
+  return function(...args) { clearTimeout(t); t = setTimeout(() => fn.apply(this, args), ms); };
+}
+
+// ── Navigation ───────────────────────────────────────────────
+function navigate(section) {
+  document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
+  document.querySelector(`[data-section="${section}"]`).classList.add('active');
+  document.querySelectorAll('.section').forEach(el => el.classList.remove('active'));
+  document.getElementById(`sec-${section}`).classList.add('active');
+  document.getElementById('topbarTitle').textContent = {
+    dashboard: 'Dashboard', hubs: 'Hub clientes', negocios: 'Negócios',
+    categorias: 'Categorias', usuarios: 'Usuários', assinaturas: 'Assinaturas',
+    blog: 'Posts do blog', 'blog-tags': 'Tags do blog', anuncios: 'Anúncios'
+  }[section];
+  state.section = section;
+  if (!state.loaded.has(section)) loadSection(section);
+}
+
+document.querySelectorAll('.nav-item').forEach(btn => {
+  btn.addEventListener('click', () => navigate(btn.dataset.section));
+});
+
+// ── Avatar inicial ───────────────────────────────────────────
+const nm = document.getElementById('userName').textContent.trim();
+if (nm && nm !== '{{ session.admin_nome }}') {
+  document.getElementById('userAvatar').textContent = nm.charAt(0).toUpperCase();
+}
+
+// ── Load sections ────────────────────────────────────────────
+async function loadSection(section) {
+  state.loaded.add(section);
+  if (section === 'dashboard') { await loadDashboard(); return; }
+  if (section === 'negocios') { await initNegociosSection(); return; }
+  await loadData(section);
+}
+
+async function loadDashboard() {
+  await loadData('hubs');
+  renderDashHubs();
+}
+
+async function loadData(section) {
+  const endpoints = {
+    hubs:        '/admin/hubs',
+    negocios:    '/admin/negocios',
+    categorias:  '/admin/categorias',
+    usuarios:    '/admin/usuarios',
+    assinaturas: '/admin/assinaturas',
+    blog:        '/admin/blog',
+    'blog-tags': '/admin/blog/tags',
+    anuncios:    '/admin/anuncios',
+  };
+  try {
+    const r = await fetch(endpoints[section], { headers: { 'X-Requested-With': 'XMLHttpRequest' } });
+    const data = await r.json();
+    state.data[section] = data;
+    render(section);
+  } catch(e) {
+    console.error(e);
+    showToast('Erro ao carregar dados', 'error');
+  }
+}
+
+
+
+// ── Render tables ────────────────────────────────────────────
+function render(section) {
+  const data = state.data[section];
+  if (section === 'hubs') renderHubs(data);
+  else if (section === 'negocios') renderNegocios(data);
+  else if (section === 'categorias') renderCategorias(data);
+  else if (section === 'usuarios') renderUsuarios(data);
+  else if (section === 'assinaturas') renderAssinaturas(data);
+  else if (section === 'blog') renderBlog(data);
+  else if (section === 'blog-tags') renderBlogTags(data);
+  else if (section === 'anuncios') renderAnuncios(data);
+}
+
+function renderDashHubs() {
+  const tbody = document.getElementById('dashHubsBody');
+  const data = state.data.hubs.slice(0, 6);
+  if (!data.length) { tbody.innerHTML = '<tr><td colspan="5"><div class="empty-state"><p>Nenhum hub encontrado</p></div></td></tr>'; return; }
+  tbody.innerHTML = data.map(h => `
+    <tr>
+      <td><strong>${esc(h.nome)}</strong></td>
+      <td class="td-mono">${esc(h.hub_leanttro) || '—'}</td>
+      <td>${badgeTipo(h.tipo)}</td>
+      <td>${esc(h.total_negocios) || '0'}</td>
+      <td>${badgeAtivo(h.ativo)}</td>
+    </tr>
+  `).join('');
+}
+
+function renderHubs(data) {
+  const tbody = document.getElementById('hubsBody');
+  if (!data.length) { tbody.innerHTML = emptyRow(7); return; }
+  tbody.innerHTML = data.map(h => `
+    <tr data-search="${esc(h.nome).toLowerCase()}">
+      <td><strong>${esc(h.nome)}</strong></td>
+      <td class="td-mono">${esc(h.hub_leanttro) || '—'}</td>
+      <td>${badgeTipo(h.tipo)}</td>
+      <td class="td-muted">${esc(h.usuario_nome) || '—'}</td>
+      <td>${esc(h.total_negocios) || '0'}</td>
+      <td>${badgeAtivo(h.ativo)}</td>
+      <td>${actionBtns('hub', h.id)}</td>
+    </tr>
+  `).join('');
+}
+
+// ── Negócios: carregamento server-side (busca/filtros/paginação) ─────
+async function initNegociosSection() {
+  // popula os selects de categoria/bairro só uma vez (não dependem dos negócios carregados)
+  if (!state.negocios.filtrosCarregados) {
+    await popularFiltrosNegocios();
+    state.negocios.filtrosCarregados = true;
+  }
+  await loadNegocios();
+}
+
+async function popularFiltrosNegocios() {
+  try {
+    const [categorias, bairros] = await Promise.all([
+      fetch('/api/hub/categorias').then(r => r.json()).catch(() => []),
+      fetch('/admin/negocios/bairros').then(r => r.json()).catch(() => []),
+    ]);
+    const selCat = document.getElementById('filterCategoria');
+    const selBairro = document.getElementById('filterBairro');
+    if (selCat) {
+      selCat.innerHTML = '<option value="">Todas as categorias</option>' +
+        categorias.map(c => `<option value="${c.id}">${esc(c.nome)}</option>`).join('');
+    }
+    if (selBairro) {
+      selBairro.innerHTML = '<option value="">Todos os bairros</option>' +
+        bairros.map(b => `<option value="${esc(b)}">${esc(b)}</option>`).join('');
+    }
+  } catch (e) { console.error(e); }
+}
+
+const onNegociosFilterChange = debounce(function() {
+  state.negocios.q = document.getElementById('searchNegocios')?.value.trim() || '';
+  state.negocios.categoria_id = document.getElementById('filterCategoria')?.value || '';
+  state.negocios.bairro = document.getElementById('filterBairro')?.value || '';
+  state.negocios.status = document.getElementById('filterStatusNegocio')?.value || '';
+  state.negocios.limit = parseInt(document.getElementById('limitNegocios')?.value || '50');
+  state.negocios.offset = 0; // qualquer mudança de filtro volta para a primeira página
+  loadNegocios();
+}, 350);
+
+function negociosMudarPagina(direcao) {
+  const novo = state.negocios.offset + direcao * state.negocios.limit;
+  if (novo < 0 || novo >= state.negocios.total) return;
+  state.negocios.offset = novo;
+  loadNegocios();
+}
+
+async function loadNegocios() {
+  const tbody = document.getElementById('negociosBody');
+  tbody.innerHTML = `<tr><td colspan="8"><div class="loading"><div class="spinner"></div>Carregando...</div></td></tr>`;
+  const { q, categoria_id, bairro, status, limit, offset } = state.negocios;
+  const params = new URLSearchParams({ limit, offset });
+  if (q) params.set('q', q);
+  if (categoria_id) params.set('categoria_id', categoria_id);
+  if (bairro) params.set('bairro', bairro);
+  if (status) params.set('status', status);
+  try {
+    const r = await fetch(`/admin/negocios?${params.toString()}`, { headers: { 'X-Requested-With': 'XMLHttpRequest' } });
+    const data = await r.json();
+    state.data.negocios = data.negocios;
+    state.negocios.total = data.total;
+    renderNegocios(data.negocios);
+    renderNegociosPaginacao();
+  } catch (e) {
+    console.error(e);
+    showToast('Erro ao carregar negócios', 'error');
+  }
+}
+
+function renderNegociosPaginacao() {
+  const { total, limit, offset } = state.negocios;
+  const totalEl = document.getElementById('negociosTotalInfo');
+  const infoEl = document.getElementById('negociosPaginaInfo');
+  const prevBtn = document.getElementById('negociosPrevBtn');
+  const nextBtn = document.getElementById('negociosNextBtn');
+  if (!total) {
+    if (totalEl) totalEl.textContent = '0 negócios';
+    if (infoEl) infoEl.textContent = '';
+    if (prevBtn) prevBtn.disabled = true;
+    if (nextBtn) nextBtn.disabled = true;
+    return;
+  }
+  const inicio = offset + 1;
+  const fim = Math.min(offset + limit, total);
+  const paginaAtual = Math.floor(offset / limit) + 1;
+  const totalPaginas = Math.ceil(total / limit);
+  if (totalEl) totalEl.textContent = `${total.toLocaleString('pt-BR')} negócios`;
+  if (infoEl) infoEl.textContent = `${inicio}–${fim} de ${total.toLocaleString('pt-BR')} (página ${paginaAtual} de ${totalPaginas})`;
+  if (prevBtn) prevBtn.disabled = offset <= 0;
+  if (nextBtn) nextBtn.disabled = offset + limit >= total;
+}
+
+function renderNegocios(data) {
+  const tbody = document.getElementById('negociosBody');
+  if (!data || !data.length) { tbody.innerHTML = emptyRow(8); return; }
+  tbody.innerHTML = data.map(n => `
+    <tr data-id="${n.id}">
+      <td><input type="checkbox" class="negocio-cb" value="${n.id}" onchange="updateNegociosBulk()"></td>
+      <td><strong>${esc(n.nome)}</strong></td>
+      <td class="td-mono">${esc(n.slug)}</td>
+      <td>${esc(n.categoria_nome) || '—'}</td>
+      <td class="td-muted">${esc(n.bairro) || '—'}</td>
+      <td class="td-mono">${esc(n.visualizacoes) || '0'}</td>
+      <td>${badgeAtivo(n.ativo)}</td>
+      <td>${actionBtns('negocio', n.id)}</td>
+    </tr>
+  `).join('');
+  updateNegociosBulk();
+}
+
+function renderCategorias(data) {
+  const tbody = document.getElementById('categoriasBody');
+  if (!data.length) { tbody.innerHTML = emptyRow(5); return; }
+  tbody.innerHTML = data.map(c => `
+    <tr>
+      <td><strong>${esc(c.nome)}</strong></td>
+      <td class="td-mono">${esc(c.slug)}</td>
+      <td class="td-muted">${esc(c.icone_url) || '—'}</td>
+      <td>${badgeAtivo(c.ativo)}</td>
+      <td>${actionBtns('categoria', c.id)}</td>
+    </tr>
+  `).join('');
+}
+
+function renderUsuarios(data) {
+  const tbody = document.getElementById('usuariosBody');
+  if (!data.length) { tbody.innerHTML = emptyRow(6); return; }
+  tbody.innerHTML = data.map(u => `
+    <tr>
+      <td><strong>${esc(u.nome)}</strong></td>
+      <td class="td-muted">${esc(u.email)}</td>
+      <td class="td-mono">${esc(u.whatsapp) || '—'}</td>
+      <td>${u.admin_nivel ? `<span class="badge badge-purple">${esc(u.admin_nivel)}</span>` : '<span class="badge badge-gray">—</span>'}</td>
+      <td class="td-muted">${esc(u.criado_em) || '—'}</td>
+      <td>${actionBtns('usuario', u.id)}</td>
+    </tr>
+  `).join('');
+}
+
+function renderAssinaturas(data) {
+  const tbody = document.getElementById('assinaturasBody');
+  if (!data.length) { tbody.innerHTML = emptyRow(7); return; }
+  tbody.innerHTML = data.map(a => `
+    <tr>
+      <td><strong>${esc(a.usuario_nome)}</strong></td>
+      <td>${esc(a.plano) || '—'}</td>
+      <td>${badgeStatus(a.status)}</td>
+      <td class="td-muted">${esc(a.valido_ate) || '—'}</td>
+      <td class="td-mono">${esc(a.mp_sub_id) || '—'}</td>
+      <td class="td-muted">${esc(a.criado_em) || '—'}</td>
+      <td>${actionBtns('assinatura', a.id)}</td>
+    </tr>
+  `).join('');
+}
+
+function renderBlog(data) {
+  const tbody = document.getElementById('blogBody');
+  if (!data || !data.length) { tbody.innerHTML = emptyRow(8); return; }
+  tbody.innerHTML = data.map(p => `
+    <tr data-search="${esc(p.titulo).toLowerCase()}">
+      <td><strong>${esc(p.titulo)}</strong></td>
+      <td class="td-mono">${esc(p.slug)}</td>
+      <td class="td-muted">${(p.tag_nomes || []).filter(Boolean).map(t => `<span class="badge badge-purple" style="margin:1px 2px;">${esc(t)}</span>`).join('') || '—'}</td>
+      <td class="td-mono">${(p.hub_ids || []).filter(Boolean).length || '0'}</td>
+      <td class="td-muted">${esc(p.publicado_em) ? esc(String(p.publicado_em).slice(0,10)) : '—'}</td>
+      <td>${p.publicado ? '<span class="badge badge-green">Publicado</span>' : '<span class="badge badge-amber">Rascunho</span>'}</td>
+      <td class="td-mono">${esc(p.visualizacoes) || '0'}</td>
+      <td>${actionBtns('blog', p.id)}</td>
+    </tr>
+  `).join('');
+}
+
+function renderBlogTags(data) {
+  const tbody = document.getElementById('blogTagsBody');
+  if (!data || !data.length) { tbody.innerHTML = emptyRow(4); return; }
+  tbody.innerHTML = data.map(t => `
+    <tr>
+      <td><strong>${esc(t.nome)}</strong></td>
+      <td class="td-mono">${esc(t.slug)}</td>
+      <td class="td-mono">${esc(t.total_posts) || '0'}</td>
+      <td>${actionBtns('blog-tag', t.id)}</td>
+    </tr>
+  `).join('');
+}
+
+function renderAnuncios(data) {
+  const tbody = document.getElementById('anunciosBody');
+  if (!data || !data.length) { tbody.innerHTML = emptyRow(7); return; }
+  tbody.innerHTML = data.map(a => {
+    const seg = [a.categoria_slug, a.cidade, a.bairro].filter(Boolean).join(' / ') || 'Todas as páginas';
+    const vig = [];
+    if (a.data_inicio) vig.push(`De ${String(a.data_inicio).slice(0,10)}`);
+    if (a.data_fim) vig.push(`Até ${String(a.data_fim).slice(0,10)}`);
+    return `
+    <tr data-search="${esc(a.titulo).toLowerCase()}">
+      <td><strong>${esc(a.titulo)}</strong></td>
+      <td class="td-muted">${esc(state.data.hubs?.find(h => h.id === a.hub_id)?.nome) || '—'}</td>
+      <td><span class="badge badge-purple">${a.posicao === 'topo' ? '↑ Topo' : '⬇ Meio'}</span></td>
+      <td class="td-muted" style="font-size:12px;">${esc(seg)}</td>
+      <td class="td-muted" style="font-size:12px;">${vig.join(' ') || '—'}</td>
+      <td>${badgeAtivo(a.ativo)}</td>
+      <td>${actionBtns('anuncio', a.id)}</td>
+    </tr>
+  `;
+  }).join('');
+}
+
+// ── Helpers ──────────────────────────────────────────────────
+function esc(s) {
+  if (s == null) return '';
+  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+function emptyRow(cols) {
+  return `<tr><td colspan="${cols}"><div class="empty-state"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg><p>Nenhum registro encontrado</p></div></td></tr>`;
+}
+function badgeAtivo(ativo) {
+  return ativo ? '<span class="badge badge-green">Ativo</span>' : '<span class="badge badge-red">Inativo</span>';
+}
+function badgeTipo(tipo) {
+  return tipo === 'categoria'
+    ? '<span class="badge badge-purple">Categoria</span>'
+    : '<span class="badge badge-amber">Bairro</span>';
+}
+function badgeStatus(s) {
+  const map = { ativo: 'badge-green', inativo: 'badge-red', cancelado: 'badge-red', pendente: 'badge-amber', trial: 'badge-purple' };
+  const cls = map[s?.toLowerCase()] || 'badge-gray';
+  return `<span class="badge ${cls}">${esc(s) || '—'}</span>`;
+}
+function actionBtns(type, id) {
+  return `
+    <div style="display:flex;gap:6px;">
+      <button class="btn btn-secondary btn-sm" onclick="editItem('${type}', ${id})">Editar</button>
+      <button class="btn btn-danger btn-sm" onclick="deleteItem('${type}', ${id})">Excluir</button>
+    </div>`;
+}
+function filterTable(tbodyId, q) {
+  const tbody = document.getElementById(tbodyId);
+  tbody.querySelectorAll('tr[data-search]').forEach(tr => {
+    tr.style.display = tr.dataset.search.includes(q.toLowerCase()) ? '' : 'none';
+  });
+}
+
+// ── Drawer / Forms ───────────────────────────────────────────
+function openDrawer(type, id = null) {
+  state.editType = type;
+  state.editId = id;
+  document.getElementById('modalOverlay').classList.add('open');
+  buildForm(type, id);
+}
+function closeDrawer() {
+  document.getElementById('modalOverlay').classList.remove('open');
+}
+function closeDrawerOnOverlay(e) {
+  if (e.target === document.getElementById('modalOverlay')) closeDrawer();
+}
+
+async function editItem(type, id) {
+  const urls = {
+    hub: `/admin/hubs/${id}/editar`, negocio: `/admin/negocios/${id}/editar`,
+    categoria: `/admin/categorias/${id}/editar`, usuario: `/admin/usuarios/${id}/editar`,
+    assinatura: `/admin/assinaturas/${id}/editar`,
+    blog: `/admin/blog/${id}/editar`, 'blog-tag': `/admin/blog/tags/${id}/editar`,
+    anuncio: `/admin/anuncios/${id}/editar`,
+  };
+  document.getElementById('drawerTitle').textContent = 'Carregando...';
+  document.getElementById('drawerBody').innerHTML = '<div class="loading"><div class="spinner"></div>Carregando...</div>';
+  openDrawer(type, id);
+  try {
+    const r = await fetch(urls[type]);
+    const data = await r.json();
+    if (type === 'hub') {
+      document.getElementById('drawerTitle').textContent = 'Editar hub';
+      document.getElementById('drawerBody').innerHTML = formHub();
+      const form = document.getElementById('drawerForm');
+      form.action = urls[type];
+      for (const [key, val] of Object.entries(data)) {
+        const el = form.elements[key];
+        if (!el || val == null) continue;
+        if (el.type === 'checkbox') { el.checked = val === true || val === 'true' || val === 't'; }
+        else if (el.type === 'color') { el.value = val || '#7943e2'; }
+        else { el.value = val; }
+      }
+      await populateTemplateSelects({
+        template_index:     data.template_index,
+        template_filtro:    data.template_filtro,
+        template_negocio:   data.template_negocio,
+        template_cidade:    data.template_cidade,
+        template_blog:      data.template_blog,
+        template_blog_post: data.template_blog_post,
+      });
+      setupFormSubmit(form);
+    } else if (type === 'blog') {
+      document.getElementById('drawerTitle').textContent = 'Editar post';
+      document.getElementById('drawerBody').innerHTML = formBlog();
+      const form = document.getElementById('drawerForm');
+      form.action = urls[type];
+      for (const [key, val] of Object.entries(data)) {
+        const el = form.elements[key];
+        if (!el || val == null) continue;
+        if (el.type === 'checkbox') { el.checked = val === true || val === 'true' || val === 't'; }
+        else { el.value = val; }
+      }
+      // Hubs vinculados ao post
+      const hubIds = Array.isArray(data.hubs_do_post) ? data.hubs_do_post.map(String) : [];
+      form.querySelectorAll('input[name="hubs"]').forEach(cb => { cb.checked = hubIds.includes(String(cb.value)); });
+      // Tags: campo texto com slugs separados por vírgula
+      const tagsInput = form.elements['tags'];
+      if (tagsInput && Array.isArray(data.tags_do_post)) tagsInput.value = data.tags_do_post.join(', ');
+      setupFormSubmit(form);
+    } else if (type === 'blog-tag') {
+      document.getElementById('drawerTitle').textContent = 'Editar tag';
+      document.getElementById('drawerBody').innerHTML = formBlogTag();
+      const form = document.getElementById('drawerForm');
+      form.action = urls[type];
+      for (const [key, val] of Object.entries(data)) {
+        const el = form.elements[key];
+        if (!el || val == null) continue;
+        el.value = val;
+      }
+      setupFormSubmit(form);
+    } else {
+      const titles = { negocio:'Editar negócio', categoria:'Editar categoria', usuario:'Editar usuário', assinatura:'Editar assinatura', anuncio:'Editar anúncio' };
+      const formFns = { negocio: formNegocio, categoria: formCategoria, usuario: formUsuario, assinatura: formAssinatura, anuncio: formAnuncio };
+      document.getElementById('drawerTitle').textContent = titles[type];
+      document.getElementById('drawerBody').innerHTML = formFns[type]();
+      const form = document.getElementById('drawerForm');
+      form.action = urls[type];
+      for (const [key, val] of Object.entries(data)) {
+        const el = form.elements[key];
+        if (!el || val == null) continue;
+        if (el.type === 'checkbox') { el.checked = val === true || val === 'true' || val === 't'; }
+        else { el.value = val; }
+      }
+      if (type === 'negocio') {
+        const hubIds = Array.isArray(data.hubs) ? data.hubs.map(h => String(h.id ?? h)) : [];
+        form.querySelectorAll('input[name="hubs"]').forEach(cb => { cb.checked = hubIds.includes(String(cb.value)); });
+        const boolFields = ['mostrar_foto','mostrar_descricao','mostrar_whatsapp','mostrar_instagram','mostrar_telefone','mostrar_site','mostrar_endereco','mostrar_mapa','ativo'];
+        boolFields.forEach(f => {
+          const cb = form.elements[f];
+          if (cb) cb.checked = data[f] === true || data[f] === 'true' || data[f] === 't';
+        });
+      }
+      setupFormSubmit(form);
+    }
+  } catch(e) { showToast('Erro ao carregar formulário', 'error'); }
+}
+
+function buildForm(type, id) {
+  const titles = { hub: 'Novo hub', negocio: 'Novo negócio', categoria: 'Nova categoria', usuario: 'Novo usuário', assinatura: 'Nova assinatura', blog: 'Novo post', 'blog-tag': 'Nova tag', anuncio: 'Novo anúncio' };
+  document.getElementById('drawerTitle').textContent = titles[type];
+  const forms = { hub: formHub, negocio: formNegocio, categoria: formCategoria, usuario: formUsuario, assinatura: formAssinatura, blog: formBlog, 'blog-tag': formBlogTag, anuncio: formAnuncio };
+  document.getElementById('drawerBody').innerHTML = forms[type]();
+  const form = document.getElementById('drawerForm');
+  if (form) setupFormSubmit(form);
+  if (type === 'hub') populateTemplateSelects();
+}
+
+function wrapFormForDrawer(form, action) {
+  form.action = action;
+  addFormActions(form);
+  setupFormSubmit(form);
+}
+
+function addFormActions(form) {
+  // Remove actions existentes e adiciona os botões padrão
+  form.querySelectorAll('.form-actions').forEach(el => el.remove());
+  const div = document.createElement('div');
+  div.className = 'form-actions';
+  div.innerHTML = `<button type="button" class="btn btn-secondary" onclick="closeDrawer()">Cancelar</button><button type="submit" class="btn btn-primary">Salvar</button>`;
+  form.appendChild(div);
+}
+
+function setupFormSubmit(form) {
+  form.addEventListener('submit', async function(e) {
+    e.preventDefault();
+    const btn = form.querySelector('[type=submit]');
+    btn.disabled = true;
+    btn.textContent = 'Salvando...';
+    try {
+      const r = await fetch(form.action, { method: 'POST', body: new FormData(form) });
+      if (r.ok || r.redirected) {
+        closeDrawer();
+        showToast('Salvo com sucesso!', 'success');
+        state.loaded.delete(state.section);
+        await loadSection(state.section);
+      } else {
+        showToast('Erro ao salvar', 'error');
+      }
+    } catch(e) { showToast('Erro de conexão', 'error'); }
+    btn.disabled = false;
+    btn.textContent = 'Salvar';
+  });
+}
+
+async function deleteItem(type, id) {
+  if (!confirm('Confirma a exclusão?')) return;
+  const urls = {
+    hub: `/admin/hubs/${id}/deletar`, negocio: `/admin/negocios/${id}/deletar`,
+    categoria: `/admin/categorias/${id}/deletar`, usuario: `/admin/usuarios/${id}/deletar`,
+    assinatura: `/admin/assinaturas/${id}/deletar`,
+    blog: `/admin/blog/${id}/deletar`, 'blog-tag': `/admin/blog/tags/${id}/deletar`,
+    anuncio: `/admin/anuncios/${id}/deletar`,
+  };
+  try {
+    const fd = new FormData();
+    const r = await fetch(urls[type], { method: 'POST', body: fd });
+    if (r.ok || r.redirected) {
+      showToast('Excluído com sucesso', 'success');
+      state.loaded.delete(state.section);
+      await loadSection(state.section);
+    } else { showToast('Erro ao excluir', 'error'); }
+  } catch(e) { showToast('Erro de conexão', 'error'); }
+}
+
+// ── Form templates ───────────────────────────────────────────
+function formHub() {
+  const cats = state.data.categorias.map(c => `<option value="${c.id}">${esc(c.nome)}</option>`).join('');
+  const users = state.data.usuarios.map(u => `<option value="${u.id}">${esc(u.nome)}</option>`).join('');
+  return `
+  <form id="drawerForm" action="/admin/hubs/novo" method="POST">
+    <div class="form-grid">
+      <div class="field"><label>Nome *</label><input name="nome" required placeholder="Hub do Bairro"></div>
+      <div class="field"><label>Slug *</label><input name="slug" required placeholder="hub-bairro"></div>
+      <div class="field"><label>Subdomínio Leanttro</label><input name="hub_leanttro" placeholder="hub1"></div>
+      <div class="field"><label>Domínio próprio</label><input name="dominio_proprio" placeholder="meuhub.com.br"></div>
+      <div class="field"><label>Tipo</label>
+        <select name="tipo">
+          <option value="bairro">Bairro</option>
+          <option value="categoria">Categoria</option>
+          <option value="cidade">Cidade</option>
+        </select>
+      </div>
+      <div class="field"><label>Usuário dono</label>
+        <select name="user_id"><option value="">— Nenhum —</option>${users}</select>
+      </div>
+      <div class="field"><label>Bairro fixo</label><input name="bairro_fixo" placeholder="Vila Madalena"></div>
+      <div class="field"><label>Categoria fixa</label><input name="categoria_fixa" placeholder="restaurantes"></div>
+      <div class="field"><label>Logo URL</label><input name="logo_url" placeholder="https://..."></div>
+      <div class="field"><label>WhatsApp</label><input name="whatsapp" placeholder="5511..."></div>
+      <div class="field"><label>Instagram</label><input name="instagram_url" placeholder="https://instagram.com/..."></div>
+      <div class="field"><label>Cor primária</label><input type="color" name="cor_primaria" value="#7943e2"></div>
+      <div class="field"><label>Cor secundária</label><input type="color" name="cor_secundaria" value="#5c2ec2"></div>
+      <div class="field"><label>GA4 ID</label><input name="ga4_id" placeholder="G-XXXXXXX"></div>
+      <div class="field"><label>Pixel ID</label><input name="pixel_id"></div>
+      <div class="field"><label>Template index</label>
+        <select name="template_index" id="sel_template_index"><option value="">Carregando...</option></select>
+      </div>
+      <div class="field"><label>Template filtro</label>
+        <select name="template_filtro" id="sel_template_filtro"><option value="">Carregando...</option></select>
+      </div>
+      <div class="field"><label>Template negócio</label>
+        <select name="template_negocio" id="sel_template_negocio"><option value="">Carregando...</option></select>
+</div>
+        <div class="field"><label>Template cidade</label>
+        <select name="template_cidade" id="sel_template_cidade"><option value="">Carregando...</option></select>
+      </div>
+      <div class="field"><label>Template blog (listagem)</label>
+        <select name="template_blog" id="sel_template_blog"><option value="">Carregando...</option></select>
+      </div>
+      <div class="field"><label>Template blog post</label>
+        <select name="template_blog_post" id="sel_template_blog_post"><option value="">Carregando...</option></select>
+      </div>
+      <div class="field form-full"><label>Título</label><input name="titulo"></div>
+      <div class="field form-full"><label>Descrição</label><textarea name="descricao"></textarea></div>
+      <div class="field form-full" style="border-top:1px solid var(--border);padding-top:16px;margin-top:4px">
+        <label style="font-weight:600;color:var(--text);margin-bottom:12px;display:block">🖼️ Banners</label>
+        <div class="form-grid" style="margin:0">
+          <div class="field form-full"><label>Banner de fundo (hero) — URL da imagem</label><input name="banner_fundo_url" placeholder="https://...jpg"></div>
+          <div class="field"><label>Banner 1 — URL da foto</label><input name="banner1_foto_url" placeholder="https://...jpg"></div>
+          <div class="field"><label>Banner 1 — Link ao clicar</label><input name="banner1_link" placeholder="https://..."></div>
+          <div class="field"><label>Banner 2 — URL da foto</label><input name="banner2_foto_url" placeholder="https://...jpg"></div>
+          <div class="field"><label>Banner 2 — Link ao clicar</label><input name="banner2_link" placeholder="https://..."></div>
+        </div>
+      </div>
+      <div class="field form-full">
+        <label>Status</label>
+        <label class="checkbox-label"><input type="checkbox" name="ativo" checked> Ativo</label>
+      </div>
+    </div>
+    <div class="form-actions">
+      <button type="button" class="btn btn-secondary" onclick="closeDrawer()">Cancelar</button>
+      <button type="submit" class="btn btn-primary">Salvar hub</button>
+    </div>
+  </form>`;
+}
+
+function formNegocio() {
+  const cats = state.data.categorias.map(c => `<option value="${c.id}">${esc(c.nome)}</option>`).join('');
+  const hubs = state.data.hubs.map(h => `<label class="checkbox-label"><input type="checkbox" name="hubs" value="${h.id}"> ${esc(h.nome)}</label>`).join('');
+  return `
+  <form id="drawerForm" action="/admin/negocios/novo" method="POST">
+    <div class="form-grid">
+      <div class="field"><label>Nome *</label><input name="nome" required></div>
+      <div class="field"><label>Slug *</label><input name="slug" required></div>
+      <div class="field"><label>Categoria</label>
+        <select name="categoria_id"><option value="">— Selecione —</option>${cats}</select>
+      </div>
+      <div class="field"><label>Bairro</label><input name="bairro"></div>
+      <div class="field"><label>Cidade</label><input name="cidade" value="São Paulo"></div>
+      <div class="field"><label>Endereço</label><input name="endereco"></div>
+      <div class="field"><label>Latitude</label><input name="lat" type="number" step="any"></div>
+      <div class="field"><label>Longitude</label><input name="lng" type="number" step="any"></div>
+      <div class="field"><label>WhatsApp</label><input name="whatsapp" placeholder="5511..."></div>
+      <div class="field"><label>Telefone</label><input name="telefone"></div>
+      <div class="field"><label>Instagram</label><input name="instagram"></div>
+      <div class="field"><label>Site URL</label><input name="site_url" placeholder="https://..."></div>
+      <div class="field"><label>Foto URL</label><input name="foto_url" placeholder="https://..."></div>
+      <div class="field form-full"><label>Descrição</label><textarea name="descricao"></textarea></div>
+      <div class="field form-full">
+        <label>Hubs vinculados</label>
+        <div class="checkbox-group">${hubs || '<span class="td-muted">Nenhum hub disponível</span>'}</div>
+      </div>
+      <div class="field form-full">
+        <label>Campos visíveis no hub</label>
+        <div class="checkbox-group">
+          <label class="checkbox-label"><input type="checkbox" name="mostrar_foto" checked> Foto</label>
+          <label class="checkbox-label"><input type="checkbox" name="mostrar_descricao" checked> Descrição</label>
+          <label class="checkbox-label"><input type="checkbox" name="mostrar_whatsapp" checked> WhatsApp</label>
+          <label class="checkbox-label"><input type="checkbox" name="mostrar_instagram" checked> Instagram</label>
+          <label class="checkbox-label"><input type="checkbox" name="mostrar_telefone" checked> Telefone</label>
+          <label class="checkbox-label"><input type="checkbox" name="mostrar_site" checked> Site</label>
+          <label class="checkbox-label"><input type="checkbox" name="mostrar_endereco" checked> Endereço</label>
+          <label class="checkbox-label"><input type="checkbox" name="mostrar_mapa" checked> Mapa</label>
+        </div>
+      </div>
+      <div class="field form-full">
+        <label class="checkbox-label"><input type="checkbox" name="ativo" checked> Ativo</label>
+      </div>
+    </div>
+    <div class="form-actions">
+      <button type="button" class="btn btn-secondary" onclick="closeDrawer()">Cancelar</button>
+      <button type="submit" class="btn btn-primary">Salvar negócio</button>
+    </div>
+  </form>`;
+}
+
+function formCategoria() {
+  return `
+  <form id="drawerForm" action="/admin/categorias/nova" method="POST">
+    <div class="form-grid">
+      <div class="field"><label>Nome *</label><input name="nome" required placeholder="Restaurantes"></div>
+      <div class="field"><label>Slug *</label><input name="slug" required placeholder="restaurantes"></div>
+      <div class="field form-full"><label>Ícone URL</label><input name="icone_url" placeholder="https://..."></div>
+      <div class="field form-full">
+        <label class="checkbox-label"><input type="checkbox" name="ativo" checked> Ativo</label>
+      </div>
+    </div>
+    <div class="form-actions">
+      <button type="button" class="btn btn-secondary" onclick="closeDrawer()">Cancelar</button>
+      <button type="submit" class="btn btn-primary">Salvar categoria</button>
+    </div>
+  </form>`;
+}
+
+function formUsuario() {
+  return `
+  <form id="drawerForm" action="/admin/usuarios/novo" method="POST">
+    <div class="form-grid">
+      <div class="field"><label>Nome *</label><input name="nome" required></div>
+      <div class="field"><label>E-mail *</label><input name="email" type="email" required></div>
+      <div class="field"><label>Senha *</label><input name="senha" type="password" required></div>
+      <div class="field"><label>WhatsApp</label><input name="whatsapp" placeholder="5511..."></div>
+      <div class="field form-full"><label>Nível admin (deixe vazio para usuário comum)</label>
+        <select name="nivel">
+          <option value="">— Usuário comum —</option>
+          <option value="super">Super admin</option>
+          <option value="admin">Admin</option>
+          <option value="editor">Editor</option>
+        </select>
+      </div>
+    </div>
+    <div class="form-actions">
+      <button type="button" class="btn btn-secondary" onclick="closeDrawer()">Cancelar</button>
+      <button type="submit" class="btn btn-primary">Salvar usuário</button>
+    </div>
+  </form>`;
+}
+
+function formAssinatura() {
+  const users = state.data.usuarios.map(u => `<option value="${u.id}">${esc(u.nome)} — ${esc(u.email)}</option>`).join('');
+  return `
+  <form id="drawerForm" action="/admin/assinaturas/nova" method="POST">
+    <div class="form-grid">
+      <div class="field form-full"><label>Usuário *</label>
+        <select name="user_id" required><option value="">— Selecione —</option>${users}</select>
+      </div>
+      <div class="field"><label>Plano *</label>
+        <select name="plano" required>
+          <option value="basic">Basic</option>
+          <option value="pro">Pro</option>
+          <option value="premium">Premium</option>
+        </select>
+      </div>
+      <div class="field"><label>Status</label>
+        <select name="status">
+          <option value="ativo">Ativo</option>
+          <option value="trial">Trial</option>
+          <option value="inativo">Inativo</option>
+          <option value="cancelado">Cancelado</option>
+          <option value="pendente">Pendente</option>
+        </select>
+      </div>
+      <div class="field"><label>Válido até</label><input name="valido_ate" type="date"></div>
+      <div class="field"><label>MP Sub ID</label><input name="mp_sub_id" placeholder="ID Mercado Pago"></div>
+    </div>
+    <div class="form-actions">
+      <button type="button" class="btn btn-secondary" onclick="closeDrawer()">Cancelar</button>
+      <button type="submit" class="btn btn-primary">Salvar assinatura</button>
+    </div>
+  </form>`;
+}
+
+function formBlog() {
+  const hubs = state.data.hubs.map(h => `<label class="checkbox-label"><input type="checkbox" name="hubs" value="${h.id}"> ${esc(h.nome)}</label>`).join('');
+  return `
+  <form id="drawerForm" action="/admin/blog/novo" method="POST">
+    <div class="form-grid">
+      <div class="field form-full"><label>Título *</label><input name="titulo" required placeholder="Título do post"></div>
+      <div class="field"><label>Slug *</label><input name="slug" required placeholder="titulo-do-post"></div>
+      <div class="field"><label>Data de publicação</label><input name="publicado_em" type="date"></div>
+      <div class="field form-full"><label>Resumo (max ~160 chars para SEO)</label><textarea name="resumo" rows="2" placeholder="Breve descrição do post..."></textarea></div>
+      <div class="field form-full"><label>URL da capa</label><input name="capa_url" placeholder="https://...jpg"></div>
+      <div class="field form-full">
+        <label>Tags <span style="font-weight:400;color:var(--text3)">(slugs separados por vírgula — ex: dicas, alimentacao, bairro)</span></label>
+        <input name="tags" placeholder="dicas, alimentacao, bairro-verde">
+      </div>
+      <div class="field form-full">
+        <label>Conteúdo (HTML) *</label>
+        <textarea name="conteudo" rows="14" style="font-family:monospace;font-size:12px;" placeholder="<p>Escreva o conteúdo do post em HTML...</p>"></textarea>
+      </div>
+      <div class="field form-full">
+        <label>Hubs onde este post aparece</label>
+        <div class="checkbox-group">${hubs || '<span class="td-muted">Nenhum hub disponível</span>'}</div>
+      </div>
+      <div class="field form-full">
+        <label class="checkbox-label"><input type="checkbox" name="publicado"> Publicado (visível no site)</label>
+      </div>
+    </div>
+    <div class="form-actions">
+      <button type="button" class="btn btn-secondary" onclick="closeDrawer()">Cancelar</button>
+      <button type="submit" class="btn btn-primary">Salvar post</button>
+    </div>
+  </form>`;
+}
+
+function formBlogTag() {
+  return `
+  <form id="drawerForm" action="/admin/blog/tags/nova" method="POST">
+    <div class="form-grid">
+      <div class="field"><label>Nome *</label><input name="nome" required placeholder="Dicas"></div>
+      <div class="field"><label>Slug *</label><input name="slug" required placeholder="dicas"></div>
+    </div>
+    <div class="form-actions">
+      <button type="button" class="btn btn-secondary" onclick="closeDrawer()">Cancelar</button>
+      <button type="submit" class="btn btn-primary">Salvar tag</button>
+    </div>
+  </form>`;
+}
+
+function formAnuncio() {
+  const hubs = state.data.hubs.map(h => `<option value="${h.id}">${esc(h.nome)}</option>`).join('');
+  return `
+  <form id="drawerForm" action="/admin/anuncios/novo" method="POST">
+    <div class="form-grid">
+      <div class="field"><label>Título *</label><input name="titulo" required placeholder="Promoção especial"></div>
+      <div class="field"><label>Hub *</label><select name="hub_id" required><option value="">— Selecione —</option>${hubs}</select></div>
+      <div class="field"><label>Posição *</label>
+        <select name="posicao" required>
+          <option value="topo">Topo</option>
+          <option value="meio">Meio</option>
+        </select>
+      </div>
+      <div class="field"><label>URL da imagem (Cloudinary) *</label><input name="foto_url" required placeholder="https://res.cloudinary.com/..."></div>
+      <div class="field"><label>Link ao clicar (URL) *</label><input name="link" required placeholder="https://example.com"></div>
+      <div class="field"><label>Categoria (opcional)</label><input name="categoria_slug" placeholder="restaurante — deixe vazio para todas"></div>
+      <div class="field"><label>Cidade (opcional)</label><input name="cidade" placeholder="São Paulo — deixe vazio para todas"></div>
+      <div class="field"><label>Bairro (opcional)</label><input name="bairro" placeholder="Vila Mariana — deixe vazio para todas"></div>
+      <div class="field"><label>Data início</label><input type="date" name="data_inicio"></div>
+      <div class="field"><label>Data fim</label><input type="date" name="data_fim"></div>
+      <div class="field form-full">
+        <label class="checkbox-label"><input type="checkbox" name="ativo" checked> Ativo</label>
+      </div>
+    </div>
+    <div class="form-actions">
+      <button type="button" class="btn btn-secondary" onclick="closeDrawer()">Cancelar</button>
+      <button type="submit" class="btn btn-primary">Salvar anúncio</button>
+    </div>
+  </form>`;
+}
+
+// ── Negócios: seleção em massa (sobre a página atual) ─────────
+function toggleSelectAllNegocios(checked) {
+  document.querySelectorAll('#negociosBody .negocio-cb').forEach(cb => cb.checked = checked);
+  updateNegociosBulk();
+}
+
+function updateNegociosBulk() {
+  const bar = document.getElementById('negociosBulkBar');
+  const countEl = document.getElementById('negociosBulkCount');
+  const selectAll = document.getElementById('selectAllNegocios');
+  if (!bar) return;
+  const allCbs = [...document.querySelectorAll('#negociosBody .negocio-cb')];
+  const checkedCbs = allCbs.filter(cb => cb.checked);
+  if (checkedCbs.length > 0) {
+    bar.classList.add('visible');
+    countEl.textContent = `${checkedCbs.length} selecionado${checkedCbs.length > 1 ? 's' : ''}`;
+  } else {
+    bar.classList.remove('visible');
+  }
+  if (selectAll) {
+    selectAll.indeterminate = checkedCbs.length > 0 && checkedCbs.length < allCbs.length;
+    selectAll.checked = allCbs.length > 0 && checkedCbs.length === allCbs.length;
+  }
+}
+
+async function bulkNegocio(action) {
+  const ids = [...document.querySelectorAll('#negociosBody .negocio-cb:checked')].map(cb => cb.value);
+  if (!ids.length) return;
+  if (action === 'excluir' && !confirm(`Excluir ${ids.length} negócio(s)? Esta ação não pode ser desfeita.`)) return;
+  try {
+    const r = await fetch('/admin/negocios/bulk', {
+      method: 'POST',
+      body: JSON.stringify({ ids, action }),
+      headers: { 'Content-Type': 'application/json' }
+    });
+    if (r.ok || r.redirected) {
+      showToast(`Ação "${action}" aplicada a ${ids.length} negócio(s)`, 'success');
+      state.loaded.delete('negocios');
+      await loadSection('negocios');
+    } else {
+      showToast('Erro ao executar ação em massa', 'error');
+    }
+  } catch(e) { showToast('Erro de conexão', 'error'); }
+}
+
+let _hubPickerAction = 'vincular';
+function openHubPicker(action) {
+  const ids = [...document.querySelectorAll('#negociosBody .negocio-cb:checked')];
+  if (!ids.length) return;
+  _hubPickerAction = action;
+  // Popula select com hubs disponíveis
+  const sel = document.getElementById('hubPickerSelect');
+  sel.innerHTML = '<option value="">— Selecione um hub —</option>' +
+    state.data.hubs.map(h => `<option value="${h.id}">${esc(h.nome)}</option>`).join('');
+  document.getElementById('hubPickerTitle').textContent =
+    action === 'vincular' ? '+ Vincular ao Hub' : '− Desvincular do Hub';
+  document.getElementById('hubPickerOverlay').classList.add('open');
+}
+function closeHubPicker() {
+  document.getElementById('hubPickerOverlay').classList.remove('open');
+}
+async function confirmHubPicker() {
+  const hub_id = document.getElementById('hubPickerSelect').value;
+  if (!hub_id) { showToast('Selecione um hub', ''); return; }
+  const ids = [...document.querySelectorAll('#negociosBody .negocio-cb:checked')].map(cb => cb.value);
+  closeHubPicker();
+  try {
+    const r = await fetch('/admin/negocios/bulk', {
+      method: 'POST',
+      body: JSON.stringify({ ids, action: _hubPickerAction, hub_id }),
+      headers: { 'Content-Type': 'application/json' }
+    });
+    if (r.ok || r.redirected) {
+      showToast(`${_hubPickerAction === 'vincular' ? 'Vinculado' : 'Desvinculado'}: ${ids.length} negócio(s)`, 'success');
+      state.loaded.delete('negocios');
+      await loadSection('negocios');
+    } else {
+      showToast('Erro ao executar ação', 'error');
+    }
+  } catch(e) { showToast('Erro de conexão', 'error'); }
+}
+
+function openCategoriaPicker() {
+  const ids = [...document.querySelectorAll('#negociosBody .negocio-cb:checked')];
+  if (!ids.length) return;
+  const sel = document.getElementById('categoriaPickerSelect');
+  sel.innerHTML = '<option value="">— Selecione uma categoria —</option>' +
+    state.data.categorias.map(c => `<option value="${c.id}">${esc(c.nome)}</option>`).join('');
+  document.getElementById('categoriaPickerOverlay').classList.add('open');
+}
+function closeCategoriaPicker() {
+  document.getElementById('categoriaPickerOverlay').classList.remove('open');
+}
+async function confirmCategoriaPicker() {
+  const categoria_id = document.getElementById('categoriaPickerSelect').value;
+  if (!categoria_id) { showToast('Selecione uma categoria', ''); return; }
+  const ids = [...document.querySelectorAll('#negociosBody .negocio-cb:checked')].map(cb => cb.value);
+  closeCategoriaPicker();
+  try {
+    const r = await fetch('/admin/negocios/bulk', {
+      method: 'POST',
+      body: JSON.stringify({ ids, action: 'mudar_categoria', categoria_id }),
+      headers: { 'Content-Type': 'application/json' }
+    });
+    if (r.ok || r.redirected) {
+      showToast(`Categoria alterada em ${ids.length} negócio(s)`, 'success');
+      state.loaded.delete('negocios');
+      await loadSection('negocios');
+    } else {
+      showToast('Erro ao mudar categoria', 'error');
+    }
+  } catch(e) { showToast('Erro de conexão', 'error'); }
+}
+
+// ── Toast ────────────────────────────────────────────────────
+function showToast(msg, type = '') {
+  const wrap = document.getElementById('toastWrap');
+  const t = document.createElement('div');
+  t.className = `toast ${type}`;
+  t.textContent = msg;
+  wrap.appendChild(t);
+  setTimeout(() => t.remove(), 3000);
+}
+
+// ── Templates dinâmicos ──────────────────────────────────────
+async function populateTemplateSelects(currentValues = {}) {
+  if (!state.templates) {
+    try {
+      const r = await fetch('/admin/templates');
+      state.templates = await r.json();
+    } catch(e) {
+      state.templates = { index: ['index_padrao'], filtro: ['filtro_padrao'], negocio: ['negocio_padrao'], cidade: ['cidade_padrao'], blog: ['blog_otp'], blog_post: ['blog_post_otp'] };
+    }
+  }
+  const map = {
+    index: 'sel_template_index', filtro: 'sel_template_filtro',
+    negocio: 'sel_template_negocio', cidade: 'sel_template_cidade',
+    blog: 'sel_template_blog', blog_post: 'sel_template_blog_post',
+  };
+  for (const [tipo, selId] of Object.entries(map)) {
+    const sel = document.getElementById(selId);
+    if (!sel) continue;
+    const keyName = tipo === 'blog_post' ? 'template_blog_post' : `template_${tipo}`;
+    const current = currentValues[keyName] || state.templates[tipo]?.[0] || '';
+    sel.innerHTML = (state.templates[tipo] || [current]).map(t => {
+      const label = t.replace(`${tipo}_`, '').replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
+      return `<option value="${t}"${t === current ? ' selected' : ''}>${label}</option>`;
+    }).join('');
+  }
+}
+
+// ── Init ─────────────────────────────────────────────────────
+(async function init() {
+  await loadSection('dashboard');
+  // Pré-carrega categorias, usuários e hubs em paralelo para os selects dos formulários
+  await Promise.all([
+    !state.loaded.has('categorias') ? loadData('categorias') : Promise.resolve(),
+    !state.loaded.has('usuarios')   ? loadData('usuarios')   : Promise.resolve(),
+    !state.loaded.has('hubs')       ? loadData('hubs')       : Promise.resolve(),
+  ]);
+})();
+</script>
+</body>
+</html>
