@@ -816,6 +816,53 @@ def blog_post(slug):
 
 
 # ════════════════════════════════════════════════════════════
+#  CADASTRO DE NEGÓCIO — ROTA PÚBLICA
+# ════════════════════════════════════════════════════════════
+
+@app.route("/cadastrar-negocio", methods=["POST"])
+def cadastrar_negocio():
+    hub = get_hub_by_host()
+    if not hub:
+        return jsonify({"erro": "Hub não encontrado"}), 404
+
+    f = request.form
+
+    nome = (f.get("nome") or "").strip()
+    if not nome:
+        return jsonify({"erro": "Nome é obrigatório"}), 400
+
+    categoria_id = f.get("categoria_id") or None
+    if categoria_id:
+        cat = query("SELECT id FROM hub_categorias WHERE id = %s AND ativo = true",
+                    (categoria_id,), one=True)
+        if not cat:
+            categoria_id = None
+
+    query("""
+        INSERT INTO hub_negocios_pendentes
+            (hub_id, nome, categoria_id, descricao, foto_url,
+             endereco, bairro, cidade,
+             whatsapp, telefone, instagram, site_url)
+        VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+    """, (
+        hub["id"],
+        nome,
+        categoria_id,
+        (f.get("descricao") or "").strip() or None,
+        (f.get("foto_url") or "").strip() or None,
+        (f.get("endereco") or "").strip() or None,
+        (f.get("bairro") or "").strip() or None,
+        (f.get("cidade") or "").strip() or None,
+        (f.get("whatsapp") or "").strip() or None,
+        (f.get("telefone") or "").strip() or None,
+        (f.get("instagram") or "").strip() or None,
+        (f.get("site_url") or "").strip() or None,
+    ), commit=True)
+
+    return jsonify({"ok": True})
+
+
+# ════════════════════════════════════════════════════════════
 #  ADMIN — AUTH
 # ════════════════════════════════════════════════════════════
 
@@ -1624,6 +1671,111 @@ def admin_anuncio_editar(anuncio_id):
 @login_required
 def admin_anuncio_deletar(anuncio_id):
     query("DELETE FROM anuncios WHERE id = %s", (anuncio_id,), commit=True)
+    return jsonify({"ok": True})
+
+
+# ════════════════════════════════════════════════════════════
+#  Admin — Pendentes
+# ════════════════════════════════════════════════════════════
+
+@app.route("/admin/pendentes")
+@login_required
+def admin_pendentes():
+    hub_id = request.args.get("hub_id", "").strip()
+    status = request.args.get("status", "pendente").strip()
+
+    condicoes = ["p.status = %s"]
+    params    = [status]
+
+    if hub_id:
+        condicoes.append("p.hub_id = %s")
+        params.append(hub_id)
+
+    where = " AND ".join(condicoes)
+
+    pendentes = query(f"""
+        SELECT p.*, h.nome as hub_nome, c.nome as categoria_nome
+        FROM hub_negocios_pendentes p
+        LEFT JOIN hub_clientes h ON h.id = p.hub_id
+        LEFT JOIN hub_categorias c ON c.id = p.categoria_id
+        WHERE {where}
+        ORDER BY p.criado_em DESC
+    """, params)
+
+    return jsonify([dict(p) for p in pendentes])
+
+
+@app.route("/admin/pendentes/<int:pendente_id>/aprovar", methods=["POST"])
+@login_required
+def admin_pendente_aprovar(pendente_id):
+    p = query("SELECT * FROM hub_negocios_pendentes WHERE id = %s", (pendente_id,), one=True)
+    if not p:
+        return jsonify({"erro": "Não encontrado"}), 404
+    if p["status"] != "pendente":
+        return jsonify({"erro": f"Cadastro já está '{p['status']}'"}), 400
+
+    base_slug = _slugify(p["nome"])
+    slug      = base_slug
+    contador  = 1
+    while query("SELECT id FROM hub_negocios WHERE slug = %s", (slug,), one=True):
+        slug = f"{base_slug}-{contador}"
+        contador += 1
+
+    db  = get_db()
+    cur = db.cursor()
+
+    cur.execute("""
+        INSERT INTO hub_negocios
+            (categoria_id, nome, slug, descricao, foto_url,
+             endereco, bairro, cidade,
+             whatsapp, telefone, instagram, site_url,
+             mostrar_foto, mostrar_descricao, mostrar_whatsapp,
+             mostrar_instagram, mostrar_telefone, mostrar_site,
+             mostrar_endereco, mostrar_mapa, ativo)
+        VALUES
+            (%s,%s,%s,%s,%s,
+             %s,%s,%s,
+             %s,%s,%s,%s,
+             true,true,true,
+             true,true,true,
+             true,false,true)
+        RETURNING id
+    """, (
+        p["categoria_id"], p["nome"], slug,
+        p["descricao"], p["foto_url"],
+        p["endereco"], p["bairro"], p["cidade"],
+        p["whatsapp"], p["telefone"], p["instagram"], p["site_url"],
+    ))
+    negocio_id = cur.fetchone()["id"]
+
+    cur.execute("""
+        INSERT INTO hub_negocio_hubs (negocio_id, hub_id)
+        VALUES (%s, %s) ON CONFLICT DO NOTHING
+    """, (negocio_id, p["hub_id"]))
+
+    cur.execute("""
+        UPDATE hub_negocios_pendentes SET status = 'aprovado' WHERE id = %s
+    """, (pendente_id,))
+
+    db.commit()
+    return jsonify({"ok": True, "negocio_id": negocio_id, "slug": slug})
+
+
+@app.route("/admin/pendentes/<int:pendente_id>/rejeitar", methods=["POST"])
+@login_required
+def admin_pendente_rejeitar(pendente_id):
+    p = query("SELECT id FROM hub_negocios_pendentes WHERE id = %s", (pendente_id,), one=True)
+    if not p:
+        return jsonify({"erro": "Não encontrado"}), 404
+    query("UPDATE hub_negocios_pendentes SET status = 'rejeitado' WHERE id = %s",
+          (pendente_id,), commit=True)
+    return jsonify({"ok": True})
+
+
+@app.route("/admin/pendentes/<int:pendente_id>/deletar", methods=["POST"])
+@login_required
+def admin_pendente_deletar(pendente_id):
+    query("DELETE FROM hub_negocios_pendentes WHERE id = %s", (pendente_id,), commit=True)
     return jsonify({"ok": True})
 
 
