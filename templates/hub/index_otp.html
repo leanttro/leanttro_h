@@ -1016,9 +1016,8 @@ function buscarProximos(){
     }, function(){ alert('Não foi possível obter sua localização. Verifique as permissões.'); });
 }
 
-// Busca já ordenado por distância direto do banco (rápido, mesmo com milhares de
-// negócios) em vez de baixar TUDO pro navegador pra só depois calcular a distância.
-// Reinicia a paginação do zero: os lotes seguintes (scroll) já vêm em lat/lng também.
+// Busca já ordenado por distância direto do banco (rápido, mesmo com muitos negócios)
+// em vez de só reordenar os poucos que já estavam carregados na tela.
 function recarregarPorDistancia(){
     var loading = document.getElementById('lazy-loading');
     if(loading) loading.style.display = 'block';
@@ -1081,12 +1080,11 @@ function filtrarCategoria(slug, btn){
     }
 
     if(geoAtivo && userLat && userLng){
-        // Com localização ativa, busca já ordenado por distância direto do banco
         recarregarPorDistancia();
         return;
     }
 
-    // Sem localização: usa o que já temos e busca mais se precisar
+    // Filtra categoria: usa o que já temos e busca mais se precisar
     negociosFiltrados = todosNegocios.filter(function(n){ return n.categoria_slug===slug; });
     renderNegocios(negociosFiltrados);
 
