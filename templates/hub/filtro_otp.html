@@ -550,7 +550,6 @@ var _totalReal  = {{ total_negocios }};
 var _totalVisivelLocal = {{ negocios | length }};
 var _userLat = null, _userLng = null;
 var _locAtiva = false;
-var _ordemOriginal = null;
 var _IMG_FALLBACK = 'https://res.cloudinary.com/dhu1cqvrb/image/upload/v1782522274/locais_pkyekz.png';
 
 // Renderiza os negócios já vindos no HTML (primeiros 48)
@@ -592,6 +591,7 @@ function _buildApiUrl(offset){
     var url = '/api/hub/negocios?limit=' + _loteSize + '&offset=' + offset;
     if(_filtroAtualBairro) url += '&bairro=' + encodeURIComponent(_filtroAtualBairro);
     if(_filtroAtualBusca)  url += '&busca='  + encodeURIComponent(_filtroAtualBusca);
+    if(_locAtiva && _userLat && _userLng) url += '&lat=' + _userLat + '&lng=' + _userLng;
     // passa filtro de categoria/bairro do contexto da página
     {% if filtro_tipo == 'categoria' %}
     url += '&categoria={{ segmento }}';
@@ -617,7 +617,6 @@ function _carregarLote(){
             _apiOffset += data.length;
             _totalVisivelLocal += data.length;
             if(data.length < _loteSize) _apiFim = true;
-            if(_locAtiva && _userLat) _ordenarCards();
         })
         .catch(function(){ _apiCarregando = false; if(loading) loading.style.display = 'none'; _apiFim = true; });
 }
@@ -652,8 +651,6 @@ function _recarregarGrid(){
     grid.innerHTML = '';
     _apiOffset = 0;
     _apiFim = false;
-    _locAtiva = false;
-    _ordemOriginal = null;
     _totalVisivelLocal = 0;
     // Se busca/filtro vazio e sem bairro ativo, usa o total real da página
     atualizarSubtitulo('...');
@@ -677,9 +674,10 @@ function usarLocalizacao(){
     var label = document.getElementById('btnLocLabel');
     if(_locAtiva){
         _locAtiva = false; locAtiva = false;
+        _userLat = null; _userLng = null;
         btn.classList.remove('ativo');
         label.textContent = 'Mais próximo';
-        _restaurarOrdem();
+        _recarregarGrid(); // volta pra ordem normal, buscando da API
         return;
     }
     if(!navigator.geolocation){ alert('Seu navegador não suporta geolocalização.'); return; }
@@ -691,7 +689,10 @@ function usarLocalizacao(){
             _userLat = pos.coords.latitude;
             _userLng = pos.coords.longitude;
             label.textContent = 'Mais próximo ✓';
-            _ordenarCards();
+            // Recarrega do zero direto da API: o banco calcula a distância de
+            // TODOS os negócios (não só dos poucos já carregados) e devolve os
+            // mais próximos primeiro — antes só reordenava o que já estava na tela.
+            _recarregarGrid();
         },
         function(){
             _locAtiva = false; locAtiva = false;
@@ -703,32 +704,7 @@ function usarLocalizacao(){
     );
 }
 
-function _distancia(lat1, lng1, lat2, lng2){
-    var R = 6371, dLat = (lat2-lat1)*Math.PI/180, dLng = (lng2-lng1)*Math.PI/180;
-    var a = Math.sin(dLat/2)*Math.sin(dLat/2) +
-            Math.cos(lat1*Math.PI/180)*Math.cos(lat2*Math.PI/180)*Math.sin(dLng/2)*Math.sin(dLng/2);
-    return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
-}
 
-function _ordenarCards(){
-    var grid = document.getElementById('negociosGrid');
-    var cards = Array.from(grid.querySelectorAll('.negocio-card'));
-    if(!_ordemOriginal) _ordemOriginal = cards.slice();
-    cards.sort(function(a, b){
-        var aLat = parseFloat(a.dataset.lat), aLng = parseFloat(a.dataset.lng);
-        var bLat = parseFloat(b.dataset.lat), bLng = parseFloat(b.dataset.lng);
-        var aSem = isNaN(aLat)||isNaN(aLng), bSem = isNaN(bLat)||isNaN(bLng);
-        if(aSem && bSem) return 0; if(aSem) return 1; if(bSem) return -1;
-        return _distancia(_userLat, _userLng, aLat, aLng) - _distancia(_userLat, _userLng, bLat, bLng);
-    });
-    cards.forEach(function(c){ grid.appendChild(c); });
-}
-
-function _restaurarOrdem(){
-    if(!_ordemOriginal) return;
-    var grid = document.getElementById('negociosGrid');
-    _ordemOriginal.forEach(function(c){ grid.appendChild(c); });
-}
 
 
 </script>
