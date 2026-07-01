@@ -936,8 +936,17 @@ var carouselPos = 0, carouselView = 'carousel';
 // _categoriaAtiva: null = tudo; string = slug da categoria filtrada
 var _lazyCategoriaAtiva = null;
 
+// Monta a URL da API já considerando categoria ativa e localização do visitante.
+// Quando lat/lng vão na URL, o banco calcula a distância de TODOS os negócios
+// (não só dos já carregados) e devolve os mais próximos primeiro.
+function _buildApiUrl(offset){
+    var url = '/api/hub/negocios?limit=' + _loteSize + '&offset=' + offset;
+    if(_lazyCategoriaAtiva) url += '&categoria=' + encodeURIComponent(_lazyCategoriaAtiva);
+    if(geoAtivo && userLat && userLng) url += '&lat=' + userLat + '&lng=' + userLng;
+    return url;
+}
+
 // Busca o próximo lote da API com paginação por offset
-// Se categoria estiver ativa, busca só dela (offset reinicia no filtrar)
 var _apiCallbacks = [];
 function _carregarAPIUmaVez(callback) {
     // Compatibilidade: chamado por renderCidades e filtrarCategoria
@@ -948,18 +957,14 @@ function _carregarAPIUmaVez(callback) {
     _apiCarregando = true;
     var loading = document.getElementById('lazy-loading');
     if(loading) loading.style.display = 'block';
-    var url = '/api/hub/negocios?limit=' + _loteSize + '&offset=' + _apiOffset;
-    if(_lazyCategoriaAtiva) url += '&categoria=' + encodeURIComponent(_lazyCategoriaAtiva);
-    if(geoAtivo && userLat && userLng) url += '&lat=' + userLat + '&lng=' + userLng;
-    fetch(url)
+    fetch(_buildApiUrl(_apiOffset))
         .then(function(r){ return r.json(); })
         .then(function(data){
             _apiCarregando = false;
             if(Array.isArray(data) && data.length > 0){
                 _apiOffset += data.length;
                 todosNegocios = todosNegocios.concat(data);
-                if(!_lazyCategoriaAtiva) negociosFiltrados = todosNegocios.slice();
-                else negociosFiltrados = todosNegocios.filter(function(n){ return n.categoria_slug === _lazyCategoriaAtiva; });
+                negociosFiltrados = todosNegocios.slice();
             } else {
                 _apiFim = true;
             }
@@ -1007,38 +1012,26 @@ function calcDistancia(lat1,lng1,lat2,lng2){
     return R*2*Math.atan2(Math.sqrt(a),Math.sqrt(1-a));
 }
 
+// Recarrega do zero direto da API (respeitando a categoria ativa e a localização,
+// se houver). Substitui o que estava carregado — não dá pra confiar no que já
+// tinha localmente porque foi buscado numa ordem/escopo diferente.
+function _recarregarNegocios(){
+    todosNegocios = [];
+    negociosFiltrados = [];
+    _apiOffset = 0;
+    _apiFim = false;
+    _carregarAPIUmaVez(function(){
+        renderNegocios(negociosFiltrados);
+    });
+}
+
 function buscarProximos(){
     if(!navigator.geolocation){ alert('Geolocalização não suportada.'); return; }
     navigator.geolocation.getCurrentPosition(function(pos){
         userLat=pos.coords.latitude; userLng=pos.coords.longitude; geoAtivo=true;
         document.getElementById('busca').scrollIntoView({behavior:'smooth',block:'start'});
-        recarregarPorDistancia();
+        _recarregarNegocios();
     }, function(){ alert('Não foi possível obter sua localização. Verifique as permissões.'); });
-}
-
-// Busca já ordenado por distância direto do banco (rápido, mesmo com milhares de
-// negócios) em vez de baixar TUDO pro navegador pra só depois calcular a distância.
-// Reinicia a paginação do zero: os lotes seguintes (scroll) já vêm em lat/lng também.
-function recarregarPorDistancia(){
-    var loading = document.getElementById('lazy-loading');
-    if(loading) loading.style.display = 'block';
-    _apiOffset = 0;
-    _apiFim = false;
-    var url = '/api/hub/negocios?limit=' + _loteSize + '&offset=0';
-    if(_lazyCategoriaAtiva) url += '&categoria=' + encodeURIComponent(_lazyCategoriaAtiva);
-    if(geoAtivo && userLat && userLng) url += '&lat=' + userLat + '&lng=' + userLng;
-    fetch(url)
-        .then(function(r){ return r.json(); })
-        .then(function(data){
-            if(loading) loading.style.display = 'none';
-            if(!Array.isArray(data)) return;
-            if(!_lazyCategoriaAtiva) todosNegocios = data;
-            negociosFiltrados = data;
-            _apiOffset = data.length;
-            _apiFim = data.length < _loteSize;
-            renderNegocios(negociosFiltrados);
-        })
-        .catch(function(){ if(loading) loading.style.display = 'none'; });
 }
 
 function toggleCategoriaSlicer(){
@@ -1067,45 +1060,7 @@ function filtrarCategoria(slug, btn){
     if(lbl) lbl.textContent=btn.textContent;
     closeCategoriaSlicer();
     _lazyCategoriaAtiva = slug || null;
-
-    if(!slug){
-        // Volta para "Tudo"
-        _apiFim = false; // pode ainda ter mais pra carregar
-        if(geoAtivo && userLat && userLng){
-            recarregarPorDistancia();
-        } else {
-            negociosFiltrados = todosNegocios.slice();
-            renderNegocios(negociosFiltrados);
-        }
-        return;
-    }
-
-    if(geoAtivo && userLat && userLng){
-        // Com localização ativa, busca já ordenado por distância direto do banco
-        recarregarPorDistancia();
-        return;
-    }
-
-    // Sem localização: usa o que já temos e busca mais se precisar
-    negociosFiltrados = todosNegocios.filter(function(n){ return n.categoria_slug===slug; });
-    renderNegocios(negociosFiltrados);
-
-    // Se temos poucos resultados locais e a API ainda tem mais, busca
-    if(!_apiFim && negociosFiltrados.length < 8){
-        var loading = document.getElementById('lazy-loading');
-        if(loading) loading.style.display = 'block';
-        // Busca direta por categoria com offset=0 (dados que não vieram no lote inicial)
-        fetch('/api/hub/negocios?limit=200&offset=0&categoria=' + encodeURIComponent(slug))
-            .then(function(r){ return r.json(); })
-            .then(function(data){
-                if(loading) loading.style.display = 'none';
-                if(Array.isArray(data) && data.length > 0){
-                    negociosFiltrados = data;
-                    renderNegocios(negociosFiltrados);
-                }
-            })
-            .catch(function(){ if(loading) loading.style.display = 'none'; });
-    }
+    _recarregarNegocios();
 }
 
 function cardHTML(n){
