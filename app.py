@@ -1784,47 +1784,6 @@ def admin_pendente_deletar(pendente_id):
 # ════════════════════════════════════════════════════════════
 
 @app.route("/api/hub/negocios")
-def _parse_coord_pair(lat_raw, lng_raw):
-    """Extrai (lat, lng) de forma tolerante a como as pessoas realmente digitam:
-    vírgula como separador decimal (padrão BR), espaços sobrando, ou as duas
-    coordenadas coladas no mesmo campo. Retorna (None, None) se não der pra confiar.
-    """
-    lat_s = (str(lat_raw).strip() if lat_raw is not None else "")
-    lng_s = (str(lng_raw).strip() if lng_raw is not None else "")
-
-    if lat_s and not lng_s and ("," in lat_s or ";" in lat_s):
-        partes = [p.strip() for p in lat_s.replace(";", ",").split(",")]
-        if len(partes) == 2:
-            lat_s, lng_s = partes
-
-    def to_float(s):
-        if not s:
-            return None
-        if "," in s and "." not in s:
-            s = s.replace(",", ".")
-        s = s.replace(" ", "")
-        try:
-            return float(s)
-        except ValueError:
-            return None
-
-    lat, lng = to_float(lat_s), to_float(lng_s)
-    if lat is None or lng is None:
-        return None, None
-    if not (-90 <= lat <= 90) or not (-180 <= lng <= 180):
-        return None, None
-    return lat, lng
-
-
-def _distancia_km(lat1, lng1, lat2, lng2):
-    from math import radians, sin, cos, sqrt, atan2
-    R = 6371
-    dlat = radians(lat2 - lat1)
-    dlng = radians(lng2 - lng1)
-    a = sin(dlat / 2) ** 2 + cos(radians(lat1)) * cos(radians(lat2)) * sin(dlng / 2) ** 2
-    return R * 2 * atan2(sqrt(a), sqrt(1 - a))
-
-
 def api_negocios():
     hub = get_hub_by_host()
     if not hub:
@@ -1837,18 +1796,6 @@ def api_negocios():
         offset = max(int(request.args.get("offset",  0)),   0)
     except (ValueError, TypeError):
         limit, offset = 96, 0
-
-    # lat/lng do visitante (opcional) — quando presentes, ordena pelos mais próximos.
-    lat_raw = request.args.get("lat")
-    lng_raw = request.args.get("lng")
-    user_lat = user_lng = None
-    if lat_raw is not None and lng_raw is not None:
-        try:
-            user_lat = float(lat_raw)
-            user_lng = float(lng_raw)
-        except (ValueError, TypeError):
-            user_lat = user_lng = None
-
     sql = """
         SELECT n.*, c.nome as categoria_nome, c.slug as categoria_slug
         FROM hub_negocios n
@@ -1866,27 +1813,6 @@ def api_negocios():
     if cidade:
         sql += " AND LOWER(TRIM(n.cidade)) = LOWER(%s)"
         params.append(cidade)
-
-    if user_lat is not None and user_lng is not None:
-        # Com localização, calculamos a distância de cada um em Python (tolerante a
-        # formato de lat/lng torto) e paginamos aqui, já que só dá pra saber a ordem
-        # certa depois de calcular todas as distâncias.
-        sql += " ORDER BY n.nome"
-        todos = query(sql, params)
-        calculados = []
-        for n in todos:
-            lat, lng = _parse_coord_pair(n.get("lat"), n.get("lng"))
-            dist = _distancia_km(user_lat, user_lng, lat, lng) if lat is not None else None
-            calculados.append((dist, n))
-        calculados.sort(key=lambda t: (t[0] is None, t[0] if t[0] is not None else 0))
-        pagina = calculados[offset: offset + limit]
-        resultado = []
-        for dist, n in pagina:
-            d = dict(n)
-            d["_distancia_km"] = dist
-            resultado.append(d)
-        return jsonify(resultado)
-
     sql += " ORDER BY n.nome LIMIT %s OFFSET %s"
     params += [limit, offset]
     negocios = query(sql, params)
