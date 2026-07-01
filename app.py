@@ -443,6 +443,47 @@ def pagina_negocio(segmento, slug_negocio):
 #  ROTAS DE CIDADE
 # ════════════════════════════════════════════════════════════
 
+def _normalizar_cidade_bairro(cidade, bairro):
+    """Corrige a grafia de cidade/bairro recebida (formulário, importação automática, etc.)
+    para bater com a grafia que JÁ existe no banco — evita criar uma duplicata nova
+    (ex: a automação manda 'sao paulo' e o sistema já tem 'São Paulo' -> grava 'São Paulo').
+    Se a cidade/bairro ainda não existir de jeito nenhum, mantém o valor recebido como está
+    (essa grafia vira a referência pra próxima vez). Chame isso em TODO ponto que grava
+    negócio (cadastro público, admin novo/editar, aprovação de pendente)."""
+    cidade = (cidade or "").strip() or None
+    bairro = (bairro or "").strip() or None
+
+    if cidade:
+        existentes = query("""
+            SELECT cidade, COUNT(*) as qtd FROM hub_negocios
+            WHERE cidade IS NOT NULL AND TRIM(cidade) != ''
+            GROUP BY cidade ORDER BY qtd DESC
+        """)
+        chave = _chave_normalizada(cidade)
+        for row in existentes:
+            if _chave_normalizada(row["cidade"]) == chave:
+                cidade = row["cidade"]
+                break
+
+    if bairro:
+        sql = """
+            SELECT bairro, COUNT(*) as qtd FROM hub_negocios
+            WHERE bairro IS NOT NULL AND TRIM(bairro) != ''
+        """
+        params = []
+        if cidade:
+            sql += " AND cidade = %s"
+            params.append(cidade)
+        sql += " GROUP BY bairro ORDER BY qtd DESC"
+        chave_b = _chave_normalizada(bairro)
+        for row in query(sql, params):
+            if _chave_normalizada(row["bairro"]) == chave_b:
+                bairro = row["bairro"]
+                break
+
+    return cidade, bairro
+
+
 def _variantes_cidade(hub_id, cidade_nome):
     """Retorna TODAS as grafias salvas no banco (com/sem acento, maiúsc/minúsc) que
     representam a mesma cidade que `cidade_nome`. Existe pra não perder negócios
@@ -897,6 +938,8 @@ def cadastrar_negocio():
         if not cat:
             categoria_id = None
 
+    cidade_norm, bairro_norm = _normalizar_cidade_bairro(f.get("cidade"), f.get("bairro"))
+
     query("""
         INSERT INTO hub_negocios_pendentes
             (hub_id, nome, categoria_id, descricao, foto_url,
@@ -910,8 +953,8 @@ def cadastrar_negocio():
         (f.get("descricao") or "").strip() or None,
         (f.get("foto_url") or "").strip() or None,
         (f.get("endereco") or "").strip() or None,
-        (f.get("bairro") or "").strip() or None,
-        (f.get("cidade") or "").strip() or None,
+        bairro_norm,
+        cidade_norm,
         (f.get("whatsapp") or "").strip() or None,
         (f.get("telefone") or "").strip() or None,
         (f.get("instagram") or "").strip() or None,
@@ -1194,6 +1237,7 @@ def admin_negocios_duplicados_campo(campo):
 @login_required
 def admin_negocio_novo():
     d = request.form
+    cidade_norm, bairro_norm = _normalizar_cidade_bairro(d.get("cidade", "São Paulo"), d.get("bairro"))
     cur = get_db().cursor()
     cur.execute("""
         INSERT INTO hub_negocios
@@ -1207,8 +1251,8 @@ def admin_negocio_novo():
     """, (
         d.get("categoria_id") or None, d["nome"], d["slug"],
         d.get("descricao") or None, d.get("foto_url") or None,
-        d.get("endereco") or None, d.get("bairro") or None,
-        d.get("cidade", "São Paulo"),
+        d.get("endereco") or None, bairro_norm,
+        cidade_norm,
         d.get("lat") or None, d.get("lng") or None,
         d.get("whatsapp") or None, d.get("telefone") or None,
         d.get("instagram") or None, d.get("site_url") or None,
@@ -1236,6 +1280,7 @@ def admin_negocio_editar(negocio_id):
         return jsonify({"erro": "Negócio não encontrado"}), 404
     if request.method == "POST":
         d = request.form
+        cidade_norm, bairro_norm = _normalizar_cidade_bairro(d.get("cidade", "São Paulo"), d.get("bairro"))
         query("""
             UPDATE hub_negocios SET
             categoria_id=%s, nome=%s, slug=%s, descricao=%s, foto_url=%s,
@@ -1248,8 +1293,8 @@ def admin_negocio_editar(negocio_id):
         """, (
             d.get("categoria_id") or None, d["nome"], d["slug"],
             d.get("descricao") or None, d.get("foto_url") or None,
-            d.get("endereco") or None, d.get("bairro") or None,
-            d.get("cidade", "São Paulo"),
+            d.get("endereco") or None, bairro_norm,
+            cidade_norm,
             d.get("lat") or None, d.get("lng") or None,
             d.get("whatsapp") or None, d.get("telefone") or None,
             d.get("instagram") or None, d.get("site_url") or None,
@@ -1850,6 +1895,8 @@ def admin_pendente_aprovar(pendente_id):
     db  = get_db()
     cur = db.cursor()
 
+    cidade_norm, bairro_norm = _normalizar_cidade_bairro(p["cidade"], p["bairro"])
+
     cur.execute("""
         INSERT INTO hub_negocios
             (categoria_id, nome, slug, descricao, foto_url,
@@ -1869,7 +1916,7 @@ def admin_pendente_aprovar(pendente_id):
     """, (
         p["categoria_id"], p["nome"], slug,
         p["descricao"], p["foto_url"],
-        p["endereco"], p["bairro"], p["cidade"],
+        p["endereco"], bairro_norm, cidade_norm,
         p["whatsapp"], p["telefone"], p["instagram"], p["site_url"],
     ))
     negocio_id = cur.fetchone()["id"]
