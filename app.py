@@ -2045,14 +2045,48 @@ def api_negocios():
         offset = max(int(request.args.get("offset",  0)),   0)
     except (ValueError, TypeError):
         limit, offset = 96, 0
+
+    # lat/lng do visitante (opcional) — quando presentes, ordena pelos mais
+    # próximos calculando a distância direto no banco, em vez de por nome.
+    # Sem isso, com hubs grandes (milhares de negócios), só dava pra ordenar
+    # por distância os poucos que já tinham sido carregados no navegador —
+    # o que fazia o "mais próximo de verdade" nunca aparecer.
+    lat_raw = request.args.get("lat")
+    lng_raw = request.args.get("lng")
+    user_lat = user_lng = None
+    if lat_raw is not None and lng_raw is not None:
+        try:
+            user_lat = float(lat_raw)
+            user_lng = float(lng_raw)
+        except (ValueError, TypeError):
+            user_lat = user_lng = None
+
     sql = """
         SELECT n.*, c.nome as categoria_nome, c.slug as categoria_slug
+    """
+    if user_lat is not None and user_lng is not None:
+        sql += """
+        , CASE
+            WHEN n.lat IS NULL OR n.lng IS NULL
+                 OR NULLIF(n.lat::text, '') IS NULL OR NULLIF(n.lng::text, '') IS NULL
+            THEN NULL
+            ELSE 6371 * acos(LEAST(1, GREATEST(-1,
+                cos(radians(%s)) * cos(radians(n.lat::float8)) *
+                cos(radians(n.lng::float8) - radians(%s)) +
+                sin(radians(%s)) * sin(radians(n.lat::float8))
+            )))
+          END AS _distancia_km
+        """
+        params = [user_lat, user_lng, user_lat]
+    else:
+        params = []
+    sql += """
         FROM hub_negocios n
         JOIN hub_negocio_hubs nh ON nh.negocio_id = n.id
         JOIN hub_categorias c ON c.id = n.categoria_id
         WHERE nh.hub_id = %s AND n.ativo = true
     """
-    params = [hub["id"]]
+    params.append(hub["id"])
     if categoria:
         sql += " AND c.slug = %s"
         params.append(categoria)
@@ -2063,10 +2097,15 @@ def api_negocios():
     if bairro:
         sql += " AND n.bairro = ANY(%s)"
         params.append(_variantes_bairro(hub["id"], bairro, cidade_var))
-    sql += " ORDER BY n.nome LIMIT %s OFFSET %s"
+    if user_lat is not None and user_lng is not None:
+        sql += " ORDER BY _distancia_km IS NULL, _distancia_km ASC"
+    else:
+        sql += " ORDER BY n.nome"
+    sql += " LIMIT %s OFFSET %s"
     params += [limit, offset]
     negocios = query(sql, params)
     return jsonify([dict(n) for n in negocios])
+
 
 
 @app.route("/api/hub/categorias")
