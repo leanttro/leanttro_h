@@ -19,6 +19,18 @@ app.url_map.strict_slashes = False
 
 DOMINIO_BASE = os.getenv("DOMINIO_BASE", "leanttro.com")
 
+# campos de texto livre que sofrem de grafias inconsistentes (maiúscula/minúscula, acento, espaços)
+CAMPOS_NORMALIZAVEIS = {"bairro", "cidade"}
+
+def _chave_normalizada(texto):
+    """Normaliza texto pra comparação: sem acento, minúsculo, sem espaço nas pontas/duplicado."""
+    if not texto:
+        return ""
+    sem_acento = "".join(
+        c for c in _uc.normalize("NFKD", texto) if not _uc.combining(c)
+    )
+    return " ".join(sem_acento.strip().lower().split())
+
 # ── Templates dinâmicos ───────────────────────────────────────
 
 def listar_templates(tipo):
@@ -1102,6 +1114,35 @@ def admin_negocios_bairros():
     return jsonify([b["bairro"] for b in bairros])
 
 
+@app.route("/admin/negocios/duplicados/<campo>")
+@login_required
+def admin_negocios_duplicados_campo(campo):
+    """Agrupa valores de 'bairro' ou 'cidade' que só diferem por maiúscula/minúscula ou acento
+    (ex: 'Aldeia da Serra' x 'Aldeia Da Serra', ou 'São Paulo' x 'Sao paulo')."""
+    if campo not in CAMPOS_NORMALIZAVEIS:
+        return jsonify({"error": "Campo inválido"}), 400
+    linhas = query(f"""
+        SELECT {campo} AS variante, COUNT(*) AS qtd
+        FROM hub_negocios
+        WHERE {campo} IS NOT NULL AND TRIM({campo}) != ''
+        GROUP BY {campo}
+        ORDER BY {campo}
+    """)
+    grupos = {}
+    for r in linhas:
+        chave = _chave_normalizada(r["variante"])
+        grupos.setdefault(chave, []).append({"bairro": r["variante"], "qtd": r["qtd"]})
+    for variantes in grupos.values():
+        variantes.sort(key=lambda v: v["qtd"], reverse=True)
+    resultado = [
+        {"chave": chave, "variantes": variantes}
+        for chave, variantes in grupos.items()
+        if len(variantes) > 1
+    ]
+    resultado.sort(key=lambda g: g["chave"])
+    return jsonify(resultado)
+
+
 @app.route("/admin/negocios/novo", methods=["POST"])
 @login_required
 def admin_negocio_novo():
@@ -1198,8 +1239,46 @@ def admin_negocio_deletar(negocio_id):
 @login_required
 def admin_negocios_bulk():
     data   = request.get_json(force=True)
-    ids    = [int(i) for i in data.get("ids", []) if str(i).isdigit()]
     action = data.get("action", "")
+
+    if action == "mesclar_bairros":
+        bairros_origem = [b.strip() for b in data.get("bairros_origem", []) if isinstance(b, str) and b.strip()]
+        bairro_destino = (data.get("bairro_destino") or "").strip()
+        if not bairros_origem:
+            return jsonify({"error": "Nenhum bairro de origem informado"}), 400
+        if not bairro_destino:
+            return jsonify({"error": "bairro_destino obrigatório"}), 400
+        # tira o próprio destino da lista de origem, só se for EXATAMENTE igual (senão não precisa de update).
+        # atenção: comparação sensível a maiúsculas/minúsculas de propósito — "Aldeia da Serra" e
+        # "Aldeia Da Serra" são grafias diferentes e as duas precisam ser corrigidas para o destino.
+        bairros_origem = [b for b in bairros_origem if b != bairro_destino]
+        if not bairros_origem:
+            return jsonify({"error": "bairro_destino não pode ser o único bairro selecionado"}), 400
+        affected = query(
+            "UPDATE hub_negocios SET bairro = %s WHERE bairro = ANY(%s)",
+            (bairro_destino, bairros_origem), commit=True
+        )
+        return jsonify({"ok": True, "affected": affected})
+
+    if action == "normalizar_case_bairros":
+        # escolhas: { "aldeia da serra": "Aldeia da Serra", "vila mariana": "Vila Mariana", ... }
+        escolhas = data.get("escolhas") or {}
+        if not isinstance(escolhas, dict) or not escolhas:
+            return jsonify({"error": "Nenhuma escolha de padronização informada"}), 400
+        total_afetado = 0
+        for chave, bairro_escolhido in escolhas.items():
+            bairro_escolhido = (bairro_escolhido or "").strip()
+            if not bairro_escolhido:
+                continue
+            # atualiza só quem está com a mesma grafia (ignorando maiúsculas/minúsculas e espaços nas pontas)
+            # e é diferente do valor escolhido, pra não fazer update desnecessário
+            total_afetado += query(
+                "UPDATE hub_negocios SET bairro = %s WHERE lower(trim(bairro)) = lower(trim(%s)) AND bairro <> %s",
+                (bairro_escolhido, chave, bairro_escolhido), commit=True
+            )
+        return jsonify({"ok": True, "affected": total_afetado})
+
+    ids    = [int(i) for i in data.get("ids", []) if str(i).isdigit()]
     hub_id = data.get("hub_id")
 
     if not ids:
