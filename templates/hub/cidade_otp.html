@@ -760,8 +760,11 @@ function buscarProximos(){
     if(!navigator.geolocation){ alert('Geolocalização não suportada.'); return; }
     navigator.geolocation.getCurrentPosition(function(pos){
         userLat=pos.coords.latitude; userLng=pos.coords.longitude; geoAtivo=true;
-        renderNegocios(negociosFiltrados);
         document.getElementById('negocios').scrollIntoView({behavior:'smooth',block:'start'});
+        // Recarrega direto da API: o banco calcula a distância de TODOS os negócios
+        // da cidade (não só dos poucos já carregados no navegador) e devolve os mais
+        // próximos primeiro — antes só reordenava o que já estava carregado localmente.
+        _resetEFiltrar();
     }, function(){ alert('Não foi possível obter sua localização.'); });
 }
 
@@ -874,6 +877,7 @@ function _buildApiUrl(offset, limit){
     var url = '/api/hub/negocios?limit='+limit+'&offset='+offset+'&cidade='+encodeURIComponent(_cidadeAtual);
     if(_filtroCategoriaAtiva) url += '&categoria='+encodeURIComponent(_filtroCategoriaAtiva);
     if(_filtroBairroAtivo)    url += '&bairro='+encodeURIComponent(_filtroBairroAtivo);
+    if(geoAtivo && userLat && userLng) url += '&lat='+userLat+'&lng='+userLng;
     return url;
 }
 
