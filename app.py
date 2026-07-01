@@ -8,6 +8,7 @@ import psycopg2.extras
 import os
 import glob
 import unicodedata as _uc
+import time
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -68,6 +69,29 @@ def query(sql, params=(), one=False, commit=False):
         return cur.rowcount
     result = cur.fetchone() if one else cur.fetchall()
     return result
+
+# ── Cache leve em memória (cidade/bairro/categoria/contagem) ───
+# Essas consultas são as mesmas pra QUALQUER visitante da mesma cidade e só mudam
+# quando um negócio é cadastrado/editado/aprovado — não precisam rodar a cada clique.
+# TTL curto (poucos minutos) já tira a maior parte da carga do banco sem deixar
+# os dados visivelmente desatualizados. É limpo automaticamente sempre que um
+# negócio é criado/editado/aprovado/apagado (ver _cache_invalidar()).
+_CACHE = {}
+_CACHE_TTL_SEGUNDOS = 180  # 3 minutos
+
+def _cache_get(chave):
+    item = _CACHE.get(chave)
+    if item and (time.time() - item[0]) < _CACHE_TTL_SEGUNDOS:
+        return item[1]
+    return None
+
+def _cache_set(chave, valor):
+    _CACHE[chave] = (time.time(), valor)
+    return valor
+
+def _cache_invalidar():
+    """Chame depois de QUALQUER escrita em hub_negocios (criar/editar/apagar/aprovar/bulk)."""
+    _CACHE.clear()
 
 # ── Auth ──────────────────────────────────────────────────────
 
@@ -486,8 +510,9 @@ def _normalizar_cidade_bairro(cidade, bairro):
 
 def _variantes_cidade(hub_id, cidade_nome):
     """Retorna TODAS as grafias salvas no banco (com/sem acento, maiúsc/minúsc) que
-    representam a mesma cidade que `cidade_nome`. Existe pra não perder negócios
-    cadastrados com uma grafia diferente da que foi escolhida como "canônica"."""
+    representam a mesma cidade que `cidade_nome`. Usada só pelos pontos de entrada que
+    recebem uma STRING solta (ex: api_negocios) — as rotas de página usam _resolve_cidade,
+    que já devolve as variantes junto, numa única query."""
     chave_alvo = _chave_normalizada(cidade_nome)
     rows = query("""
         SELECT DISTINCT n.cidade
@@ -498,10 +523,10 @@ def _variantes_cidade(hub_id, cidade_nome):
     return [r["cidade"] for r in rows if _chave_normalizada(r["cidade"]) == chave_alvo] or [cidade_nome]
 
 
-def _variantes_bairro(hub_id, cidade_nome, bairro_nome):
-    """Mesma ideia de _variantes_cidade, mas pra bairro (escopado dentro da cidade já resolvida)."""
+def _variantes_bairro(hub_id, bairro_nome, cidade_variantes=None):
+    """Mesma ideia de _variantes_cidade, mas pra bairro. Aceita `cidade_variantes` já
+    calculada (lista) pra não repetir a consulta de cidade."""
     chave_alvo = _chave_normalizada(bairro_nome)
-    variantes_cidade = _variantes_cidade(hub_id, cidade_nome) if cidade_nome else None
     sql = """
         SELECT DISTINCT n.bairro
         FROM hub_negocios n
@@ -509,18 +534,23 @@ def _variantes_bairro(hub_id, cidade_nome, bairro_nome):
         WHERE nh.hub_id = %s AND n.ativo = true AND n.bairro IS NOT NULL
     """
     params = [hub_id]
-    if variantes_cidade:
+    if cidade_variantes:
         sql += " AND n.cidade = ANY(%s)"
-        params.append(variantes_cidade)
+        params.append(cidade_variantes)
     rows = query(sql, params)
     return [r["bairro"] for r in rows if _chave_normalizada(r["bairro"]) == chave_alvo] or [bairro_nome]
 
 
-def _resolve_bairro(hub_id, bairro_slug, cidade_nome=None):
-    """Resolve o slug de bairro pra grafia CANÔNICA = a que tem mais negócios cadastrados.
-    Isso torna a escolha determinística mesmo quando existem grafias duplicadas no banco
-    (ex: 'Agua Rasa' x 'Água Rasa')."""
+def _resolve_bairro(hub_id, bairro_slug, cidade_variantes=None):
+    """Resolve o slug de bairro pra (nome_canonico, variantes) numa ÚNICA query —
+    nome_canonico é a grafia com mais negócios; variantes são todas as grafias da mesma
+    (ex: 'Agua Rasa' x 'Água Rasa'). Passe `cidade_variantes` (lista, já resolvida por
+    _resolve_cidade) pra escopar a busca sem rodar outra query de cidade. CACHEADO."""
     bairro_slug_norm = _slugify(bairro_slug)
+    chave_cache = ("resolve_bairro", hub_id, tuple(sorted(cidade_variantes or [])), bairro_slug_norm)
+    cached = _cache_get(chave_cache)
+    if cached is not None:
+        return cached
     sql = """
         SELECT n.bairro, COUNT(*) as qtd
         FROM hub_negocios n
@@ -528,22 +558,35 @@ def _resolve_bairro(hub_id, bairro_slug, cidade_nome=None):
         WHERE nh.hub_id = %s AND n.ativo = true AND n.bairro IS NOT NULL
     """
     params = [hub_id]
-    if cidade_nome:
-        variantes_cidade = _variantes_cidade(hub_id, cidade_nome)
+    if cidade_variantes:
         sql += " AND n.cidade = ANY(%s)"
-        params.append(variantes_cidade)
+        params.append(cidade_variantes)
     sql += " GROUP BY n.bairro ORDER BY qtd DESC, n.bairro"
     rows = query(sql, params)
     candidatos = [row for row in rows if _slugify(row["bairro"]) == bairro_slug_norm]
-    return candidatos[0]["bairro"] if candidatos else None
+    if not candidatos:
+        return _cache_set(chave_cache, (None, []))
+    nome_canonico = candidatos[0]["bairro"]
+    chave_alvo = _chave_normalizada(nome_canonico)
+    variantes = [row["bairro"] for row in rows if _chave_normalizada(row["bairro"]) == chave_alvo]
+    return _cache_set(chave_cache, (nome_canonico, variantes))
 
 
 def _resolve_cidade(hub_id, cidade_slug):
-    """Resolve o slug de cidade pra grafia CANÔNICA = a que tem mais negócios cadastrados.
-    Sem isso, um SELECT DISTINCT sem ORDER BY pode devolver 'sao paulo' (grafia minoritária,
-    sem acento) em vez de 'São Paulo' de forma não-determinística — foi exatamente o bug
-    que fazia só 2 categorias aparecerem na página da cidade."""
+    """Resolve o slug de cidade pra (nome_canonico, variantes) numa ÚNICA query —
+    nome_canonico é a grafia com mais negócios cadastrados (escolha determinística;
+    sem isso, um SELECT DISTINCT sem ORDER BY podia devolver 'sao paulo' em vez de
+    'São Paulo' de forma aleatória — foi o bug que fazia só 2 categorias aparecerem).
+    `variantes` traz todas as grafias da mesma cidade, pra usar nos filtros seguintes
+    sem precisar rodar essa consulta de novo a cada helper chamado.
+    CACHEADO: essa consulta faz GROUP BY em cima de TODOS os negócios do hub — é a
+    mais cara de todas e o resultado é igual pra qualquer visitante, então cachear
+    aqui é o que mais economiza."""
     cidade_slug_norm = _slugify(cidade_slug)
+    chave_cache = ("resolve_cidade", hub_id, cidade_slug_norm)
+    cached = _cache_get(chave_cache)
+    if cached is not None:
+        return cached
     rows = query("""
         SELECT n.cidade, COUNT(*) as qtd
         FROM hub_negocios n
@@ -553,10 +596,15 @@ def _resolve_cidade(hub_id, cidade_slug):
         ORDER BY qtd DESC, n.cidade
     """, (hub_id,))
     candidatos = [row for row in rows if _slugify(row["cidade"]) == cidade_slug_norm]
-    return candidatos[0]["cidade"] if candidatos else None
+    if not candidatos:
+        return _cache_set(chave_cache, (None, []))
+    nome_canonico = candidatos[0]["cidade"]
+    chave_alvo = _chave_normalizada(nome_canonico)
+    variantes = [row["cidade"] for row in rows if _chave_normalizada(row["cidade"]) == chave_alvo]
+    return _cache_set(chave_cache, (nome_canonico, variantes))
 
 
-def _negocios_cidade(hub_id, cidade_nome=None, cat_slug=None, bairro_slug=None, limit=None, offset=None):
+def _negocios_cidade(hub_id, cidade_variantes=None, cat_slug=None, bairro_variantes=None, limit=None, offset=None):
     sql = """
         SELECT n.*, c.nome as categoria_nome, c.slug as categoria_slug
         FROM hub_negocios n
@@ -565,15 +613,15 @@ def _negocios_cidade(hub_id, cidade_nome=None, cat_slug=None, bairro_slug=None, 
         WHERE nh.hub_id = %s AND n.ativo = true
     """
     params = [hub_id]
-    if cidade_nome:
+    if cidade_variantes:
         sql += " AND n.cidade = ANY(%s)"
-        params.append(_variantes_cidade(hub_id, cidade_nome))
+        params.append(cidade_variantes)
     if cat_slug:
         sql += " AND c.slug = %s"
         params.append(cat_slug)
-    if bairro_slug:
+    if bairro_variantes:
         sql += " AND n.bairro = ANY(%s)"
-        params.append(_variantes_bairro(hub_id, cidade_nome, bairro_slug))
+        params.append(bairro_variantes)
     sql += " ORDER BY n.nome"
     if limit is not None:
         sql += " LIMIT %s"
@@ -584,8 +632,14 @@ def _negocios_cidade(hub_id, cidade_nome=None, cat_slug=None, bairro_slug=None, 
     return query(sql, params)
 
 
-def _contar_negocios_cidade(hub_id, cidade_nome=None, cat_slug=None, bairro_slug=None):
-    """COUNT(*) leve — usado para mostrar o total real mesmo quando _negocios_cidade vem limitado."""
+def _contar_negocios_cidade(hub_id, cidade_variantes=None, cat_slug=None, bairro_variantes=None):
+    """COUNT(*) leve — usado para mostrar o total real mesmo quando _negocios_cidade vem limitado.
+    CACHEADO: é reconsultado em toda visita mas só muda quando algum negócio é criado/editado."""
+    chave_cache = ("contar", hub_id, tuple(sorted(cidade_variantes or [])), cat_slug,
+                   tuple(sorted(bairro_variantes or [])))
+    cached = _cache_get(chave_cache)
+    if cached is not None:
+        return cached
     sql = """
         SELECT COUNT(*) as total
         FROM hub_negocios n
@@ -594,21 +648,27 @@ def _contar_negocios_cidade(hub_id, cidade_nome=None, cat_slug=None, bairro_slug
         WHERE nh.hub_id = %s AND n.ativo = true
     """
     params = [hub_id]
-    if cidade_nome:
+    if cidade_variantes:
         sql += " AND n.cidade = ANY(%s)"
-        params.append(_variantes_cidade(hub_id, cidade_nome))
+        params.append(cidade_variantes)
     if cat_slug:
         sql += " AND c.slug = %s"
         params.append(cat_slug)
-    if bairro_slug:
+    if bairro_variantes:
         sql += " AND n.bairro = ANY(%s)"
-        params.append(_variantes_bairro(hub_id, cidade_nome, bairro_slug))
-    return query(sql, params, one=True)["total"]
+        params.append(bairro_variantes)
+    total = query(sql, params, one=True)["total"]
+    return _cache_set(chave_cache, total)
 
 
-def _bairros_cidade(hub_id, cidade_nome):
+def _bairros_cidade(hub_id, cidade_variantes):
     """Lista de bairros da cidade, DEDUPLICADA por grafia (acento/maiúscula).
-    Cada bairro aparece uma única vez, usando a grafia com mais negócios cadastrados."""
+    Cada bairro aparece uma única vez, usando a grafia com mais negócios cadastrados.
+    CACHEADO — é a mesma lista pra qualquer visitante da cidade."""
+    chave_cache = ("bairros_cidade", hub_id, tuple(sorted(cidade_variantes)))
+    cached = _cache_get(chave_cache)
+    if cached is not None:
+        return cached
     rows = query("""
         SELECT n.bairro, COUNT(*) as qtd
         FROM hub_negocios n
@@ -618,17 +678,22 @@ def _bairros_cidade(hub_id, cidade_nome):
           AND n.cidade = ANY(%s)
         GROUP BY n.bairro
         ORDER BY qtd DESC, n.bairro
-    """, (hub_id, _variantes_cidade(hub_id, cidade_nome)))
+    """, (hub_id, cidade_variantes))
     vistos = {}
     for r in rows:
         chave = _chave_normalizada(r["bairro"])
         if chave not in vistos:
             vistos[chave] = r["bairro"]
-    return sorted(vistos.values())
+    return _cache_set(chave_cache, sorted(vistos.values()))
 
 
-def _categorias_cidade(hub_id, cidade_nome):
-    return query("""
+def _categorias_cidade(hub_id, cidade_variantes):
+    """CACHEADO — lista de categorias com negócios na cidade, igual pra qualquer visitante."""
+    chave_cache = ("categorias_cidade", hub_id, tuple(sorted(cidade_variantes)))
+    cached = _cache_get(chave_cache)
+    if cached is not None:
+        return cached
+    resultado = query("""
         SELECT DISTINCT c.id, c.nome, c.slug, c.icone_url
         FROM hub_categorias c
         JOIN hub_negocios n ON n.categoria_id = c.id
@@ -636,7 +701,8 @@ def _categorias_cidade(hub_id, cidade_nome):
         WHERE nh.hub_id = %s AND n.ativo = true AND c.ativo = true
           AND n.cidade = ANY(%s)
         ORDER BY c.nome
-    """, (hub_id, _variantes_cidade(hub_id, cidade_nome)))
+    """, (hub_id, cidade_variantes))
+    return _cache_set(chave_cache, resultado)
 
 
 def _render_cidade(hub, negocios, categorias, cidade_nome,
@@ -668,14 +734,14 @@ def pagina_cidade(cidade_slug):
     hub = get_hub_by_host()
     if not hub:
         return "Hub não encontrado", 404
-    cidade_nome = _resolve_cidade(hub["id"], cidade_slug)
+    cidade_nome, cidade_var = _resolve_cidade(hub["id"], cidade_slug)
     if not cidade_nome:
         return "Cidade não encontrada", 404
-    negocios   = _negocios_cidade(hub["id"], cidade_nome=cidade_nome, limit=48)
-    total      = _contar_negocios_cidade(hub["id"], cidade_nome=cidade_nome)
+    negocios   = _negocios_cidade(hub["id"], cidade_variantes=cidade_var, limit=100)
+    total      = _contar_negocios_cidade(hub["id"], cidade_variantes=cidade_var)
     categorias = query("SELECT * FROM hub_categorias WHERE ativo = true ORDER BY nome")
-    bairros    = _bairros_cidade(hub["id"], cidade_nome)
-    cats_disp  = _categorias_cidade(hub["id"], cidade_nome)
+    bairros    = _bairros_cidade(hub["id"], cidade_var)
+    cats_disp  = _categorias_cidade(hub["id"], cidade_var)
     return _render_cidade(hub, negocios, categorias, cidade_nome,
                           bairros_disponiveis=bairros,
                           categorias_disponiveis=cats_disp,
@@ -687,7 +753,7 @@ def pagina_cidade_segundo(cidade_slug, segundo_slug):
     hub = get_hub_by_host()
     if not hub:
         return "Hub não encontrado", 404
-    cidade_nome = _resolve_cidade(hub["id"], cidade_slug)
+    cidade_nome, cidade_var = _resolve_cidade(hub["id"], cidade_slug)
     if not cidade_nome:
         return "Cidade não encontrada", 404
     categoria = query(
@@ -695,20 +761,23 @@ def pagina_cidade_segundo(cidade_slug, segundo_slug):
         (segundo_slug,), one=True
     )
     categorias = query("SELECT * FROM hub_categorias WHERE ativo = true ORDER BY nome")
-    bairros    = _bairros_cidade(hub["id"], cidade_nome)
-    cats_disp  = _categorias_cidade(hub["id"], cidade_nome)
+    bairros    = _bairros_cidade(hub["id"], cidade_var)
+    cats_disp  = _categorias_cidade(hub["id"], cidade_var)
     if categoria:
-        negocios = _negocios_cidade(hub["id"], cidade_nome=cidade_nome, cat_slug=segundo_slug, limit=48)
-        total    = _contar_negocios_cidade(hub["id"], cidade_nome=cidade_nome, cat_slug=segundo_slug)
+        negocios = _negocios_cidade(hub["id"], cidade_variantes=cidade_var, cat_slug=segundo_slug, limit=100)
+        total    = _contar_negocios_cidade(hub["id"], cidade_variantes=cidade_var, cat_slug=segundo_slug)
         return _render_cidade(hub, negocios, categorias, cidade_nome,
                               categoria=dict(categoria),
                               bairros_disponiveis=bairros,
                               categorias_disponiveis=cats_disp,
                               total_negocios=total)
     else:
-        bairro_nome = _resolve_bairro(hub["id"], segundo_slug, cidade_nome) or segundo_slug.replace("-", " ").title()
-        negocios    = _negocios_cidade(hub["id"], cidade_nome=cidade_nome, bairro_slug=bairro_nome, limit=48)
-        total       = _contar_negocios_cidade(hub["id"], cidade_nome=cidade_nome, bairro_slug=bairro_nome)
+        bairro_nome, bairro_var = _resolve_bairro(hub["id"], segundo_slug, cidade_var)
+        if not bairro_nome:
+            bairro_nome = segundo_slug.replace("-", " ").title()
+            bairro_var  = [bairro_nome]
+        negocios    = _negocios_cidade(hub["id"], cidade_variantes=cidade_var, bairro_variantes=bairro_var, limit=100)
+        total       = _contar_negocios_cidade(hub["id"], cidade_variantes=cidade_var, bairro_variantes=bairro_var)
         return _render_cidade(hub, negocios, categorias, cidade_nome,
                               bairro=bairro_nome,
                               bairros_disponiveis=bairros,
@@ -721,7 +790,7 @@ def pagina_cidade_bairro_cat(cidade_slug, bairro_slug, cat_slug):
     hub = get_hub_by_host()
     if not hub:
         return "Hub não encontrado", 404
-    cidade_nome = _resolve_cidade(hub["id"], cidade_slug)
+    cidade_nome, cidade_var = _resolve_cidade(hub["id"], cidade_slug)
     if not cidade_nome:
         return "Cidade não encontrada", 404
     categoria   = query(
@@ -729,13 +798,16 @@ def pagina_cidade_bairro_cat(cidade_slug, bairro_slug, cat_slug):
         (cat_slug,), one=True
     )
     categorias  = query("SELECT * FROM hub_categorias WHERE ativo = true ORDER BY nome")
-    bairros     = _bairros_cidade(hub["id"], cidade_nome)
-    cats_disp   = _categorias_cidade(hub["id"], cidade_nome)
-    bairro_nome = _resolve_bairro(hub["id"], bairro_slug, cidade_nome) or bairro_slug.replace("-", " ").title()
-    negocios    = _negocios_cidade(hub["id"], cidade_nome=cidade_nome,
-                                   cat_slug=cat_slug, bairro_slug=bairro_nome, limit=48)
-    total       = _contar_negocios_cidade(hub["id"], cidade_nome=cidade_nome,
-                                          cat_slug=cat_slug, bairro_slug=bairro_nome)
+    bairros     = _bairros_cidade(hub["id"], cidade_var)
+    cats_disp   = _categorias_cidade(hub["id"], cidade_var)
+    bairro_nome, bairro_var = _resolve_bairro(hub["id"], bairro_slug, cidade_var)
+    if not bairro_nome:
+        bairro_nome = bairro_slug.replace("-", " ").title()
+        bairro_var  = [bairro_nome]
+    negocios    = _negocios_cidade(hub["id"], cidade_variantes=cidade_var,
+                                   cat_slug=cat_slug, bairro_variantes=bairro_var, limit=100)
+    total       = _contar_negocios_cidade(hub["id"], cidade_variantes=cidade_var,
+                                          cat_slug=cat_slug, bairro_variantes=bairro_var)
     return _render_cidade(hub, negocios, categorias, cidade_nome,
                           bairro=bairro_nome,
                           categoria=dict(categoria) if categoria else None,
@@ -757,14 +829,14 @@ def pagina_cat_cidade(cat_slug, cidade_slug):
     )
     if not categoria:
         return "Categoria não encontrada", 404
-    cidade_nome = _resolve_cidade(hub["id"], cidade_slug)
+    cidade_nome, cidade_var = _resolve_cidade(hub["id"], cidade_slug)
     if not cidade_nome:
         return "Cidade não encontrada", 404
-    negocios   = _negocios_cidade(hub["id"], cidade_nome=cidade_nome, cat_slug=cat_slug, limit=48)
-    total      = _contar_negocios_cidade(hub["id"], cidade_nome=cidade_nome, cat_slug=cat_slug)
+    negocios   = _negocios_cidade(hub["id"], cidade_variantes=cidade_var, cat_slug=cat_slug, limit=100)
+    total      = _contar_negocios_cidade(hub["id"], cidade_variantes=cidade_var, cat_slug=cat_slug)
     categorias = query("SELECT * FROM hub_categorias WHERE ativo = true ORDER BY nome")
-    bairros    = _bairros_cidade(hub["id"], cidade_nome)
-    cats_disp  = _categorias_cidade(hub["id"], cidade_nome)
+    bairros    = _bairros_cidade(hub["id"], cidade_var)
+    cats_disp  = _categorias_cidade(hub["id"], cidade_var)
     return _render_cidade(hub, negocios, categorias, cidade_nome,
                           categoria=dict(categoria),
                           bairros_disponiveis=bairros,
@@ -785,17 +857,20 @@ def pagina_cat_cidade_bairro(cat_slug, cidade_slug, bairro_slug):
     )
     if not categoria:
         return "Categoria não encontrada", 404
-    cidade_nome = _resolve_cidade(hub["id"], cidade_slug)
+    cidade_nome, cidade_var = _resolve_cidade(hub["id"], cidade_slug)
     if not cidade_nome:
         return "Cidade não encontrada", 404
-    bairro_nome = bairro_slug.replace("-", " ").title()
-    negocios    = _negocios_cidade(hub["id"], cidade_nome=cidade_nome,
-                                    cat_slug=cat_slug, bairro_slug=bairro_slug, limit=48)
-    total       = _contar_negocios_cidade(hub["id"], cidade_nome=cidade_nome,
-                                          cat_slug=cat_slug, bairro_slug=bairro_slug)
+    bairro_nome, bairro_var = _resolve_bairro(hub["id"], bairro_slug, cidade_var)
+    if not bairro_nome:
+        bairro_nome = bairro_slug.replace("-", " ").title()
+        bairro_var  = [bairro_nome]
+    negocios    = _negocios_cidade(hub["id"], cidade_variantes=cidade_var,
+                                    cat_slug=cat_slug, bairro_variantes=bairro_var, limit=100)
+    total       = _contar_negocios_cidade(hub["id"], cidade_variantes=cidade_var,
+                                          cat_slug=cat_slug, bairro_variantes=bairro_var)
     categorias  = query("SELECT * FROM hub_categorias WHERE ativo = true ORDER BY nome")
-    bairros     = _bairros_cidade(hub["id"], cidade_nome)
-    cats_disp   = _categorias_cidade(hub["id"], cidade_nome)
+    bairros     = _bairros_cidade(hub["id"], cidade_var)
+    cats_disp   = _categorias_cidade(hub["id"], cidade_var)
     return _render_cidade(hub, negocios, categorias, cidade_nome,
                           bairro=bairro_nome,
                           categoria=dict(categoria),
@@ -1269,6 +1344,7 @@ def admin_negocio_novo():
             VALUES (%s, %s) ON CONFLICT DO NOTHING
         """, (negocio_id, hub_id))
     get_db().commit()
+    _cache_invalidar()
     return jsonify({"ok": True})
 
 
@@ -1980,12 +2056,13 @@ def api_negocios():
     if categoria:
         sql += " AND c.slug = %s"
         params.append(categoria)
-    if cidade:
+    cidade_var = _variantes_cidade(hub["id"], cidade) if cidade else None
+    if cidade_var:
         sql += " AND n.cidade = ANY(%s)"
-        params.append(_variantes_cidade(hub["id"], cidade))
+        params.append(cidade_var)
     if bairro:
         sql += " AND n.bairro = ANY(%s)"
-        params.append(_variantes_bairro(hub["id"], cidade, bairro))
+        params.append(_variantes_bairro(hub["id"], bairro, cidade_var))
     sql += " ORDER BY n.nome LIMIT %s OFFSET %s"
     params += [limit, offset]
     negocios = query(sql, params)
