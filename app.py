@@ -1198,8 +1198,26 @@ def admin_negocio_deletar(negocio_id):
 @login_required
 def admin_negocios_bulk():
     data   = request.get_json(force=True)
-    ids    = [int(i) for i in data.get("ids", []) if str(i).isdigit()]
     action = data.get("action", "")
+
+    if action == "mesclar_bairros":
+        bairros_origem = [b.strip() for b in data.get("bairros_origem", []) if isinstance(b, str) and b.strip()]
+        bairro_destino = (data.get("bairro_destino") or "").strip()
+        if not bairros_origem:
+            return jsonify({"error": "Nenhum bairro de origem informado"}), 400
+        if not bairro_destino:
+            return jsonify({"error": "bairro_destino obrigatório"}), 400
+        # tira o próprio destino da lista de origem, caso tenha vindo junto (evita update inútil)
+        bairros_origem = [b for b in bairros_origem if b.lower() != bairro_destino.lower()]
+        if not bairros_origem:
+            return jsonify({"error": "bairro_destino não pode ser o único bairro selecionado"}), 400
+        affected = query(
+            "UPDATE hub_negocios SET bairro = %s WHERE bairro = ANY(%s)",
+            (bairro_destino, bairros_origem), commit=True
+        )
+        return jsonify({"ok": True, "affected": affected})
+
+    ids    = [int(i) for i in data.get("ids", []) if str(i).isdigit()]
     hub_id = data.get("hub_id")
 
     if not ids:
