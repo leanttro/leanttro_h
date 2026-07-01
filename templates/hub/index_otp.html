@@ -950,6 +950,7 @@ function _carregarAPIUmaVez(callback) {
     if(loading) loading.style.display = 'block';
     var url = '/api/hub/negocios?limit=' + _loteSize + '&offset=' + _apiOffset;
     if(_lazyCategoriaAtiva) url += '&categoria=' + encodeURIComponent(_lazyCategoriaAtiva);
+    if(geoAtivo && userLat && userLng) url += '&lat=' + userLat + '&lng=' + userLng;
     fetch(url)
         .then(function(r){ return r.json(); })
         .then(function(data){
@@ -1011,33 +1012,33 @@ function buscarProximos(){
     navigator.geolocation.getCurrentPosition(function(pos){
         userLat=pos.coords.latitude; userLng=pos.coords.longitude; geoAtivo=true;
         document.getElementById('busca').scrollIntoView({behavior:'smooth',block:'start'});
-        if(_lazyCategoriaAtiva){
-            // Categoria já ativa: os dados locais já cobrem a categoria inteira (ou quase)
-            renderNegocios(negociosFiltrados);
-        } else {
-            // "Tudo": os 48 negócios iniciais vêm em ordem alfabética, não por proximidade.
-            // Pra ordenar por distância direito, precisamos carregar TODOS antes de ordenar,
-            // senão só comparamos distância entre esses 48 e perdemos os que estão mais perto de verdade.
-            carregarTodosParaGeo();
-        }
+        recarregarPorDistancia();
     }, function(){ alert('Não foi possível obter sua localização. Verifique as permissões.'); });
 }
 
-// Carrega, em lotes, todos os negócios restantes da API (só usado quando geo está ativo
-// e nenhuma categoria está selecionada) antes de renderizar ordenado por distância.
-function carregarTodosParaGeo(){
+// Busca já ordenado por distância direto do banco (rápido, mesmo com milhares de
+// negócios) em vez de baixar TUDO pro navegador pra só depois calcular a distância.
+// Reinicia a paginação do zero: os lotes seguintes (scroll) já vêm em lat/lng também.
+function recarregarPorDistancia(){
     var loading = document.getElementById('lazy-loading');
     if(loading) loading.style.display = 'block';
-    renderNegocios(todosNegocios.slice()); // mostra algo já enquanto o resto carrega
-    function proximoLote(){
-        if(_apiFim || _lazyCategoriaAtiva){
+    _apiOffset = 0;
+    _apiFim = false;
+    var url = '/api/hub/negocios?limit=' + _loteSize + '&offset=0';
+    if(_lazyCategoriaAtiva) url += '&categoria=' + encodeURIComponent(_lazyCategoriaAtiva);
+    if(geoAtivo && userLat && userLng) url += '&lat=' + userLat + '&lng=' + userLng;
+    fetch(url)
+        .then(function(r){ return r.json(); })
+        .then(function(data){
             if(loading) loading.style.display = 'none';
-            renderNegocios(todosNegocios.slice());
-            return;
-        }
-        _carregarAPIUmaVez(proximoLote);
-    }
-    proximoLote();
+            if(!Array.isArray(data)) return;
+            if(!_lazyCategoriaAtiva) todosNegocios = data;
+            negociosFiltrados = data;
+            _apiOffset = data.length;
+            _apiFim = data.length < _loteSize;
+            renderNegocios(negociosFiltrados);
+        })
+        .catch(function(){ if(loading) loading.style.display = 'none'; });
 }
 
 function toggleCategoriaSlicer(){
@@ -1068,12 +1069,10 @@ function filtrarCategoria(slug, btn){
     _lazyCategoriaAtiva = slug || null;
 
     if(!slug){
-        // Volta para "Tudo": usa o que já temos localmente + habilita lazy do restante
+        // Volta para "Tudo"
         _apiFim = false; // pode ainda ter mais pra carregar
         if(geoAtivo && userLat && userLng){
-            // Com localização ativa, precisa carregar tudo antes de ordenar por distância
-            // (senão a ordenação só compara os poucos negócios já carregados localmente)
-            carregarTodosParaGeo();
+            recarregarPorDistancia();
         } else {
             negociosFiltrados = todosNegocios.slice();
             renderNegocios(negociosFiltrados);
@@ -1081,7 +1080,13 @@ function filtrarCategoria(slug, btn){
         return;
     }
 
-    // Filtra categoria: usa o que já temos e busca mais se precisar
+    if(geoAtivo && userLat && userLng){
+        // Com localização ativa, busca já ordenado por distância direto do banco
+        recarregarPorDistancia();
+        return;
+    }
+
+    // Sem localização: usa o que já temos e busca mais se precisar
     negociosFiltrados = todosNegocios.filter(function(n){ return n.categoria_slug===slug; });
     renderNegocios(negociosFiltrados);
 
