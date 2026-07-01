@@ -443,8 +443,24 @@ def pagina_negocio(segmento, slug_negocio):
 #  ROTAS DE CIDADE
 # ════════════════════════════════════════════════════════════
 
-def _resolve_bairro(hub_id, bairro_slug, cidade_nome=None):
-    bairro_slug_norm = _slugify(bairro_slug)
+def _variantes_cidade(hub_id, cidade_nome):
+    """Retorna TODAS as grafias salvas no banco (com/sem acento, maiúsc/minúsc) que
+    representam a mesma cidade que `cidade_nome`. Existe pra não perder negócios
+    cadastrados com uma grafia diferente da que foi escolhida como "canônica"."""
+    chave_alvo = _chave_normalizada(cidade_nome)
+    rows = query("""
+        SELECT DISTINCT n.cidade
+        FROM hub_negocios n
+        JOIN hub_negocio_hubs nh ON nh.negocio_id = n.id
+        WHERE nh.hub_id = %s AND n.ativo = true AND n.cidade IS NOT NULL
+    """, (hub_id,))
+    return [r["cidade"] for r in rows if _chave_normalizada(r["cidade"]) == chave_alvo] or [cidade_nome]
+
+
+def _variantes_bairro(hub_id, cidade_nome, bairro_nome):
+    """Mesma ideia de _variantes_cidade, mas pra bairro (escopado dentro da cidade já resolvida)."""
+    chave_alvo = _chave_normalizada(bairro_nome)
+    variantes_cidade = _variantes_cidade(hub_id, cidade_nome) if cidade_nome else None
     sql = """
         SELECT DISTINCT n.bairro
         FROM hub_negocios n
@@ -452,28 +468,51 @@ def _resolve_bairro(hub_id, bairro_slug, cidade_nome=None):
         WHERE nh.hub_id = %s AND n.ativo = true AND n.bairro IS NOT NULL
     """
     params = [hub_id]
-    if cidade_nome:
-        sql += " AND LOWER(TRIM(n.cidade)) = LOWER(%s)"
-        params.append(cidade_nome)
+    if variantes_cidade:
+        sql += " AND n.cidade = ANY(%s)"
+        params.append(variantes_cidade)
     rows = query(sql, params)
-    for row in rows:
-        if _slugify(row["bairro"]) == bairro_slug_norm:
-            return row["bairro"]
-    return None
+    return [r["bairro"] for r in rows if _chave_normalizada(r["bairro"]) == chave_alvo] or [bairro_nome]
+
+
+def _resolve_bairro(hub_id, bairro_slug, cidade_nome=None):
+    """Resolve o slug de bairro pra grafia CANÔNICA = a que tem mais negócios cadastrados.
+    Isso torna a escolha determinística mesmo quando existem grafias duplicadas no banco
+    (ex: 'Agua Rasa' x 'Água Rasa')."""
+    bairro_slug_norm = _slugify(bairro_slug)
+    sql = """
+        SELECT n.bairro, COUNT(*) as qtd
+        FROM hub_negocios n
+        JOIN hub_negocio_hubs nh ON nh.negocio_id = n.id
+        WHERE nh.hub_id = %s AND n.ativo = true AND n.bairro IS NOT NULL
+    """
+    params = [hub_id]
+    if cidade_nome:
+        variantes_cidade = _variantes_cidade(hub_id, cidade_nome)
+        sql += " AND n.cidade = ANY(%s)"
+        params.append(variantes_cidade)
+    sql += " GROUP BY n.bairro ORDER BY qtd DESC, n.bairro"
+    rows = query(sql, params)
+    candidatos = [row for row in rows if _slugify(row["bairro"]) == bairro_slug_norm]
+    return candidatos[0]["bairro"] if candidatos else None
 
 
 def _resolve_cidade(hub_id, cidade_slug):
+    """Resolve o slug de cidade pra grafia CANÔNICA = a que tem mais negócios cadastrados.
+    Sem isso, um SELECT DISTINCT sem ORDER BY pode devolver 'sao paulo' (grafia minoritária,
+    sem acento) em vez de 'São Paulo' de forma não-determinística — foi exatamente o bug
+    que fazia só 2 categorias aparecerem na página da cidade."""
     cidade_slug_norm = _slugify(cidade_slug)
     rows = query("""
-        SELECT DISTINCT n.cidade
+        SELECT n.cidade, COUNT(*) as qtd
         FROM hub_negocios n
         JOIN hub_negocio_hubs nh ON nh.negocio_id = n.id
         WHERE nh.hub_id = %s AND n.ativo = true AND n.cidade IS NOT NULL
+        GROUP BY n.cidade
+        ORDER BY qtd DESC, n.cidade
     """, (hub_id,))
-    for row in rows:
-        if _slugify(row["cidade"]) == cidade_slug_norm:
-            return row["cidade"]
-    return None
+    candidatos = [row for row in rows if _slugify(row["cidade"]) == cidade_slug_norm]
+    return candidatos[0]["cidade"] if candidatos else None
 
 
 def _negocios_cidade(hub_id, cidade_nome=None, cat_slug=None, bairro_slug=None, limit=None, offset=None):
@@ -486,14 +525,14 @@ def _negocios_cidade(hub_id, cidade_nome=None, cat_slug=None, bairro_slug=None, 
     """
     params = [hub_id]
     if cidade_nome:
-        sql += " AND LOWER(TRIM(n.cidade)) = LOWER(%s)"
-        params.append(cidade_nome)
+        sql += " AND n.cidade = ANY(%s)"
+        params.append(_variantes_cidade(hub_id, cidade_nome))
     if cat_slug:
         sql += " AND c.slug = %s"
         params.append(cat_slug)
     if bairro_slug:
-        sql += " AND LOWER(TRIM(n.bairro)) = LOWER(TRIM(%s))"
-        params.append(bairro_slug)
+        sql += " AND n.bairro = ANY(%s)"
+        params.append(_variantes_bairro(hub_id, cidade_nome, bairro_slug))
     sql += " ORDER BY n.nome"
     if limit is not None:
         sql += " LIMIT %s"
@@ -515,28 +554,36 @@ def _contar_negocios_cidade(hub_id, cidade_nome=None, cat_slug=None, bairro_slug
     """
     params = [hub_id]
     if cidade_nome:
-        sql += " AND LOWER(TRIM(n.cidade)) = LOWER(%s)"
-        params.append(cidade_nome)
+        sql += " AND n.cidade = ANY(%s)"
+        params.append(_variantes_cidade(hub_id, cidade_nome))
     if cat_slug:
         sql += " AND c.slug = %s"
         params.append(cat_slug)
     if bairro_slug:
-        sql += " AND LOWER(TRIM(n.bairro)) = LOWER(TRIM(%s))"
-        params.append(bairro_slug)
+        sql += " AND n.bairro = ANY(%s)"
+        params.append(_variantes_bairro(hub_id, cidade_nome, bairro_slug))
     return query(sql, params, one=True)["total"]
 
 
 def _bairros_cidade(hub_id, cidade_nome):
+    """Lista de bairros da cidade, DEDUPLICADA por grafia (acento/maiúscula).
+    Cada bairro aparece uma única vez, usando a grafia com mais negócios cadastrados."""
     rows = query("""
-        SELECT DISTINCT n.bairro
+        SELECT n.bairro, COUNT(*) as qtd
         FROM hub_negocios n
         JOIN hub_negocio_hubs nh ON nh.negocio_id = n.id
         WHERE nh.hub_id = %s AND n.ativo = true
           AND n.bairro IS NOT NULL AND TRIM(n.bairro) != ''
-          AND LOWER(TRIM(n.cidade)) = LOWER(%s)
-        ORDER BY n.bairro
-    """, (hub_id, cidade_nome))
-    return [r["bairro"] for r in rows]
+          AND n.cidade = ANY(%s)
+        GROUP BY n.bairro
+        ORDER BY qtd DESC, n.bairro
+    """, (hub_id, _variantes_cidade(hub_id, cidade_nome)))
+    vistos = {}
+    for r in rows:
+        chave = _chave_normalizada(r["bairro"])
+        if chave not in vistos:
+            vistos[chave] = r["bairro"]
+    return sorted(vistos.values())
 
 
 def _categorias_cidade(hub_id, cidade_nome):
@@ -546,9 +593,9 @@ def _categorias_cidade(hub_id, cidade_nome):
         JOIN hub_negocios n ON n.categoria_id = c.id
         JOIN hub_negocio_hubs nh ON nh.negocio_id = n.id
         WHERE nh.hub_id = %s AND n.ativo = true AND c.ativo = true
-          AND LOWER(TRIM(n.cidade)) = LOWER(%s)
+          AND n.cidade = ANY(%s)
         ORDER BY c.nome
-    """, (hub_id, cidade_nome))
+    """, (hub_id, _variantes_cidade(hub_id, cidade_nome)))
 
 
 def _render_cidade(hub, negocios, categorias, cidade_nome,
@@ -1886,12 +1933,12 @@ def api_negocios():
     if categoria:
         sql += " AND c.slug = %s"
         params.append(categoria)
-    if bairro:
-        sql += " AND LOWER(n.bairro) = LOWER(%s)"
-        params.append(bairro)
     if cidade:
-        sql += " AND LOWER(TRIM(n.cidade)) = LOWER(%s)"
-        params.append(cidade)
+        sql += " AND n.cidade = ANY(%s)"
+        params.append(_variantes_cidade(hub["id"], cidade))
+    if bairro:
+        sql += " AND n.bairro = ANY(%s)"
+        params.append(_variantes_bairro(hub["id"], cidade, bairro))
     sql += " ORDER BY n.nome LIMIT %s OFFSET %s"
     params += [limit, offset]
     negocios = query(sql, params)
