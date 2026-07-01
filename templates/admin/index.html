@@ -375,6 +375,30 @@ body {
 }
 .hub-picker select:focus { border-color: var(--accent); }
 .hub-picker-actions { display: flex; gap: 8px; justify-content: flex-end; }
+.hub-picker.wide { width: 420px; }
+.bairro-merge-hint { font-size: 12px; color: var(--text2); margin-bottom: 12px; line-height: 1.5; }
+.bairro-merge-search {
+  width: 100%; padding: 8px 12px; margin-bottom: 10px;
+  border: 1px solid var(--border2); border-radius: var(--radius-sm);
+  background: var(--surface); color: var(--text);
+  font-family: var(--font); font-size: 13px; outline: none;
+}
+.bairro-merge-search:focus { border-color: var(--accent); }
+.bairro-merge-list {
+  max-height: 220px; overflow-y: auto;
+  border: 1px solid var(--border); border-radius: var(--radius-sm);
+  margin-bottom: 14px; background: var(--surface2);
+}
+.bairro-merge-item {
+  display: flex; align-items: center; gap: 8px;
+  padding: 7px 12px; font-size: 13px; cursor: pointer;
+  border-bottom: 1px solid var(--border);
+}
+.bairro-merge-item:last-child { border-bottom: none; }
+.bairro-merge-item:hover { background: var(--accent-light); }
+.bairro-merge-item input { flex-shrink: 0; }
+.bairro-merge-count { font-size: 12px; color: var(--text2); margin-bottom: 6px; }
+.bairro-merge-label { font-size: 12.5px; font-weight: 500; color: var(--text2); margin-bottom: 6px; display: block; }
 
 /* ── Table ── */
 .table-wrap { overflow-x: auto; }
@@ -779,6 +803,7 @@ tbody td {
             <select class="filter-select" id="filterBairro" onchange="onNegociosFilterChange()">
               <option value="">Todos os bairros</option>
             </select>
+            <button class="btn btn-secondary btn-sm" onclick="openBairroMerge()" title="Selecionar vários bairros (ex: grafias erradas) e mesclar em um só">↷ Mesclar bairros</button>
             <select class="filter-select" id="filterStatusNegocio" onchange="onNegociosFilterChange()">
               <option value="">Ativos e inativos</option>
               <option value="ativo">Somente ativos</option>
@@ -1026,6 +1051,24 @@ tbody td {
   </div>
 </div>
 
+<!-- Bairro merge modal (mescla vários bairros em um só, em TODOS os negócios) -->
+<div class="hub-picker-overlay" id="bairroMergeOverlay">
+  <div class="hub-picker wide">
+    <h4>Mesclar bairros</h4>
+    <p class="bairro-merge-hint">Marque os bairros que estão duplicados/errados abaixo e escolha para qual bairro correto eles devem ser movidos. Isso atualiza <strong>todos</strong> os negócios que estiverem com esses bairros — não só os selecionados na tabela.</p>
+    <input type="text" class="bairro-merge-search" id="bairroMergeSearch" placeholder="Filtrar lista de bairros..." oninput="filtrarBairroMergeLista(this.value)">
+    <div class="bairro-merge-count" id="bairroMergeCount">0 bairros selecionados</div>
+    <div class="bairro-merge-list" id="bairroMergeLista"></div>
+    <label class="bairro-merge-label">Mesclar para (bairro correto/final)</label>
+    <input type="text" id="bairroMergeDestino" list="bairroMergeDatalist" placeholder="Ex: Copacabana" style="width:100%; padding:9px 12px; border:1px solid var(--border2); border-radius:var(--radius-sm); background:var(--surface); color:var(--text); font-family:var(--font); font-size:13.5px; outline:none; margin-bottom:14px;">
+    <datalist id="bairroMergeDatalist"></datalist>
+    <div class="hub-picker-actions">
+      <button class="btn btn-secondary btn-sm" onclick="closeBairroMerge()">Cancelar</button>
+      <button class="btn btn-primary btn-sm" onclick="confirmBairroMerge()">Mesclar</button>
+    </div>
+  </div>
+</div>
+
 <script>
 // ── State ────────────────────────────────────────────────────
 const state = {
@@ -1034,7 +1077,7 @@ const state = {
   data: { hubs: [], negocios: [], categorias: [], usuarios: [], assinaturas: [], blog: [], 'blog-tags': [], anuncios: [], pendentes: [] },
   editId: null,
   editType: null,
-  negocios: { q: '', categoria_id: '', bairro: '', status: '', limit: 50, offset: 0, total: 0, filtrosCarregados: false },
+  negocios: { q: '', categoria_id: '', bairro: '', status: '', limit: 50, offset: 0, total: 0, filtrosCarregados: false, bairrosDisponiveis: [] },
   pendentes: { status: 'pendente', hub_id: '' },
 };
 
@@ -1180,6 +1223,7 @@ async function popularFiltrosNegocios() {
       selBairro.innerHTML = '<option value="">Todos os bairros</option>' +
         bairros.map(b => `<option value="${esc(b)}">${esc(b)}</option>`).join('');
     }
+    state.negocios.bairrosDisponiveis = Array.isArray(bairros) ? bairros : [];
   } catch (e) { console.error(e); }
 }
 
@@ -1955,6 +1999,63 @@ async function confirmCategoriaPicker() {
       showToast('Erro ao mudar categoria', 'error');
     }
   } catch(e) { showToast('Erro de conexão', 'error'); }
+}
+
+function openBairroMerge() {
+  const bairros = (state.negocios.bairrosDisponiveis || []).slice().sort((a, b) => a.localeCompare(b, 'pt-BR'));
+  if (!bairros.length) { showToast('Nenhum bairro cadastrado ainda', ''); return; }
+  const lista = document.getElementById('bairroMergeLista');
+  lista.innerHTML = bairros.map(b => `
+    <label class="bairro-merge-item" data-bairro-nome="${esc(b).toLowerCase()}">
+      <input type="checkbox" class="bairro-merge-cb" value="${esc(b)}" onchange="atualizarBairroMergeCount()">
+      <span>${esc(b)}</span>
+    </label>
+  `).join('');
+  const datalist = document.getElementById('bairroMergeDatalist');
+  datalist.innerHTML = bairros.map(b => `<option value="${esc(b)}"></option>`).join('');
+  document.getElementById('bairroMergeSearch').value = '';
+  document.getElementById('bairroMergeDestino').value = '';
+  atualizarBairroMergeCount();
+  document.getElementById('bairroMergeOverlay').classList.add('open');
+}
+function closeBairroMerge() {
+  document.getElementById('bairroMergeOverlay').classList.remove('open');
+}
+function filtrarBairroMergeLista(termo) {
+  const t = termo.trim().toLowerCase();
+  document.querySelectorAll('#bairroMergeLista .bairro-merge-item').forEach(item => {
+    item.style.display = item.dataset.bairroNome.includes(t) ? 'flex' : 'none';
+  });
+}
+function atualizarBairroMergeCount() {
+  const n = document.querySelectorAll('#bairroMergeLista .bairro-merge-cb:checked').length;
+  document.getElementById('bairroMergeCount').textContent = `${n} bairro${n === 1 ? '' : 's'} selecionado${n === 1 ? '' : 's'}`;
+}
+async function confirmBairroMerge() {
+  const origem = [...document.querySelectorAll('#bairroMergeLista .bairro-merge-cb:checked')].map(cb => cb.value);
+  const destino = document.getElementById('bairroMergeDestino').value.trim();
+  if (!origem.length) { showToast('Selecione ao menos um bairro para mesclar', ''); return; }
+  if (!destino) { showToast('Informe o bairro de destino', ''); return; }
+  // se o próprio destino também estiver marcado, não tem problema — o backend só reatribui os negócios,
+  // mas evitamos mandar ele junto pra não gerar update desnecessário
+  const origemFinal = origem.filter(b => b.toLowerCase() !== destino.toLowerCase());
+  if (!origemFinal.length) { showToast('O bairro de destino não pode ser o único selecionado', ''); return; }
+  try {
+    const r = await fetch('/admin/negocios/bulk', {
+      method: 'POST',
+      body: JSON.stringify({ action: 'mesclar_bairros', bairros_origem: origemFinal, bairro_destino: destino }),
+      headers: { 'Content-Type': 'application/json' }
+    });
+    if (r.ok || r.redirected) {
+      showToast(`Bairros mesclados em "${destino}"`, 'success');
+      closeBairroMerge();
+      state.negocios.filtrosCarregados = false;
+      state.loaded.delete('negocios');
+      await initNegociosSection();
+    } else {
+      showToast('Erro ao mesclar bairros', 'error');
+    }
+  } catch (e) { showToast('Erro de conexão', 'error'); }
 }
 
 // ── Pendentes ────────────────────────────────────────────────
