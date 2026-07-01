@@ -1387,7 +1387,6 @@ def admin_negocio_editar(negocio_id):
                     INSERT INTO hub_negocio_hubs (negocio_id, hub_id)
                     VALUES (%s, %s) ON CONFLICT DO NOTHING
                 """, (negocio_id, hub_id), commit=True)
-        _cache_invalidar()
         return jsonify({"ok": True})
     hubs_do_negocio = [r["hub_id"] for r in query(
         "SELECT hub_id FROM hub_negocio_hubs WHERE negocio_id = %s", (negocio_id,)
@@ -1401,7 +1400,6 @@ def admin_negocio_editar(negocio_id):
 @login_required
 def admin_negocio_deletar(negocio_id):
     query("DELETE FROM hub_negocios WHERE id = %s", (negocio_id,), commit=True)
-    _cache_invalidar()
     return jsonify({"ok": True})
 
 
@@ -1428,7 +1426,6 @@ def admin_negocios_bulk():
             "UPDATE hub_negocios SET bairro = %s WHERE bairro = ANY(%s)",
             (bairro_destino, bairros_origem), commit=True
         )
-        _cache_invalidar()
         return jsonify({"ok": True, "affected": affected})
 
     if action == "normalizar_case_bairros":
@@ -1447,7 +1444,6 @@ def admin_negocios_bulk():
                 "UPDATE hub_negocios SET bairro = %s WHERE lower(trim(bairro)) = lower(trim(%s)) AND bairro <> %s",
                 (bairro_escolhido, chave, bairro_escolhido), commit=True
             )
-        _cache_invalidar()
         return jsonify({"ok": True, "affected": total_afetado})
 
     ids    = [int(i) for i in data.get("ids", []) if str(i).isdigit()]
@@ -1488,7 +1484,6 @@ def admin_negocios_bulk():
     else:
         return jsonify({"error": "Ação inválida"}), 400
 
-    _cache_invalidar()
     return jsonify({"ok": True, "affected": len(ids)})
 
 
@@ -2012,7 +2007,6 @@ def admin_pendente_aprovar(pendente_id):
     """, (pendente_id,))
 
     db.commit()
-    _cache_invalidar()
     return jsonify({"ok": True, "negocio_id": negocio_id, "slug": slug})
 
 
@@ -2038,50 +2032,6 @@ def admin_pendente_deletar(pendente_id):
 #  API pública — JSON
 # ════════════════════════════════════════════════════════════
 
-def _parse_coord_pair(lat_raw, lng_raw):
-    """Extrai (lat, lng) de forma tolerante a como as pessoas realmente digitam:
-    vírgula como separador decimal (padrão BR), espaços sobrando, ou as duas
-    coordenadas coladas no mesmo campo (ex: campo 'lat' = "-23.55,-46.63" e
-    'lng' vazio). Retorna (None, None) se não der pra confiar no valor.
-    """
-    lat_s = (str(lat_raw).strip() if lat_raw is not None else "")
-    lng_s = (str(lng_raw).strip() if lng_raw is not None else "")
-
-    # As duas coordenadas coladas em um campo só
-    if lat_s and not lng_s and ("," in lat_s or ";" in lat_s):
-        partes = [p.strip() for p in lat_s.replace(";", ",").split(",")]
-        if len(partes) == 2:
-            lat_s, lng_s = partes
-
-    def to_float(s):
-        if not s:
-            return None
-        # vírgula decimal (BR) só quando não há ponto já presente
-        if "," in s and "." not in s:
-            s = s.replace(",", ".")
-        s = s.replace(" ", "")
-        try:
-            return float(s)
-        except ValueError:
-            return None
-
-    lat, lng = to_float(lat_s), to_float(lng_s)
-    if lat is None or lng is None:
-        return None, None
-    if not (-90 <= lat <= 90) or not (-180 <= lng <= 180):
-        return None, None
-    return lat, lng
-
-
-def _distancia_km(lat1, lng1, lat2, lng2):
-    from math import radians, sin, cos, sqrt, atan2
-    R = 6371
-    dlat = radians(lat2 - lat1)
-    dlng = radians(lng2 - lng1)
-    a = sin(dlat / 2) ** 2 + cos(radians(lat1)) * cos(radians(lat2)) * sin(dlng / 2) ** 2
-    return R * 2 * atan2(sqrt(a), sqrt(1 - a))
-
-
 @app.route("/api/hub/negocios")
 def api_negocios():
     hub = get_hub_by_host()
@@ -2096,7 +2046,11 @@ def api_negocios():
     except (ValueError, TypeError):
         limit, offset = 96, 0
 
-    # lat/lng do visitante (opcional) — quando presentes, ordena pelos mais próximos.
+    # lat/lng do visitante (opcional) — quando presentes, ordena pelos mais
+    # próximos calculando a distância direto no banco, em vez de por nome.
+    # Sem isso, com hubs grandes (milhares de negócios), só dava pra ordenar
+    # por distância os poucos que já tinham sido carregados no navegador —
+    # o que fazia o "mais próximo de verdade" nunca aparecer.
     lat_raw = request.args.get("lat")
     lng_raw = request.args.get("lng")
     user_lat = user_lng = None
@@ -2109,12 +2063,30 @@ def api_negocios():
 
     sql = """
         SELECT n.*, c.nome as categoria_nome, c.slug as categoria_slug
+    """
+    if user_lat is not None and user_lng is not None:
+        sql += """
+        , CASE
+            WHEN n.lat IS NULL OR n.lng IS NULL
+                 OR NULLIF(n.lat::text, '') IS NULL OR NULLIF(n.lng::text, '') IS NULL
+            THEN NULL
+            ELSE 6371 * acos(LEAST(1, GREATEST(-1,
+                cos(radians(%s)) * cos(radians(n.lat::float8)) *
+                cos(radians(n.lng::float8) - radians(%s)) +
+                sin(radians(%s)) * sin(radians(n.lat::float8))
+            )))
+          END AS _distancia_km
+        """
+        params = [user_lat, user_lng, user_lat]
+    else:
+        params = []
+    sql += """
         FROM hub_negocios n
         JOIN hub_negocio_hubs nh ON nh.negocio_id = n.id
         JOIN hub_categorias c ON c.id = n.categoria_id
         WHERE nh.hub_id = %s AND n.ativo = true
     """
-    params = [hub["id"]]
+    params.append(hub["id"])
     if categoria:
         sql += " AND c.slug = %s"
         params.append(categoria)
@@ -2125,31 +2097,11 @@ def api_negocios():
     if bairro:
         sql += " AND n.bairro = ANY(%s)"
         params.append(_variantes_bairro(hub["id"], bairro, cidade_var))
-
     if user_lat is not None and user_lng is not None:
-        # Com localização ativa não dá pra paginar direto no banco (LIMIT/OFFSET),
-        # porque só sabemos a ordem certa depois de calcular a distância de cada um.
-        # O cálculo é feito aqui em Python (tolerante a formato) em vez de no SQL,
-        # porque o campo lat/lng é texto digitado à mão e vem em formatos variados —
-        # validar isso rígido no banco derrubava negócios que tinham o dado "torto"
-        # mas ainda utilizável.
+        sql += " ORDER BY _distancia_km IS NULL, _distancia_km ASC"
+    else:
         sql += " ORDER BY n.nome"
-        todos = query(sql, params)
-        calculados = []
-        for n in todos:
-            lat, lng = _parse_coord_pair(n.get("lat"), n.get("lng"))
-            dist = _distancia_km(user_lat, user_lng, lat, lng) if lat is not None else None
-            calculados.append((dist, n))
-        calculados.sort(key=lambda t: (t[0] is None, t[0] if t[0] is not None else 0))
-        pagina = calculados[offset: offset + limit]
-        resultado = []
-        for dist, n in pagina:
-            d = dict(n)
-            d["_distancia_km"] = dist
-            resultado.append(d)
-        return jsonify(resultado)
-
-    sql += " ORDER BY n.nome LIMIT %s OFFSET %s"
+    sql += " LIMIT %s OFFSET %s"
     params += [limit, offset]
     negocios = query(sql, params)
     return jsonify([dict(n) for n in negocios])
