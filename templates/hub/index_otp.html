@@ -978,6 +978,12 @@ function _carregarAPIUmaVez(callback) {
 function _renderizarProximoLote(){
     // Se ainda há dados locais não renderizados, renderiza
     var lista = negociosFiltrados;
+    if(geoAtivo && userLat && userLng){
+        lista = lista.map(function(n){
+            var d = (n.lat && n.lng) ? calcDistancia(userLat, userLng, parseFloat(n.lat), parseFloat(n.lng)) : 9999;
+            return Object.assign({}, n, {_dist: d});
+        }).sort(function(a,b){ return a._dist - b._dist; });
+    }
     var trackCards = document.getElementById('negocios-track') ? document.getElementById('negocios-track').querySelectorAll('.negocio-card').length : 0;
     if(trackCards < lista.length){
         var proximo = lista.slice(trackCards, trackCards + _loteSize);
