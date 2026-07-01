@@ -950,7 +950,6 @@ function _carregarAPIUmaVez(callback) {
     if(loading) loading.style.display = 'block';
     var url = '/api/hub/negocios?limit=' + _loteSize + '&offset=' + _apiOffset;
     if(_lazyCategoriaAtiva) url += '&categoria=' + encodeURIComponent(_lazyCategoriaAtiva);
-    if(geoAtivo && userLat && userLng) url += '&lat=' + userLat + '&lng=' + userLng;
     fetch(url)
         .then(function(r){ return r.json(); })
         .then(function(data){
@@ -1011,33 +1010,9 @@ function buscarProximos(){
     if(!navigator.geolocation){ alert('Geolocalização não suportada.'); return; }
     navigator.geolocation.getCurrentPosition(function(pos){
         userLat=pos.coords.latitude; userLng=pos.coords.longitude; geoAtivo=true;
+        renderNegocios(negociosFiltrados);
         document.getElementById('busca').scrollIntoView({behavior:'smooth',block:'start'});
-        recarregarPorDistancia();
     }, function(){ alert('Não foi possível obter sua localização. Verifique as permissões.'); });
-}
-
-// Busca já ordenado por distância direto do banco (rápido, mesmo com muitos negócios)
-// em vez de só reordenar os poucos que já estavam carregados na tela.
-function recarregarPorDistancia(){
-    var loading = document.getElementById('lazy-loading');
-    if(loading) loading.style.display = 'block';
-    _apiOffset = 0;
-    _apiFim = false;
-    var url = '/api/hub/negocios?limit=' + _loteSize + '&offset=0';
-    if(_lazyCategoriaAtiva) url += '&categoria=' + encodeURIComponent(_lazyCategoriaAtiva);
-    if(geoAtivo && userLat && userLng) url += '&lat=' + userLat + '&lng=' + userLng;
-    fetch(url)
-        .then(function(r){ return r.json(); })
-        .then(function(data){
-            if(loading) loading.style.display = 'none';
-            if(!Array.isArray(data)) return;
-            if(!_lazyCategoriaAtiva) todosNegocios = data;
-            negociosFiltrados = data;
-            _apiOffset = data.length;
-            _apiFim = data.length < _loteSize;
-            renderNegocios(negociosFiltrados);
-        })
-        .catch(function(){ if(loading) loading.style.display = 'none'; });
 }
 
 function toggleCategoriaSlicer(){
@@ -1068,19 +1043,10 @@ function filtrarCategoria(slug, btn){
     _lazyCategoriaAtiva = slug || null;
 
     if(!slug){
-        // Volta para "Tudo"
+        // Volta para "Tudo": usa o que já temos localmente + habilita lazy do restante
+        negociosFiltrados = todosNegocios.slice();
         _apiFim = false; // pode ainda ter mais pra carregar
-        if(geoAtivo && userLat && userLng){
-            recarregarPorDistancia();
-        } else {
-            negociosFiltrados = todosNegocios.slice();
-            renderNegocios(negociosFiltrados);
-        }
-        return;
-    }
-
-    if(geoAtivo && userLat && userLng){
-        recarregarPorDistancia();
+        renderNegocios(negociosFiltrados);
         return;
     }
 
