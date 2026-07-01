@@ -1211,3 +1211,255 @@ document.addEventListener('click', function(e) {
     }
 });
 </script>
+
+<!-- ════════════════════════════════════════════════════
+     MODAL CADASTRO DE NEGÓCIO — botão flutuante fixo
+     ════════════════════════════════════════════════ -->
+
+<!-- Botão flutuante -->
+<button
+  id="btn-cadastrar"
+  onclick="document.getElementById('modal-cadastro').classList.remove('modal-oculto')"
+  style="
+    position: fixed; bottom: 80px; right: 20px; z-index: 8900;
+    background: #f6972b; color: #fff; border: none;
+    border-radius: 50px; padding: 13px 20px;
+    font-size: 14px; font-weight: 700; cursor: pointer;
+    box-shadow: 0 4px 16px rgba(0,0,0,.25);
+    display: flex; align-items: center; gap: 8px;
+    font-family: 'Roboto', sans-serif;
+    transition: transform .15s, box-shadow .15s;
+  "
+  onmouseover="this.style.transform='scale(1.05)'"
+  onmouseout="this.style.transform='scale(1)'"
+>
+  <svg width="17" height="17" fill="none" stroke="currentColor" stroke-width="2.5"
+       viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg>
+  Cadastre seu negócio
+</button>
+
+<!-- Overlay + Modal -->
+<div id="modal-cadastro" class="modal-oculto" style="
+  position: fixed; inset: 0; z-index: 9999;
+  background: rgba(0,0,0,.55); backdrop-filter: blur(3px);
+  display: flex; align-items: center; justify-content: center; padding: 16px;
+">
+  <div style="
+    background: #fff; border-radius: 16px;
+    width: 100%; max-width: 560px; max-height: 92vh;
+    overflow-y: auto; padding: 32px 28px; position: relative;
+    box-shadow: 0 20px 60px rgba(0,0,0,.3);
+    font-family: 'Roboto', sans-serif;
+  ">
+    <button onclick="fecharModalCadastro()" style="
+      position: absolute; top: 16px; right: 16px;
+      background: #f0f0f0; border: none; border-radius: 50%;
+      width: 32px; height: 32px; cursor: pointer; font-size: 20px;
+      line-height: 32px; text-align: center; color: #555;
+    ">×</button>
+
+    <h2 style="margin: 0 0 4px; font-size: 22px; font-weight: 800; color: #1a1a1a;">Cadastre seu negócio</h2>
+    <p style="margin: 0 0 24px; color: #666; font-size: 14px;">
+      Preencha os dados abaixo. Após análise, seu negócio aparecerá no diretório gratuitamente.
+    </p>
+
+    <div id="cadastro-sucesso" style="display:none; text-align:center; padding: 32px 0;">
+      <div style="font-size: 52px;">🎉</div>
+      <h3 style="color: #1a1a1a; margin: 12px 0 8px; font-size: 20px;">Cadastro enviado!</h3>
+      <p style="color: #555; margin: 0 0 24px;">Vamos analisar e publicar em breve. Obrigado!</p>
+      <button onclick="fecharModalCadastro()" style="
+        background: #f6972b; color: #fff; border: none; border-radius: 8px;
+        padding: 12px 28px; font-size: 15px; cursor: pointer; font-weight: 700;
+        font-family: 'Roboto', sans-serif;
+      ">Fechar</button>
+    </div>
+
+    <form id="form-cadastro" onsubmit="enviarCadastroNegocio(event)" style="display:flex; flex-direction:column; gap:14px;">
+
+      <div>
+        <label style="font-size:13px; font-weight:600; color:#333; display:block; margin-bottom:5px;">
+          Nome do negócio <span style="color:#e53935">*</span>
+        </label>
+        <input name="nome" required maxlength="255" placeholder="Ex: Barbearia do João" class="cad-input">
+      </div>
+
+      <div>
+        <label style="font-size:13px; font-weight:600; color:#333; display:block; margin-bottom:5px;">Categoria</label>
+        <select name="categoria_id" class="cad-input">
+          <option value="">Selecione uma categoria</option>
+          {% for cat in categorias %}
+          <option value="{{ cat.id }}">{{ cat.nome }}</option>
+          {% endfor %}
+        </select>
+      </div>
+
+      <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px;">
+        <div>
+          <label style="font-size:13px; font-weight:600; color:#333; display:block; margin-bottom:5px;">Cidade</label>
+          <input name="cidade" maxlength="255" placeholder="São Paulo" class="cad-input">
+        </div>
+        <div>
+          <label style="font-size:13px; font-weight:600; color:#333; display:block; margin-bottom:5px;">Bairro</label>
+          <input name="bairro" maxlength="255" placeholder="Centro" class="cad-input">
+        </div>
+      </div>
+
+      <div>
+        <label style="font-size:13px; font-weight:600; color:#333; display:block; margin-bottom:5px;">Endereço</label>
+        <input name="endereco" maxlength="255" placeholder="Rua das Flores, 123" class="cad-input">
+      </div>
+
+      <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px;">
+        <div>
+          <label style="font-size:13px; font-weight:600; color:#333; display:block; margin-bottom:5px;">WhatsApp</label>
+          <input name="whatsapp" maxlength="50" placeholder="(11) 99999-9999" class="cad-input">
+        </div>
+        <div>
+          <label style="font-size:13px; font-weight:600; color:#333; display:block; margin-bottom:5px;">Telefone</label>
+          <input name="telefone" maxlength="50" placeholder="(11) 3333-3333" class="cad-input">
+        </div>
+      </div>
+
+      <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px;">
+        <div>
+          <label style="font-size:13px; font-weight:600; color:#333; display:block; margin-bottom:5px;">Instagram</label>
+          <input name="instagram" maxlength="255" placeholder="@seunegocio" class="cad-input">
+        </div>
+        <div>
+          <label style="font-size:13px; font-weight:600; color:#333; display:block; margin-bottom:5px;">Site</label>
+          <input name="site_url" maxlength="255" placeholder="https://seusite.com" class="cad-input">
+        </div>
+      </div>
+
+      <div>
+        <label style="font-size:13px; font-weight:600; color:#333; display:block; margin-bottom:5px;">Descrição</label>
+        <textarea name="descricao" rows="3" maxlength="1000" class="cad-input"
+                  placeholder="Fale um pouco sobre seu negócio..." style="resize:vertical;"></textarea>
+      </div>
+
+      <!-- Upload de foto via Imgur -->
+      <div>
+        <label style="font-size:13px; font-weight:600; color:#333; display:block; margin-bottom:8px;">Logo / foto do negócio</label>
+        <div id="imgur-area" style="
+          border: 2px dashed #ddd; border-radius: 10px; padding: 18px;
+          text-align: center; cursor: pointer; transition: border-color .2s, background .2s;
+          background: #fafafa; position: relative;"
+          onclick="document.getElementById('imgur-file-input').click()"
+          ondragover="imgurDragOver(event)" ondragleave="imgurDragLeave(event)" ondrop="imgurDrop(event)">
+          <input type="file" id="imgur-file-input" accept="image/*" style="display:none" onchange="imgurUpload(this.files[0])">
+          <div id="imgur-idle">
+            <svg width="32" height="32" fill="none" stroke="#bbb" stroke-width="1.5" viewBox="0 0 24 24" style="margin-bottom:8px;">
+              <rect x="3" y="3" width="18" height="18" rx="3"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/>
+            </svg>
+            <p style="margin:0; font-size:13px; color:#888;">Clique ou arraste uma imagem aqui<br>
+              <span style="font-size:12px; color:#bbb;">JPG, PNG, GIF, WebP — máx. 10 MB</span></p>
+          </div>
+          <div id="imgur-loading" style="display:none;">
+            <div style="width:28px;height:28px;border:3px solid #eee;border-top-color:#f6972b;border-radius:50%;animation:spin-imgur .7s linear infinite;margin:0 auto 8px;"></div>
+            <p style="margin:0;font-size:13px;color:#888;">Enviando para o Imgur...</p>
+          </div>
+          <div id="imgur-preview" style="display:none;">
+            <img id="imgur-preview-img" src="" alt="Preview" style="max-height:120px;max-width:100%;border-radius:8px;object-fit:contain;">
+            <p id="imgur-preview-nome" style="margin:8px 0 0;font-size:12px;color:#888;"></p>
+            <button type="button" onclick="imgurLimpar(event)" style="margin-top:6px;background:none;border:none;color:#e53935;font-size:12px;cursor:pointer;font-family:'Roboto',sans-serif;">✕ Remover foto</button>
+          </div>
+        </div>
+        <div id="imgur-erro" style="display:none;color:#c0392b;font-size:12px;margin-top:6px;"></div>
+        <input type="hidden" name="foto_url" id="foto_url_hidden">
+        <details style="margin-top:10px;">
+          <summary style="font-size:12px;color:#888;cursor:pointer;user-select:none;">Prefere colar um link de imagem?</summary>
+          <input id="foto_url_manual" maxlength="512" placeholder="https://link-da-sua-imagem.com"
+                 class="cad-input" style="margin-top:6px;" oninput="imgurManualUrl(this.value)">
+        </details>
+      </div>
+
+      <div id="cadastro-erro" style="display:none; color:#c0392b; font-size:13px;
+           background:#fdf0ef; border:1px solid #f5c6c6; border-radius:8px; padding:10px 12px;"></div>
+
+      <button type="submit" id="btn-submit-cadastro" style="
+        background: #f6972b; color: #fff; border: none; border-radius: 10px;
+        padding: 14px; font-size: 16px; font-weight: 700; cursor: pointer;
+        font-family: 'Roboto', sans-serif; transition: background .2s; margin-top: 4px;
+      ">Enviar cadastro</button>
+    </form>
+  </div>
+</div>
+
+<style>
+  .modal-oculto { display: none !important; }
+  .cad-input {
+    width: 100%; padding: 10px 12px;
+    border: 1.5px solid #ddd; border-radius: 8px;
+    font-size: 14px; box-sizing: border-box;
+    outline: none; transition: border .15s;
+    font-family: 'Roboto', sans-serif;
+    background: #fff; color: #333;
+  }
+  .cad-input:focus { border-color: #f6972b; }
+  @keyframes spin-imgur { to { transform: rotate(360deg); } }
+</style>
+
+<script>
+// ── Imgur ──
+const IMGUR_CLIENT_ID = '546c25a59c58ad7';
+
+function imgurDragOver(e) { e.preventDefault(); document.getElementById('imgur-area').style.borderColor='#f6972b'; document.getElementById('imgur-area').style.background='#fff8f0'; }
+function imgurDragLeave(e) { document.getElementById('imgur-area').style.borderColor='#ddd'; document.getElementById('imgur-area').style.background='#fafafa'; }
+function imgurDrop(e) { e.preventDefault(); imgurDragLeave(e); const f=e.dataTransfer.files[0]; if(f) imgurUpload(f); }
+
+async function imgurUpload(file) {
+  if (!file) return;
+  if (file.size > 10*1024*1024) { document.getElementById('imgur-erro').textContent='Imagem muito grande (máx. 10 MB).'; document.getElementById('imgur-erro').style.display='block'; return; }
+  document.getElementById('imgur-erro').style.display='none';
+  document.getElementById('imgur-idle').style.display='none';
+  document.getElementById('imgur-preview').style.display='none';
+  document.getElementById('imgur-loading').style.display='block';
+  try {
+    const body=new FormData(); body.append('image',file);
+    const res=await fetch('https://api.imgur.com/3/image',{method:'POST',headers:{Authorization:'Client-ID '+IMGUR_CLIENT_ID},body});
+    const data=await res.json();
+    if(!res.ok||!data.success) throw new Error(data.data?.error||'Erro no Imgur');
+    const url=data.data.link;
+    document.getElementById('foto_url_hidden').value=url;
+    document.getElementById('imgur-preview-img').src=url;
+    document.getElementById('imgur-preview-nome').textContent=file.name;
+    document.getElementById('imgur-loading').style.display='none';
+    document.getElementById('imgur-preview').style.display='block';
+    document.getElementById('imgur-area').style.borderColor='#f6972b';
+    document.getElementById('imgur-area').style.background='#fff8f0';
+    document.getElementById('imgur-area').style.cursor='default';
+  } catch(err) {
+    document.getElementById('imgur-loading').style.display='none';
+    document.getElementById('imgur-idle').style.display='block';
+    document.getElementById('imgur-erro').textContent='Falha no upload: '+(err.message||'tente novamente.');
+    document.getElementById('imgur-erro').style.display='block';
+  }
+}
+function imgurLimpar(e) { e.stopPropagation(); document.getElementById('foto_url_hidden').value=''; document.getElementById('imgur-file-input').value=''; document.getElementById('imgur-preview').style.display='none'; document.getElementById('imgur-idle').style.display='block'; document.getElementById('imgur-area').style.borderColor='#ddd'; document.getElementById('imgur-area').style.background='#fafafa'; document.getElementById('imgur-area').style.cursor='pointer'; document.getElementById('imgur-erro').style.display='none'; }
+function imgurManualUrl(val) { document.getElementById('foto_url_hidden').value=val.trim(); }
+
+function fecharModalCadastro() {
+  document.getElementById('modal-cadastro').classList.add('modal-oculto');
+  document.getElementById('form-cadastro').reset();
+  document.getElementById('form-cadastro').style.display='flex';
+  document.getElementById('cadastro-sucesso').style.display='none';
+  document.getElementById('cadastro-erro').style.display='none';
+  imgurLimpar({stopPropagation:()=>{}});
+}
+document.getElementById('modal-cadastro').addEventListener('click',function(e){ if(e.target===this) fecharModalCadastro(); });
+document.addEventListener('keydown',function(e){ if(e.key==='Escape'&&!document.getElementById('modal-cadastro').classList.contains('modal-oculto')) fecharModalCadastro(); });
+
+async function enviarCadastroNegocio(e) {
+  e.preventDefault();
+  const btn=document.getElementById('btn-submit-cadastro');
+  const erro=document.getElementById('cadastro-erro');
+  erro.style.display='none'; btn.disabled=true; btn.textContent='Enviando...';
+  try {
+    const res=await fetch('/cadastrar-negocio',{method:'POST',body:new FormData(e.target)});
+    const data=await res.json();
+    if(res.ok&&data.ok){ document.getElementById('form-cadastro').style.display='none'; document.getElementById('cadastro-sucesso').style.display='block'; }
+    else { erro.textContent=data.erro||'Erro ao enviar. Tente novamente.'; erro.style.display='block'; }
+  } catch(err) { erro.textContent='Erro de conexão. Tente novamente.'; erro.style.display='block'; }
+  finally { btn.disabled=false; btn.textContent='Enviar cadastro'; }
+}
+</script>
