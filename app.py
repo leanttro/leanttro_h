@@ -2040,8 +2040,15 @@ def api_negocios():
     categoria = request.args.get("categoria")
     bairro    = request.args.get("bairro")
     cidade    = request.args.get("cidade")
+    # Categorias com volume muito maior que a média (ex.: pontos de ônibus, que
+    # numa cidade grande passam de milhares de registros). Pra essas, o corte de
+    # 200 em ordem alfabética escondia o resultado mais próximo de verdade —
+    # então liberamos um teto bem mais alto só pra elas. Ajuste essa lista
+    # conforme identificar outras categorias com o mesmo problema.
+    CATEGORIAS_TETO_ALTO = {"ponto-de-onibus"}
+    teto = 20000 if categoria in CATEGORIAS_TETO_ALTO else 2000
     try:
-        limit  = min(int(request.args.get("limit",  96)), 200)
+        limit  = min(int(request.args.get("limit",  96)), teto)
         offset = max(int(request.args.get("offset",  0)),   0)
     except (ValueError, TypeError):
         limit, offset = 96, 0
