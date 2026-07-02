@@ -1,0 +1,829 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<!-- Google tag (gtag.js) -->
+<script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-7617881885143728"
+     crossorigin="anonymous"></script>
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-J707J0QZ5R"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+  gtag('config', 'G-J707J0QZ5R');
+</script>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="description" content="{% if negocio.descricao %}{{ negocio.descricao }}{% else %}{{ negocio.nome }} — {{ hub.nome or 'Cesta de Presentes' }}. Endereço, horário, telefone e informações completas.{% endif %}">
+<meta name="keywords" content="{{ negocio.nome }}, {{ negocio.categoria_nome }}, {{ negocio.bairro or negocio.cidade or 'São Paulo' }}, presente perto de mim, cesta de presente">
+<meta name="robots" content="index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1">
+<meta name="theme-color" content="#c60909">
+<meta name="author" content="{{ hub.nome or 'Cesta de Presentes' }}">
+<title>{{ negocio.nome }} — {{ hub.nome or 'Cesta de Presentes' }}</title>
+<link rel="canonical" href="https://{{ request.host }}/{{ segmento }}/{{ negocio.slug }}/">
+<link rel="icon" type="image/png" href="{{ hub.logo_url or 'https://res.cloudinary.com/desvazant/image/upload/v1782959580/Cesta_de_Presentes_7_xaav6t.png' }}">
+<link rel="apple-touch-icon" href="{{ hub.logo_url or 'https://res.cloudinary.com/desvazant/image/upload/v1782959580/Cesta_de_Presentes_7_xaav6t.png' }}">
+
+<!-- Open Graph -->
+<meta property="og:type" content="business.business">
+<meta property="og:site_name" content="{{ hub.nome or 'Cesta de Presentes' }}">
+<meta property="og:url" content="https://{{ request.host }}/{{ segmento }}/{{ negocio.slug }}/">
+<meta property="og:title" content="{{ negocio.nome }} — {{ hub.nome or 'Cesta de Presentes' }}">
+<meta property="og:description" content="{% if negocio.descricao %}{{ negocio.descricao | truncate(160) }}{% else %}Conheça {{ negocio.nome }}. Endereço, horário, telefone e informações.{% endif %}">
+{% if negocio.foto_url and negocio.mostrar_foto %}<meta property="og:image" content="{{ negocio.foto_url }}">{% endif %}
+<meta property="og:locale" content="pt_BR">
+
+<!-- Twitter Card -->
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="{{ negocio.nome }} — {{ hub.nome or 'Cesta de Presentes' }}">
+<meta name="twitter:description" content="{% if negocio.descricao %}{{ negocio.descricao | truncate(160) }}{% else %}Conheça {{ negocio.nome }}.{% endif %}">
+{% if negocio.foto_url and negocio.mostrar_foto %}<meta name="twitter:image" content="{{ negocio.foto_url }}">{% endif %}
+
+<!-- JSON-LD LocalBusiness -->
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "LocalBusiness",
+  "@id": "https://{{ request.host }}/{{ segmento }}/{{ negocio.slug }}/",
+  "name": "{{ negocio.nome }}",
+  "url": "https://{{ request.host }}/{{ segmento }}/{{ negocio.slug }}/",
+  {% if negocio.descricao %}"description": "{{ negocio.descricao }}",{% endif %}
+  {% if negocio.foto_url and negocio.mostrar_foto %}"image": ["{{ negocio.foto_url }}"],{% endif %}
+  {% if negocio.endereco and negocio.mostrar_endereco %}"address": {
+    "@type": "PostalAddress",
+    "streetAddress": "{{ negocio.endereco }}",
+    "addressLocality": "{{ negocio.cidade or 'São Paulo' }}",
+    "addressRegion": "SP",
+    "postalCode": "{{ negocio.cep or '' }}",
+    "addressCountry": "BR"
+  },{% endif %}
+  {% if negocio.telefone and negocio.mostrar_telefone %}"telephone": "{{ negocio.telefone }}",{% endif %}
+  {% if negocio.whatsapp and negocio.mostrar_whatsapp %}"contactPoint": {"@type": "ContactPoint","contactType": "Customer Service","telephone": "{{ negocio.whatsapp }}"},{% endif %}
+  "areaServed": "{{ negocio.cidade or 'São Paulo' }}",
+  "priceRange": "$$",
+  "knowsAbout": "{{ negocio.categoria_nome }}"
+}
+</script>
+
+<!-- JSON-LD BreadcrumbList -->
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "BreadcrumbList",
+  "itemListElement": [
+    {
+      "@type": "ListItem",
+      "position": 1,
+      "name": "{{ hub.nome or 'Cesta de Presentes' }}",
+      "item": "https://{{ request.host }}/"
+    },
+    {
+      "@type": "ListItem",
+      "position": 2,
+      "name": "{{ negocio.categoria_nome }}",
+      "item": "https://{{ request.host }}/{{ segmento }}/"
+    },
+    {
+      "@type": "ListItem",
+      "position": 3,
+      "name": "{{ negocio.nome }}",
+      "item": "https://{{ request.host }}/{{ segmento }}/{{ negocio.slug }}/"
+    }
+  ]
+}
+</script>
+
+{% if hub.ga4_id %}
+<script async src="https://www.googletagmanager.com/gtag/js?id={{ hub.ga4_id }}"></script>
+<script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag('js',new Date());gtag('config','{{ hub.ga4_id }}');</script>
+{% endif %}
+
+<link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700;900&display=swap" rel="stylesheet">
+<link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+
+<style>
+:root {
+  --primary:       #c60909;
+  --dark:          #8a0606;
+  --light:         #fbe9e7;
+  --light-gray:    #f8f9fa;
+  --medium-gray:   #e0e0e0;
+  --dark-gray:     #343a40;
+  --text-color:    #495057;
+  --white:         #ffffff;
+  --shadow-light:  rgba(0,0,0,0.08);
+  --shadow-medium: rgba(0,0,0,0.16);
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html { scroll-behavior: smooth; }
+body { font-family: 'Roboto', sans-serif; background: var(--light-gray); color: var(--text-color); line-height: 1.6; }
+.container { max-width: 1200px; margin: 0 auto; padding: 0 20px; }
+a { text-decoration: none; color: inherit; }
+img { max-width: 100%; display: block; }
+
+/* ══ HEADER ══ */
+body > header {
+  background: var(--primary);
+  padding: 6px 24px 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  box-shadow: 0 2px 10px rgba(0,0,0,0.15);
+}
+.header-logo { margin-bottom: 0; }
+.header-logo a { display: block; text-align: center; }
+.header-logo img { height: 160px; width: auto; display: block; margin: 0 auto; }
+
+.hamburger-btn {
+  display: none; background: none; border: none; color: #fff;
+  font-size: 1.8em; cursor: pointer; padding: 6px;
+  position: absolute; right: 20px; top: 20px;
+}
+
+nav.desktop-nav { width: 100%; }
+nav.desktop-nav ul { list-style: none; display: flex; align-items: center; justify-content: center; flex-wrap: wrap; }
+nav.desktop-nav ul li { position: relative; }
+nav.desktop-nav ul li a {
+  color: #fff; font-weight: 600; font-size: 0.95em;
+  padding: 12px 20px; display: block;
+  border-bottom: 3px solid transparent; transition: border-color 0.2s, background 0.2s;
+}
+nav.desktop-nav ul li a:hover { border-bottom-color: #fff; background: rgba(0,0,0,0.08); }
+
+/* ══ DROPDOWN NAV ══ */
+.nav-dropdown {
+  display: none; position: absolute; background: #fff;
+  min-width: 220px; box-shadow: 0 8px 16px rgba(0,0,0,0.16);
+  z-index: 100; border-radius: 8px; max-height: 400px; overflow-y: auto;
+  top: 100%; left: 0;
+}
+.nav-dropdown a { display: block; color: var(--dark-gray); padding: 11px 18px; font-weight: 500; font-size: 0.9em; transition: all 0.2s; }
+.nav-dropdown a:hover { background: var(--light); color: var(--primary); }
+nav.desktop-nav ul li:hover .nav-dropdown { display: block; }
+
+/* ══ MOBILE NAV ══ */
+.mobile-nav-overlay {
+  display: none; position: fixed; inset: 0;
+  background: rgba(0,0,0,0.95); z-index: 1000;
+  flex-direction: column; justify-content: center; align-items: center;
+  opacity: 0; transition: opacity 0.25s;
+}
+.mobile-nav-overlay.active { display: flex; opacity: 1; }
+.mobile-nav-close { position: absolute; top: 20px; left: 24px; background: none; border: none; color: #fff; font-size: 2em; cursor: pointer; }
+.mobile-nav-overlay nav ul { list-style: none; text-align: center; }
+.mobile-nav-overlay nav ul li { margin: 12px 0; }
+.mobile-nav-overlay nav ul li a { color: #fff; font-size: 1.5em; font-weight: 700; }
+
+/* ══ BANNERS ══ */
+.banner-topo { background: var(--white); border-bottom: 1px solid var(--medium-gray); padding: 10px 20px; text-align: center; }
+.banner-meio { background: var(--light); padding: 28px 20px; text-align: center; border-top: 1px solid #ffd0cc; border-bottom: 1px solid #ffd0cc; }
+.banner-placeholder { display: inline-block; background: var(--light-gray); border: 2px dashed var(--medium-gray); border-radius: 8px; padding: 12px 36px; color: #aaa; font-size: 0.9em; font-weight: 500; transition: all 0.2s; }
+.banner-placeholder:hover { border-color: var(--primary); color: var(--primary); }
+
+/* ══ HERO NEGÓCIO ══ */
+.negocio-hero {
+  background: linear-gradient(rgba(0,0,0,0.55), rgba(0,0,0,0.55)),
+    url('{{ negocio.foto_url or "https://res.cloudinary.com/desvazant/image/upload/v1782959580/Cesta_de_Presentes_7_xaav6t.png" }}') center/cover no-repeat;
+  color: #fff;
+  text-align: center;
+  padding: 80px 20px;
+}
+.hero-inner { padding: 0; }
+.negocio-hero h1 { font-size: 2.8em; font-weight: 900; line-height: 1.2; text-shadow: 2px 2px 8px rgba(0,0,0,0.6); margin-bottom: 16px; }
+.negocio-hero h1 em { color: #ffb3a3; font-style: normal; }
+.negocio-hero p { font-size: 1.1em; line-height: 1.5; margin-bottom: 24px; max-width: 600px; margin-left: auto; margin-right: auto; opacity: 0.9; }
+
+.hero-actions { display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; margin-top: 32px; }
+
+.hero-btn {
+  display: inline-flex; align-items: center; gap: 8px;
+  background: var(--primary); color: #fff;
+  padding: 14px 28px; border-radius: 8px;
+  font-weight: 700; font-size: 1em;
+  transition: all 0.2s; border: 2px solid var(--primary); cursor: pointer;
+}
+.hero-btn:hover { background: var(--dark); border-color: var(--dark); transform: translateY(-2px); box-shadow: 0 8px 20px rgba(0,0,0,0.3); }
+.hero-btn.secondary { background: transparent; color: #fff; border-color: #fff; }
+.hero-btn.secondary:hover { background: rgba(255,255,255,0.1); }
+.hero-btn.maps { background: #fff; color: #1a73e8; border-color: #fff; }
+.hero-btn.maps:hover { background: #e8f0fe; border-color: #e8f0fe; }
+
+/* ══ CONTEÚDO PRINCIPAL ══ */
+.negocio-container { padding: 48px 20px; }
+.negocio-layout { display: grid; grid-template-columns: 1fr 320px; gap: 32px; align-items: start; }
+@media(max-width: 900px) { .negocio-layout { grid-template-columns: 1fr; } }
+
+.negocio-main { background: #fff; border-radius: 12px; padding: 32px; box-shadow: 0 2px 8px var(--shadow-light); }
+
+.info-section { margin-bottom: 32px; padding-bottom: 32px; border-bottom: 1px solid var(--medium-gray); }
+.info-section:last-child { border-bottom: none; margin-bottom: 0; padding-bottom: 0; }
+.info-section h2 { font-size: 1.4em; font-weight: 700; color: var(--dark-gray); margin-bottom: 16px; }
+
+.info-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px; margin-top: 16px; }
+
+.info-card { background: var(--light-gray); padding: 16px; border-radius: 8px; border-left: 4px solid var(--primary); }
+.info-card-label { font-size: 0.85em; color: var(--text-color); font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; }
+.info-card-value { font-size: 1.05em; font-weight: 700; color: var(--dark-gray); margin-top: 4px; word-break: break-word; }
+
+.btn-maps {
+  display: inline-flex; align-items: center; gap: 8px;
+  background: #1a73e8; color: #fff;
+  padding: 12px 20px; border-radius: 8px;
+  font-weight: 700; font-size: 0.95em;
+  transition: all 0.2s; margin-top: 16px;
+  cursor: pointer; border: none; font-family: inherit; width: 100%; justify-content: center;
+}
+.btn-maps:hover { background: #1558b0; transform: translateY(-2px); }
+
+/* ══ SIDEBAR ══ */
+.sidebar-card { background: #fff; border-radius: 12px; overflow: hidden; box-shadow: 0 2px 8px var(--shadow-light); margin-bottom: 24px; }
+.sidebar-card-header { background: var(--primary); color: #fff; padding: 16px 20px; font-weight: 700; font-size: 1.05em; }
+.sidebar-card-body { padding: 20px; }
+
+.contact-btn {
+  display: flex; align-items: center; gap: 12px;
+  background: var(--light); color: var(--dark);
+  padding: 13px 16px; border-radius: 8px;
+  font-weight: 600; margin-bottom: 12px;
+  transition: all 0.2s; border: 2px solid var(--light);
+}
+.contact-btn:hover { background: var(--primary); color: #fff; border-color: var(--primary); transform: translateY(-2px); }
+.contact-btn:last-child { margin-bottom: 0; }
+
+/* ══ FOOTER ══ */
+footer { background: var(--dark-gray); color: #fff; padding: 40px 20px; text-align: center; font-size: 0.9em; }
+footer p { margin: 8px 0; }
+.footer-logo { display: inline-block; margin-bottom: 16px; }
+.footer-logo img { height: 60px; width: auto; }
+
+/* ══ WHATSAPP FLUTUANTE ══ */
+.wpp-float {
+  position: fixed; bottom: 88px; right: 24px;
+  background: #25D366; color: #fff;
+  width: 56px; height: 56px; border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  box-shadow: 0 4px 20px rgba(37,211,102,0.4);
+  z-index: 999; transition: transform 0.2s;
+}
+.wpp-float:hover { transform: scale(1.1); }
+
+/* ══ RESPONSIVO ══ */
+@media(max-width: 768px) {
+  nav.desktop-nav { display: none; }
+  .hamburger-btn { display: block; }
+  .header-logo img { height: 120px; }
+  .negocio-hero h1 { font-size: 1.8em; }
+  .negocio-hero { padding: 60px 20px; }
+  .negocio-main { padding: 20px; }
+  .info-grid { grid-template-columns: 1fr; }
+  .hero-actions { flex-direction: column; }
+  .hero-btn { width: 100%; justify-content: center; }
+  .wpp-float { width: 50px; height: 50px; bottom: 80px; right: 16px; }
+}
+</style>
+</head>
+<body>
+
+<!-- HEADER -->
+<header>
+  <div class="header-logo">
+    <a href="/" aria-label="{{ hub.nome or 'Cesta de Presentes' }} — Página inicial">
+      <img src="{{ hub.logo_url or 'https://res.cloudinary.com/desvazant/image/upload/v1782959580/Cesta_de_Presentes_7_xaav6t.png' }}"
+           alt="{{ hub.nome or 'Cesta de Presentes' }}" loading="eager">
+    </a>
+  </div>
+  <nav class="desktop-nav" aria-label="Navegação principal">
+    <ul>
+      <li><a href="/">Início</a></li>
+      <li>
+        <a href="/#categorias">Categorias ▾</a>
+        <div class="nav-dropdown">
+          {% set cat_ids_hub = negocios_relacionados | map(attribute='categoria_id') | list | unique | list if negocios_relacionados else [] %}
+          {% for cat in categorias %}
+          <a href="/{{ cat.slug }}/">{{ cat.nome }}</a>
+          {% endfor %}
+        </div>
+      </li>
+      <li><a href="/blog/">Blog</a></li>
+      <li><a href="https://wa.me/55{{ hub.whatsapp or '11999999999' }}?text=Olá,+quero+saber+mais" target="_blank" rel="noopener">Contato</a></li>
+    </ul>
+  </nav>
+  <button class="hamburger-btn" id="hamburger-btn" aria-label="Abrir menu">
+    <i class="fas fa-bars"></i>
+  </button>
+</header>
+
+<!-- MOBILE NAV -->
+<div class="mobile-nav-overlay" id="mobile-nav" role="dialog" aria-modal="true">
+  <button class="mobile-nav-close" onclick="document.getElementById('mobile-nav').classList.remove('active')" aria-label="Fechar menu">✕</button>
+  <nav>
+    <ul>
+      <li><a href="/" onclick="document.getElementById('mobile-nav').classList.remove('active')">Início</a></li>
+      <li><a href="/{{ segmento }}/" onclick="document.getElementById('mobile-nav').classList.remove('active')">{{ negocio.categoria_nome }}</a></li>
+      <li><a href="/blog/" onclick="document.getElementById('mobile-nav').classList.remove('active')">Blog</a></li>
+      <li><a href="https://wa.me/55{{ hub.whatsapp or '11999999999' }}?text=Olá,+quero+saber+mais" target="_blank" rel="noopener" onclick="document.getElementById('mobile-nav').classList.remove('active')">Contato</a></li>
+    </ul>
+  </nav>
+</div>
+
+<!-- BANNER TOPO -->
+<div class="banner-topo">
+  {% if anuncio_topo %}
+  <a href="{{ anuncio_topo.link }}" target="_blank" rel="noopener sponsored">
+    <img src="{{ anuncio_topo.foto_url }}" alt="{{ anuncio_topo.titulo or 'Publicidade' }}"
+         style="max-height:90px; width:auto; max-width:100%; border-radius:8px;">
+  </a>
+  {% elif hub.banner1_foto_url %}
+  <a href="{{ hub.banner1_link or '#' }}" target="_blank" rel="noopener sponsored">
+    <img src="{{ hub.banner1_foto_url }}" alt="Publicidade"
+         style="max-height:90px; width:auto; max-width:100%; border-radius:8px;">
+  </a>
+  {% else %}
+  <a class="banner-placeholder"
+     href="https://wa.me/55{{ hub.whatsapp or '11999999999' }}?text=Quero+anunciar+na+Cesta+de+Presentes"
+     target="_blank" rel="noopener">📣 Anuncie aqui — espaço disponível</a>
+  {% endif %}
+</div>
+
+<!-- HERO -->
+<section class="negocio-hero">
+  <div class="container hero-inner">
+    <h1><em>{{ negocio.nome }}</em></h1>
+    {% if negocio.descricao and negocio.mostrar_descricao %}
+    <p>{{ negocio.descricao }}</p>
+    {% endif %}
+    <div class="hero-actions">
+      {% if negocio.whatsapp and negocio.mostrar_whatsapp %}
+      <a href="https://wa.me/55{{ negocio.whatsapp | replace(' ','') | replace('-','') | replace('(','') | replace(')','') }}"
+         class="hero-btn" target="_blank" rel="noopener">
+        <i class="fab fa-whatsapp"></i> WhatsApp
+      </a>
+      {% elif hub.whatsapp %}
+      <a href="https://wa.me/55{{ hub.whatsapp | replace(' ','') | replace('-','') | replace('(','') | replace(')','') }}"
+         class="hero-btn" target="_blank" rel="noopener">
+        <i class="fab fa-whatsapp"></i> WhatsApp
+      </a>
+      {% endif %}
+
+      {% if negocio.telefone and negocio.mostrar_telefone %}
+      <a href="tel:{{ negocio.telefone }}" class="hero-btn secondary">
+        <i class="fas fa-phone"></i> Ligar
+      </a>
+      {% endif %}
+
+      <button class="hero-btn maps" onclick="abrirMaps()">
+        <i class="fas fa-map-marker-alt"></i> Abrir no Maps
+      </button>
+    </div>
+  </div>
+</section>
+
+<!-- CONTEÚDO PRINCIPAL -->
+<div class="negocio-container">
+  <div class="container negocio-layout">
+
+    <!-- COLUNA ESQUERDA -->
+    <div class="negocio-main">
+
+      <!-- ENDEREÇO -->
+      {% if negocio.endereco and negocio.mostrar_endereco %}
+      <div class="info-section">
+        <h2><i class="fas fa-map-marker-alt" style="color:var(--primary);"></i> Localização</h2>
+        <div class="info-grid">
+          <div class="info-card">
+            <div class="info-card-label">Endereço</div>
+            <div class="info-card-value">{{ negocio.endereco }}</div>
+          </div>
+          {% if negocio.bairro %}
+          <div class="info-card">
+            <div class="info-card-label">Bairro</div>
+            <div class="info-card-value">{{ negocio.bairro }}</div>
+          </div>
+          {% endif %}
+          {% if negocio.cidade %}
+          <div class="info-card">
+            <div class="info-card-label">Cidade</div>
+            <div class="info-card-value">{{ negocio.cidade }}</div>
+          </div>
+          {% endif %}
+          {% if negocio.cep %}
+          <div class="info-card">
+            <div class="info-card-label">CEP</div>
+            <div class="info-card-value">{{ negocio.cep }}</div>
+          </div>
+          {% endif %}
+        </div>
+        <button class="btn-maps" onclick="abrirMaps()">
+          <i class="fas fa-map-marker-alt"></i> Como chegar — Abrir no Google Maps
+        </button>
+      </div>
+      {% endif %}
+
+      <!-- INFORMAÇÕES -->
+      <div class="info-section">
+        <h2><i class="fas fa-info-circle" style="color:var(--primary);"></i> Informações</h2>
+        <div class="info-grid">
+          <div class="info-card">
+            <div class="info-card-label">Categoria</div>
+            <div class="info-card-value">{{ negocio.categoria_nome }}</div>
+          </div>
+          {% if negocio.horario_funcionamento %}
+          <div class="info-card">
+            <div class="info-card-label">Horário</div>
+            <div class="info-card-value">{{ negocio.horario_funcionamento }}</div>
+          </div>
+          {% endif %}
+        </div>
+      </div>
+
+      <!-- DESCRIÇÃO -->
+      {% if negocio.descricao and negocio.mostrar_descricao %}
+      <div class="info-section">
+        <h2><i class="fas fa-gift" style="color:var(--primary);"></i> Sobre</h2>
+        <p style="line-height:1.8; color:var(--text-color);">{{ negocio.descricao }}</p>
+      </div>
+      {% endif %}
+
+    </div>
+
+    <!-- SIDEBAR -->
+    <div class="negocio-sidebar">
+
+      <!-- CONTATOS -->
+      <div class="sidebar-card">
+        <div class="sidebar-card-header">
+          <i class="fas fa-phone"></i> Contato
+        </div>
+        <div class="sidebar-card-body">
+          {% if negocio.whatsapp and negocio.mostrar_whatsapp %}
+          <a href="https://wa.me/55{{ negocio.whatsapp | replace(' ','') | replace('-','') | replace('(','') | replace(')','') }}"
+             class="contact-btn" target="_blank" rel="noopener">
+            <i class="fab fa-whatsapp" style="font-size:1.2em;"></i>
+            <span>WhatsApp</span>
+          </a>
+          {% endif %}
+
+          {% if negocio.telefone and negocio.mostrar_telefone %}
+          <a href="tel:{{ negocio.telefone }}" class="contact-btn">
+            <i class="fas fa-phone" style="font-size:1.1em;"></i>
+            <span>{{ negocio.telefone }}</span>
+          </a>
+          {% endif %}
+
+          {% if negocio.site_url and negocio.mostrar_site %}
+          <a href="{{ negocio.site_url }}" class="contact-btn" target="_blank" rel="noopener">
+            <i class="fas fa-globe" style="font-size:1.1em;"></i>
+            <span>Site</span>
+          </a>
+          {% endif %}
+
+          {% if negocio.instagram and negocio.mostrar_instagram %}
+          <a href="https://instagram.com/{{ negocio.instagram }}" class="contact-btn" target="_blank" rel="noopener">
+            <i class="fab fa-instagram" style="font-size:1.2em;"></i>
+            <span>@{{ negocio.instagram }}</span>
+          </a>
+          {% endif %}
+
+          {% if not negocio.mostrar_whatsapp and not negocio.mostrar_telefone and not negocio.mostrar_instagram and not negocio.mostrar_site %}
+          <p style="text-align:center; color:var(--text-color); padding:20px 0; font-size:0.9em;">Sem contato disponível.</p>
+          {% endif %}
+        </div>
+      </div>
+
+      <!-- VOLTAR -->
+      <a href="/{{ segmento }}/" style="display:flex; align-items:center; gap:8px; font-size:0.9em; font-weight:600; color:var(--primary); padding:12px; transition:color 0.2s;">
+        <i class="fas fa-arrow-left"></i> Voltar para {{ negocio.categoria_nome }}
+      </a>
+
+    </div>
+  </div>
+</div>
+
+<!-- BANNER MEIO -->
+<div class="banner-meio">
+  {% if anuncio_meio %}
+  <a href="{{ anuncio_meio.link }}" target="_blank" rel="noopener sponsored">
+    <img src="{{ anuncio_meio.foto_url }}" alt="{{ anuncio_meio.titulo or 'Publicidade' }}"
+         style="max-height:120px; width:auto; max-width:100%; border-radius:8px;">
+  </a>
+  {% elif hub.banner2_foto_url %}
+  <a href="{{ hub.banner2_link or '#' }}" target="_blank" rel="noopener sponsored">
+    <img src="{{ hub.banner2_foto_url }}" alt="Publicidade"
+         style="max-height:120px; width:auto; max-width:100%; border-radius:8px;">
+  </a>
+  {% else %}
+  <a class="banner-placeholder"
+     href="https://wa.me/55{{ hub.whatsapp or '11999999999' }}?text=Quero+anunciar+na+Cesta+de+Presentes"
+     target="_blank" rel="noopener">📣 Anuncie aqui — espaço disponível</a>
+  {% endif %}
+</div>
+
+<!-- FOOTER -->
+<footer>
+  <a href="/" class="footer-logo">
+    <img src="{{ hub.logo_url or 'https://res.cloudinary.com/desvazant/image/upload/v1782959580/Cesta_de_Presentes_7_xaav6t.png' }}"
+         alt="{{ hub.nome or 'Cesta de Presentes' }}">
+  </a>
+  <p>&copy; 2025 <strong>{{ hub.nome or 'Cesta de Presentes' }}</strong> — Todos os direitos reservados</p>
+  <p style="margin-top:10px; opacity:0.7;">O presente perfeito perto de você</p>
+</footer>
+
+<!-- WHATSAPP FLUTUANTE -->
+{% if negocio.whatsapp and negocio.mostrar_whatsapp %}
+<a href="https://wa.me/55{{ negocio.whatsapp | replace(' ','') | replace('-','') | replace('(','') | replace(')','') }}"
+   target="_blank" rel="noopener" class="wpp-float" aria-label="WhatsApp">
+  <svg width="28" height="28" viewBox="0 0 24 24" fill="#fff"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
+</a>
+{% endif %}
+
+<!-- BOTÃO CADASTRAR -->
+<button
+  id="btn-cadastrar"
+  onclick="document.getElementById('modal-cadastro').classList.remove('modal-oculto')"
+  style="
+    position:fixed; bottom:24px; right:24px; z-index:8900;
+    background:var(--primary); color:#fff; border:none;
+    border-radius:50px; padding:13px 20px;
+    font-size:14px; font-weight:700; cursor:pointer;
+    box-shadow:0 4px 16px rgba(0,0,0,.25);
+    display:flex; align-items:center; gap:8px;
+    font-family:'Roboto',sans-serif;
+    transition:transform .15s, box-shadow .15s;
+  "
+  onmouseover="this.style.transform='scale(1.05)'"
+  onmouseout="this.style.transform='scale(1)'"
+>
+  <svg width="17" height="17" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg>
+  Cadastre seu negócio
+</button>
+
+<!-- MODAL CADASTRO -->
+<div id="modal-cadastro" class="modal-oculto" style="
+  position:fixed; inset:0; z-index:9999;
+  background:rgba(0,0,0,.55); backdrop-filter:blur(3px);
+  display:flex; align-items:center; justify-content:center; padding:16px;
+">
+  <div style="
+    background:#fff; border-radius:16px;
+    width:100%; max-width:560px; max-height:92vh;
+    overflow-y:auto; padding:32px 28px; position:relative;
+    box-shadow:0 20px 60px rgba(0,0,0,.3);
+    font-family:'Roboto',sans-serif;
+  ">
+    <button onclick="fecharModalCadastro()" style="
+      position:absolute; top:16px; right:16px;
+      background:#f0f0f0; border:none; border-radius:50%;
+      width:32px; height:32px; cursor:pointer; font-size:20px;
+      line-height:32px; text-align:center; color:#555;
+    ">×</button>
+
+    <h2 style="margin:0 0 4px; font-size:22px; font-weight:800; color:#1a1a1a;">Cadastre seu negócio</h2>
+    <p style="margin:0 0 24px; color:#666; font-size:14px;">
+      Preencha os dados abaixo. Após análise, seu negócio aparecerá no diretório gratuitamente.
+    </p>
+
+    <div id="cadastro-sucesso" style="display:none; text-align:center; padding:32px 0;">
+      <div style="font-size:52px;">🎉</div>
+      <h3 style="color:#1a1a1a; margin:12px 0 8px; font-size:20px;">Cadastro enviado!</h3>
+      <p style="color:#555; margin:0 0 24px;">Vamos analisar e publicar em breve. Obrigado!</p>
+      <button onclick="fecharModalCadastro()" style="
+        background:var(--primary); color:#fff; border:none; border-radius:8px;
+        padding:12px 28px; font-size:15px; cursor:pointer; font-weight:700;
+        font-family:'Roboto',sans-serif;
+      ">Fechar</button>
+    </div>
+
+    <form id="form-cadastro" onsubmit="enviarCadastroNegocio(event)" style="display:flex; flex-direction:column; gap:14px;">
+
+      <div>
+        <label style="font-size:13px; font-weight:600; color:#333; display:block; margin-bottom:5px;">
+          Nome do negócio <span style="color:#e53935">*</span>
+        </label>
+        <input name="nome" required maxlength="255" placeholder="Ex: Cestas da Maria" class="cad-input">
+      </div>
+
+      <div>
+        <label style="font-size:13px; font-weight:600; color:#333; display:block; margin-bottom:5px;">Categoria</label>
+        <select name="categoria_id" class="cad-input">
+          <option value="">Selecione uma categoria</option>
+          {% for cat in categorias %}
+          <option value="{{ cat.id }}">{{ cat.nome }}</option>
+          {% endfor %}
+        </select>
+      </div>
+
+      <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px;">
+        <div>
+          <label style="font-size:13px; font-weight:600; color:#333; display:block; margin-bottom:5px;">Cidade</label>
+          <input name="cidade" maxlength="255" placeholder="São Paulo" class="cad-input">
+        </div>
+        <div>
+          <label style="font-size:13px; font-weight:600; color:#333; display:block; margin-bottom:5px;">Bairro</label>
+          <input name="bairro" maxlength="255" placeholder="Centro" class="cad-input">
+        </div>
+      </div>
+
+      <div>
+        <label style="font-size:13px; font-weight:600; color:#333; display:block; margin-bottom:5px;">Endereço</label>
+        <input name="endereco" maxlength="255" placeholder="Rua das Flores, 123" class="cad-input">
+      </div>
+
+      <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px;">
+        <div>
+          <label style="font-size:13px; font-weight:600; color:#333; display:block; margin-bottom:5px;">WhatsApp</label>
+          <input name="whatsapp" maxlength="50" placeholder="(11) 99999-9999" class="cad-input">
+        </div>
+        <div>
+          <label style="font-size:13px; font-weight:600; color:#333; display:block; margin-bottom:5px;">Telefone</label>
+          <input name="telefone" maxlength="50" placeholder="(11) 3333-3333" class="cad-input">
+        </div>
+      </div>
+
+      <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px;">
+        <div>
+          <label style="font-size:13px; font-weight:600; color:#333; display:block; margin-bottom:5px;">Instagram</label>
+          <input name="instagram" maxlength="255" placeholder="@seunegocio" class="cad-input">
+        </div>
+        <div>
+          <label style="font-size:13px; font-weight:600; color:#333; display:block; margin-bottom:5px;">Site</label>
+          <input name="site_url" maxlength="255" placeholder="https://seusite.com" class="cad-input">
+        </div>
+      </div>
+
+      <div>
+        <label style="font-size:13px; font-weight:600; color:#333; display:block; margin-bottom:5px;">Descrição</label>
+        <textarea name="descricao" rows="3" maxlength="1000" class="cad-input"
+                  placeholder="Fale um pouco sobre seu negócio..." style="resize:vertical;"></textarea>
+      </div>
+
+      <!-- Upload foto via Imgur -->
+      <div>
+        <label style="font-size:13px; font-weight:600; color:#333; display:block; margin-bottom:8px;">Logo / foto do negócio</label>
+        <div id="imgur-area" style="
+          border:2px dashed #ddd; border-radius:10px; padding:18px;
+          text-align:center; cursor:pointer; transition:border-color .2s, background .2s;
+          background:#fafafa;"
+          onclick="document.getElementById('imgur-file-input').click()"
+          ondragover="imgurDragOver(event)" ondragleave="imgurDragLeave(event)" ondrop="imgurDrop(event)">
+          <input type="file" id="imgur-file-input" accept="image/*" style="display:none" onchange="imgurUpload(this.files[0])">
+          <div id="imgur-idle">
+            <svg width="32" height="32" fill="none" stroke="#bbb" stroke-width="1.5" viewBox="0 0 24 24" style="margin-bottom:8px;">
+              <rect x="3" y="3" width="18" height="18" rx="3"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/>
+            </svg>
+            <p style="margin:0; font-size:13px; color:#888;">Clique ou arraste uma imagem aqui<br>
+              <span style="font-size:12px; color:#bbb;">JPG, PNG, GIF, WebP — máx. 10 MB</span></p>
+          </div>
+          <div id="imgur-loading" style="display:none;">
+            <div style="width:28px;height:28px;border:3px solid #eee;border-top-color:var(--primary);border-radius:50%;animation:spin-imgur .7s linear infinite;margin:0 auto 8px;"></div>
+            <p style="margin:0;font-size:13px;color:#888;">Enviando imagem...</p>
+          </div>
+          <div id="imgur-preview" style="display:none;">
+            <img id="imgur-preview-img" src="" alt="Preview" style="max-height:120px;max-width:100%;border-radius:8px;object-fit:contain;">
+            <p id="imgur-preview-nome" style="margin:8px 0 0;font-size:12px;color:#888;"></p>
+            <button type="button" onclick="imgurLimpar(event)" style="margin-top:6px;background:none;border:none;color:#e53935;font-size:12px;cursor:pointer;font-family:'Roboto',sans-serif;">✕ Remover foto</button>
+          </div>
+        </div>
+        <div id="imgur-erro" style="display:none;color:#c0392b;font-size:12px;margin-top:6px;"></div>
+        <input type="hidden" name="foto_url" id="foto_url_hidden">
+        <details style="margin-top:10px;">
+          <summary style="font-size:12px;color:#888;cursor:pointer;user-select:none;">Prefere colar um link de imagem?</summary>
+          <input id="foto_url_manual" maxlength="512" placeholder="https://link-da-sua-imagem.com"
+                 class="cad-input" style="margin-top:6px;" oninput="imgurManualUrl(this.value)">
+        </details>
+      </div>
+
+      <div id="cadastro-erro" style="display:none; color:#c0392b; font-size:13px;
+           background:#fdf0ef; border:1px solid #f5c6c6; border-radius:8px; padding:10px 12px;"></div>
+
+      <button type="submit" id="btn-submit-cadastro" style="
+        background:var(--primary); color:#fff; border:none; border-radius:10px;
+        padding:14px; font-size:16px; font-weight:700; cursor:pointer;
+        font-family:'Roboto',sans-serif; transition:background .2s; margin-top:4px;
+      "
+      onmouseover="this.style.background='var(--dark)'"
+      onmouseout="this.style.background='var(--primary)'"
+      >Enviar cadastro</button>
+    </form>
+  </div>
+</div>
+
+<style>
+  .modal-oculto { display: none !important; }
+  .cad-input {
+    width:100%; padding:10px 12px;
+    border:1.5px solid #ddd; border-radius:8px;
+    font-size:14px; box-sizing:border-box;
+    outline:none; transition:border .15s;
+    font-family:'Roboto',sans-serif;
+    background:#fff; color:#333;
+  }
+  .cad-input:focus { border-color: var(--primary); }
+  @keyframes spin-imgur { to { transform: rotate(360deg); } }
+</style>
+
+<script>
+/* ══ MAPS COM ROTA ══ */
+var DEST_LAT = {{ negocio.lat or 'null' }};
+var DEST_LNG = {{ negocio.lng or 'null' }};
+var DEST_END = encodeURIComponent("{{ negocio.endereco or '' }}, {{ negocio.cidade or 'São Paulo' }}");
+
+function abrirMaps(){
+  var destino = DEST_END ? DEST_END : (DEST_LAT && DEST_LNG ? DEST_LAT+','+DEST_LNG : '');
+  if(navigator.geolocation){
+    navigator.geolocation.getCurrentPosition(
+      function(pos){
+        var origem = pos.coords.latitude+','+pos.coords.longitude;
+        window.open('https://www.google.com/maps/dir/?api=1&origin='+origem+'&destination='+destino+'&travelmode=driving','_blank');
+      },
+      function(){
+        window.open('https://www.google.com/maps/search/?api=1&query='+destino,'_blank');
+      },
+      { timeout: 5000 }
+    );
+  } else {
+    window.open('https://www.google.com/maps/search/?api=1&query='+destino,'_blank');
+  }
+}
+</script>
+
+<script>
+document.getElementById('hamburger-btn').addEventListener('click', function(){
+  document.getElementById('mobile-nav').classList.add('active');
+});
+</script>
+
+<script>
+// ── Imgur ──
+const IMGUR_CLIENT_ID = '546c25a59c58ad7';
+function imgurDragOver(e){ e.preventDefault(); document.getElementById('imgur-area').style.borderColor='var(--primary)'; document.getElementById('imgur-area').style.background='#fff5f5'; }
+function imgurDragLeave(e){ document.getElementById('imgur-area').style.borderColor='#ddd'; document.getElementById('imgur-area').style.background='#fafafa'; }
+function imgurDrop(e){ e.preventDefault(); imgurDragLeave(e); const f=e.dataTransfer.files[0]; if(f) imgurUpload(f); }
+async function imgurUpload(file){
+  if(!file) return;
+  if(file.size>10*1024*1024){ document.getElementById('imgur-erro').textContent='Imagem muito grande (máx. 10 MB).'; document.getElementById('imgur-erro').style.display='block'; return; }
+  document.getElementById('imgur-erro').style.display='none';
+  document.getElementById('imgur-idle').style.display='none';
+  document.getElementById('imgur-preview').style.display='none';
+  document.getElementById('imgur-loading').style.display='block';
+  try {
+    const body=new FormData(); body.append('image',file);
+    const res=await fetch('https://api.imgur.com/3/image',{method:'POST',headers:{Authorization:'Client-ID '+IMGUR_CLIENT_ID},body});
+    const data=await res.json();
+    if(!res.ok||!data.success) throw new Error(data.data?.error||'Erro no Imgur');
+    const url=data.data.link;
+    document.getElementById('foto_url_hidden').value=url;
+    document.getElementById('imgur-preview-img').src=url;
+    document.getElementById('imgur-preview-nome').textContent=file.name;
+    document.getElementById('imgur-loading').style.display='none';
+    document.getElementById('imgur-preview').style.display='block';
+    document.getElementById('imgur-area').style.borderColor='var(--primary)';
+    document.getElementById('imgur-area').style.background='#fff5f5';
+  } catch(err){
+    document.getElementById('imgur-loading').style.display='none';
+    document.getElementById('imgur-idle').style.display='block';
+    document.getElementById('imgur-erro').textContent='Falha no upload: '+(err.message||'tente novamente.');
+    document.getElementById('imgur-erro').style.display='block';
+  }
+}
+function imgurLimpar(e){ e.stopPropagation(); document.getElementById('foto_url_hidden').value=''; document.getElementById('imgur-file-input').value=''; document.getElementById('imgur-preview').style.display='none'; document.getElementById('imgur-idle').style.display='block'; document.getElementById('imgur-area').style.borderColor='#ddd'; document.getElementById('imgur-area').style.background='#fafafa'; document.getElementById('imgur-area').style.cursor='pointer'; document.getElementById('imgur-erro').style.display='none'; }
+function imgurManualUrl(val){ document.getElementById('foto_url_hidden').value=val.trim(); }
+
+function fecharModalCadastro(){
+  document.getElementById('modal-cadastro').classList.add('modal-oculto');
+  document.getElementById('form-cadastro').reset();
+  document.getElementById('form-cadastro').style.display='flex';
+  document.getElementById('cadastro-sucesso').style.display='none';
+  document.getElementById('cadastro-erro').style.display='none';
+  imgurLimpar({stopPropagation:()=>{}});
+}
+document.getElementById('modal-cadastro').addEventListener('click',function(e){ if(e.target===this) fecharModalCadastro(); });
+document.addEventListener('keydown',function(e){ if(e.key==='Escape'&&!document.getElementById('modal-cadastro').classList.contains('modal-oculto')) fecharModalCadastro(); });
+
+async function enviarCadastroNegocio(e){
+  e.preventDefault();
+  const btn=document.getElementById('btn-submit-cadastro');
+  const erro=document.getElementById('cadastro-erro');
+  erro.style.display='none'; btn.disabled=true; btn.textContent='Enviando...';
+  try {
+    const res=await fetch('/cadastrar-negocio',{method:'POST',body:new FormData(e.target)});
+    const data=await res.json();
+    if(res.ok&&data.ok){ document.getElementById('form-cadastro').style.display='none'; document.getElementById('cadastro-sucesso').style.display='block'; }
+    else { erro.textContent=data.erro||'Erro ao enviar. Tente novamente.'; erro.style.display='block'; }
+  } catch(err){ erro.textContent='Erro de conexão. Tente novamente.'; erro.style.display='block'; }
+  finally { btn.disabled=false; btn.textContent='Enviar cadastro'; }
+}
+</script>
+
+{% if hub.ga4_id %}
+<script async src="https://www.googletagmanager.com/gtag/js?id={{ hub.ga4_id }}"></script>
+<script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag('js',new Date());gtag('config','{{ hub.ga4_id }}');</script>
+{% endif %}
+
+{% if hub.pixel_id %}
+<script>!function(f,b,e,v,n,t,s){if(f.fbq)return;n=f.fbq=function(){n.callMethod?n.callMethod.apply(n,arguments):n.queue.push(arguments)};if(!f._fbq)f._fbq=n;n.push=n;n.loaded=!0;n.version='2.0';n.queue=[];t=b.createElement(e);t.async=!0;t.src=v;s=b.getElementsByTagName(e)[0];s.parentNode.insertBefore(t,s)}(window,document,'script','https://connect.facebook.net/en_US/fbevents.js');fbq('init','{{ hub.pixel_id }}');fbq('track','PageView');</script>
+{% endif %}
+
+</body>
+</html>
