@@ -676,24 +676,7 @@
             <div class="slicer-backdrop" id="slicer-backdrop" onclick="closeCategoriaSlicer()"></div>
         </div>
 
-        <!-- Tags sazonais / ocasião -->
-        <div class="tags-sazonais" id="tags-sazonais">
-            <span class="tags-sazonais-label"><i class="fas fa-gift"></i> Encontre cestas para</span>
-            <div class="tags-sazonais-list" id="tags-sazonais-list">
-                <button type="button" class="chip-tag" data-tag="aniversario" onclick="filtrarTagSazonal('aniversario', this)">Aniversário</button>
-                <button type="button" class="chip-tag" data-tag="dia-das-maes" onclick="filtrarTagSazonal('dia-das-maes', this)">Dia das Mães</button>
-                <button type="button" class="chip-tag" data-tag="dia-dos-namorados" onclick="filtrarTagSazonal('dia-dos-namorados', this)">Dia dos Namorados</button>
-                <button type="button" class="chip-tag" data-tag="dia-dos-pais" onclick="filtrarTagSazonal('dia-dos-pais', this)">Dia dos Pais</button>
-                <button type="button" class="chip-tag" data-tag="natal" onclick="filtrarTagSazonal('natal', this)">Natal</button>
-                <button type="button" class="chip-tag" data-tag="pascoa" onclick="filtrarTagSazonal('pascoa', this)">Páscoa</button>
-                <button type="button" class="chip-tag" data-tag="casamento" onclick="filtrarTagSazonal('casamento', this)">Casamento</button>
-                <button type="button" class="chip-tag" data-tag="formatura" onclick="filtrarTagSazonal('formatura', this)">Formatura</button>
-                <button type="button" class="chip-tag" data-tag="cafe-da-manha" onclick="filtrarTagSazonal('cafe-da-manha', this)">Café da Manhã</button>
-                <button type="button" class="chip-tag" data-tag="cha-de-bebe" onclick="filtrarTagSazonal('cha-de-bebe', this)">Chá de Bebê</button>
-                <button type="button" class="chip-tag" data-tag="melhoras" onclick="filtrarTagSazonal('melhoras', this)">Melhoras</button>
-                <button type="button" class="chip-tag" data-tag="boas-vindas" onclick="filtrarTagSazonal('boas-vindas', this)">Boas-vindas</button>
-            </div>
-        </div>
+
 
         <!-- Controles de visualização -->
         <div class="view-controls" id="view-controls" style="display:none;">
@@ -847,16 +830,7 @@
                 <input type="text" class="cidades-busca-input" id="cidades-busca-input" placeholder="Buscar cidade…" oninput="filtrarCidadesCarrossel(this.value)">
             </div>
 
-            <!-- Botões de visualização -->
-            <div class="cidades-view-controls view-controls" id="cidades-view-controls" style="display:none;">
-                <span>Ver como:</span>
-                <button class="view-btn active" id="btn-cid-carousel" title="Carrossel" onclick="setViewCidades('carousel')">
-                    <i class="fas fa-grip-lines"></i>
-                </button>
-                <button class="view-btn" id="btn-cid-grade" title="Grade" onclick="setViewCidades('grade')">
-                    <i class="fas fa-th"></i>
-                </button>
-            </div>
+
         </div>
 
         <!-- Carrossel de cidades -->
@@ -1398,24 +1372,11 @@ function renderNegocios(lista){
         clampCat();
     };
 
-    window.setViewCategorias = function(mode){
-        catView = mode;
-        var cw = document.getElementById('categorias-carousel-wrapper');
-        var gd = document.getElementById('categorias-grade');
-        var bc = document.getElementById('btn-cat-carousel');
-        var bg = document.getElementById('btn-cat-grade');
-        if(bc) bc.classList.toggle('active', mode==='carousel');
-        if(bg) bg.classList.toggle('active', mode==='grade');
-        if(cw) cw.style.display = mode==='carousel' ? '' : 'none';
-        if(gd) gd.style.display = mode==='grade' ? 'grid' : 'none';
-    };
+    window.setViewCategorias = function(mode){ /* no-op: grade estática */ };
 
-    var track = document.getElementById('categorias-track');
-    var grade = document.getElementById('categorias-grade');
-    if(track && grade) grade.innerHTML = track.innerHTML; // popula a grade sem duplicar o loop no template
-
-    initCatCarousel();
-    setViewCategorias(catView);
+    // grade hardcoded no HTML — só garantir visibilidade
+    var gd = document.getElementById('categorias-grade');
+    if(gd) gd.style.display = 'grid';
 })();
 </script>
 
