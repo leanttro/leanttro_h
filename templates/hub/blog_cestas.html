@@ -2,7 +2,7 @@
 <html lang="pt-BR">
 <head>
 <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-7617881885143728"
-     crossorigin="anonymous"></script> 
+     crossorigin="anonymous"></script>
 {% set tag_obj = (tags | selectattr('slug','equalto', tag_ativa) | first) if tag_ativa else None %}
 {% set seo_title = ("Blog — " ~ tag_obj.nome ~ " — " ~ (hub.nome or "Cesta de Presentes")) if tag_obj else ("Blog — " ~ (hub.nome or "Cesta de Presentes")) %}
 {% set seo_desc  = ("Posts sobre " ~ tag_obj.nome ~ " em " ~ (hub.nome or "Cesta de Presentes") ~ ". Dicas, guias e novidades perto de você.") if tag_obj else ("Dicas, guias e novidades de " ~ (hub.nome or "Cesta de Presentes") ~ ". Fique por dentro do que tem perto de você.") %}
