@@ -1,0 +1,663 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+{% set seo_image = post.capa_url or hub.logo_url or 'https://res.cloudinary.com/desvazant/image/upload/v1782959580/Cesta_de_Presentes_7_xaav6t.png' %}
+
+<!-- SEO -->
+<title>{{ post.titulo }} — {{ hub.nome or 'Cesta de Presentes' }}</title>
+<meta name="description" content="{{ post.resumo or (post.titulo ~ ' — ' ~ (hub.nome or 'Cesta de Presentes')) }}">
+<meta name="robots" content="index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1">
+<meta name="theme-color" content="#c60909">
+<link rel="canonical" href="https://{{ request.host }}/blog/{{ post.slug }}/">
+
+<link rel="icon" type="image/png" href="{{ hub.logo_url or 'https://res.cloudinary.com/desvazant/image/upload/v1782959580/Cesta_de_Presentes_7_xaav6t.png' }}">
+<link rel="apple-touch-icon" href="{{ hub.logo_url or 'https://res.cloudinary.com/desvazant/image/upload/v1782959580/Cesta_de_Presentes_7_xaav6t.png' }}">
+
+<!-- Open Graph -->
+<meta property="og:type"         content="article">
+<meta property="og:site_name"    content="{{ hub.nome or 'Cesta de Presentes' }}">
+<meta property="og:url"          content="https://{{ request.host }}/blog/{{ post.slug }}/">
+<meta property="og:title"        content="{{ post.titulo }} — {{ hub.nome or 'Cesta de Presentes' }}">
+<meta property="og:description"  content="{{ post.resumo or post.titulo }}">
+<meta property="og:image"        content="{{ seo_image }}">
+<meta property="og:image:width"  content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:locale"       content="pt_BR">
+{% if post.publicado_em %}<meta property="article:published_time" content="{{ post.publicado_em }}">{% endif %}
+<meta name="twitter:card"        content="summary_large_image">
+<meta name="twitter:title"       content="{{ post.titulo }} — {{ hub.nome or 'Cesta de Presentes' }}">
+<meta name="twitter:description" content="{{ post.resumo or post.titulo }}">
+<meta name="twitter:image"       content="{{ seo_image }}">
+
+<!-- JSON-LD BlogPosting -->
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "BlogPosting",
+  "headline": {{ post.titulo | tojson }},
+  "url": "https://{{ request.host }}/blog/{{ post.slug }}/",
+  "description": {{ (post.resumo or post.titulo) | tojson }},
+  "image": {{ seo_image | tojson }},
+  "datePublished": {{ (post.publicado_em | string) | tojson }},
+  "inLanguage": "pt-BR",
+  "publisher": {
+    "@type": "Organization",
+    "name": {{ (hub.nome or 'Cesta de Presentes') | tojson }},
+    "logo": {
+      "@type": "ImageObject",
+      "url": {{ (hub.logo_url or seo_image) | tojson }}
+    }
+  }
+}
+</script>
+
+<link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700;900&display=swap" rel="stylesheet">
+<link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+
+<style>
+    :root {
+        --primary:       #c60909;
+        --dark:          #8a0606;
+        --light:         #fbe9e7;
+        --light-gray:    #f8f9fa;
+        --medium-gray:   #e0e0e0;
+        --dark-gray:     #343a40;
+        --text-color:    #495057;
+        --white:         #ffffff;
+        --shadow-light:  rgba(0,0,0,0.08);
+        --shadow-medium: rgba(0,0,0,0.16);
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    html { scroll-behavior: smooth; }
+    body { font-family: 'Roboto', sans-serif; background: var(--light-gray); color: var(--text-color); line-height: 1.6; }
+    .container { max-width: 1200px; margin: 0 auto; padding: 0 20px; }
+    a { text-decoration: none; color: inherit; }
+
+    /* ══ HEADER ══ */
+    body > header {
+        background: var(--primary); padding: 6px 24px 0;
+        display: flex; flex-direction: column; align-items: center; justify-content: center;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.15);
+    }
+    .header-logo { margin-bottom: 0; }
+    .header-logo a { display: block; text-align: center; }
+    .header-logo img { height: 160px; width: auto; display: block; margin: 0 auto; }
+    .hamburger-btn { display: none; background: none; border: none; color: #fff; font-size: 1.8em; cursor: pointer; padding: 6px; position: absolute; right: 20px; top: 20px; }
+    nav.desktop-nav { width: 100%; }
+    nav.desktop-nav ul { list-style: none; display: flex; align-items: center; justify-content: center; flex-wrap: wrap; }
+    nav.desktop-nav ul li { position: relative; }
+    nav.desktop-nav ul li a { color: #fff; font-weight: 600; font-size: 0.95em; padding: 12px 20px; display: block; border-bottom: 3px solid transparent; transition: border-color 0.2s, background 0.2s; }
+    nav.desktop-nav ul li a:hover { border-bottom-color: #fff; background: rgba(0,0,0,0.08); }
+    nav.desktop-nav ul li a.active-link { border-bottom-color: #fff; }
+    .nav-dropdown { display: none; position: absolute; top: 100%; left: 50%; transform: translateX(-50%); background: #fff; border-radius: 12px; box-shadow: 0 8px 32px rgba(0,0,0,0.15); min-width: 220px; max-height: 360px; overflow-y: auto; z-index: 999; padding: 8px 0; }
+    nav.desktop-nav ul li:hover .nav-dropdown { display: block; }
+    .nav-dropdown a { display: block; padding: 10px 20px; color: var(--dark-gray) !important; font-size: 0.9em; font-weight: 500; border-bottom: none !important; background: none !important; transition: background 0.15s; white-space: nowrap; }
+    .nav-dropdown a:hover { background: var(--light) !important; color: var(--primary) !important; }
+
+    /* ══ MOBILE NAV ══ */
+    .mobile-nav-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.95); z-index: 1000; flex-direction: column; justify-content: center; align-items: center; opacity: 0; transition: opacity 0.25s; }
+    .mobile-nav-overlay.active { display: flex; opacity: 1; }
+    .mobile-nav-close { position: absolute; top: 20px; left: 24px; background: none; border: none; color: #fff; font-size: 2em; cursor: pointer; }
+    .mobile-nav-overlay nav ul { list-style: none; text-align: center; max-height: 80vh; overflow-y: auto; }
+    .mobile-nav-overlay nav ul li { margin: 12px 0; }
+    .mobile-nav-overlay nav ul li a { color: #fff; font-size: 1.5em; font-weight: 700; }
+
+    /* ══ BREADCRUMB ══ */
+    .breadcrumb {
+        background: var(--white); border-bottom: 1px solid var(--medium-gray);
+        padding: 12px 0;
+    }
+    .breadcrumb nav { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; font-size: 0.85em; color: #6c757d; }
+    .breadcrumb nav a { color: var(--primary); }
+    .breadcrumb nav a:hover { text-decoration: underline; }
+    .breadcrumb nav span { color: #adb5bd; }
+
+    /* ══ HERO DO POST ══ */
+    .post-hero {
+        position: relative; width: 100%; max-height: 420px; overflow: hidden;
+        background: var(--dark-gray);
+    }
+    .post-hero img {
+        width: 100%; max-height: 420px; object-fit: cover;
+        display: block; filter: brightness(0.65);
+    }
+    .post-hero-placeholder {
+        height: 280px; display: flex; align-items: center; justify-content: center;
+        background: linear-gradient(135deg, var(--primary), var(--dark));
+    }
+    .post-hero-placeholder i { font-size: 4em; color: rgba(255,255,255,0.35); }
+    .post-hero-overlay {
+        position: absolute; bottom: 0; left: 0; right: 0;
+        padding: 48px 0 28px;
+        background: linear-gradient(to top, rgba(0,0,0,0.75) 0%, transparent 100%);
+    }
+    .post-hero-title {
+        font-size: clamp(1.5em, 4vw, 2.4em); font-weight: 900;
+        color: #fff; line-height: 1.2; text-shadow: 0 2px 8px rgba(0,0,0,0.5);
+        max-width: 860px;
+    }
+    .post-hero-meta {
+        margin-top: 10px; display: flex; align-items: center; gap: 18px; flex-wrap: wrap;
+        color: rgba(255,255,255,0.85); font-size: 0.88em;
+    }
+    .post-hero-meta span { display: flex; align-items: center; gap: 5px; }
+
+    /* ══ CONTEÚDO ══ */
+    .post-layout { padding: 48px 0 60px; }
+    .post-content-wrap {
+        max-width: 780px; margin: 0 auto;
+        background: var(--white); border-radius: 14px;
+        box-shadow: 0 4px 18px var(--shadow-light);
+        padding: 40px 48px;
+    }
+
+    /* Estilo do corpo do artigo */
+    .post-body { font-size: 1.06em; line-height: 1.85; color: var(--text-color); }
+    .post-body h1, .post-body h2, .post-body h3, .post-body h4, .post-body h5 {
+        color: var(--dark-gray); font-weight: 700; margin: 1.6em 0 0.6em; line-height: 1.3;
+    }
+    .post-body h2 { font-size: 1.5em; border-bottom: 2px solid var(--light); padding-bottom: 8px; }
+    .post-body h3 { font-size: 1.25em; }
+    .post-body h4 { font-size: 1.05em; }
+    .post-body p { margin: 0.9em 0; }
+    .post-body ul, .post-body ol { padding-left: 1.6em; margin: 0.9em 0; }
+    .post-body li { margin: 0.4em 0; }
+    .post-body a { color: var(--primary); text-decoration: underline; }
+    .post-body a:hover { color: var(--dark); }
+    .post-body blockquote {
+        border-left: 4px solid var(--primary); margin: 1.4em 0;
+        padding: 12px 20px; background: var(--light); border-radius: 0 8px 8px 0;
+        font-style: italic; color: #5a5a5a;
+    }
+    .post-body img { max-width: 100%; height: auto; border-radius: 8px; margin: 1em 0; display: block; }
+    .post-body table { width: 100%; border-collapse: collapse; margin: 1em 0; font-size: 0.95em; }
+    .post-body table th, .post-body table td { border: 1px solid var(--medium-gray); padding: 10px 14px; text-align: left; }
+    .post-body table th { background: var(--light); font-weight: 700; }
+    .post-body pre { background: #2d2d2d; color: #f8f8f2; padding: 18px 20px; border-radius: 8px; overflow-x: auto; font-size: 0.88em; margin: 1em 0; }
+    .post-body code { font-family: 'Courier New', monospace; font-size: 0.9em; background: var(--light); padding: 2px 6px; border-radius: 4px; }
+    .post-body pre code { background: none; padding: 0; color: inherit; }
+    .post-body hr { border: none; border-top: 2px solid var(--medium-gray); margin: 2em 0; }
+
+    /* ══ TAGS DO POST ══ */
+    .post-tags { margin-top: 32px; padding-top: 24px; border-top: 2px solid var(--medium-gray); }
+    .post-tags-label { font-size: 0.82em; font-weight: 700; color: #adb5bd; text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 10px; }
+    .post-tags-row { display: flex; flex-wrap: wrap; gap: 8px; }
+    .post-tag-chip {
+        padding: 6px 16px; border-radius: 20px; border: 2px solid var(--medium-gray);
+        background: var(--white); color: var(--text-color); font-size: 0.85em; font-weight: 600;
+        transition: all 0.2s;
+    }
+    .post-tag-chip:hover { border-color: var(--primary); color: var(--primary); }
+
+    /* ══ RELACIONADOS ══ */
+    .relacionados-section { padding: 44px 0 20px; }
+    .relacionados-section h2 { font-size: 1.5em; font-weight: 800; color: var(--dark-gray); margin-bottom: 24px; text-align: center; }
+    .blog-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 22px; }
+    .blog-card {
+        background: var(--white); border-radius: 14px; overflow: hidden;
+        box-shadow: 0 4px 14px var(--shadow-light);
+        transition: transform 0.3s, box-shadow 0.3s;
+        display: flex; flex-direction: column; text-decoration: none; color: inherit;
+    }
+    .blog-card:hover { transform: translateY(-5px); box-shadow: 0 10px 28px var(--shadow-medium); }
+    .blog-card-foto { width: 100%; height: 180px; overflow: hidden; background: var(--light); }
+    .blog-card-foto img { width: 100%; height: 100%; object-fit: cover; transition: transform 0.4s; }
+    .blog-card:hover .blog-card-foto img { transform: scale(1.06); }
+    .blog-card-foto-placeholder { width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; }
+    .blog-card-foto-placeholder i { font-size: 2.5em; color: var(--primary); opacity: 0.4; }
+    .blog-card-body { padding: 16px; flex: 1; display: flex; flex-direction: column; gap: 6px; }
+    .blog-card-body h3 { font-size: 1.05em; font-weight: 700; color: var(--dark-gray); line-height: 1.35; }
+    .blog-card-body p { font-size: 0.88em; color: #6c757d; line-height: 1.5; flex: 1; }
+    .blog-card-data { font-size: 0.78em; color: #adb5bd; display: flex; align-items: center; gap: 5px; margin-top: 4px; }
+    .blog-card-btn { margin-top: 10px; display: inline-block; background: var(--primary); color: #fff; padding: 9px 18px; border-radius: 6px; font-size: 0.88em; font-weight: 700; text-align: center; transition: background 0.2s; }
+    .blog-card:hover .blog-card-btn { background: var(--dark); }
+
+    /* ══ CTA ANUNCIE ══ */
+    .cta-section { background: var(--primary); padding: 48px 20px; text-align: center; }
+    .cta-section h2 { font-size: 1.8em; font-weight: 900; color: #fff; margin-bottom: 10px; }
+    .cta-section p { color: rgba(255,255,255,0.9); font-size: 1.05em; margin-bottom: 24px; max-width: 480px; margin-left: auto; margin-right: auto; }
+    .cta-btn {
+        display: inline-flex; align-items: center; gap: 10px;
+        background: #fff; color: var(--primary); font-weight: 800; font-size: 1em;
+        padding: 14px 30px; border-radius: 8px;
+        box-shadow: 0 4px 16px rgba(0,0,0,0.15); transition: all 0.2s;
+    }
+    .cta-btn:hover { background: var(--light); transform: translateY(-2px); box-shadow: 0 8px 24px rgba(0,0,0,0.2); }
+
+    /* ══ FOOTER ══ */
+    footer { background: #111; color: #999; text-align: center; padding: 32px 20px; font-size: 0.88em; }
+    footer a { color: var(--primary); }
+    footer a:hover { text-decoration: underline; }
+    .footer-logo { margin-bottom: 14px; }
+    .footer-logo img { height: 36px; width: auto; opacity: 0.85; }
+
+    @media (max-width: 768px) {
+        body > header { padding: 16px 60px 16px 20px; flex-direction: row; justify-content: center; }
+        .header-logo img { height: 96px; }
+        nav.desktop-nav { display: none; }
+        .hamburger-btn { display: block; top: 50%; transform: translateY(-50%); }
+        .post-content-wrap { padding: 24px 20px; }
+        .post-hero-title { font-size: 1.4em; }
+    }
+/* ══ BANNERS ══ */
+.banner-topo { background: var(--white); border-bottom: 1px solid var(--medium-gray); padding: 10px 20px; text-align: center; }
+.banner-meio { background: var(--light); padding: 28px 20px; text-align: center; border-top: 1px solid #f5c6c1; border-bottom: 1px solid #f5c6c1; }
+.banner-placeholder { display: inline-block; background: var(--light-gray); border: 2px dashed var(--medium-gray); border-radius: 8px; padding: 12px 36px; color: #aaa; font-size: 0.9em; font-weight: 500; transition: all 0.2s; }
+.banner-placeholder:hover { border-color: var(--primary); color: var(--primary); }
+</style>
+</head>
+<body>
+
+<!-- HEADER -->
+<header>
+    <div class="header-logo">
+        <a href="/" aria-label="{{ hub.nome or 'Cesta de Presentes' }} — Página inicial">
+            <img src="{{ hub.logo_url or 'https://res.cloudinary.com/desvazant/image/upload/v1782959580/Cesta_de_Presentes_7_xaav6t.png' }}"
+                 alt="{{ hub.nome or 'Cesta de Presentes' }}" height="80" loading="eager">
+        </a>
+    </div>
+    <nav class="desktop-nav" aria-label="Navegação principal">
+        <ul>
+            <li><a href="/">Início</a></li>
+            <li>
+                <a href="/#categorias">Categorias ▾</a>
+                <div class="nav-dropdown">
+                    {% for cat in categorias %}
+                    <a href="/{{ cat.slug }}/">{{ cat.nome }}</a>
+                    {% endfor %}
+                </div>
+            </li>
+            <li>
+                <a href="/#cidades">Cidades ▾</a>
+                <div class="nav-dropdown" id="nav-dropdown-cidades">
+                    <a href="/#cidades">Ver todas as cidades</a>
+                </div>
+            </li>
+            <li><a href="/blog/" class="active-link">Blog</a></li>
+            <li><a href="https://wa.me/55{{ hub.whatsapp or '11999999999' }}?text=Olá,+quero+saber+mais" target="_blank" rel="noopener">Contato</a></li>
+        </ul>
+    </nav>
+    <button class="hamburger-btn" id="hamburger-btn" aria-label="Abrir menu"><i class="fas fa-bars"></i></button>
+</header>
+
+<!-- MOBILE NAV -->
+<div class="mobile-nav-overlay" id="mobile-nav" role="dialog" aria-modal="true">
+    <button class="mobile-nav-close" onclick="closeMobileNav()" aria-label="Fechar menu">&#x2715;</button>
+    <nav>
+        <ul>
+            <li><a href="/" onclick="closeMobileNav()">Início</a></li>
+            <li><a href="/#categorias" onclick="closeMobileNav()">Categorias</a></li>
+            <li><a href="/#cidades" onclick="closeMobileNav()">Cidades</a></li>
+            <li><a href="/blog/" onclick="closeMobileNav()">Blog</a></li>
+            <li><a href="https://wa.me/55{{ hub.whatsapp or '11999999999' }}?text=Olá,+quero+saber+mais" target="_blank" rel="noopener" onclick="closeMobileNav()">Contato</a></li>
+        </ul>
+    </nav>
+</div>
+
+<!-- BANNER TOPO -->
+<div class="banner-topo">
+    {% if anuncio_topo %}
+    <a href="{{ anuncio_topo.link }}" target="_blank" rel="noopener sponsored">
+        <img src="{{ anuncio_topo.foto_url }}" alt="{{ anuncio_topo.titulo or 'Publicidade' }}"
+             style="max-height:90px; width:auto; max-width:100%; border-radius:8px;">
+    </a>
+    {% elif hub.banner1_foto_url %}
+    <a href="{{ hub.banner1_link or '#' }}" target="_blank" rel="noopener sponsored">
+        <img src="{{ hub.banner1_foto_url }}" alt="Publicidade"
+             style="max-height:90px; width:auto; max-width:100%; border-radius:8px;">
+    </a>
+    {% else %}
+    <a class="banner-placeholder"
+       href="https://wa.me/55{{ hub.whatsapp or '11999999999' }}?text=Quero+anunciar+no+Onde+Tem+Perto"
+       target="_blank" rel="noopener">📣 Anuncie aqui — espaço disponível</a>
+    {% endif %}
+</div>
+
+<!-- BREADCRUMB -->
+<div class="breadcrumb">
+    <div class="container">
+        <nav aria-label="Breadcrumb">
+            <a href="/">Início</a>
+            <span>›</span>
+            <a href="/blog/">Blog</a>
+            <span>›</span>
+            <span>{{ post.titulo }}</span>
+        </nav>
+    </div>
+</div>
+
+<!-- HERO DO POST -->
+{% if post.capa_url %}
+<div class="post-hero">
+    <img src="{{ post.capa_url }}" alt="{{ post.titulo }}" loading="eager" width="1200" height="420">
+    <div class="post-hero-overlay">
+        <div class="container">
+            <h1 class="post-hero-title">{{ post.titulo }}</h1>
+            <div class="post-hero-meta">
+                {% if post.publicado_em %}
+                <span><i class="fas fa-calendar-alt"></i> {{ post.publicado_em.strftime('%d %b %Y') if post.publicado_em.strftime else post.publicado_em }}</span>
+                {% endif %}
+                <span><i class="fas fa-eye"></i> {{ post.visualizacoes or 0 }} leituras</span>
+                {% if tags %}
+                <span><i class="fas fa-tags"></i> {% for t in tags %}{{ t.nome }}{% if not loop.last %}, {% endif %}{% endfor %}</span>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% else %}
+<div class="post-hero">
+    <div class="post-hero-placeholder">
+        <i class="fas fa-newspaper"></i>
+    </div>
+    <div class="post-hero-overlay">
+        <div class="container">
+            <h1 class="post-hero-title">{{ post.titulo }}</h1>
+            <div class="post-hero-meta">
+                {% if post.publicado_em %}
+                <span><i class="fas fa-calendar-alt"></i> {{ post.publicado_em.strftime('%d %b %Y') if post.publicado_em.strftime else post.publicado_em }}</span>
+                {% endif %}
+                <span><i class="fas fa-eye"></i> {{ post.visualizacoes or 0 }} leituras</span>
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+<!-- CORPO DO ARTIGO -->
+<section class="post-layout">
+    <div class="container">
+        <div class="post-content-wrap">
+
+            {% if post.resumo %}
+            <p style="font-size:1.12em; color:#6c757d; font-weight:400; line-height:1.7; margin-bottom:28px; padding-bottom:24px; border-bottom:2px solid var(--medium-gray);">
+                {{ post.resumo }}
+            </p>
+            {% endif %}
+
+            <div class="post-body">
+                {{ post.conteudo | safe }}
+            </div>
+
+            {% if tags %}
+            <div class="post-tags">
+                <div class="post-tags-label">Tags</div>
+                <div class="post-tags-row">
+                    {% for t in tags %}
+                    <a class="post-tag-chip" href="/blog/?tag={{ t.slug }}">#{{ t.nome }}</a>
+                    {% endfor %}
+                </div>
+            </div>
+            {% endif %}
+
+        </div>
+
+        {% if relacionados %}
+        <section class="relacionados-section">
+            <h2><i class="fas fa-newspaper" style="color:var(--primary);margin-right:8px;"></i>Posts relacionados</h2>
+            <div class="blog-grid">
+                {% for r in relacionados %}
+                <a href="/blog/{{ r.slug }}/" class="blog-card">
+                    <div class="blog-card-foto">
+                        {% if r.capa_url %}
+                        <img src="{{ r.capa_url }}" alt="{{ r.titulo }}" loading="lazy" width="600" height="180">
+                        {% else %}
+                        <div class="blog-card-foto-placeholder"><i class="fas fa-newspaper"></i></div>
+                        {% endif %}
+                    </div>
+                    <div class="blog-card-body">
+                        <h3>{{ r.titulo }}</h3>
+                        {% if r.resumo %}
+                        <p>{{ r.resumo[:110] }}{% if r.resumo | length > 110 %}…{% endif %}</p>
+                        {% endif %}
+                        {% if r.publicado_em %}
+                        <span class="blog-card-data"><i class="fas fa-calendar-alt"></i> {{ r.publicado_em.strftime('%d %b %Y') if r.publicado_em.strftime else r.publicado_em }}</span>
+                        {% endif %}
+                        <span class="blog-card-btn">Ler post →</span>
+                    </div>
+                </a>
+                {% endfor %}
+            </div>
+        </section>
+        {% endif %}
+
+    </div>
+</section>
+
+<!-- CTA ANUNCIE -->
+{% if hub.whatsapp %}
+<section class="cta-section">
+    <div class="container">
+        <h2>Seu negócio aqui!</h2>
+        <p>Anuncie no {{ hub.nome or 'Cesta de Presentes' }} e alcance mais clientes perto de você.</p>
+        <a class="cta-btn" href="https://wa.me/55{{ hub.whatsapp }}?text=Olá,+quero+anunciar+no+{{ hub.nome | urlencode }}" target="_blank" rel="noopener">
+            <i class="fab fa-whatsapp"></i> Falar pelo WhatsApp
+        </a>
+    </div>
+</section>
+{% endif %}
+
+<!-- FOOTER -->
+<footer>
+    <div class="footer-logo">
+        <img src="{{ hub.logo_url or 'https://res.cloudinary.com/desvazant/image/upload/v1782959580/Cesta_de_Presentes_7_xaav6t.png' }}"
+             alt="{{ hub.nome or 'Cesta de Presentes' }}" loading="lazy">
+    </div>
+    <p>© 2026 <strong>{{ hub.nome or 'Cesta de Presentes' }}</strong> — Todos os direitos reservados</p>
+    <p style="margin-top:10px;">
+        <a href="/sitemap.xml">Sitemap</a> &middot;
+        <a href="/robots.txt">Robots.txt</a> &middot;
+        <a href="/blog/">Blog</a>
+    </p>
+</footer>
+
+<!-- Scripts -->
+<script>
+document.getElementById('hamburger-btn').addEventListener('click', function(){
+    document.getElementById('mobile-nav').classList.add('active');
+    document.body.style.overflow = 'hidden';
+});
+function closeMobileNav(){
+    document.getElementById('mobile-nav').classList.remove('active');
+    document.body.style.overflow = '';
+}
+document.addEventListener('keydown', function(e){ if(e.key === 'Escape') closeMobileNav(); });
+</script>
+
+{% if hub.ga4_id %}
+<script async src="https://www.googletagmanager.com/gtag/js?id={{ hub.ga4_id }}"></script>
+<script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag('js',new Date());gtag('config','{{ hub.ga4_id }}');</script>
+{% endif %}
+
+{% if hub.pixel_id %}
+<script>!function(f,b,e,v,n,t,s){if(f.fbq)return;n=f.fbq=function(){n.callMethod?n.callMethod.apply(n,arguments):n.queue.push(arguments)};if(!f._fbq)f._fbq=n;n.push=n;n.loaded=!0;n.version='2.0';n.queue=[];t=b.createElement(e);t.async=!0;t.src=v;s=b.getElementsByTagName(e)[0];s.parentNode.insertBefore(t,s)}(window,document,'script','https://connect.facebook.net/en_US/fbevents.js');fbq('init','{{ hub.pixel_id }}');fbq('track','PageView');</script>
+{% endif %}
+
+<script>
+// Popula dropdown de cidades via API
+function _slugCidade(nome) {
+    return nome.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/\s+/g,'-').replace(/[^a-z0-9-]/g,'');
+}
+function renderCidadesDropdown(lista) {
+    if(!lista || !lista.length) return;
+    var dd = document.getElementById('nav-dropdown-cidades');
+    if(dd){
+        dd.innerHTML = lista.map(function(c){
+            var slug = _slugCidade(c.cidade || c.nome || '');
+            var nome = c.cidade || c.nome || '';
+            return '<a href="/cidade/'+slug+'/">'+nome+'</a>';
+        }).join('');
+    }
+}
+fetch('/api/hub/cidades')
+    .then(function(r){ return r.json(); })
+    .then(function(data){ if(Array.isArray(data)) renderCidadesDropdown(data); })
+    .catch(function(){});
+</script>
+
+<!-- ── Google Translate (widget nativo oculto) ── -->
+<div id="google_translate_element"></div>
+<script>
+function googleTranslateElementInit() {
+    new google.translate.TranslateElement({ pageLanguage: 'pt', autoDisplay: false }, 'google_translate_element');
+}
+</script>
+<script src="//translate.google.com/translate_a/element.js?cb=googleTranslateElementInit"></script>
+
+<!-- ── Botão flutuante de tradução ── -->
+<button id="translate-btn" onclick="toggleTranslateDrawer()">
+    <i class="fas fa-language"></i> Traduzir
+</button>
+
+<!-- ── Drawer de idiomas ── -->
+<div id="translate-drawer">
+    <div class="td-header">
+        <input class="td-search" id="td-search" type="text" placeholder="Buscar idioma…" oninput="filterLangs(this.value)">
+        <button class="td-close" onclick="toggleTranslateDrawer()">&#10005;</button>
+    </div>
+    <div class="td-list" id="td-list"></div>
+</div>
+
+<style>
+    #google_translate_element { position: absolute; visibility: hidden; pointer-events: none; }
+    .goog-te-banner-frame, .skiptranslate { display: none !important; }
+    body { top: 0 !important; }
+    #translate-btn {
+        position: fixed; bottom: 20px; right: 20px; z-index: 999;
+        background: var(--white); border: none; border-radius: 50px;
+        padding: 10px 18px; display: flex; align-items: center; gap: 8px;
+        font-family: 'Roboto', sans-serif; font-size: 14px; font-weight: 600;
+        color: var(--dark); cursor: pointer;
+        box-shadow: 0 4px 20px rgba(0,0,0,0.18);
+        transition: box-shadow 0.2s, transform 0.15s;
+    }
+    #translate-btn:hover { box-shadow: 0 6px 28px rgba(0,0,0,0.25); transform: translateY(-1px); }
+    #translate-btn i { color: var(--primary); font-size: 16px; }
+    #translate-drawer {
+        position: fixed; bottom: 70px; right: 20px; z-index: 1000;
+        background: var(--white); border-radius: 16px;
+        box-shadow: 0 8px 40px rgba(0,0,0,0.2);
+        width: 280px; max-height: 420px;
+        display: none; flex-direction: column; overflow: hidden;
+    }
+    #translate-drawer.open { display: flex; }
+    .td-header { padding: 12px 14px; border-bottom: 1px solid var(--medium-gray); display: flex; align-items: center; gap: 8px; }
+    .td-search { flex: 1; border: 1.5px solid var(--medium-gray); border-radius: 8px; padding: 8px 12px; font-family: 'Roboto', sans-serif; font-size: 13px; outline: none; transition: border-color 0.2s; }
+    .td-search:focus { border-color: var(--primary); }
+    .td-close { background: none; border: none; color: #aaa; font-size: 18px; cursor: pointer; line-height: 1; padding: 2px 4px; }
+    .td-close:hover { color: var(--dark-gray); }
+    .td-list { overflow-y: auto; flex: 1; padding: 6px 0; }
+    .td-item { padding: 9px 18px; font-size: 14px; cursor: pointer; color: var(--text-color); transition: background 0.1s; display: flex; align-items: center; gap: 10px; }
+    .td-item:hover { background: var(--light); color: var(--dark); }
+    .td-item.active { color: var(--primary); font-weight: 600; background: #fbe9e7; }
+    .td-item .flag { font-size: 18px; flex-shrink: 0; }
+    .td-empty { padding: 24px; text-align: center; color: #bbb; font-size: 13px; }
+    @media (max-width: 480px) {
+        #translate-drawer { width: calc(100vw - 32px); right: 16px; bottom: 72px; max-height: 55vh; }
+        #translate-btn { bottom: 16px; right: 16px; }
+    }
+</style>
+
+<script>
+const LANGS = [
+    {code:'af',name:'Afrikaans',flag:'🇿🇦'},{code:'sq',name:'Albanian',flag:'🇦🇱'},{code:'am',name:'Amharic',flag:'🇪🇹'},
+    {code:'ar',name:'Arabic',flag:'🇸🇦'},{code:'hy',name:'Armenian',flag:'🇦🇲'},{code:'as',name:'Assamese',flag:'🇮🇳'},
+    {code:'ay',name:'Aymara',flag:'🇧🇴'},{code:'az',name:'Azerbaijani',flag:'🇦🇿'},{code:'bm',name:'Bambara',flag:'🇲🇱'},
+    {code:'eu',name:'Basque',flag:'🌍'},{code:'be',name:'Belarusian',flag:'🇧🇾'},{code:'bn',name:'Bengali',flag:'🇧🇩'},
+    {code:'bho',name:'Bhojpuri',flag:'🇮🇳'},{code:'bs',name:'Bosnian',flag:'🇧🇦'},{code:'bg',name:'Bulgarian',flag:'🇧🇬'},
+    {code:'ca',name:'Catalan',flag:'🌍'},{code:'ceb',name:'Cebuano',flag:'🇵🇭'},{code:'ny',name:'Chichewa',flag:'🇲🇼'},
+    {code:'zh-CN',name:'Chinese (Simplified)',flag:'🇨🇳'},{code:'zh-TW',name:'Chinese (Traditional)',flag:'🇹🇼'},
+    {code:'co',name:'Corsican',flag:'🌍'},{code:'hr',name:'Croatian',flag:'🇭🇷'},{code:'cs',name:'Czech',flag:'🇨🇿'},
+    {code:'da',name:'Danish',flag:'🇩🇰'},{code:'dv',name:'Dhivehi',flag:'🇲🇻'},{code:'doi',name:'Dogri',flag:'🇮🇳'},
+    {code:'nl',name:'Dutch',flag:'🇳🇱'},{code:'en',name:'English',flag:'🇺🇸'},{code:'eo',name:'Esperanto',flag:'🌍'},
+    {code:'et',name:'Estonian',flag:'🇪🇪'},{code:'ee',name:'Ewe',flag:'🇬🇭'},{code:'tl',name:'Filipino',flag:'🇵🇭'},
+    {code:'fi',name:'Finnish',flag:'🇫🇮'},{code:'fr',name:'French',flag:'🇫🇷'},{code:'fy',name:'Frisian',flag:'🌍'},
+    {code:'gl',name:'Galician',flag:'🌍'},{code:'ka',name:'Georgian',flag:'🇬🇪'},{code:'de',name:'German',flag:'🇩🇪'},
+    {code:'el',name:'Greek',flag:'🇬🇷'},{code:'gn',name:'Guarani',flag:'🇵🇾'},{code:'gu',name:'Gujarati',flag:'🇮🇳'},
+    {code:'ht',name:'Haitian Creole',flag:'🇭🇹'},{code:'ha',name:'Hausa',flag:'🇳🇬'},{code:'haw',name:'Hawaiian',flag:'🇺🇸'},
+    {code:'he',name:'Hebrew',flag:'🇮🇱'},{code:'hi',name:'Hindi',flag:'🇮🇳'},{code:'hmn',name:'Hmong',flag:'🌏'},
+    {code:'hu',name:'Hungarian',flag:'🇭🇺'},{code:'is',name:'Icelandic',flag:'🇮🇸'},{code:'ig',name:'Igbo',flag:'🇳🇬'},
+    {code:'id',name:'Indonesian',flag:'🇮🇩'},{code:'ga',name:'Irish',flag:'🇮🇪'},{code:'it',name:'Italian',flag:'🇮🇹'},
+    {code:'ja',name:'Japanese',flag:'🇯🇵'},{code:'jv',name:'Javanese',flag:'🇮🇩'},{code:'kn',name:'Kannada',flag:'🇮🇳'},
+    {code:'kk',name:'Kazakh',flag:'🇰🇿'},{code:'km',name:'Khmer',flag:'🇰🇭'},{code:'rw',name:'Kinyarwanda',flag:'🇷🇼'},
+    {code:'ko',name:'Korean',flag:'🇰🇷'},{code:'ku',name:'Kurdish',flag:'🌍'},{code:'ky',name:'Kyrgyz',flag:'🇰🇬'},
+    {code:'lo',name:'Lao',flag:'🇱🇦'},{code:'la',name:'Latin',flag:'🏛️'},{code:'lv',name:'Latvian',flag:'🇱🇻'},
+    {code:'lt',name:'Lithuanian',flag:'🇱🇹'},{code:'lb',name:'Luxembourgish',flag:'🇱🇺'},{code:'mk',name:'Macedonian',flag:'🇲🇰'},
+    {code:'mg',name:'Malagasy',flag:'🇲🇬'},{code:'ms',name:'Malay',flag:'🇲🇾'},{code:'ml',name:'Malayalam',flag:'🇮🇳'},
+    {code:'mt',name:'Maltese',flag:'🇲🇹'},{code:'mi',name:'Maori',flag:'🇳🇿'},{code:'mr',name:'Marathi',flag:'🇮🇳'},
+    {code:'mn',name:'Mongolian',flag:'🇲🇳'},{code:'my',name:'Myanmar (Burmese)',flag:'🇲🇲'},{code:'ne',name:'Nepali',flag:'🇳🇵'},
+    {code:'no',name:'Norwegian',flag:'🇳🇴'},{code:'or',name:'Odia (Oriya)',flag:'🇮🇳'},{code:'ps',name:'Pashto',flag:'🇦🇫'},
+    {code:'fa',name:'Persian',flag:'🇮🇷'},{code:'pl',name:'Polish',flag:'🇵🇱'},{code:'pt',name:'Português',flag:'🇧🇷'},
+    {code:'pa',name:'Punjabi',flag:'🇮🇳'},{code:'ro',name:'Romanian',flag:'🇷🇴'},{code:'ru',name:'Russian',flag:'🇷🇺'},
+    {code:'sm',name:'Samoan',flag:'🇼🇸'},{code:'gd',name:'Scots Gaelic',flag:'🏴󠁧󠁢󠁳󠁣󠁴󠁿'},{code:'sr',name:'Serbian',flag:'🇷🇸'},
+    {code:'st',name:'Sesotho',flag:'🇱🇸'},{code:'sn',name:'Shona',flag:'🇿🇼'},{code:'sd',name:'Sindhi',flag:'🇵🇰'},
+    {code:'si',name:'Sinhala',flag:'🇱🇰'},{code:'sk',name:'Slovak',flag:'🇸🇰'},{code:'sl',name:'Slovenian',flag:'🇸🇮'},
+    {code:'so',name:'Somali',flag:'🇸🇴'},{code:'es',name:'Spanish',flag:'🇪🇸'},{code:'su',name:'Sundanese',flag:'🇮🇩'},
+    {code:'sw',name:'Swahili',flag:'🇰🇪'},{code:'sv',name:'Swedish',flag:'🇸🇪'},{code:'tg',name:'Tajik',flag:'🇹🇯'},
+    {code:'ta',name:'Tamil',flag:'🇮🇳'},{code:'tt',name:'Tatar',flag:'🇷🇺'},{code:'te',name:'Telugu',flag:'🇮🇳'},
+    {code:'th',name:'Thai',flag:'🇹🇭'},{code:'tr',name:'Turkish',flag:'🇹🇷'},{code:'tk',name:'Turkmen',flag:'🇹🇲'},
+    {code:'uk',name:'Ukrainian',flag:'🇺🇦'},{code:'ur',name:'Urdu',flag:'🇵🇰'},{code:'ug',name:'Uyghur',flag:'🇨🇳'},
+    {code:'uz',name:'Uzbek',flag:'🇺🇿'},{code:'vi',name:'Vietnamese',flag:'🇻🇳'},{code:'cy',name:'Welsh',flag:'🏴󠁧󠁢󠁷󠁬󠁳󠁿'},
+    {code:'xh',name:'Xhosa',flag:'🇿🇦'},{code:'yi',name:'Yiddish',flag:'🌍'},{code:'yo',name:'Yoruba',flag:'🇳🇬'},
+    {code:'zu',name:'Zulu',flag:'🇿🇦'}
+];
+
+let currentLang = 'pt';
+let drawerOpen  = false;
+
+function renderLangs(list) {
+    var el = document.getElementById('td-list');
+    if (!list.length) { el.innerHTML = '<div class="td-empty">Nenhum idioma encontrado</div>'; return; }
+    el.innerHTML = list.map(function(l){
+        return '<div class="td-item ' + (l.code === currentLang ? 'active' : '') + '" onclick="selectLang(\'' + l.code + '\',\'' + l.name + '\')"><span class="flag">' + l.flag + '</span> ' + l.name + '</div>';
+    }).join('');
+}
+function filterLangs(q) {
+    renderLangs(LANGS.filter(function(l){ return l.name.toLowerCase().includes(q.toLowerCase()); }));
+}
+function selectLang(code, name) {
+    currentLang = code;
+    drawerOpen  = false;
+    document.getElementById('translate-drawer').classList.remove('open');
+    var lang = LANGS.find(function(l){ return l.code === code; });
+    document.getElementById('translate-btn').innerHTML = '<i class="fas fa-language"></i> ' + (lang ? lang.flag + ' ' + name : name);
+    if (code === 'pt') {
+        var sel = document.querySelector('.goog-te-combo');
+        if (sel) { sel.value = ''; sel.dispatchEvent(new Event('change')); }
+        document.getElementById('translate-btn').innerHTML = '<i class="fas fa-language"></i> Traduzir';
+        return;
+    }
+    var tryTranslate = function(attempts) {
+        var sel = document.querySelector('.goog-te-combo');
+        if (sel) { sel.value = code; sel.dispatchEvent(new Event('change')); }
+        else if (attempts > 0) { setTimeout(function(){ tryTranslate(attempts - 1); }, 300); }
+    };
+    tryTranslate(10);
+}
+function toggleTranslateDrawer() {
+    drawerOpen = !drawerOpen;
+    var drawer = document.getElementById('translate-drawer');
+    if (drawerOpen) {
+        drawer.classList.add('open');
+        renderLangs(LANGS);
+        var search = document.getElementById('td-search');
+        search.value = '';
+        setTimeout(function(){ search.focus(); }, 50);
+    } else {
+        drawer.classList.remove('open');
+    }
+}
+document.addEventListener('click', function(e) {
+    if (drawerOpen &&
+        !document.getElementById('translate-drawer').contains(e.target) &&
+        !document.getElementById('translate-btn').contains(e.target)) {
+        drawerOpen = false;
+        document.getElementById('translate-drawer').classList.remove('open');
+    }
+});
+</script>
+</body>
+</html>
