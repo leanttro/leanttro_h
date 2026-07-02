@@ -552,11 +552,15 @@ var _userLat = null, _userLng = null;
 var _locAtiva = false;
 var _IMG_FALLBACK = 'https://res.cloudinary.com/dhu1cqvrb/image/upload/v1782522274/locais_pkyekz.png';
 
+// Guarda TODOS os negócios já buscados (inicial + lotes lazy) — igual
+// o "todosNegocios" do index_otp — pra dar pra ordenar por distância
+// no navegador sem precisar voltar no backend.
+var negociosCarregados = [];
+
 // Renderiza os negócios já vindos no HTML (primeiros 48)
 (function(){
-    var grid = document.getElementById('negociosGrid');
-    var inicial = {{ negocios | tojson }};
-    grid.innerHTML = inicial.map(negocioCardHTML).join('');
+    negociosCarregados = {{ negocios | tojson }};
+    renderGrid();
     atualizarSubtitulo(_totalReal);
     initLazySentinel();
 })();
@@ -582,6 +586,29 @@ function negocioCardHTML(n){
         '</a>';
 }
 
+// Distância Haversine (km) — copiada igual do index_otp, que já funciona.
+function calcDistancia(lat1,lng1,lat2,lng2){
+    var R=6371,dLat=(lat2-lat1)*Math.PI/180,dLng=(lng2-lng1)*Math.PI/180;
+    var a=Math.sin(dLat/2)*Math.sin(dLat/2)+Math.cos(lat1*Math.PI/180)*Math.cos(lat2*Math.PI/180)*Math.sin(dLng/2)*Math.sin(dLng/2);
+    return R*2*Math.atan2(Math.sqrt(a),Math.sqrt(1-a));
+}
+
+// Renderiza o grid a partir de negociosCarregados. Se "Mais próximo" estiver
+// ativo, ordena por distância no navegador (igual index_otp) — não depende
+// do backend calcular nada.
+function renderGrid(){
+    var grid = document.getElementById('negociosGrid');
+    if(!grid) return;
+    var lista = negociosCarregados;
+    if(_locAtiva && _userLat && _userLng){
+        lista = lista.map(function(n){
+            var d = (n.lat && n.lng) ? calcDistancia(_userLat, _userLng, parseFloat(n.lat), parseFloat(n.lng)) : 9999;
+            return Object.assign({}, n, {_dist: d});
+        }).sort(function(a,b){ return a._dist - b._dist; });
+    }
+    grid.innerHTML = lista.map(negocioCardHTML).join('');
+}
+
 function atualizarSubtitulo(total){
     var el = document.getElementById('gridSubtitulo');
     if(el) el.textContent = total + ' negócio(s) encontrado(s)';
@@ -591,7 +618,6 @@ function _buildApiUrl(offset){
     var url = '/api/hub/negocios?limit=' + _loteSize + '&offset=' + offset;
     if(_filtroAtualBairro) url += '&bairro=' + encodeURIComponent(_filtroAtualBairro);
     if(_filtroAtualBusca)  url += '&busca='  + encodeURIComponent(_filtroAtualBusca);
-    if(_locAtiva && _userLat && _userLng) url += '&lat=' + _userLat + '&lng=' + _userLng;
     // passa filtro de categoria/bairro do contexto da página
     {% if filtro_tipo == 'categoria' %}
     url += '&categoria={{ segmento }}';
@@ -612,8 +638,8 @@ function _carregarLote(){
             _apiCarregando = false;
             if(loading) loading.style.display = 'none';
             if(!Array.isArray(data) || !data.length){ _apiFim = true; return; }
-            var grid = document.getElementById('negociosGrid');
-            data.forEach(function(n){ grid.insertAdjacentHTML('beforeend', negocioCardHTML(n)); });
+            negociosCarregados = negociosCarregados.concat(data);
+            renderGrid();
             _apiOffset += data.length;
             _totalVisivelLocal += data.length;
             if(data.length < _loteSize) _apiFim = true;
@@ -649,6 +675,7 @@ function selecionarItem(el, val){
 function _recarregarGrid(){
     var grid = document.getElementById('negociosGrid');
     grid.innerHTML = '';
+    negociosCarregados = [];
     _apiOffset = 0;
     _apiFim = false;
     _totalVisivelLocal = 0;
@@ -677,7 +704,7 @@ function usarLocalizacao(){
         _userLat = null; _userLng = null;
         btn.classList.remove('ativo');
         label.textContent = 'Mais próximo';
-        _recarregarGrid(); // volta pra ordem normal, buscando da API
+        renderGrid(); // volta pra ordem normal, sem precisar buscar de novo
         return;
     }
     if(!navigator.geolocation){ alert('Seu navegador não suporta geolocalização.'); return; }
@@ -689,10 +716,10 @@ function usarLocalizacao(){
             _userLat = pos.coords.latitude;
             _userLng = pos.coords.longitude;
             label.textContent = 'Mais próximo ✓';
-            // Recarrega do zero direto da API: o banco calcula a distância de
-            // TODOS os negócios (não só dos poucos já carregados) e devolve os
-            // mais próximos primeiro — antes só reordenava o que já estava na tela.
-            _recarregarGrid();
+            // Reordena no navegador o que já foi carregado — igual o
+            // index_otp, que calcula a distância no cliente (Haversine)
+            // em vez de depender do backend, que nunca soube fazer isso.
+            renderGrid();
         },
         function(){
             _locAtiva = false; locAtiva = false;
