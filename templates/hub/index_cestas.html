@@ -680,18 +680,18 @@
         <div class="tags-sazonais" id="tags-sazonais">
             <span class="tags-sazonais-label"><i class="fas fa-gift"></i> Encontre cestas para</span>
             <div class="tags-sazonais-list" id="tags-sazonais-list">
-                <button type="button" class="chip-tag" data-tag="aniversario" onclick="filtrarTagSazonal('aniversario', this)">🎂 Aniversário</button>
-                <button type="button" class="chip-tag" data-tag="dia-das-maes" onclick="filtrarTagSazonal('dia-das-maes', this)">💐 Dia das Mães</button>
-                <button type="button" class="chip-tag" data-tag="dia-dos-namorados" onclick="filtrarTagSazonal('dia-dos-namorados', this)">❤️ Dia dos Namorados</button>
-                <button type="button" class="chip-tag" data-tag="dia-dos-pais" onclick="filtrarTagSazonal('dia-dos-pais', this)">👔 Dia dos Pais</button>
-                <button type="button" class="chip-tag" data-tag="natal" onclick="filtrarTagSazonal('natal', this)">🎄 Natal</button>
-                <button type="button" class="chip-tag" data-tag="pascoa" onclick="filtrarTagSazonal('pascoa', this)">🐣 Páscoa</button>
-                <button type="button" class="chip-tag" data-tag="casamento" onclick="filtrarTagSazonal('casamento', this)">💍 Casamento</button>
-                <button type="button" class="chip-tag" data-tag="formatura" onclick="filtrarTagSazonal('formatura', this)">🎓 Formatura</button>
-                <button type="button" class="chip-tag" data-tag="cafe-da-manha" onclick="filtrarTagSazonal('cafe-da-manha', this)">☕ Café da Manhã</button>
-                <button type="button" class="chip-tag" data-tag="cha-de-bebe" onclick="filtrarTagSazonal('cha-de-bebe', this)">🍼 Chá de Bebê</button>
-                <button type="button" class="chip-tag" data-tag="melhoras" onclick="filtrarTagSazonal('melhoras', this)">🌻 Melhoras</button>
-                <button type="button" class="chip-tag" data-tag="boas-vindas" onclick="filtrarTagSazonal('boas-vindas', this)">🎉 Boas-vindas</button>
+                <button type="button" class="chip-tag" data-tag="aniversario" onclick="filtrarTagSazonal('aniversario', this)">Aniversário</button>
+                <button type="button" class="chip-tag" data-tag="dia-das-maes" onclick="filtrarTagSazonal('dia-das-maes', this)">Dia das Mães</button>
+                <button type="button" class="chip-tag" data-tag="dia-dos-namorados" onclick="filtrarTagSazonal('dia-dos-namorados', this)">Dia dos Namorados</button>
+                <button type="button" class="chip-tag" data-tag="dia-dos-pais" onclick="filtrarTagSazonal('dia-dos-pais', this)">Dia dos Pais</button>
+                <button type="button" class="chip-tag" data-tag="natal" onclick="filtrarTagSazonal('natal', this)">Natal</button>
+                <button type="button" class="chip-tag" data-tag="pascoa" onclick="filtrarTagSazonal('pascoa', this)">Páscoa</button>
+                <button type="button" class="chip-tag" data-tag="casamento" onclick="filtrarTagSazonal('casamento', this)">Casamento</button>
+                <button type="button" class="chip-tag" data-tag="formatura" onclick="filtrarTagSazonal('formatura', this)">Formatura</button>
+                <button type="button" class="chip-tag" data-tag="cafe-da-manha" onclick="filtrarTagSazonal('cafe-da-manha', this)">Café da Manhã</button>
+                <button type="button" class="chip-tag" data-tag="cha-de-bebe" onclick="filtrarTagSazonal('cha-de-bebe', this)">Chá de Bebê</button>
+                <button type="button" class="chip-tag" data-tag="melhoras" onclick="filtrarTagSazonal('melhoras', this)">Melhoras</button>
+                <button type="button" class="chip-tag" data-tag="boas-vindas" onclick="filtrarTagSazonal('boas-vindas', this)">Boas-vindas</button>
             </div>
         </div>
 
@@ -751,46 +751,37 @@
         <h2 class="section-title">O que você está procurando?</h2>
         <p class="section-subtitle">Selecione uma categoria e veja o presente ideal perto de você agora mesmo</p>
 
-        {% if categorias %}
-        <!-- Controles de visualização -->
-        <div class="view-controls" id="categorias-view-controls">
-            <span>Ver como:</span>
-            <button class="view-btn active" id="btn-cat-carousel" title="Carrossel" onclick="setViewCategorias('carousel')">
-                <i class="fas fa-grip-lines"></i>
-            </button>
-            <button class="view-btn" id="btn-cat-grade" title="Grade" onclick="setViewCategorias('grade')">
-                <i class="fas fa-th"></i>
-            </button>
-        </div>
-
-        <!-- Carrossel de categorias -->
-        <div id="categorias-carousel-wrapper" class="carousel-wrapper">
-            <div class="carousel-track-outer">
-                <div class="carousel-track" id="categorias-track">
-                    {% for cat in categorias %}
-                    <a href="/{{ cat.slug }}/" class="categoria-card" aria-label="{{ cat.nome }} perto de mim">
-                        <div class="cat-photo">
-                            <img src="{{ cat.icone_url or 'https://res.cloudinary.com/desvazant/image/upload/v1782962461/Cesta_de_Presentes_250_x_250_px_6_jbnclr.png' }}"
-                                 alt="{{ cat.nome }} perto de mim" loading="lazy" width="400" height="400">
-                        </div>
-                        <h3>{{ cat.nome }}</h3>
-                        <span class="btn-ver">Ver todos →</span>
-                    </a>
-                    {% endfor %}
+        <!-- Grade de categorias hardcoded do hub cestas -->
+        <div class="categorias-grid" id="categorias-grade">
+            <a href="/cesta-de-presentes/" class="categoria-card" aria-label="Cesta de Presentes perto de mim">
+                <div class="cat-photo">
+                    <img src="{{ (categorias | selectattr('slug','equalto','cesta-de-presentes') | first | default({'icone_url':''}) ).icone_url or 'https://res.cloudinary.com/desvazant/image/upload/v1782962461/Cesta_de_Presentes_250_x_250_px_6_jbnclr.png' }}"
+                         alt="Cesta de Presentes perto de mim" loading="lazy" width="400" height="400">
                 </div>
-            </div>
-            <div class="carousel-nav" id="categorias-carousel-nav">
-                <button class="carousel-arrow" id="categorias-prev" onclick="moveCarouselCategorias(-1)"><i class="fas fa-chevron-left"></i></button>
-                <div class="carousel-progress-bar"><div class="carousel-progress-fill" id="categorias-progress-fill"></div></div>
-                <button class="carousel-arrow" id="categorias-next" onclick="moveCarouselCategorias(1)"><i class="fas fa-chevron-right"></i></button>
-            </div>
+                <h3>Cesta de Presentes</h3>
+            </a>
+            <a href="/floricultura/" class="categoria-card" aria-label="Floricultura perto de mim">
+                <div class="cat-photo">
+                    <img src="{{ (categorias | selectattr('slug','equalto','floricultura') | first | default({'icone_url':''}) ).icone_url or 'https://res.cloudinary.com/desvazant/image/upload/v1782962461/Cesta_de_Presentes_250_x_250_px_6_jbnclr.png' }}"
+                         alt="Floricultura perto de mim" loading="lazy" width="400" height="400">
+                </div>
+                <h3>Floricultura</h3>
+            </a>
+            <a href="/chocolates-finos/" class="categoria-card" aria-label="Chocolates Finos perto de mim">
+                <div class="cat-photo">
+                    <img src="{{ (categorias | selectattr('slug','equalto','chocolates-finos') | first | default({'icone_url':''}) ).icone_url or 'https://res.cloudinary.com/desvazant/image/upload/v1782962461/Cesta_de_Presentes_250_x_250_px_6_jbnclr.png' }}"
+                         alt="Chocolates Finos perto de mim" loading="lazy" width="400" height="400">
+                </div>
+                <h3>Chocolates Finos</h3>
+            </a>
+            <a href="/papelaria-personalizada/" class="categoria-card" aria-label="Papelaria Personalizada perto de mim">
+                <div class="cat-photo">
+                    <img src="{{ (categorias | selectattr('slug','equalto','papelaria-personalizada') | first | default({'icone_url':''}) ).icone_url or 'https://res.cloudinary.com/desvazant/image/upload/v1782962461/Cesta_de_Presentes_250_x_250_px_6_jbnclr.png' }}"
+                         alt="Papelaria Personalizada perto de mim" loading="lazy" width="400" height="400">
+                </div>
+                <h3>Papelaria Personalizada</h3>
+            </a>
         </div>
-
-        <!-- Grade (oculta inicialmente, populada via JS a partir do carrossel) -->
-        <div class="categorias-grid" id="categorias-grade" style="display:none;"></div>
-        {% else %}
-        <p class="info-message">Nenhuma categoria cadastrada.</p>
-        {% endif %}
     </div>
 </section>
 
