@@ -207,6 +207,8 @@
         .card-body h3 { font-size: 1.05em; font-weight: 700; color: var(--dark-gray); }
         .card-bairro { font-size: 0.88em; color: #6c757d; display: flex; align-items: center; gap: 5px; }
         .card-bairro i { color: var(--primary); font-size: 0.85em; }
+        .card-dist { font-size: 0.85em; color: var(--primary); font-weight: 600; display: flex; align-items: center; gap: 5px; margin-top: 2px; }
+        .card-dist i { font-size: 0.85em; }
         .btn-ver { margin-top: auto; padding-top: 12px; display: block; background: var(--primary); color: #fff; padding: 9px 18px; border-radius: 6px; font-size: 0.88em; font-weight: 700; text-align: center; transition: background 0.2s; }
         .negocio-card:hover .btn-ver { background: var(--dark); }
 
@@ -568,6 +570,7 @@ var negociosCarregados = [];
 function negocioCardHTML(n){
     var foto = (n.foto_url && n.mostrar_foto) ? n.foto_url : _IMG_FALLBACK;
     var bairro = n.bairro ? '<p class="card-bairro"><i class="fas fa-map-marker-alt"></i> ' + n.bairro + (n.cidade ? ', ' + n.cidade : '') + '</p>' : '';
+    var dist = (n._dist !== undefined && n._dist < 9999) ? '<p class="card-dist"><i class="fas fa-location-arrow"></i> ' + n._dist.toFixed(1) + ' km de você</p>' : '';
     return '<a href="/' + n.categoria_slug + '/' + n.slug + '/" class="negocio-card"' +
         ' data-bairro="' + (n.bairro||'').toLowerCase() + '"' +
         ' data-cat="' + n.categoria_slug + '"' +
@@ -581,6 +584,7 @@ function negocioCardHTML(n){
         '<div class="card-body">' +
             '<h3>' + n.nome + '</h3>' +
             bairro +
+            dist +
             '<span class="btn-ver">Ver detalhes →</span>' +
         '</div>' +
         '</a>';
@@ -605,6 +609,13 @@ function renderGrid(){
             var d = (n.lat && n.lng) ? calcDistancia(_userLat, _userLng, parseFloat(n.lat), parseFloat(n.lng)) : 9999;
             return Object.assign({}, n, {_dist: d});
         }).sort(function(a,b){ return a._dist - b._dist; });
+        // Com "mais próximo" ativo, negociosCarregados pode ter até 20 mil
+        // itens (categorias grandes) — precisamos de todos pra achar os
+        // mais próximos de verdade, mas só RENDERIZAMOS os 48 primeiros
+        // (já ordenados), senão o navegador trava jogando milhares de
+        // cards no DOM de uma vez. Igual o index_otp faz.
+        lista = lista.slice(0, 48);
+        atualizarSubtitulo(lista.length + ' mais próximos de você');
     }
     grid.innerHTML = lista.map(negocioCardHTML).join('');
 }
@@ -614,8 +625,8 @@ function atualizarSubtitulo(total){
     if(el) el.textContent = total + ' negócio(s) encontrado(s)';
 }
 
-function _buildApiUrl(offset){
-    var url = '/api/hub/negocios?limit=' + _loteSize + '&offset=' + offset;
+function _buildApiUrl(offset, limiteCustom){
+    var url = '/api/hub/negocios?limit=' + (limiteCustom || _loteSize) + '&offset=' + offset;
     if(_filtroAtualBairro) url += '&bairro=' + encodeURIComponent(_filtroAtualBairro);
     if(_filtroAtualBusca)  url += '&busca='  + encodeURIComponent(_filtroAtualBusca);
     // passa filtro de categoria/bairro do contexto da página
@@ -704,7 +715,10 @@ function usarLocalizacao(){
         _userLat = null; _userLng = null;
         btn.classList.remove('ativo');
         label.textContent = 'Mais próximo';
-        renderGrid(); // volta pra ordem normal, sem precisar buscar de novo
+        // Volta pro modo lazy paginado normal (o array em memória pode
+        // conter TUDO do filtro, então recomeça do zero em vez de listar
+        // 20 mil cards de uma vez na tela).
+        _recarregarGrid();
         return;
     }
     if(!navigator.geolocation){ alert('Seu navegador não suporta geolocalização.'); return; }
@@ -716,10 +730,32 @@ function usarLocalizacao(){
             _userLat = pos.coords.latitude;
             _userLng = pos.coords.longitude;
             label.textContent = 'Mais próximo ✓';
-            // Reordena no navegador o que já foi carregado — igual o
-            // index_otp, que calcula a distância no cliente (Haversine)
-            // em vez de depender do backend, que nunca soube fazer isso.
-            renderGrid();
+            var loading = document.getElementById('lazy-loading');
+            if(loading) loading.style.display = 'block';
+            // Busca TUDO que bate com o filtro atual (categoria/bairro) de
+            // uma vez só — igual o index_otp faz pra categorias grandes
+            // (ex.: ponto de ônibus, 20 mil+ registros espalhados pelo
+            // Brasil). Só reordenar os 48 iniciais alfabéticos não adianta,
+            // porque os mais próximos de verdade quase certamente não
+            // estão nesse recorte alfabético. O backend já limita sozinho
+            // ao teto correto por categoria (api_negocios: 20000 pra
+            // categorias grandes, 4000 pras demais).
+            fetch(_buildApiUrl(0, 20000))
+                .then(function(r){ return r.json(); })
+                .then(function(data){
+                    if(loading) loading.style.display = 'none';
+                    if(Array.isArray(data) && data.length){
+                        negociosCarregados = data;
+                        _apiFim = true; // já veio tudo, não precisa mais lazy load
+                    }
+                    renderGrid();
+                })
+                .catch(function(){
+                    if(loading) loading.style.display = 'none';
+                    // Se a busca completa falhar, ao menos reordena o que
+                    // já tínhamos carregado.
+                    renderGrid();
+                });
         },
         function(){
             _locAtiva = false; locAtiva = false;
