@@ -734,36 +734,17 @@
         <h2 class="section-title">O que você está procurando?</h2>
         <p class="section-subtitle">Selecione uma categoria e veja o presente ideal perto de você agora mesmo</p>
 
-        <!-- Grade de categorias hardcoded do hub cestas -->
+        <!-- Grade de categorias do hub -->
         <div class="categorias-grid" id="categorias-grade">
-            <a href="/cesta-de-presentes/" class="categoria-card" aria-label="Cesta de Presentes perto de mim">
+            {% for cat in categorias %}
+            <a href="/{{ cat.slug }}/" class="categoria-card" aria-label="{{ cat.nome }} perto de mim">
                 <div class="cat-photo">
-                    <img src="{{ (categorias | selectattr('slug','equalto','cesta-de-presentes') | first | default({'icone_url':''}) ).icone_url or 'https://res.cloudinary.com/desvazant/image/upload/v1782962461/Cesta_de_Presentes_250_x_250_px_6_jbnclr.png' }}"
-                         alt="Cesta de Presentes perto de mim" loading="lazy" width="400" height="400">
+                    <img src="{{ cat.icone_url or 'https://res.cloudinary.com/desvazant/image/upload/v1782962461/Cesta_de_Presentes_250_x_250_px_6_jbnclr.png' }}"
+                         alt="{{ cat.nome }} perto de mim" loading="lazy" width="400" height="400">
                 </div>
-                <h3>Cesta de Presentes</h3>
+                <h3>{{ cat.nome }}</h3>
             </a>
-            <a href="/floricultura/" class="categoria-card" aria-label="Floricultura perto de mim">
-                <div class="cat-photo">
-                    <img src="{{ (categorias | selectattr('slug','equalto','floricultura') | first | default({'icone_url':''}) ).icone_url or 'https://res.cloudinary.com/desvazant/image/upload/v1782962461/Cesta_de_Presentes_250_x_250_px_6_jbnclr.png' }}"
-                         alt="Floricultura perto de mim" loading="lazy" width="400" height="400">
-                </div>
-                <h3>Floricultura</h3>
-            </a>
-            <a href="/chocolates-finos/" class="categoria-card" aria-label="Chocolates Finos perto de mim">
-                <div class="cat-photo">
-                    <img src="{{ (categorias | selectattr('slug','equalto','chocolates-finos') | first | default({'icone_url':''}) ).icone_url or 'https://res.cloudinary.com/desvazant/image/upload/v1782962461/Cesta_de_Presentes_250_x_250_px_6_jbnclr.png' }}"
-                         alt="Chocolates Finos perto de mim" loading="lazy" width="400" height="400">
-                </div>
-                <h3>Chocolates Finos</h3>
-            </a>
-            <a href="/papelaria-personalizada/" class="categoria-card" aria-label="Papelaria Personalizada perto de mim">
-                <div class="cat-photo">
-                    <img src="{{ (categorias | selectattr('slug','equalto','papelaria-personalizada') | first | default({'icone_url':''}) ).icone_url or 'https://res.cloudinary.com/desvazant/image/upload/v1782962461/Cesta_de_Presentes_250_x_250_px_6_jbnclr.png' }}"
-                         alt="Papelaria Personalizada perto de mim" loading="lazy" width="400" height="400">
-                </div>
-                <h3>Papelaria Personalizada</h3>
-            </a>
+            {% endfor %}
         </div>
     </div>
 </section>
@@ -1274,20 +1255,9 @@ function renderNegocios(lista){
     setView(carouselView);
 }
 
-// Estado inicial: não mostra "Tudo" (evita listar um recorte alfabético incompleto
-// como se fosse "os mais próximos"). Pede pra escolher categoria primeiro.
-(function mostrarPromptInicial(){
-    var vazio = document.getElementById('negocios-vazio');
-    var vc = document.getElementById('view-controls');
-    var cw = document.getElementById('negocios-carousel-wrapper');
-    var gd = document.getElementById('negocios-grade');
-    if(vc) vc.style.display = 'none';
-    if(cw) cw.style.display = 'none';
-    if(gd) gd.style.display = 'none';
-    if(vazio){
-        vazio.style.display = '';
-        vazio.innerHTML = 'Escolha uma categoria acima para ver os estabelecimentos perto de você. <a href="#" onclick="openCategoriaSlicer(); return false;" style="color:var(--primary); font-weight:600;">Ver categorias</a>';
-    }
+// Estado inicial: mostra todos os negócios no carrossel
+(function mostrarTodosInicial(){
+    renderNegocios(negociosFiltrados);
 })();
 
 // IntersectionObserver: ao rolar até o fim, busca próximo lote
