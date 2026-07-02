@@ -646,11 +646,11 @@
         <!-- Filtro de categoria (slicer) -->
         <div class="categoria-slicer" id="categoria-slicer">
             <button type="button" class="slicer-toggle" id="slicer-toggle" onclick="toggleCategoriaSlicer()" aria-haspopup="listbox" aria-expanded="false" aria-controls="filtros-categoria">
-                <span class="slicer-label"><i class="fas fa-filter"></i> Categoria: <strong id="slicer-label-text">Tudo</strong></span>
+                <span class="slicer-label"><i class="fas fa-filter"></i> Categoria: <strong id="slicer-label-text">Escolha uma categoria</strong></span>
                 <i class="fas fa-chevron-down slicer-chevron" aria-hidden="true"></i>
             </button>
             <div class="slicer-panel" id="filtros-categoria" role="listbox" aria-label="Filtrar por categoria">
-                <button class="chip-cat active" onclick="filtrarCategoria(null, this)">Tudo</button>
+                <button class="chip-cat" onclick="closeCategoriaSlicer(); document.getElementById('categorias').scrollIntoView({behavior:'smooth', block:'start'});">Ver todas as categorias</button>
                 {% for cat in categorias %}
                 <button class="chip-cat" onclick="filtrarCategoria('{{ cat.slug }}', this)">{{ cat.nome }}</button>
                 {% endfor %}
@@ -1201,7 +1201,21 @@ function renderNegocios(lista){
     setView(carouselView);
 }
 
-renderNegocios(negociosFiltrados);
+// Estado inicial: não mostra "Tudo" (evita listar um recorte alfabético incompleto
+// como se fosse "os mais próximos"). Pede pra escolher categoria primeiro.
+(function mostrarPromptInicial(){
+    var vazio = document.getElementById('negocios-vazio');
+    var vc = document.getElementById('view-controls');
+    var cw = document.getElementById('negocios-carousel-wrapper');
+    var gd = document.getElementById('negocios-grade');
+    if(vc) vc.style.display = 'none';
+    if(cw) cw.style.display = 'none';
+    if(gd) gd.style.display = 'none';
+    if(vazio){
+        vazio.style.display = '';
+        vazio.innerHTML = 'Escolha uma categoria acima para ver os estabelecimentos perto de você. <a href="#" onclick="openCategoriaSlicer(); return false;" style="color:var(--primary); font-weight:600;">Ver categorias</a>';
+    }
+})();
 
 // IntersectionObserver: ao rolar até o fim, busca próximo lote
 (function(){
