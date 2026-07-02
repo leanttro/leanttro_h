@@ -2046,7 +2046,7 @@ def api_negocios():
     # então liberamos um teto bem mais alto só pra elas. Ajuste essa lista
     # conforme identificar outras categorias com o mesmo problema.
     CATEGORIAS_TETO_ALTO = {"ponto-de-onibus"}
-    teto = 20000 if categoria in CATEGORIAS_TETO_ALTO else 2000
+    teto = 20000 if categoria in CATEGORIAS_TETO_ALTO else 4000
     try:
         limit  = min(int(request.args.get("limit",  96)), teto)
         offset = max(int(request.args.get("offset",  0)),   0)
