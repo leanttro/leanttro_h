@@ -1065,7 +1065,9 @@ function filtrarCategoria(slug, btn){
         var loading = document.getElementById('lazy-loading');
         if(loading) loading.style.display = 'block';
         // Busca direta por categoria com offset=0 (dados que não vieram no lote inicial)
-        fetch('/api/hub/negocios?limit=200&offset=0&categoria=' + encodeURIComponent(slug))
+        // Pede um teto bem alto — o backend decide o limite real por categoria
+        // (categorias grandes tipo "ponto de ônibus" liberam mais; as demais continuam em 200).
+        fetch('/api/hub/negocios?limit=20000&offset=0&categoria=' + encodeURIComponent(slug))
             .then(function(r){ return r.json(); })
             .then(function(data){
                 if(loading) loading.style.display = 'none';
