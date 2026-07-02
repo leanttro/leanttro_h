@@ -425,7 +425,13 @@ def pagina_filtro(segmento):
             ORDER BY n.nome LIMIT %s
         """, (hub["id"], segmento, limite))
         filtro_tipo, filtro_valor = "categoria", segmento
-    categorias = query("SELECT * FROM hub_categorias WHERE ativo = true ORDER BY nome")
+    categorias = query("""
+        SELECT DISTINCT c.* FROM hub_categorias c
+        JOIN hub_negocios n ON n.categoria_id = c.id
+        JOIN hub_negocio_hubs nh ON nh.negocio_id = n.id
+        WHERE nh.hub_id = %s AND c.ativo = true AND n.ativo = true
+        ORDER BY c.nome
+    """, (hub["id"],))
     # Bairros únicos para o slicer — query leve só com DISTINCT
     bairros_disponiveis = []
     if filtro_tipo == "categoria":
