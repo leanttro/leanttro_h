@@ -564,7 +564,8 @@
             <li>
                 <a href="#categorias">Categorias ▾</a>
                 <div class="nav-dropdown">
-                    {% for cat in categorias %}
+                    {% set cat_ids_hub = negocios | map(attribute='categoria_id') | list | unique | list %}
+                    {% for cat in categorias if cat.id in cat_ids_hub %}
                     <a href="/{{ cat.slug }}/">{{ cat.nome }}</a>
                     {% endfor %}
                 </div>
@@ -667,11 +668,11 @@
                 <i class="fas fa-chevron-down slicer-chevron" aria-hidden="true"></i>
             </button>
             <div class="slicer-panel" id="filtros-categoria" role="listbox" aria-label="Filtrar por categoria">
-                <button class="chip-cat" onclick="closeCategoriaSlicer(); document.getElementById('categorias').scrollIntoView({behavior:'smooth', block:'start'});">Ver todas as categorias</button>
-                <button class="chip-cat" onclick="filtrarCategoria('cesta-de-presentes', this)">Cesta de Presentes</button>
-                <button class="chip-cat" onclick="filtrarCategoria('floricultura', this)">Floricultura</button>
-                <button class="chip-cat" onclick="filtrarCategoria('chocolates-finos', this)">Chocolates Finos</button>
-                <button class="chip-cat" onclick="filtrarCategoria('papelaria-personalizada', this)">Papelaria Personalizada</button>
+                <button class="chip-cat" onclick="closeCategoriaSlicer(); renderNegocios(negociosFiltrados = todosNegocios.slice()); document.getElementById('slicer-label-text').textContent='Escolha uma categoria'; _lazyCategoriaAtiva=null;">Todas</button>
+                {% set cat_ids_hub = negocios | map(attribute='categoria_id') | list | unique | list %}
+                {% for cat in categorias if cat.id in cat_ids_hub %}
+                <button class="chip-cat" onclick="filtrarCategoria('{{ cat.slug }}', this)">{{ cat.nome }}</button>
+                {% endfor %}
             </div>
             <div class="slicer-backdrop" id="slicer-backdrop" onclick="closeCategoriaSlicer()"></div>
         </div>
@@ -734,9 +735,10 @@
         <h2 class="section-title">O que você está procurando?</h2>
         <p class="section-subtitle">Selecione uma categoria e veja o presente ideal perto de você agora mesmo</p>
 
-        <!-- Grade de categorias do hub -->
+        <!-- Grade de categorias do hub — só as que têm negócios vinculados -->
+        {% set cat_ids_hub = negocios | map(attribute='categoria_id') | list | unique | list %}
         <div class="categorias-grid" id="categorias-grade">
-            {% for cat in categorias %}
+            {% for cat in categorias if cat.id in cat_ids_hub %}
             <a href="/{{ cat.slug }}/" class="categoria-card" aria-label="{{ cat.nome }} perto de mim">
                 <div class="cat-photo">
                     <img src="{{ cat.icone_url or 'https://res.cloudinary.com/desvazant/image/upload/v1782962461/Cesta_de_Presentes_250_x_250_px_6_jbnclr.png' }}"
