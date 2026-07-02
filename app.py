@@ -1148,9 +1148,10 @@ def admin_hub_novo():
          bairro_fixo, categoria_fixa, logo_url, cor_primaria, cor_secundaria,
          titulo, descricao, ga4_id, pixel_id, instagram_url, whatsapp,
          template_index, template_filtro, template_negocio, template_cidade,
+         template_blog, template_blog_post,
          banner_fundo_url, banner1_foto_url, banner1_link, banner2_foto_url, banner2_link,
          ativo)
-        VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)
+        VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)
     """, (
         d.get("user_id") or None, d["nome"], d["slug"],
         d.get("dominio_proprio") or None, d.get("hub_leanttro") or None,
@@ -1164,6 +1165,8 @@ def admin_hub_novo():
         d.get("template_filtro", "filtro_padrao"),
         d.get("template_negocio", "negocio_padrao"),
         d.get("template_cidade", "cidade_otp"),
+        d.get("template_blog", "blog_otp"),
+        d.get("template_blog_post", "blog_post_otp"),
         d.get("banner_fundo_url") or None,
         d.get("banner1_foto_url") or None, d.get("banner1_link") or None,
         d.get("banner2_foto_url") or None, d.get("banner2_link") or None,
@@ -1187,6 +1190,7 @@ def admin_hub_editar(hub_id):
             cor_primaria=%s, cor_secundaria=%s, titulo=%s, descricao=%s,
             ga4_id=%s, pixel_id=%s, instagram_url=%s, whatsapp=%s,
             template_index=%s, template_filtro=%s, template_negocio=%s, template_cidade=%s,
+            template_blog=%s, template_blog_post=%s,
             banner_fundo_url=%s, banner1_foto_url=%s, banner1_link=%s,
             banner2_foto_url=%s, banner2_link=%s, ativo=%s
             WHERE id=%s
@@ -1203,6 +1207,8 @@ def admin_hub_editar(hub_id):
             d.get("template_filtro", "filtro_padrao"),
             d.get("template_negocio", "negocio_padrao"),
             d.get("template_cidade", "cidade_otp"),
+            d.get("template_blog", "blog_otp"),
+            d.get("template_blog_post", "blog_post_otp"),
             d.get("banner_fundo_url") or None,
             d.get("banner1_foto_url") or None, d.get("banner1_link") or None,
             d.get("banner2_foto_url") or None, d.get("banner2_link") or None,
