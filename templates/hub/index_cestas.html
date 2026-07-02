@@ -183,7 +183,7 @@
             padding: 0 28px;
         }
         .hero-stat-num {
-            font-size: 1.8em; font-weight: 900; color: var(--primary);
+            font-size: 1.8em; font-weight: 900; color: #ffffff;
             line-height: 1; letter-spacing: -0.5px;
             text-shadow: 0 2px 8px rgba(0,0,0,0.4);
         }
@@ -668,40 +668,30 @@
             </button>
             <div class="slicer-panel" id="filtros-categoria" role="listbox" aria-label="Filtrar por categoria">
                 <button class="chip-cat" onclick="closeCategoriaSlicer(); document.getElementById('categorias').scrollIntoView({behavior:'smooth', block:'start'});">Ver todas as categorias</button>
-                {% for cat in categorias %}
-                <button class="chip-cat" onclick="filtrarCategoria('{{ cat.slug }}', this)">{{ cat.nome }}</button>
-                {% endfor %}
+                <button class="chip-cat" onclick="filtrarCategoria('cesta-de-presentes', this)">Cesta de Presentes</button>
+                <button class="chip-cat" onclick="filtrarCategoria('floricultura', this)">Floricultura</button>
+                <button class="chip-cat" onclick="filtrarCategoria('chocolates-finos', this)">Chocolates Finos</button>
+                <button class="chip-cat" onclick="filtrarCategoria('papelaria-personalizada', this)">Papelaria Personalizada</button>
             </div>
             <div class="slicer-backdrop" id="slicer-backdrop" onclick="closeCategoriaSlicer()"></div>
         </div>
 
         <!-- Tags sazonais / ocasião -->
         <div class="tags-sazonais" id="tags-sazonais">
-            <span class="tags-sazonais-label"><i class="fas fa-gift"></i> Filtrar por ocasião</span>
+            <span class="tags-sazonais-label"><i class="fas fa-gift"></i> Encontre cestas para</span>
             <div class="tags-sazonais-list" id="tags-sazonais-list">
-                {% set tags_sazonais = tags_sazonais or [
-                    {'slug':'aniversario','nome':'Aniversário'},
-                    {'slug':'dia-das-maes','nome':'Dia das Mães'},
-                    {'slug':'dia-dos-namorados','nome':'Dia dos Namorados'},
-                    {'slug':'dia-dos-pais','nome':'Dia dos Pais'},
-                    {'slug':'dia-das-criancas','nome':'Dia das Crianças'},
-                    {'slug':'natal','nome':'Natal'},
-                    {'slug':'ano-novo','nome':'Ano Novo'},
-                    {'slug':'pascoa','nome':'Páscoa'},
-                    {'slug':'cha-de-bebe','nome':'Chá de Bebê'},
-                    {'slug':'nascimento','nome':'Nascimento'},
-                    {'slug':'casamento','nome':'Casamento'},
-                    {'slug':'bem-casado','nome':'Bem-casado'},
-                    {'slug':'formatura','nome':'Formatura'},
-                    {'slug':'cafe-da-manha','nome':'Café da Manhã'},
-                    {'slug':'amizade','nome':'Amizade'},
-                    {'slug':'agradecimento','nome':'Agradecimento'},
-                    {'slug':'melhoras','nome':'Melhoras'},
-                    {'slug':'boas-vindas','nome':'Boas-vindas'}
-                ] %}
-                {% for tag in tags_sazonais %}
-                <button type="button" class="chip-tag" data-tag="{{ tag.slug }}" onclick="filtrarTagSazonal('{{ tag.slug }}', this)">{{ tag.nome }}</button>
-                {% endfor %}
+                <button type="button" class="chip-tag" data-tag="aniversario" onclick="filtrarTagSazonal('aniversario', this)">🎂 Aniversário</button>
+                <button type="button" class="chip-tag" data-tag="dia-das-maes" onclick="filtrarTagSazonal('dia-das-maes', this)">💐 Dia das Mães</button>
+                <button type="button" class="chip-tag" data-tag="dia-dos-namorados" onclick="filtrarTagSazonal('dia-dos-namorados', this)">❤️ Dia dos Namorados</button>
+                <button type="button" class="chip-tag" data-tag="dia-dos-pais" onclick="filtrarTagSazonal('dia-dos-pais', this)">👔 Dia dos Pais</button>
+                <button type="button" class="chip-tag" data-tag="natal" onclick="filtrarTagSazonal('natal', this)">🎄 Natal</button>
+                <button type="button" class="chip-tag" data-tag="pascoa" onclick="filtrarTagSazonal('pascoa', this)">🐣 Páscoa</button>
+                <button type="button" class="chip-tag" data-tag="casamento" onclick="filtrarTagSazonal('casamento', this)">💍 Casamento</button>
+                <button type="button" class="chip-tag" data-tag="formatura" onclick="filtrarTagSazonal('formatura', this)">🎓 Formatura</button>
+                <button type="button" class="chip-tag" data-tag="cafe-da-manha" onclick="filtrarTagSazonal('cafe-da-manha', this)">☕ Café da Manhã</button>
+                <button type="button" class="chip-tag" data-tag="cha-de-bebe" onclick="filtrarTagSazonal('cha-de-bebe', this)">🍼 Chá de Bebê</button>
+                <button type="button" class="chip-tag" data-tag="melhoras" onclick="filtrarTagSazonal('melhoras', this)">🌻 Melhoras</button>
+                <button type="button" class="chip-tag" data-tag="boas-vindas" onclick="filtrarTagSazonal('boas-vindas', this)">🎉 Boas-vindas</button>
             </div>
         </div>
 
