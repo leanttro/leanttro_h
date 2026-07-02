@@ -781,31 +781,6 @@
     </div>
 </section>
 
-<!-- BLOG -->
-<section class="section blog-section" id="blog">
-    <div class="container">
-        <div class="blog-section-header">
-            <h2 class="section-title">Do nosso blog</h2>
-            <a href="/blog/" class="btn-ver-blog"><i class="fas fa-newspaper"></i> Ver todos os posts</a>
-        </div>
-        <p class="section-subtitle" style="text-align:left; margin-bottom:28px;">Dicas, guias e novidades para você</p>
-        <div class="carousel-wrapper" id="blog-carousel-wrapper">
-            <div class="carousel-track-outer">
-                <div class="carousel-track" id="blog-track"></div>
-            </div>
-            <div class="carousel-nav" id="blog-carousel-nav" style="display:none;">
-                <button class="carousel-arrow" id="blog-prev" onclick="moveCarouselBlog(-1)"><i class="fas fa-chevron-left"></i></button>
-                <div class="carousel-progress-bar"><div class="carousel-progress-fill" id="blog-progress-fill"></div></div>
-                <button class="carousel-arrow" id="blog-next" onclick="moveCarouselBlog(1)"><i class="fas fa-chevron-right"></i></button>
-            </div>
-        </div>
-        <p id="blog-vazio" style="display:none; text-align:center; color:#6c757d; padding:30px 0;">Nenhum post publicado ainda.</p>
-        <div id="blog-loading" style="text-align:center; color:var(--primary); padding:20px;">
-            <i class="fas fa-spinner fa-spin"></i> Carregando posts...
-        </div>
-    </div>
-</section>
-
 <!-- CIDADES -->
 <section class="section cidades-section" id="cidades">
     <div class="container">
@@ -1491,51 +1466,6 @@ function renderNegocios(lista){
 </script>
 
 <script>
-// ══ BLOG — carrossel de posts via API ══
-(function(){
-    var track   = document.getElementById('blog-track');
-    var vazio   = document.getElementById('blog-vazio');
-    var loading = document.getElementById('blog-loading');
-    if(!track) return;
-    var blogPos = 0;
-    function blogCardWidth(){ var card=track.querySelector('.blog-card'); if(!card) return 280; var style=window.getComputedStyle(track); var gap=parseFloat(style.gap||style.columnGap)||22; return card.offsetWidth+gap; }
-    function clampBlog(){ var maxScroll=track.scrollWidth-track.parentElement.offsetWidth; blogPos=Math.max(0,Math.min(blogPos,maxScroll)); track.style.transform='translateX(-'+blogPos+'px)'; var fill=document.getElementById('blog-progress-fill'); if(fill&&maxScroll>0) fill.style.width=(blogPos/maxScroll*100)+'%'; else if(fill) fill.style.width='100%'; }
-    window.moveCarouselBlog = function(dir){ if(!track) return; var visivel=Math.max(1,Math.floor(track.parentElement.offsetWidth/blogCardWidth())); blogPos+=dir*visivel*blogCardWidth(); clampBlog(); };
-    function initBlogCarousel(){
-        var isDragging=false,startX=0,startPos=0;
-        function onStart(x){ isDragging=true; startX=x; startPos=blogPos; track.style.transition='none'; }
-        function onMove(x){ if(!isDragging) return; blogPos=startPos-(x-startX); clampBlog(); }
-        function onEnd(){ isDragging=false; track.style.transition=''; }
-        track.addEventListener('mousedown',function(e){ onStart(e.clientX); });
-        document.addEventListener('mousemove',function(e){ if(isDragging){e.preventDefault();onMove(e.clientX);} });
-        document.addEventListener('mouseup',function(){ if(isDragging) onEnd(); });
-        var startT=0,_ty=0,_horiz=false,_det=false;
-        track.addEventListener('touchstart',function(e){ startT=e.touches[0].clientX; _ty=e.touches[0].clientY; _horiz=false; _det=false; onStart(startT); },{passive:true});
-        track.addEventListener('touchmove',function(e){ if(!_det){var dx=Math.abs(e.touches[0].clientX-startT),dy=Math.abs(e.touches[0].clientY-_ty);if(dx>5||dy>5){_horiz=dx>=dy;_det=true;}} if(!_det||!_horiz) return; e.preventDefault(); onMove(e.touches[0].clientX); },{passive:false});
-        track.addEventListener('touchend',function(){ if(_horiz) onEnd(); else isDragging=false; });
-        clampBlog();
-    }
-    function fmtData(iso){ if(!iso) return ''; var d=new Date(iso); return d.toLocaleDateString('pt-BR',{day:'2-digit',month:'short',year:'numeric'}); }
-    function blogCardHTML(p){
-        var foto=p.capa_url ? '<img src="'+p.capa_url+'" alt="'+p.titulo+'" loading="lazy" width="600" height="180">' : '<div class="blog-card-foto-placeholder"><i class="fas fa-newspaper"></i></div>';
-        var tags=(Array.isArray(p.tags)&&p.tags.length) ? '<div class="blog-card-tags">'+p.tags.slice(0,3).map(function(t){ return '<span class="blog-card-tag">#'+t+'</span>'; }).join('')+'</div>' : '';
-        var resumo=p.resumo ? '<p>'+p.resumo.substring(0,100)+(p.resumo.length>100?'…':'')+'</p>' : '';
-        var data=p.publicado_em ? '<span class="blog-card-data"><i class="fas fa-calendar-alt"></i> '+fmtData(p.publicado_em)+'</span>' : '';
-        return '<a href="/blog/'+p.slug+'/" class="blog-card"><div class="blog-card-foto">'+foto+'</div><div class="blog-card-body">'+tags+'<h3>'+p.titulo+'</h3>'+resumo+data+'<span class="blog-card-btn">Ler post →</span></div></a>';
-    }
-    fetch('/api/hub/blog?limit=6')
-        .then(function(r){ return r.json(); })
-        .then(function(data){
-            loading.style.display='none';
-            if(!Array.isArray(data)||!data.length){ var section=document.getElementById('blog'); if(section) section.style.display='none'; return; }
-            track.innerHTML=data.map(blogCardHTML).join('');
-            var nav=document.getElementById('blog-carousel-nav');
-            if(nav) nav.style.display='';
-            initBlogCarousel();
-        })
-        .catch(function(){ loading.style.display='none'; var section=document.getElementById('blog'); if(section) section.style.display='none'; });
-})();
-
 // ══ SEÇÃO CIDADES — mesmo padrão do carrossel de categorias ══
 (function(){
     var _todasCidades = [];
