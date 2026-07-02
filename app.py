@@ -1118,6 +1118,7 @@ def admin_templates():
         "negocio": listar_templates("negocio"),
         "cidade":  listar_templates("cidade"),
         "blog":    listar_templates("blog"),
+        "blog_post": listar_templates("blog_post"),
     })
 
 
