@@ -4,13 +4,13 @@
 <!-- Google tag (gtag.js) -->
 <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-7617881885143728"
      crossorigin="anonymous"></script>
-<script async src="https://www.googletagmanager.com/gtag/js?id=G-WT0FC04V1X"></script>
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-J707J0QZ5R"></script>
 <script>
   window.dataLayer = window.dataLayer || [];
   function gtag(){dataLayer.push(arguments);}
   gtag('js', new Date());
 
-  gtag('config', 'G-WT0FC04V1X');
+  gtag('config', 'G-J707J0QZ5R');
 </script>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -165,7 +165,7 @@
         }
         .hero-inner { padding: 48px 20px; }
         .hero-section h1 { font-size: 3em; font-weight: 900; line-height: 1.2; text-shadow: 2px 2px 8px rgba(0,0,0,0.6); margin-bottom: 16px; }
-        .hero-section h1 em { color: var(--primary); font-style: normal; }
+        .hero-section h1 em { color: #ffb3a3; font-style: normal; }
         .hero-section .hero-sub { font-size: 1.25em; max-width: 660px; margin: 0 auto 32px; text-shadow: 1px 1px 4px rgba(0,0,0,0.5); opacity: 0.92; }
         .hero-btns { display: flex; gap: 14px; justify-content: center; flex-wrap: wrap; }
         .btn-hero { display: inline-flex; align-items: center; gap: 8px; background: var(--primary); color: #fff; padding: 15px 34px; border-radius: 8px; font-size: 1.1em; font-weight: 700; border: none; cursor: pointer; transition: background 0.3s, transform 0.2s; }
@@ -780,7 +780,7 @@
                     {% for cat in categorias %}
                     <a href="/{{ cat.slug }}/" class="categoria-card" aria-label="{{ cat.nome }} perto de mim">
                         <div class="cat-photo">
-                            <img src="{{ cat.icone_url or 'https://res.cloudinary.com/dhu1cqvrb/image/upload/v1782522274/locais_pkyekz.png' }}"
+                            <img src="{{ cat.icone_url or 'https://res.cloudinary.com/desvazant/image/upload/v1782962461/Cesta_de_Presentes_250_x_250_px_6_jbnclr.png' }}"
                                  alt="{{ cat.nome }} perto de mim" loading="lazy" width="400" height="400">
                         </div>
                         <h3>{{ cat.nome }}</h3>
@@ -970,8 +970,44 @@ document.addEventListener('keydown', function(e){ if(e.key === 'Escape') closeMo
 </script>
 
 <script>
+// ══════════════════════════════════════════════════════════════════
+// TAGS SAZONAIS — mapeamento manual, escrito aqui no site
+// ══════════════════════════════════════════════════════════════════
+// Isso NÃO é adivinhado por palavra-chave. É uma lista escrita à mão,
+// direto neste arquivo: você associa o SLUG do negócio às ocasiões que
+// ele atende. Continua sem tocar no app.py — é só editar este objeto.
+//
+// Como pegar o slug do negócio: é o final da URL dele no site.
+// Ex.: seusite.com/floricultura/flores-da-vila/  →  slug = "flores-da-vila"
+//
+// Como adicionar: copie uma linha, troque o slug e as tags.
+// Tags disponíveis (os mesmos slugs dos chips de "Filtrar por ocasião" abaixo):
+//   aniversario, dia-das-maes, dia-dos-namorados, dia-dos-pais,
+//   dia-das-criancas, natal, ano-novo, pascoa, cha-de-bebe, nascimento,
+//   casamento, bem-casado, formatura, cafe-da-manha, amizade,
+//   agradecimento, melhoras, boas-vindas
+//
+var TAGS_POR_NEGOCIO = {
+    // 'slug-do-negocio': ['tag1', 'tag2'],
+    // 'flores-da-vila':  ['dia-das-maes', 'aniversario', 'nascimento'],
+    // 'chocolates-brasil': ['dia-dos-namorados', 'natal', 'aniversario'],
+};
+
+// Aplica as tags escritas acima a cada negócio (por slug). Se a API um dia
+// passar a mandar n.tags de verdade, essa lista manual não sobrescreve —
+// o dado real do backend sempre tem prioridade.
+function _comTags(lista){
+    return (lista||[]).map(function(n){
+        if(Array.isArray(n.tags) && n.tags.length) return n; // já veio pronto da API — não mexe
+        n.tags = TAGS_POR_NEGOCIO[n.slug] || [];
+        return n;
+    });
+}
+</script>
+
+<script>
 // Apenas 48 negócios vêm no HTML — o resto é buscado em lotes via API com offset
-var todosNegocios = {{ negocios | tojson }};
+var todosNegocios = _comTags({{ negocios | tojson }});
 var _apiOffset = 48;          // próximo offset a buscar
 var _apiFim = false;          // true quando API retornar array vazio
 var _apiCarregando = false;
@@ -1002,6 +1038,7 @@ function _carregarAPIUmaVez(callback) {
         .then(function(data){
             _apiCarregando = false;
             if(Array.isArray(data) && data.length > 0){
+                data = _comTags(data);
                 _apiOffset += data.length;
                 todosNegocios = todosNegocios.concat(data);
                 if(!_lazyCategoriaAtiva) negociosFiltrados = todosNegocios.slice();
@@ -1143,7 +1180,7 @@ function filtrarCategoria(slug, btn){
             .then(function(data){
                 if(loading) loading.style.display = 'none';
                 if(Array.isArray(data) && data.length > 0 && _lazyCategoriaAtiva === slug){
-                    _aplicarFiltroCategoriaETag(data);
+                    _aplicarFiltroCategoriaETag(_comTags(data));
                 }
             })
             .catch(function(){ if(loading) loading.style.display = 'none'; });
@@ -1157,7 +1194,7 @@ function _nomeTagSazonal(slug){
 
 function cardHTML(n){
     var dist=(n._dist&&n._dist<9999)?'<span class="card-dist"><i class="fas fa-map-marker-alt"></i> '+n._dist.toFixed(1)+' km de você</span>':'';
-    var foto=n.foto_url||'https://res.cloudinary.com/dhu1cqvrb/image/upload/v1782522274/locais_pkyekz.png';
+    var foto=n.foto_url||'https://res.cloudinary.com/desvazant/image/upload/v1782962461/Cesta_de_Presentes_250_x_250_px_6_jbnclr.png';
     var local=[n.bairro,n.cidade].filter(Boolean).join(', ');
     var tagsHTML = (Array.isArray(n.tags) && n.tags.length)
         ? '<div class="card-tags">'+n.tags.slice(0,3).map(function(t){ return '<span class="card-tag">'+_nomeTagSazonal(t)+'</span>'; }).join('')+'</div>'
@@ -1519,7 +1556,7 @@ function renderNegocios(lista){
 (function(){
     var _todasCidades = [];
     var cidPos = 0, cidView = 'carousel';
-    var fotoBase = 'https://res.cloudinary.com/dhu1cqvrb/image/upload/v1782521985/cidade_krf7xk.png';
+    var fotoBase = 'https://res.cloudinary.com/desvazant/image/upload/v1782962461/Cesta_de_Presentes_250_x_250_px_6_jbnclr.png';
 
     function _slugCidade(nome){
         return nome.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/\s+/g,'-').replace(/[^a-z0-9-]/g,'');
