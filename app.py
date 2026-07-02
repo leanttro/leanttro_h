@@ -174,6 +174,16 @@ def index():
     if not hub:
         return "Hub não encontrado", 404
     categorias = query("SELECT * FROM hub_categorias WHERE ativo = true ORDER BY nome")
+    template = hub.get("template_index") or "index_padrao"
+
+    # Templates preparados p/ infinite-scroll (JS busca o resto via
+    # /api/hub/negocios?offset=...) carregam só a 1ª leva no HTML.
+    # Os demais hubs (volume pequeno/médio, sem esse JS) carregam a lista
+    # inteira de uma vez — 5000 aqui é só um teto de segurança, não um
+    # limite de negócio real.
+    TEMPLATES_INFINITE_SCROLL = {"index_otp"}
+    limite = 48 if template in TEMPLATES_INFINITE_SCROLL else 5000
+
     negocios = query("""
         SELECT n.*, c.nome as categoria_nome, c.slug as categoria_slug
         FROM hub_negocios n
@@ -181,11 +191,10 @@ def index():
         JOIN hub_categorias c ON c.id = n.categoria_id
         WHERE nh.hub_id = %s AND n.ativo = true
         ORDER BY n.nome
-        LIMIT 48
-    """, (hub["id"],))
+        LIMIT %s
+    """, (hub["id"], limite))
     anuncio_topo = _get_anuncios(hub["id"], "topo")
     anuncio_meio = _get_anuncios(hub["id"], "meio")
-    template = hub.get("template_index") or "index_padrao"
     return render_template(f"hub/{template}.html", hub=hub, negocios=negocios, categorias=categorias,
                            anuncio_topo=anuncio_topo, anuncio_meio=anuncio_meio)
 
@@ -341,6 +350,14 @@ def pagina_filtro(segmento):
     hub = get_hub_by_host()
     if not hub:
         return "Hub não encontrado", 404
+
+    # Mesma lógica da home: só os templates com JS de infinite-scroll
+    # (busca o resto via /api/hub/negocios?offset=...) recebem a página
+    # inicial cortada em 48. Os demais carregam a lista inteira do filtro.
+    TEMPLATES_INFINITE_SCROLL = {"filtro_otp"}
+    template_filtro_nome = hub.get("template_filtro") or "filtro_padrao"
+    limite = 48 if template_filtro_nome in TEMPLATES_INFINITE_SCROLL else 5000
+
     if hub["tipo"] == "bairro":
         total = query("""
             SELECT COUNT(*) as total FROM hub_negocios n
@@ -353,8 +370,8 @@ def pagina_filtro(segmento):
             JOIN hub_negocio_hubs nh ON nh.negocio_id = n.id
             JOIN hub_categorias c ON c.id = n.categoria_id
             WHERE nh.hub_id = %s AND n.ativo = true AND LOWER(n.bairro) = LOWER(%s)
-            ORDER BY n.nome LIMIT 48
-        """, (hub["id"], segmento))
+            ORDER BY n.nome LIMIT %s
+        """, (hub["id"], segmento, limite))
         filtro_tipo, filtro_valor = "bairro", segmento
     elif hub["tipo"] == "cidade":
         categoria = query(
@@ -374,8 +391,8 @@ def pagina_filtro(segmento):
                 JOIN hub_negocio_hubs nh ON nh.negocio_id = n.id
                 JOIN hub_categorias c ON c.id = n.categoria_id
                 WHERE nh.hub_id = %s AND n.ativo = true AND c.slug = %s
-                ORDER BY n.nome LIMIT 48
-            """, (hub["id"], segmento))
+                ORDER BY n.nome LIMIT %s
+            """, (hub["id"], segmento, limite))
             filtro_tipo, filtro_valor = "categoria", segmento
         else:
             total = query("""
@@ -389,8 +406,8 @@ def pagina_filtro(segmento):
                 JOIN hub_negocio_hubs nh ON nh.negocio_id = n.id
                 JOIN hub_categorias c ON c.id = n.categoria_id
                 WHERE nh.hub_id = %s AND n.ativo = true AND LOWER(n.bairro) = LOWER(%s)
-                ORDER BY n.nome LIMIT 48
-            """, (hub["id"], segmento))
+                ORDER BY n.nome LIMIT %s
+            """, (hub["id"], segmento, limite))
             filtro_tipo, filtro_valor = "bairro", segmento
     else:
         total = query("""
@@ -405,8 +422,8 @@ def pagina_filtro(segmento):
             JOIN hub_negocio_hubs nh ON nh.negocio_id = n.id
             JOIN hub_categorias c ON c.id = n.categoria_id
             WHERE nh.hub_id = %s AND n.ativo = true AND c.slug = %s
-            ORDER BY n.nome LIMIT 48
-        """, (hub["id"], segmento))
+            ORDER BY n.nome LIMIT %s
+        """, (hub["id"], segmento, limite))
         filtro_tipo, filtro_valor = "categoria", segmento
     categorias = query("SELECT * FROM hub_categorias WHERE ativo = true ORDER BY nome")
     # Bairros únicos para o slicer — query leve só com DISTINCT
