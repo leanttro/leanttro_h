@@ -1,4 +1,4 @@
-from flask import Flask, render_template, request, jsonify, redirect, session, g, Response, stream_with_context
+from flask import Flask, render_template, request, jsonify, redirect, session, g, Response, stream_with_context, make_response
 from werkzeug.security import generate_password_hash, check_password_hash
 from werkzeug.middleware.proxy_fix import ProxyFix
 from functools import wraps
@@ -736,7 +736,8 @@ def _render_cidade(hub, negocios, categorias, cidade_nome,
     cat_slug = categoria["slug"] if categoria else None
     anuncio_topo = _get_anuncios(hub["id"], "topo", categoria_slug=cat_slug, cidade=cidade_nome, bairro=bairro)
     anuncio_meio = _get_anuncios(hub["id"], "meio", categoria_slug=cat_slug, cidade=cidade_nome, bairro=bairro)
-    return render_template(
+    total_final = total_negocios if total_negocios is not None else len(negocios)
+    resp = make_response(render_template(
         f"hub/{template}.html",
         hub=hub,
         negocios=negocios,
@@ -746,10 +747,16 @@ def _render_cidade(hub, negocios, categorias, cidade_nome,
         categoria=categoria,
         bairros_disponiveis=bairros_disponiveis or [],
         categorias_disponiveis=categorias_disponiveis or [],
-        total_negocios=total_negocios if total_negocios is not None else len(negocios),
+        total_negocios=total_final,
         anuncio_topo=anuncio_topo,
         anuncio_meio=anuncio_meio,
-    )
+    ))
+    # SEO: páginas sem nenhum negócio (combinação vazia de cidade/bairro/categoria)
+    # recebem noindex via header HTTP — não altera o HTML, não muda o status (200),
+    # não afeta em nada páginas que já têm resultados e já estão indexadas.
+    if total_final == 0:
+        resp.headers["X-Robots-Tag"] = "noindex, follow"
+    return resp
 
 
 @app.route("/cidade/<cidade_slug>/")
