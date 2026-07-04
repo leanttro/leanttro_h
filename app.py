@@ -1518,6 +1518,14 @@ def admin_negocios_bulk():
             "UPDATE hub_negocios SET categoria_id = %s WHERE id = ANY(%s)",
             (categoria_id, ids), commit=True
         )
+    elif action == "mudar_foto":
+        foto_url = (data.get("foto_url") or "").strip()
+        if not foto_url:
+            return jsonify({"error": "foto_url obrigatório"}), 400
+        query(
+            "UPDATE hub_negocios SET foto_url = %s WHERE id = ANY(%s)",
+            (foto_url, ids), commit=True
+        )
     else:
         return jsonify({"error": "Ação inválida"}), 400
 
