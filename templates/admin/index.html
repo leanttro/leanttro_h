@@ -367,13 +367,13 @@ body {
   width: 360px; max-width: 95vw;
 }
 .hub-picker h4 { font-size: 14px; font-weight: 600; margin-bottom: 14px; color: var(--text); }
-.hub-picker select {
+.hub-picker select, .hub-picker input[type="url"], .hub-picker input[type="text"] {
   width: 100%; padding: 9px 12px;
   border: 1px solid var(--border2); border-radius: var(--radius-sm);
   background: var(--surface); color: var(--text);
   font-family: var(--font); font-size: 13.5px; outline: none; margin-bottom: 14px;
 }
-.hub-picker select:focus { border-color: var(--accent); }
+.hub-picker select:focus, .hub-picker input[type="url"]:focus, .hub-picker input[type="text"]:focus { border-color: var(--accent); }
 .hub-picker-actions { display: flex; gap: 8px; justify-content: flex-end; }
 .hub-picker.wide { width: 420px; }
 .bairro-merge-hint { font-size: 12px; color: var(--text2); margin-bottom: 12px; line-height: 1.5; }
@@ -829,6 +829,7 @@ tbody td {
           <button class="btn btn-secondary btn-sm" onclick="openHubPicker('vincular')">+ Vincular ao Hub</button>
           <button class="btn btn-secondary btn-sm" onclick="openHubPicker('desvincular')">− Desvincular do Hub</button>
           <button class="btn btn-secondary btn-sm" onclick="openCategoriaPicker()">↷ Mudar categoria</button>
+          <button class="btn btn-secondary btn-sm" onclick="openFotoPicker()">🖼 Mudar foto (URL)</button>
           <button class="btn btn-danger btn-sm" onclick="bulkNegocio('excluir')">Excluir</button>
         </div>
         <div class="table-wrap">
@@ -1047,6 +1048,19 @@ tbody td {
     <div class="hub-picker-actions">
       <button class="btn btn-secondary btn-sm" onclick="closeCategoriaPicker()">Cancelar</button>
       <button class="btn btn-primary btn-sm" onclick="confirmCategoriaPicker()">Confirmar</button>
+    </div>
+  </div>
+</div>
+
+<!-- Foto picker modal (bulk) -->
+<div class="hub-picker-overlay" id="fotoPickerOverlay">
+  <div class="hub-picker">
+    <h4>Mudar foto (URL) em massa</h4>
+    <p class="bairro-merge-hint" style="margin-bottom:10px;">A URL informada abaixo será aplicada a todos os negócios selecionados na tabela.</p>
+    <input type="url" id="fotoPickerInput" placeholder="https://...">
+    <div class="hub-picker-actions">
+      <button class="btn btn-secondary btn-sm" onclick="closeFotoPicker()">Cancelar</button>
+      <button class="btn btn-primary btn-sm" onclick="confirmFotoPicker()">Confirmar</button>
     </div>
   </div>
 </div>
@@ -1997,6 +2011,36 @@ async function confirmCategoriaPicker() {
       await loadSection('negocios');
     } else {
       showToast('Erro ao mudar categoria', 'error');
+    }
+  } catch(e) { showToast('Erro de conexão', 'error'); }
+}
+
+function openFotoPicker() {
+  const ids = [...document.querySelectorAll('#negociosBody .negocio-cb:checked')];
+  if (!ids.length) return;
+  document.getElementById('fotoPickerInput').value = '';
+  document.getElementById('fotoPickerOverlay').classList.add('open');
+}
+function closeFotoPicker() {
+  document.getElementById('fotoPickerOverlay').classList.remove('open');
+}
+async function confirmFotoPicker() {
+  const foto_url = document.getElementById('fotoPickerInput').value.trim();
+  if (!foto_url) { showToast('Informe a URL da foto', ''); return; }
+  const ids = [...document.querySelectorAll('#negociosBody .negocio-cb:checked')].map(cb => cb.value);
+  closeFotoPicker();
+  try {
+    const r = await fetch('/admin/negocios/bulk', {
+      method: 'POST',
+      body: JSON.stringify({ ids, action: 'mudar_foto', foto_url }),
+      headers: { 'Content-Type': 'application/json' }
+    });
+    if (r.ok || r.redirected) {
+      showToast(`Foto alterada em ${ids.length} negócio(s)`, 'success');
+      state.loaded.delete('negocios');
+      await loadSection('negocios');
+    } else {
+      showToast('Erro ao mudar foto', 'error');
     }
   } catch(e) { showToast('Erro de conexão', 'error'); }
 }
