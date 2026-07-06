@@ -161,7 +161,7 @@
         .hero-inner { padding: 48px 20px; }
         .hero-label { font-size: 0.9em; font-weight: 600; text-transform: uppercase; letter-spacing: 2px; color: var(--primary); margin-bottom: 10px; }
         .hero-section h1 { font-size: 2.6em; font-weight: 900; line-height: 1.2; text-shadow: 2px 2px 8px rgba(0,0,0,0.6); margin-bottom: 8px; }
-        .hero-section h1 em { color: var(--primary); font-style: normal; }
+        .hero-section h1 em { color: #ffb3a3; font-style: normal; }
         .hero-sub { font-size: 1em; margin-bottom: 16px; opacity: 0.85; }
         .hero-stats { display: flex; gap: 32px; justify-content: center; flex-wrap: wrap; margin-top: 20px; }
         .hero-stat strong { display: block; font-size: 1.8em; font-weight: 900; color: #fff; }
@@ -343,7 +343,7 @@
 <section class="hero-section">
     <div class="hero-inner container">
         <p class="hero-label"><i class="fas fa-{% if filtro_tipo == 'categoria' %}store{% else %}map-marker-alt{% endif %}"></i> {% if filtro_tipo == 'categoria' %}Categoria{% else %}Bairro{% endif %}</p>
-        <h1><em>{{ filtro_valor | capitalize }}</em><br>{% if filtro_tipo == 'categoria' %}{{ hub.nome or 'Cesta de Presentes' }}{% else %}— {{ hub.nome or 'Cesta de Presentes' }}{% endif %}</h1>
+        <h1><em>{{ filtro_valor | capitalize }}</em></h1>
         <p class="hero-sub">
             {% if filtro_tipo == 'categoria' %}
             Encontre os melhores negócios de {{ filtro_valor }} perto de você.
@@ -618,6 +618,14 @@ function renderGrid(){
         lista = lista.slice(0, 48);
         atualizarSubtitulo(lista.length + ' mais próximos de você');
     }
+    if(_filtroAtualBusca){
+        var termo = _filtroAtualBusca;
+        lista = lista.filter(function(n){
+            return (n.nome||'').toLowerCase().indexOf(termo) !== -1 ||
+                   (n.bairro||'').toLowerCase().indexOf(termo) !== -1;
+        });
+        atualizarSubtitulo(lista.length + ' negócio(s) encontrado(s)');
+    }
     grid.innerHTML = lista.map(negocioCardHTML).join('');
 }
 
@@ -670,7 +678,7 @@ function initLazySentinel(){
 // ══ SLICER / BUSCA — agora recarregam da API ══
 function buscar(q){
     _filtroAtualBusca = q.toLowerCase().trim();
-    _recarregarGrid();
+    renderGrid();
 }
 
 function selecionarItem(el, val){
