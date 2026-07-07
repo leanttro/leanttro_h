@@ -139,6 +139,10 @@ def _jinja_slugify(texto):
 def _get_anuncios(hub_id, posicao, categoria_slug=None, cidade=None, bairro=None):
     """Retorna até 1 anúncio ativo que case com o contexto da página.
     Prioriza anúncios mais segmentados; desempate por RANDOM().
+
+    `cidades`/`bairros` são arrays: um anúncio sem nada nesses arrays vale pra
+    qualquer cidade/bairro; se tiver valores, a página tem que casar com PELO
+    MENOS um deles.
     """
     hoje = date.today()
     sql = """
@@ -147,12 +151,18 @@ def _get_anuncios(hub_id, posicao, categoria_slug=None, cidade=None, bairro=None
           AND (data_inicio IS NULL OR data_inicio <= %s)
           AND (data_fim   IS NULL OR data_fim   >= %s)
           AND (categoria_slug IS NULL OR categoria_slug = %s)
-          AND (cidade         IS NULL OR LOWER(cidade)  = LOWER(%s))
-          AND (bairro         IS NULL OR LOWER(bairro)  = LOWER(%s))
+          AND (
+                cidades IS NULL OR cardinality(cidades) = 0
+                OR EXISTS (SELECT 1 FROM unnest(cidades) x WHERE LOWER(x) = LOWER(%s))
+              )
+          AND (
+                bairros IS NULL OR cardinality(bairros) = 0
+                OR EXISTS (SELECT 1 FROM unnest(bairros) x WHERE LOWER(x) = LOWER(%s))
+              )
         ORDER BY
           (categoria_slug IS NOT NULL)::int +
-          (cidade         IS NOT NULL)::int +
-          (bairro         IS NOT NULL)::int DESC,
+          (cidades IS NOT NULL AND cardinality(cidades) > 0)::int +
+          (bairros IS NOT NULL AND cardinality(bairros) > 0)::int DESC,
           RANDOM()
         LIMIT 1
     """
@@ -1316,6 +1326,27 @@ def admin_negocios_bairros():
     return jsonify([b["bairro"] for b in bairros])
 
 
+@app.route("/admin/negocios/localidades")
+@login_required
+def admin_negocios_localidades():
+    """Mapa {cidade: [bairros...]} pra popular o seletor de segmentação de anúncios
+    (todas as cidades/bairros que existem em negócios cadastrados)."""
+    rows = query("""
+        SELECT DISTINCT cidade, bairro
+        FROM hub_negocios
+        WHERE cidade IS NOT NULL AND TRIM(cidade) != ''
+        ORDER BY cidade, bairro
+    """)
+    mapa = {}
+    for r in rows:
+        cidade = r["cidade"]
+        bairro = r["bairro"]
+        mapa.setdefault(cidade, [])
+        if bairro and bairro.strip():
+            mapa[cidade].append(bairro)
+    return jsonify(mapa)
+
+
 @app.route("/admin/negocios/duplicados/<campo>")
 @login_required
 def admin_negocios_duplicados_campo(campo):
@@ -1901,15 +1932,33 @@ def admin_anuncios():
     return jsonify([dict(a) for a in anuncios])
 
 
+def _parse_lista_localidades(valor):
+    """Converte a string 'a, b, c' (vinda do hidden input do seletor de
+    cidades/bairros) numa lista limpa, sem vazios e sem duplicatas."""
+    if not valor:
+        return []
+    vistos = set()
+    resultado = []
+    for item in valor.split(","):
+        item = item.strip()
+        if item and item.lower() not in vistos:
+            vistos.add(item.lower())
+            resultado.append(item)
+    return resultado
+
+
 @app.route("/admin/anuncios/novo", methods=["POST"])
 @login_required
 def admin_anuncio_novo():
     f = request.form
     ativo = f.get("ativo") in ("on", "true", "1", True)
+    cidades = _parse_lista_localidades(f.get("cidades"))
+    bairros = _parse_lista_localidades(f.get("bairros"))
     query("""
         INSERT INTO anuncios (hub_id, titulo, foto_url, link, posicao,
-                              categoria_slug, cidade, bairro, data_inicio, data_fim, ativo)
-        VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+                              categoria_slug, cidade, bairro, cidades, bairros,
+                              data_inicio, data_fim, ativo)
+        VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
     """, (
         f.get("hub_id") or None,
         f.get("titulo"),
@@ -1917,8 +1966,10 @@ def admin_anuncio_novo():
         f.get("link"),
         f.get("posicao", "topo"),
         f.get("categoria_slug") or None,
-        f.get("cidade") or None,
-        f.get("bairro") or None,
+        cidades[0] if cidades else None,
+        bairros[0] if bairros else None,
+        cidades or None,
+        bairros or None,
         f.get("data_inicio") or None,
         f.get("data_fim") or None,
         ativo,
@@ -1936,10 +1987,12 @@ def admin_anuncio_editar(anuncio_id):
         return jsonify(dict(row))
     f = request.form
     ativo = f.get("ativo") in ("on", "true", "1", True)
+    cidades = _parse_lista_localidades(f.get("cidades"))
+    bairros = _parse_lista_localidades(f.get("bairros"))
     query("""
         UPDATE anuncios SET
             hub_id = %s, titulo = %s, foto_url = %s, link = %s, posicao = %s,
-            categoria_slug = %s, cidade = %s, bairro = %s,
+            categoria_slug = %s, cidade = %s, bairro = %s, cidades = %s, bairros = %s,
             data_inicio = %s, data_fim = %s, ativo = %s
         WHERE id = %s
     """, (
@@ -1949,8 +2002,10 @@ def admin_anuncio_editar(anuncio_id):
         f.get("link"),
         f.get("posicao", "topo"),
         f.get("categoria_slug") or None,
-        f.get("cidade") or None,
-        f.get("bairro") or None,
+        cidades[0] if cidades else None,
+        bairros[0] if bairros else None,
+        cidades or None,
+        bairros or None,
         f.get("data_inicio") or None,
         f.get("data_fim") or None,
         ativo,
