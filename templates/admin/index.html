@@ -400,6 +400,60 @@ body {
 .bairro-merge-count { font-size: 12px; color: var(--text2); margin-bottom: 6px; }
 .bairro-merge-label { font-size: 12.5px; font-weight: 500; color: var(--text2); margin-bottom: 6px; display: block; }
 
+/* ── Geo select (cidades/bairros multi-select, usado no form de anúncio) ── */
+.geo-select { position: relative; }
+.geo-chips {
+  display: flex; flex-wrap: wrap; gap: 6px;
+  margin-bottom: 6px;
+}
+.geo-chips:empty { display: none; }
+.geo-chip {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 4px 6px 4px 10px;
+  background: var(--accent-light); color: var(--accent);
+  border-radius: 999px; font-size: 12.5px; font-weight: 500;
+  line-height: 1.4;
+}
+.geo-chip button {
+  border: none; background: none; cursor: pointer;
+  color: var(--accent); font-size: 14px; line-height: 1;
+  padding: 2px; border-radius: 50%; display: flex;
+}
+.geo-chip button:hover { background: var(--accent); color: #fff; }
+.geo-search {
+  width: 100%; padding: 9px 12px;
+  border: 1px solid var(--border2); border-radius: var(--radius-sm);
+  background: var(--surface); color: var(--text);
+  font-family: var(--font); font-size: 13.5px; outline: none;
+}
+.geo-search:focus { border-color: var(--accent); }
+.geo-hint { font-size: 11.5px; color: var(--text3); margin-top: 4px; line-height: 1.4; }
+.geo-dropdown {
+  display: none;
+  position: absolute; left: 0; right: 0; top: calc(100% + 4px);
+  z-index: 50;
+  max-height: 240px; overflow-y: auto;
+  background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-sm);
+  box-shadow: var(--shadow-md);
+}
+.geo-dropdown.open { display: block; }
+.geo-dropdown-actions {
+  display: flex; justify-content: space-between; gap: 8px;
+  padding: 7px 12px; border-bottom: 1px solid var(--border);
+  position: sticky; top: 0; background: var(--surface);
+}
+.geo-dropdown-actions a { font-size: 11.5px; color: var(--accent); cursor: pointer; text-decoration: none; }
+.geo-dropdown-actions a:hover { text-decoration: underline; }
+.geo-item {
+  display: flex; align-items: center; gap: 8px;
+  padding: 7px 12px; font-size: 13px; cursor: pointer;
+  border-bottom: 1px solid var(--border);
+}
+.geo-item:last-child { border-bottom: none; }
+.geo-item:hover { background: var(--accent-light); }
+.geo-item input { flex-shrink: 0; }
+.geo-item-empty { padding: 12px; font-size: 12.5px; color: var(--text3); text-align: center; }
+
 /* ── Table ── */
 .table-wrap { overflow-x: auto; }
 table { width: 100%; border-collapse: collapse; }
@@ -1400,7 +1454,9 @@ function renderAnuncios(data) {
   const tbody = document.getElementById('anunciosBody');
   if (!data || !data.length) { tbody.innerHTML = emptyRow(7); return; }
   tbody.innerHTML = data.map(a => {
-    const seg = [a.categoria_slug, a.cidade, a.bairro].filter(Boolean).join(' / ') || 'Todas as páginas';
+    const cidadesTxt = Array.isArray(a.cidades) && a.cidades.length ? a.cidades.join(', ') : (a.cidade || '');
+    const bairrosTxt = Array.isArray(a.bairros) && a.bairros.length ? a.bairros.join(', ') : (a.bairro || '');
+    const seg = [a.categoria_slug, cidadesTxt, bairrosTxt].filter(Boolean).join(' / ') || 'Todas as páginas';
     const vig = [];
     if (a.data_inicio) vig.push(`De ${String(a.data_inicio).slice(0,10)}`);
     if (a.data_fim) vig.push(`Até ${String(a.data_fim).slice(0,10)}`);
@@ -1553,6 +1609,9 @@ async function editItem(type, id) {
           if (cb) cb.checked = data[f] === true || data[f] === 'true' || data[f] === 't';
         });
       }
+      if (type === 'anuncio') {
+        await initGeoSelects(data.cidades, data.bairros);
+      }
       setupFormSubmit(form);
     }
   } catch(e) { showToast('Erro ao carregar formulário', 'error'); }
@@ -1566,6 +1625,7 @@ function buildForm(type, id) {
   const form = document.getElementById('drawerForm');
   if (form) setupFormSubmit(form);
   if (type === 'hub') populateTemplateSelects();
+  if (type === 'anuncio') initGeoSelects([], []);
 }
 
 function wrapFormForDrawer(form, action) {
@@ -1886,8 +1946,16 @@ function formAnuncio() {
       <div class="field"><label>URL da imagem (Cloudinary) *</label><input name="foto_url" required placeholder="https://res.cloudinary.com/..."></div>
       <div class="field"><label>Link ao clicar (URL) *</label><input name="link" required placeholder="https://example.com"></div>
       <div class="field"><label>Categoria (opcional)</label><input name="categoria_slug" placeholder="restaurante — deixe vazio para todas"></div>
-      <div class="field"><label>Cidade (opcional)</label><input name="cidade" placeholder="São Paulo — deixe vazio para todas"></div>
-      <div class="field"><label>Bairro (opcional)</label><input name="bairro" placeholder="Vila Mariana — deixe vazio para todas"></div>
+      <div class="field form-full">
+        <label>Cidades (opcional)</label>
+        ${geoSelectHtml('cidades')}
+        <div class="geo-hint">Deixe vazio pra valer em todas as cidades. Busque, digite várias cidades separadas por vírgula, ou clique pra marcar/desmarcar.</div>
+      </div>
+      <div class="field form-full">
+        <label>Bairros (opcional)</label>
+        ${geoSelectHtml('bairros')}
+        <div class="geo-hint">Deixe vazio pra valer em todos os bairros. Selecionando uma cidade acima, só aparecem os bairros dela — mas também dá pra digitar/colar vários bairros separados por vírgula de uma vez.</div>
+      </div>
       <div class="field"><label>Data início</label><input type="date" name="data_inicio"></div>
       <div class="field"><label>Data fim</label><input type="date" name="data_fim"></div>
       <div class="field form-full">
@@ -1899,6 +1967,177 @@ function formAnuncio() {
       <button type="submit" class="btn btn-primary">Salvar anúncio</button>
     </div>
   </form>`;
+}
+
+// ── Anúncio: seletor múltiplo de cidades/bairros ───────────────
+// _geoSelected guarda os valores marcados (Set) por campo ('cidades'/'bairros').
+// state.geoLocalidades é o mapa {cidade: [bairros...]} carregado 1x da API.
+let _geoSelected = { cidades: new Set(), bairros: new Set() };
+
+function geoSelectHtml(field) {
+  return `
+    <div class="geo-select" data-geo="${field}">
+      <div class="geo-chips" id="geoChips_${field}"></div>
+      <input type="text" class="geo-search" id="geoSearch_${field}" autocomplete="off"
+        placeholder="${field === 'cidades' ? 'Buscar cidade, ou colar várias separadas por vírgula...' : 'Buscar bairro, ou colar vários separados por vírgula...'}"
+        onfocus="renderGeoDropdown('${field}', this.value)"
+        oninput="geoOnSearchInput('${field}', this)"
+        onkeydown="if(event.key==='Enter'){event.preventDefault(); geoFlushSearch('${field}', this);}"
+        onblur="setTimeout(() => { geoFlushSearch('${field}', document.getElementById('geoSearch_${field}')); closeGeoDropdown('${field}'); }, 150)">
+      <div class="geo-dropdown" id="geoDropdown_${field}"></div>
+      <input type="hidden" name="${field}" id="geoHidden_${field}">
+    </div>`;
+}
+
+function _normTxt(s) {
+  return (s || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().trim();
+}
+
+async function initGeoSelects(prefillCidades, prefillBairros) {
+  _geoSelected = {
+    cidades: new Set(Array.isArray(prefillCidades) ? prefillCidades : []),
+    bairros: new Set(Array.isArray(prefillBairros) ? prefillBairros : []),
+  };
+  if (!state.geoLocalidades) {
+    try {
+      state.geoLocalidades = await fetch('/admin/negocios/localidades').then(r => r.json());
+    } catch (e) { state.geoLocalidades = {}; }
+  }
+  ['cidades', 'bairros'].forEach(field => {
+    commitGeoHidden(field);
+    renderGeoChips(field);
+  });
+}
+
+function geoAllCidades() {
+  return Object.keys(state.geoLocalidades || {}).sort((a, b) => a.localeCompare(b, 'pt-BR'));
+}
+
+function geoBairrosDisponiveis() {
+  const mapa = state.geoLocalidades || {};
+  const cidadesSelecionadas = [..._geoSelected.cidades];
+  const fontes = cidadesSelecionadas.length ? cidadesSelecionadas : Object.keys(mapa);
+  const set = new Set();
+  fontes.forEach(c => (mapa[c] || []).forEach(b => set.add(b)));
+  return [...set].sort((a, b) => a.localeCompare(b, 'pt-BR'));
+}
+
+function commitGeoHidden(field) {
+  const hidden = document.getElementById(`geoHidden_${field}`);
+  if (hidden) hidden.value = [..._geoSelected[field]].join(', ');
+}
+
+function renderGeoChips(field) {
+  const el = document.getElementById(`geoChips_${field}`);
+  if (!el) return;
+  el.innerHTML = [..._geoSelected[field]].map(v => `
+    <span class="geo-chip">${esc(v)}<button type="button" onclick="toggleGeoItem('${field}','${esc(v).replace(/'/g, "\\'")}')">&times;</button></span>
+  `).join('');
+}
+
+function toggleGeoItem(field, value) {
+  if (_geoSelected[field].has(value)) _geoSelected[field].delete(value);
+  else _geoSelected[field].add(value);
+  commitGeoHidden(field);
+  renderGeoChips(field);
+  const search = document.getElementById(`geoSearch_${field}`);
+  renderGeoDropdown(field, search ? search.value : '');
+  // Trocar cidades muda quais bairros ficam disponíveis — atualiza o outro seletor também.
+  if (field === 'cidades') {
+    const searchB = document.getElementById('geoSearch_bairros');
+    if (searchB) renderGeoDropdown('bairros', searchB.value);
+  }
+}
+
+function renderGeoDropdown(field, termo) {
+  const dropdown = document.getElementById(`geoDropdown_${field}`);
+  if (!dropdown) return;
+  const options = field === 'cidades' ? geoAllCidades() : geoBairrosDisponiveis();
+  const t = _normTxt(termo);
+  const filtradas = t ? options.filter(o => _normTxt(o).includes(t)) : options;
+  const linhas = filtradas.length
+    ? filtradas.map(o => `
+        <label class="geo-item" onmousedown="event.preventDefault()">
+          <input type="checkbox" ${_geoSelected[field].has(o) ? 'checked' : ''} onchange="toggleGeoItem('${field}','${esc(o).replace(/'/g, "\\'")}')">
+          ${esc(o)}
+        </label>`).join('')
+    : `<div class="geo-item-empty">Nenhum${field === 'cidades' ? 'a cidade encontrada' : ' bairro encontrado'}</div>`;
+  dropdown.innerHTML = `
+    <div class="geo-dropdown-actions">
+      <a onmousedown="event.preventDefault()" onclick="geoMarcarVisiveis('${field}', ${JSON.stringify(filtradas).replace(/"/g, '&quot;')})">Marcar ${filtradas.length} visíveis</a>
+      <a onmousedown="event.preventDefault()" onclick="geoLimparSelecao('${field}')">Limpar seleção</a>
+    </div>
+    ${linhas}`;
+  dropdown.classList.add('open');
+}
+
+function closeGeoDropdown(field) {
+  const dropdown = document.getElementById(`geoDropdown_${field}`);
+  if (dropdown) dropdown.classList.remove('open');
+}
+
+function geoMarcarVisiveis(field, lista) {
+  (lista || []).forEach(v => _geoSelected[field].add(v));
+  commitGeoHidden(field);
+  renderGeoChips(field);
+  const search = document.getElementById(`geoSearch_${field}`);
+  renderGeoDropdown(field, search ? search.value : '');
+}
+
+function geoLimparSelecao(field) {
+  _geoSelected[field].clear();
+  commitGeoHidden(field);
+  renderGeoChips(field);
+  const search = document.getElementById(`geoSearch_${field}`);
+  renderGeoDropdown(field, search ? search.value : '');
+  if (field === 'cidades') {
+    const searchB = document.getElementById('geoSearch_bairros');
+    if (searchB) renderGeoDropdown('bairros', searchB.value);
+  }
+}
+
+// Digitar OU colar "Bairro A, Bairro B, Bairro C" — a cada vírgula completa,
+// o(s) trecho(s) antes dela já são processados; o que vier depois da última
+// vírgula fica no campo pra continuar digitando/filtrando normalmente.
+function geoOnSearchInput(field, input) {
+  const valor = input.value;
+  if (valor.includes(',')) {
+    const partes = valor.split(',');
+    const emAndamento = partes.pop();
+    const prontos = partes.join(',');
+    if (prontos.trim()) geoParseAndSelect(field, prontos);
+    input.value = emAndamento;
+  }
+  renderGeoDropdown(field, input.value);
+}
+
+// Enter ou "sair do campo" (blur) — tenta selecionar o que sobrou digitado
+// (match exato ou parcial) e limpa o campo de busca.
+function geoFlushSearch(field, input) {
+  if (!input) return;
+  const valor = input.value.trim();
+  if (valor) geoParseAndSelect(field, valor);
+  input.value = '';
+  renderGeoDropdown(field, '');
+}
+
+function geoParseAndSelect(field, raw) {
+  const tokens = raw.split(',').map(t => t.trim()).filter(Boolean);
+  if (!tokens.length) return;
+  const options = field === 'cidades' ? geoAllCidades() : geoBairrosDisponiveis();
+  const normalizadas = options.map(o => ({ o, n: _normTxt(o) }));
+  const naoEncontrados = [];
+  tokens.forEach(tok => {
+    const tn = _normTxt(tok);
+    const match = normalizadas.find(x => x.n === tn) || normalizadas.find(x => tn.length >= 3 && x.n.includes(tn));
+    if (match) _geoSelected[field].add(match.o);
+    else naoEncontrados.push(tok);
+  });
+  commitGeoHidden(field);
+  renderGeoChips(field);
+  if (naoEncontrados.length) {
+    showToast(`Não encontrado (verifique a grafia): ${naoEncontrados.join(', ')}`, '');
+  }
 }
 
 // ── Negócios: seleção em massa (sobre a página atual) ─────────
