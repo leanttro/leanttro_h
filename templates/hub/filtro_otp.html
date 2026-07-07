@@ -666,10 +666,24 @@ function initLazySentinel(){
     }, { rootMargin: '300px' }).observe(sentinel);
 }
 
-// ══ SLICER / BUSCA — agora recarregam da API ══
+// ══ SLICER / BUSCA ══
+// Busca por nome é feita localmente (nos negócios já carregados na tela),
+// usando o atributo data-nome de cada card. Corrigido: antes chamava a API
+// com o parâmetro "busca", que o backend ignora, então sempre voltavam os
+// mesmos resultados e o contador ficava travado em "...".
 function buscar(q){
     _filtroAtualBusca = q.toLowerCase().trim();
-    _recarregarGrid();
+    var cards = document.querySelectorAll('#negociosGrid .negocio-card');
+    var visiveis = 0;
+    cards.forEach(function(card){
+        var nome = card.getAttribute('data-nome') || '';
+        var mostra = !_filtroAtualBusca || nome.indexOf(_filtroAtualBusca) !== -1;
+        card.style.display = mostra ? '' : 'none';
+        if(mostra) visiveis++;
+    });
+    atualizarSubtitulo(visiveis);
+    var emptyMsg = document.getElementById('emptyMsg');
+    if(emptyMsg) emptyMsg.style.display = (visiveis === 0 && _filtroAtualBusca) ? 'block' : 'none';
 }
 
 function selecionarItem(el, val){
