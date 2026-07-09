@@ -961,10 +961,16 @@ function buscarProximos(){
     navigator.geolocation.getCurrentPosition(function(pos){
         userLat=pos.coords.latitude; userLng=pos.coords.longitude; geoAtivo=true;
         if(!_apiFim){
-            fetch('/api/hub/negocios?limit=20000&offset=0')
+            // Precisa mandar a categoria explicitamente: sem ela o backend limita
+            // a resposta a 200 registros, mesmo pedindo limit=20000 (ver filtrarCategoria).
+            var catAtual = _lazyCategoriaAtiva || (todosNegocios[0] && todosNegocios[0].categoria_slug) || '';
+            var urlProximos = '/api/hub/negocios?limit=20000&offset=0';
+            if(catAtual) urlProximos += '&categoria=' + encodeURIComponent(catAtual);
+            fetch(urlProximos)
             .then(function(r){ return r.json(); })
             .then(function(data){
                 if(Array.isArray(data) && data.length){
+                    data = _comTags(data);
                     todosNegocios = data;
                     negociosFiltrados = todosNegocios.slice();
                     _apiFim = true;
