@@ -1305,18 +1305,11 @@ document.addEventListener('click', function(e) {
         <label style="font-size:13px; font-weight:600; color:#333; display:block; margin-bottom:5px;">
           Nome do negócio <span style="color:#e53935">*</span>
         </label>
-        <input name="nome" required maxlength="255" placeholder="Ex: Barbearia do João" class="cad-input">
+        <input name="nome" required maxlength="255" placeholder="Ex: Ponto R. das Flores, 123" class="cad-input">
       </div>
 
-      <div>
-        <label style="font-size:13px; font-weight:600; color:#333; display:block; margin-bottom:5px;">Categoria</label>
-        <select name="categoria_id" class="cad-input">
-          <option value="">Selecione uma categoria</option>
-          {% for cat in categorias %}
-          <option value="{{ cat.id }}">{{ cat.nome }}</option>
-          {% endfor %}
-        </select>
-      </div>
+      {% set cat_ponto = (categorias | selectattr('slug','equalto','ponto-de-onibus') | list | first) %}
+      <input type="hidden" name="categoria_id" value="{{ cat_ponto.id if cat_ponto else '' }}">
 
       <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px;">
         <div>
@@ -1332,17 +1325,6 @@ document.addEventListener('click', function(e) {
       <div>
         <label style="font-size:13px; font-weight:600; color:#333; display:block; margin-bottom:5px;">Endereço</label>
         <input name="endereco" maxlength="255" placeholder="Rua das Flores, 123" class="cad-input">
-      </div>
-
-      <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px;">
-        <div>
-          <label style="font-size:13px; font-weight:600; color:#333; display:block; margin-bottom:5px;">WhatsApp</label>
-          <input name="whatsapp" maxlength="50" placeholder="(11) 99999-9999" class="cad-input">
-        </div>
-        <div>
-          <label style="font-size:13px; font-weight:600; color:#333; display:block; margin-bottom:5px;">Telefone</label>
-          <input name="telefone" maxlength="50" placeholder="(11) 3333-3333" class="cad-input">
-        </div>
       </div>
 
       <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px;">
