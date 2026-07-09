@@ -4,13 +4,13 @@
 <!-- Google tag (gtag.js) -->
 <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-7617881885143728"
      crossorigin="anonymous"></script>
-<script async src="https://www.googletagmanager.com/gtag/js?id=G-KDP5FYQVHX"></script>
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-J707J0QZ5R"></script>
 <script>
   window.dataLayer = window.dataLayer || [];
   function gtag(){dataLayer.push(arguments);}
   gtag('js', new Date());
 
-  gtag('config', 'G-KDP5FYQVHX');
+  gtag('config', 'G-J707J0QZ5R');
 </script>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -330,14 +330,6 @@
     <nav class="desktop-nav" aria-label="Navegação principal">
         <ul>
             <li><a href="/">Início</a></li>
-            <li>
-                <a href="#categorias">Categorias ▾</a>
-                <div class="nav-dropdown">
-                    {% for cat in categorias %}
-                    <a href="/{{ cat.slug }}/">{{ cat.nome }}</a>
-                    {% endfor %}
-                </div>
-            </li>
             <li><a href="#negocios">Pontos de Ônibus</a></li>
             <li><a href="https://wa.me/55{{ hub.whatsapp or '11999999999' }}?text=Olá,+quero+saber+mais" target="_blank" rel="noopener">Contato</a></li>
         </ul>
@@ -351,7 +343,6 @@
     <nav>
         <ul>
             <li><a href="/" onclick="closeMobileNav()">Início</a></li>
-            <li><a href="#categorias" onclick="closeMobileNav()">Categorias</a></li>
             <li><a href="#negocios" onclick="closeMobileNav()">Pontos de Ônibus</a></li>
             <li><a href="https://wa.me/55{{ hub.whatsapp or '11999999999' }}?text=Olá,+quero+saber+mais" target="_blank" rel="noopener" onclick="closeMobileNav()">Contato</a></li>
         </ul>
@@ -759,10 +750,29 @@ function buscarProximos(){
     navigator.geolocation.getCurrentPosition(function(pos){
         userLat=pos.coords.latitude; userLng=pos.coords.longitude; geoAtivo=true;
         document.getElementById('negocios').scrollIntoView({behavior:'smooth',block:'start'});
-        // Recarrega direto da API: o banco calcula a distância de TODOS os negócios
-        // da cidade (não só dos poucos já carregados no navegador) e devolve os mais
-        // próximos primeiro — antes só reordenava o que já estava carregado localmente.
-        _resetEFiltrar();
+        // Busca TODOS os negócios da cidade (com os filtros de bairro/categoria atuais)
+        // de uma vez só, como no index_ponto — não só o lote que já estava carregado —
+        // e ordena tudo por distância no navegador.
+        _apiCarregando = true;
+        var loading = document.getElementById('lazy-loading');
+        if(loading) loading.style.display = 'block';
+        fetch(_buildApiUrl(0, 20000))
+        .then(function(r){ return r.json(); })
+        .then(function(data){
+            _apiCarregando = false;
+            if(loading) loading.style.display = 'none';
+            if(Array.isArray(data) && data.length){
+                todosNegocios = data;
+                _apiOffset = data.length;
+                _apiFim = true;
+            }
+            renderNegocios(todosNegocios.slice());
+        })
+        .catch(function(){
+            _apiCarregando = false;
+            if(loading) loading.style.display = 'none';
+            renderNegocios(todosNegocios.slice());
+        });
     }, function(){ alert('Não foi possível obter sua localização.'); });
 }
 
