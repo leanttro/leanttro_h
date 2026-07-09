@@ -1054,7 +1054,7 @@ function _nomeTagSazonal(slug){
 
 function cardHTML(n){
     var dist=(n._dist&&n._dist<9999)?'<span class="card-dist"><i class="fas fa-map-marker-alt"></i> '+n._dist.toFixed(1)+' km de você</span>':'';
-    var foto=n.foto_url||'https://res.cloudinary.com/desvazant/image/upload/v1782962461/Cesta_de_Presentes_250_x_250_px_6_jbnclr.png';
+    var foto=n.foto_url||'https://i.pinimg.com/736x/87/ca/2c/87ca2c40beca74be4f28a37bd39d5cda.jpg';
     var local=[n.bairro,n.cidade].filter(Boolean).join(', ');
     var tagsHTML = (Array.isArray(n.tags) && n.tags.length)
         ? '<div class="card-tags">'+n.tags.slice(0,3).map(function(t){ return '<span class="card-tag">'+_nomeTagSazonal(t)+'</span>'; }).join('')+'</div>'
