@@ -160,6 +160,11 @@ nav.desktop-nav ul li a:hover{border-bottom-color:#fff;background:rgba(0,0,0,.08
 .endereco-row span{font-size:.9rem;color:var(--text)}
 .endereco-row span small{display:block;font-size:.78rem;color:var(--muted);margin-top:1px}
 
+/* BOTÃO ABRIR NO MAPS */
+.btn-maps{display:flex;align-items:center;justify-content:center;gap:10px;width:100%;margin-top:16px;padding:14px 20px;background:linear-gradient(135deg,var(--primary),var(--primary-d));color:#fff;font-weight:700;font-size:.95rem;border-radius:10px;box-shadow:0 6px 18px rgba(0,184,169,.35);transition:transform .15s,box-shadow .15s}
+.btn-maps:hover{transform:translateY(-2px);box-shadow:0 10px 24px rgba(0,184,169,.45)}
+.btn-maps svg{width:18px;height:18px;stroke:currentColor;fill:none;stroke-width:2;flex-shrink:0}
+
 /* COLUNA DIREITA — SIDEBAR */
 .sidebar-card{background:#fff;border:1.5px solid var(--border);border-radius:var(--radius);overflow:hidden;margin-bottom:20px;box-shadow:var(--shadow);position:sticky;top:88px}
 .sidebar-card-header{padding:16px 20px;border-bottom:1px solid var(--border);background:linear-gradient(135deg,var(--primary),var(--primary-d))}
@@ -314,6 +319,12 @@ footer a:hover{text-decoration:underline}
                 <small>{% if negocio.bairro %}{{ negocio.bairro }}{% endif %}{% if negocio.cidade %}, {{ negocio.cidade }}{% endif %}</small>
               </span>
             </div>
+            <a class="btn-maps"
+               href="https://www.google.com/maps/search/?api=1&query={{ (negocio.endereco ~ (', ' ~ negocio.bairro if negocio.bairro else '') ~ (', ' ~ negocio.cidade if negocio.cidade else '')) | urlencode }}"
+               target="_blank" rel="noopener noreferrer">
+              <svg viewBox="0 0 24 24"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
+              Abrir no Google Maps
+            </a>
             {% endif %}
             {% if negocio.mostrar_mapa and negocio.lat and negocio.lng %}
             <div class="mapa-wrap" style="margin-top:{% if negocio.mostrar_endereco %}16px{% else %}0{% endif %}">
