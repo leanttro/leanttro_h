@@ -960,8 +960,22 @@ function buscarProximos(){
     if(!navigator.geolocation){ alert('Geolocalização não suportada.'); return; }
     navigator.geolocation.getCurrentPosition(function(pos){
         userLat=pos.coords.latitude; userLng=pos.coords.longitude; geoAtivo=true;
-        renderNegocios(negociosFiltrados);
-        document.getElementById('busca').scrollIntoView({behavior:'smooth',block:'start'});
+        if(!_apiFim){
+            fetch('/api/hub/negocios?limit=20000&offset=0')
+            .then(function(r){ return r.json(); })
+            .then(function(data){
+                if(Array.isArray(data) && data.length){
+                    todosNegocios = data;
+                    negociosFiltrados = todosNegocios.slice();
+                    _apiFim = true;
+                }
+                renderNegocios(negociosFiltrados);
+                document.getElementById('busca').scrollIntoView({behavior:'smooth',block:'start'});
+            });
+        } else {
+            renderNegocios(negociosFiltrados);
+            document.getElementById('busca').scrollIntoView({behavior:'smooth',block:'start'});
+        }
     }, function(){ alert('Não foi possível obter sua localização. Verifique as permissões.'); });
 }
 
