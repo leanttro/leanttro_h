@@ -1,6 +1,15 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
+<!-- Google tag (gtag.js) -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-KDP5FYQVHX"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+
+  gtag('config', 'G-KDP5FYQVHX');
+</script>
 {% set tag_obj = (tags | selectattr('slug','equalto', tag_ativa) | first) if tag_ativa else None %}
 {% set seo_title = ("Blog — " ~ tag_obj.nome ~ " — " ~ (hub.nome or "Ponto de Ônibus")) if tag_obj else ("Blog — " ~ (hub.nome or "Ponto de Ônibus")) %}
 {% set seo_desc  = ("Posts sobre " ~ tag_obj.nome ~ " em " ~ (hub.nome or "Ponto de Ônibus") ~ ". Dicas, guias e novidades perto de você.") if tag_obj else ("Dicas, guias e novidades de " ~ (hub.nome or "Ponto de Ônibus") ~ ". Fique por dentro do que tem perto de você.") %}
