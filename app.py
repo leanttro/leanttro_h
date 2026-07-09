@@ -1265,7 +1265,7 @@ def admin_negocios():
     bairro     = request.args.get("bairro", "").strip()
     status     = request.args.get("status", "").strip()
     try:
-        limit  = min(int(request.args.get("limit", 50)), 500)
+        limit  = min(int(request.args.get("limit", 50)), 5000)
         offset = max(int(request.args.get("offset", 0)), 0)
     except (ValueError, TypeError):
         limit, offset = 50, 0
