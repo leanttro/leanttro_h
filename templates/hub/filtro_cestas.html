@@ -601,6 +601,26 @@ function calcDistancia(lat1,lng1,lat2,lng2){
 // Renderiza o grid a partir de negociosCarregados. Se "Mais próximo" estiver
 // ativo, ordena por distância no navegador (igual index_otp) — não depende
 // do backend calcular nada.
+function renderGridComCoords(userLat, userLng){
+    var grid = document.getElementById('negociosGrid');
+    if(!grid) return;
+    var lista = negociosCarregados;
+    if(userLat && userLng){
+        lista = lista.map(function(n){
+            var d = (n.lat && n.lng) ? calcDistancia(userLat, userLng, parseFloat(n.lat), parseFloat(n.lng)) : 9999;
+            return Object.assign({}, n, {_dist: d});
+        }).sort(function(a,b){ return a._dist - b._dist; });
+    }
+    if(_filtroAtualBusca){
+        var termo = _filtroAtualBusca;
+        lista = lista.filter(function(n){
+            return (n.nome||'').toLowerCase().indexOf(termo) !== -1 ||
+                   (n.bairro||'').toLowerCase().indexOf(termo) !== -1;
+        });
+    }
+    grid.innerHTML = lista.map(negocioCardHTML).join('');
+}
+
 function renderGrid(){
     var grid = document.getElementById('negociosGrid');
     if(!grid) return;
@@ -757,6 +777,7 @@ function usarLocalizacao(){
             // alfabética mesmo com "Mais próximo" ativo.
             _apiFim = true;
             _apiCarregando = true;
+            var snapLat = _userLat, snapLng = _userLng;
             fetch(_buildApiUrl(0, 20000))
                 .then(function(r){ return r.json(); })
                 .then(function(data){
@@ -765,12 +786,12 @@ function usarLocalizacao(){
                     if(Array.isArray(data) && data.length){
                         negociosCarregados = data;
                     }
-                    renderGrid();
+                    renderGridComCoords(snapLat, snapLng);
                 })
                 .catch(function(){
                     _apiCarregando = false;
                     if(loading) loading.style.display = 'none';
-                    renderGrid();
+                    renderGridComCoords(snapLat, snapLng);
                 });
         },
         function(){
