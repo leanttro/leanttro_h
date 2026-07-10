@@ -1455,6 +1455,7 @@ def admin_negocio_editar(negocio_id):
                     INSERT INTO hub_negocio_hubs (negocio_id, hub_id)
                     VALUES (%s, %s) ON CONFLICT DO NOTHING
                 """, (negocio_id, hub_id), commit=True)
+        _cache_invalidar()
         return jsonify({"ok": True})
     hubs_do_negocio = [r["hub_id"] for r in query(
         "SELECT hub_id FROM hub_negocio_hubs WHERE negocio_id = %s", (negocio_id,)
@@ -1468,6 +1469,7 @@ def admin_negocio_editar(negocio_id):
 @login_required
 def admin_negocio_deletar(negocio_id):
     query("DELETE FROM hub_negocios WHERE id = %s", (negocio_id,), commit=True)
+    _cache_invalidar()
     return jsonify({"ok": True})
 
 
@@ -1494,6 +1496,7 @@ def admin_negocios_bulk():
             "UPDATE hub_negocios SET bairro = %s WHERE bairro = ANY(%s)",
             (bairro_destino, bairros_origem), commit=True
         )
+        _cache_invalidar()
         return jsonify({"ok": True, "affected": affected})
 
     if action == "normalizar_case_bairros":
@@ -1512,6 +1515,7 @@ def admin_negocios_bulk():
                 "UPDATE hub_negocios SET bairro = %s WHERE lower(trim(bairro)) = lower(trim(%s)) AND bairro <> %s",
                 (bairro_escolhido, chave, bairro_escolhido), commit=True
             )
+        _cache_invalidar()
         return jsonify({"ok": True, "affected": total_afetado})
 
     ids    = [int(i) for i in data.get("ids", []) if str(i).isdigit()]
@@ -1560,6 +1564,7 @@ def admin_negocios_bulk():
     else:
         return jsonify({"error": "Ação inválida"}), 400
 
+    _cache_invalidar()
     return jsonify({"ok": True, "affected": len(ids)})
 
 
@@ -2107,6 +2112,7 @@ def admin_pendente_aprovar(pendente_id):
     """, (pendente_id,))
 
     db.commit()
+    _cache_invalidar()
     return jsonify({"ok": True, "negocio_id": negocio_id, "slug": slug})
 
 
