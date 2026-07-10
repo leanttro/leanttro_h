@@ -1132,6 +1132,14 @@ function filtrarCategoria(slug, btn){
                 if(loading) loading.style.display = 'none';
                 if(Array.isArray(data) && data.length > 0){
                     negociosFiltrados = data;
+                    if (geoAtivo && userLat !== null) {
+                        negociosFiltrados.forEach(function(n){
+                            var lat = parseFloat(n.lat);
+                            var lng = parseFloat(n.lng);
+                            n._dist = (!isNaN(lat) && !isNaN(lng) && lat !== 0 && lng !== 0) ? haversineKm(userLat, userLng, lat, lng) : 99999;
+                        });
+                        negociosFiltrados.sort(function(a,b){ return (a._dist || 99999) - (b._dist || 99999); });
+                    }
                     renderNegocios(negociosFiltrados);
                 }
             })
