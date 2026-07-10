@@ -626,14 +626,9 @@ function renderGrid(){
         });
     }
 
-    // 3) Só agora, se "Mais próximo" está ativo E não tem busca digitada,
-    // corta pros 48 primeiros só pra não travar o navegador jogando
-    // milhares de cards no DOM de uma vez. Com busca ativa, mostra todos
-    // os resultados encontrados (normalmente são poucos).
-    if(_locAtiva && _userLat && _userLng && !_filtroAtualBusca){
-        lista = lista.slice(0, 48);
-    }
-
+    // 3) Mostra TODOS os negócios (ordenados por distância quando "Mais
+    // próximo" está ativo) — sem cortar em 48. Igual ao modo padrão
+    // (sem localização), que já mostra a lista inteira.
     if(_filtroAtualBusca){
         atualizarSubtitulo(lista.length + ' negócio(s) encontrado(s)');
     } else if(_locAtiva && _userLat && _userLng){
