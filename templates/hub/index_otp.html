@@ -1131,15 +1131,16 @@ function filtrarCategoria(slug, btn){
             .then(function(data){
                 if(loading) loading.style.display = 'none';
                 if(Array.isArray(data) && data.length > 0){
-                    negociosFiltrados = data;
-                    if (geoAtivo && userLat !== null) {
-                        negociosFiltrados.forEach(function(n){
-                            var lat = parseFloat(n.lat);
-                            var lng = parseFloat(n.lng);
-                            n._dist = (!isNaN(lat) && !isNaN(lng) && lat !== 0 && lng !== 0) ? haversineKm(userLat, userLng, lat, lng) : 99999;
-                        });
-                        negociosFiltrados.sort(function(a,b){ return (a._dist || 99999) - (b._dist || 99999); });
-                    }
+                    // Mescla na lista principal (evita duplicar por slug) para que
+                    // negociosFiltrados continue compartilhando os mesmos objetos de
+                    // todosNegocios — assim _aplicarDistancias() funciona não importa
+                    // se a localização é ativada antes ou depois de escolher a categoria.
+                    var existentes = {};
+                    todosNegocios.forEach(function(n){ existentes[n.slug] = true; });
+                    var novos = data.filter(function(n){ return !existentes[n.slug]; });
+                    if(novos.length) todosNegocios = todosNegocios.concat(novos);
+                    negociosFiltrados = todosNegocios.filter(function(n){ return n.categoria_slug === slug; });
+                    if (geoAtivo && userLat !== null) _aplicarDistancias();
                     renderNegocios(negociosFiltrados);
                 }
             })
