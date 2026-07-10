@@ -1003,7 +1003,7 @@ function _renderizarProximoLote(){
     var lista = negociosFiltrados;
     if(geoAtivo && userLat && userLng){
         lista = lista.map(function(n){
-            var d = (n.lat && n.lng) ? calcDistancia(userLat, userLng, parseFloat(n.lat), parseFloat(n.lng)) : 9999;
+            var d = (n.lat && n.lng) ? calcDistancia(userLat, userLng, parseFloat(String(n.lat).replace(',', '.')), parseFloat(String(n.lng).replace(',', '.'))) : 9999;
             return Object.assign({}, n, {_dist: d});
         }).sort(function(a,b){ return a._dist - b._dist; });
     }
