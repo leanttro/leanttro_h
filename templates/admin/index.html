@@ -1603,7 +1603,7 @@ async function editItem(type, id) {
         else { el.value = val; }
       }
       if (type === 'negocio') {
-        const hubIds = Array.isArray(data.hubs) ? data.hubs.map(h => String(h.id ?? h)) : [];
+        const hubIds = Array.isArray(data.hubs_do_negocio) ? data.hubs_do_negocio.map(h => String(h.id ?? h)) : [];
         form.querySelectorAll('input[name="hubs"]').forEach(cb => { cb.checked = hubIds.includes(String(cb.value)); });
         const boolFields = ['mostrar_foto','mostrar_descricao','mostrar_whatsapp','mostrar_instagram','mostrar_telefone','mostrar_site','mostrar_endereco','mostrar_mapa','ativo'];
         boolFields.forEach(f => {
