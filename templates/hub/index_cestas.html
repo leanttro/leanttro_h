@@ -625,7 +625,7 @@
         <h1>O presente<br><em>perfeito, perto de você</em></h1>
         <p class="hero-sub">Cestas de presente, flores, chocolates finos e papelaria personalizada — para cada ocasião, em qualquer cidade do Brasil.</p>
         <div class="hero-btns">
-            <button class="btn-hero" onclick="buscarProximos()">
+            <button class="btn-hero btn-loc" id="btnLoc" onclick="toggleLocalizacao()">
                 <i class="fas fa-location-arrow"></i> Ver presentes perto de mim
             </button>
             <a href="#categorias" class="btn-hero-outline">
@@ -657,7 +657,7 @@
         <div class="busca-topo">
             <h2>Presentes perto de mim agora</h2>
             <p>Ative sua localização e veja as melhores opções de presente mais próximas de você primeiro</p>
-            <button class="btn-geo" onclick="buscarProximos()">
+            <button class="btn-geo btn-loc" onclick="toggleLocalizacao()">
                 <i class="fas fa-map-marker-alt"></i> Usar minha localização
             </button>
         </div>
@@ -980,6 +980,7 @@ function _carregarAPIUmaVez(callback) {
                 data = _comTags(data);
                 _apiOffset += data.length;
                 todosNegocios = todosNegocios.concat(data);
+                if(geoAtivo && userLat !== null) _aplicarDistancias();
                 if(!_lazyCategoriaAtiva) negociosFiltrados = todosNegocios.slice();
                 else negociosFiltrados = todosNegocios.filter(function(n){ return n.categoria_slug === _lazyCategoriaAtiva; });
             } else {
@@ -1001,12 +1002,6 @@ function _carregarAPIUmaVez(callback) {
 function _renderizarProximoLote(){
     // Se ainda há dados locais não renderizados, renderiza
     var lista = negociosFiltrados;
-    if(geoAtivo && userLat && userLng){
-        lista = lista.map(function(n){
-            var d = (n.lat && n.lng) ? calcDistancia(userLat, userLng, parseFloat(n.lat), parseFloat(n.lng)) : 9999;
-            return Object.assign({}, n, {_dist: d});
-        }).sort(function(a,b){ return a._dist - b._dist; });
-    }
     var trackCards = document.getElementById('negocios-track') ? document.getElementById('negocios-track').querySelectorAll('.negocio-card').length : 0;
     if(trackCards < lista.length){
         var proximo = lista.slice(trackCards, trackCards + _loteSize);
@@ -1029,48 +1024,73 @@ function _renderizarProximoLote(){
     }
 }
 
-function calcDistancia(lat1,lng1,lat2,lng2){
-    var R=6371,dLat=(lat2-lat1)*Math.PI/180,dLng=(lng2-lng1)*Math.PI/180;
-    var a=Math.sin(dLat/2)*Math.sin(dLat/2)+Math.cos(lat1*Math.PI/180)*Math.cos(lat2*Math.PI/180)*Math.sin(dLng/2)*Math.sin(dLng/2);
-    return R*2*Math.atan2(Math.sqrt(a),Math.sqrt(1-a));
+function haversineKm(lat1, lng1, lat2, lng2) {
+    var R = 6371;
+    var dLat = (lat2 - lat1) * Math.PI / 180;
+    var dLng = (lng2 - lng1) * Math.PI / 180;
+    var a = Math.sin(dLat/2)*Math.sin(dLat/2) +
+            Math.cos(lat1*Math.PI/180)*Math.cos(lat2*Math.PI/180)*
+            Math.sin(dLng/2)*Math.sin(dLng/2);
+    return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
 }
 
-function buscarProximos(){
-    if(!navigator.geolocation){ alert('Geolocalização não suportada.'); return; }
-    navigator.geolocation.getCurrentPosition(function(pos){
-        userLat=pos.coords.latitude; userLng=pos.coords.longitude; geoAtivo=true;
-        // Busca TODOS os negócios da API antes de ordenar por distância —
-        // não dá pra confiar que "todosNegocios" já tem a lista inteira
-        // (pode ter só o primeiro lote carregado até agora). Igual ao
-        // filtro_cestas.html, que já faz isso corretamente.
-        var loading = document.getElementById('lazy-loading');
-        if(loading) loading.style.display = 'block';
-        var urlTudo = '/api/hub/negocios?limit=20000&offset=0';
-        if(_lazyCategoriaAtiva) urlTudo += '&categoria=' + encodeURIComponent(_lazyCategoriaAtiva);
-        fetch(urlTudo)
-            .then(function(r){ return r.json(); })
-            .then(function(data){
-                if(loading) loading.style.display = 'none';
-                if(Array.isArray(data) && data.length){
-                    data = _comTags(data);
-                    todosNegocios = data;
-                    _apiFim = true; // já veio tudo, não precisa mais paginar
-                    var listaAlvo = _lazyCategoriaAtiva
-                        ? todosNegocios.filter(function(n){ return n.categoria_slug === _lazyCategoriaAtiva; })
-                        : todosNegocios.slice();
-                    renderNegocios(listaAlvo);
-                } else {
-                    // Falhou ou veio vazio: pelo menos reordena o que já tínhamos.
-                    renderNegocios(negociosFiltrados);
-                }
-                document.getElementById('busca').scrollIntoView({behavior:'smooth',block:'start'});
-            })
-            .catch(function(){
-                if(loading) loading.style.display = 'none';
-                renderNegocios(negociosFiltrados);
-                document.getElementById('busca').scrollIntoView({behavior:'smooth',block:'start'});
-            });
-    }, function(){ alert('Não foi possível obter sua localização. Verifique as permissões.'); });
+function _aplicarDistancias() {
+    todosNegocios.forEach(function(n) {
+        var lat = parseFloat(n.lat);
+        var lng = parseFloat(n.lng);
+        if (userLat !== null && !isNaN(lat) && !isNaN(lng) && lat !== 0 && lng !== 0) {
+            n._dist = haversineKm(userLat, userLng, lat, lng);
+        } else {
+            n._dist = 99999;
+        }
+    });
+    todosNegocios.sort(function(a, b) {
+        return (a._dist || 99999) - (b._dist || 99999);
+    });
+}
+
+function toggleLocalizacao() {
+    var btn = document.getElementById('btnLoc');
+    if (geoAtivo) {
+        geoAtivo = false;
+        userLat = null;
+        userLng = null;
+        btn.classList.remove('ativo');
+        btn.innerHTML = '<i class="fas fa-location-arrow"></i> Mais próximo';
+        todosNegocios.forEach(function(n) { delete n._dist; });
+        negociosFiltrados = _lazyCategoriaAtiva
+            ? todosNegocios.filter(function(n){ return n.categoria_slug === _lazyCategoriaAtiva; })
+            : todosNegocios.slice();
+        renderNegocios(negociosFiltrados);
+        return;
+    }
+    if (!navigator.geolocation) {
+        alert('Geolocalização não suportada.');
+        return;
+    }
+    btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Localizando...';
+    btn.disabled = true;
+    navigator.geolocation.getCurrentPosition(
+        function(pos) {
+            userLat = pos.coords.latitude;
+            userLng = pos.coords.longitude;
+            geoAtivo = true;
+            btn.classList.add('ativo');
+            btn.innerHTML = '<i class="fas fa-location-arrow"></i> Mais próximo ✓';
+            btn.disabled = false;
+            _aplicarDistancias();
+            negociosFiltrados = _lazyCategoriaAtiva
+                ? todosNegocios.filter(function(n){ return n.categoria_slug === _lazyCategoriaAtiva; })
+                : todosNegocios.slice();
+            renderNegocios(negociosFiltrados);
+        },
+        function() {
+            btn.innerHTML = '<i class="fas fa-location-arrow"></i> Mais próximo';
+            btn.disabled = false;
+            alert('Não foi possível obter sua localização. Verifique as permissões.');
+        },
+        { timeout: 10000, maximumAge: 60000 }
+    );
 }
 
 function toggleCategoriaSlicer(){
@@ -1263,12 +1283,7 @@ function renderNegocios(lista){
     negociosFiltrados = lista;
     var vc=document.getElementById('view-controls');
     var vazio=document.getElementById('negocios-vazio');
-    if(geoAtivo&&userLat&&userLng){
-        lista=lista.map(function(n){
-            var d=(n.lat&&n.lng)?calcDistancia(userLat,userLng,parseFloat(n.lat),parseFloat(n.lng)):9999;
-            return Object.assign({},n,{_dist:d});
-        }).sort(function(a,b){ return a._dist-b._dist; });
-    }
+
     if(!lista.length){
         if(vc) vc.style.display='none';
         var cw=document.getElementById('negocios-carousel-wrapper');
