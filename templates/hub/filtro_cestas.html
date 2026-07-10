@@ -750,28 +750,26 @@ function usarLocalizacao(){
             label.textContent = 'Mais próximo ✓';
             var loading = document.getElementById('lazy-loading');
             if(loading) loading.style.display = 'block';
-            // Busca TUDO que bate com o filtro atual (categoria/bairro) de
-            // uma vez só — igual o index_otp faz pra categorias grandes
-            // (ex.: ponto de ônibus, 20 mil+ registros espalhados pelo
-            // Brasil). Só reordenar os 48 iniciais alfabéticos não adianta,
-            // porque os mais próximos de verdade quase certamente não
-            // estão nesse recorte alfabético. O backend já limita sozinho
-            // ao teto correto por categoria (api_negocios: 20000 pra
-            // categorias grandes, 4000 pras demais).
+            // Trava o lazy load ANTES de iniciar o fetch — sem isso o
+            // IntersectionObserver dispara _carregarLote() enquanto o fetch
+            // de 20000 ainda está em andamento, concatena lotes na lista e
+            // chama renderGrid() fora de ordem, resultando em exibição
+            // alfabética mesmo com "Mais próximo" ativo.
+            _apiFim = true;
+            _apiCarregando = true;
             fetch(_buildApiUrl(0, 20000))
                 .then(function(r){ return r.json(); })
                 .then(function(data){
+                    _apiCarregando = false;
                     if(loading) loading.style.display = 'none';
                     if(Array.isArray(data) && data.length){
                         negociosCarregados = data;
-                        _apiFim = true; // já veio tudo, não precisa mais lazy load
                     }
                     renderGrid();
                 })
                 .catch(function(){
+                    _apiCarregando = false;
                     if(loading) loading.style.display = 'none';
-                    // Se a busca completa falhar, ao menos reordena o que
-                    // já tínhamos carregado.
                     renderGrid();
                 });
         },
