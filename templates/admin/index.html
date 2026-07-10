@@ -1600,7 +1600,6 @@ async function editItem(type, id) {
         const el = form.elements[key];
         if (!el || val == null) continue;
         if (el.type === 'checkbox') { el.checked = val === true || val === 'true' || val === 't'; }
-        else if (key === 'lat' || key === 'lng') { el.value = String(val).replace(',', '.'); }
         else { el.value = val; }
       }
       if (type === 'negocio') {
@@ -1760,22 +1759,6 @@ function formHub() {
   </form>`;
 }
 
-// Sanitiza campos de latitude/longitude: troca vírgula por ponto na hora
-// (evita o problema do teclado numérico em Windows pt-BR, que envia ","
-// quando o usuário aperta o "." do numpad) e remove qualquer caractere
-// que não seja dígito, ponto ou sinal de menos.
-function normalizarDecimal(input) {
-  const cursorNoFim = input.selectionEnd === input.value.length;
-  let v = input.value.replace(/,/g, '.');
-  v = v.replace(/[^0-9.\-]/g, '');
-  // mantém só o primeiro ponto (evita "23.65.34") e só o "-" inicial
-  const partes = v.split('.');
-  if (partes.length > 2) v = partes[0] + '.' + partes.slice(1).join('');
-  if (v.indexOf('-') > 0) v = v.replace(/-/g, '');
-  input.value = v;
-  if (cursorNoFim) input.setSelectionRange(v.length, v.length);
-}
-
 function formNegocio() {
   const cats = state.data.categorias.map(c => `<option value="${c.id}">${esc(c.nome)}</option>`).join('');
   const hubs = state.data.hubs.map(h => `<label class="checkbox-label"><input type="checkbox" name="hubs" value="${h.id}"> ${esc(h.nome)}</label>`).join('');
@@ -1790,8 +1773,8 @@ function formNegocio() {
       <div class="field"><label>Bairro</label><input name="bairro"></div>
       <div class="field"><label>Cidade</label><input name="cidade" value="São Paulo"></div>
       <div class="field"><label>Endereço</label><input name="endereco"></div>
-      <div class="field"><label>Latitude</label><input name="lat" type="text" inputmode="decimal" placeholder="-23.6534013" oninput="normalizarDecimal(this)" onblur="normalizarDecimal(this)"></div>
-      <div class="field"><label>Longitude</label><input name="lng" type="text" inputmode="decimal" placeholder="-46.6505146" oninput="normalizarDecimal(this)" onblur="normalizarDecimal(this)"></div>
+      <div class="field"><label>Latitude</label><input name="lat" type="number" step="any"></div>
+      <div class="field"><label>Longitude</label><input name="lng" type="number" step="any"></div>
       <div class="field"><label>WhatsApp</label><input name="whatsapp" placeholder="5511..."></div>
       <div class="field"><label>Telefone</label><input name="telefone"></div>
       <div class="field"><label>Instagram</label><input name="instagram"></div>
