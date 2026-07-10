@@ -198,7 +198,7 @@ def index():
         SELECT n.*, c.nome as categoria_nome, c.slug as categoria_slug
         FROM hub_negocios n
         JOIN hub_negocio_hubs nh ON nh.negocio_id = n.id
-        JOIN hub_categorias c ON c.id = n.categoria_id
+        LEFT JOIN hub_categorias c ON c.id = n.categoria_id
         WHERE nh.hub_id = %s AND n.ativo = true
         ORDER BY n.nome
         LIMIT %s
@@ -272,7 +272,7 @@ def sitemap_parte(parte):
                c.slug as categoria_slug
         FROM hub_negocios n
         JOIN hub_negocio_hubs nh ON nh.negocio_id = n.id
-        JOIN hub_categorias c ON c.id = n.categoria_id
+        LEFT JOIN hub_categorias c ON c.id = n.categoria_id
         WHERE nh.hub_id = %s AND n.ativo = true
         ORDER BY n.nome
         LIMIT %s OFFSET %s
@@ -378,7 +378,7 @@ def pagina_filtro(segmento):
             SELECT n.*, c.nome as categoria_nome, c.slug as categoria_slug
             FROM hub_negocios n
             JOIN hub_negocio_hubs nh ON nh.negocio_id = n.id
-            JOIN hub_categorias c ON c.id = n.categoria_id
+            LEFT JOIN hub_categorias c ON c.id = n.categoria_id
             WHERE nh.hub_id = %s AND n.ativo = true AND LOWER(n.bairro) = LOWER(%s)
             ORDER BY n.nome LIMIT %s
         """, (hub["id"], segmento, limite))
@@ -392,14 +392,14 @@ def pagina_filtro(segmento):
             total = query("""
                 SELECT COUNT(*) as total FROM hub_negocios n
                 JOIN hub_negocio_hubs nh ON nh.negocio_id = n.id
-                JOIN hub_categorias c ON c.id = n.categoria_id
+                LEFT JOIN hub_categorias c ON c.id = n.categoria_id
                 WHERE nh.hub_id = %s AND n.ativo = true AND c.slug = %s
             """, (hub["id"], segmento), one=True)["total"]
             negocios = query("""
                 SELECT n.*, c.nome as categoria_nome, c.slug as categoria_slug
                 FROM hub_negocios n
                 JOIN hub_negocio_hubs nh ON nh.negocio_id = n.id
-                JOIN hub_categorias c ON c.id = n.categoria_id
+                LEFT JOIN hub_categorias c ON c.id = n.categoria_id
                 WHERE nh.hub_id = %s AND n.ativo = true AND c.slug = %s
                 ORDER BY n.nome LIMIT %s
             """, (hub["id"], segmento, limite))
@@ -414,7 +414,7 @@ def pagina_filtro(segmento):
                 SELECT n.*, c.nome as categoria_nome, c.slug as categoria_slug
                 FROM hub_negocios n
                 JOIN hub_negocio_hubs nh ON nh.negocio_id = n.id
-                JOIN hub_categorias c ON c.id = n.categoria_id
+                LEFT JOIN hub_categorias c ON c.id = n.categoria_id
                 WHERE nh.hub_id = %s AND n.ativo = true AND LOWER(n.bairro) = LOWER(%s)
                 ORDER BY n.nome LIMIT %s
             """, (hub["id"], segmento, limite))
@@ -423,14 +423,14 @@ def pagina_filtro(segmento):
         total = query("""
             SELECT COUNT(*) as total FROM hub_negocios n
             JOIN hub_negocio_hubs nh ON nh.negocio_id = n.id
-            JOIN hub_categorias c ON c.id = n.categoria_id
+            LEFT JOIN hub_categorias c ON c.id = n.categoria_id
             WHERE nh.hub_id = %s AND n.ativo = true AND c.slug = %s
         """, (hub["id"], segmento), one=True)["total"]
         negocios = query("""
             SELECT n.*, c.nome as categoria_nome, c.slug as categoria_slug
             FROM hub_negocios n
             JOIN hub_negocio_hubs nh ON nh.negocio_id = n.id
-            JOIN hub_categorias c ON c.id = n.categoria_id
+            LEFT JOIN hub_categorias c ON c.id = n.categoria_id
             WHERE nh.hub_id = %s AND n.ativo = true AND c.slug = %s
             ORDER BY n.nome LIMIT %s
         """, (hub["id"], segmento, limite))
@@ -448,7 +448,7 @@ def pagina_filtro(segmento):
         rows = query("""
             SELECT DISTINCT n.bairro FROM hub_negocios n
             JOIN hub_negocio_hubs nh ON nh.negocio_id = n.id
-            JOIN hub_categorias c ON c.id = n.categoria_id
+            LEFT JOIN hub_categorias c ON c.id = n.categoria_id
             WHERE nh.hub_id = %s AND n.ativo = true AND c.slug = %s
               AND n.bairro IS NOT NULL AND n.bairro <> ''
             ORDER BY n.bairro
@@ -476,7 +476,7 @@ def pagina_negocio(segmento, slug_negocio):
         SELECT n.*, c.nome as categoria_nome, c.slug as categoria_slug
         FROM hub_negocios n
         JOIN hub_negocio_hubs nh ON nh.negocio_id = n.id
-        JOIN hub_categorias c ON c.id = n.categoria_id
+        LEFT JOIN hub_categorias c ON c.id = n.categoria_id
         WHERE nh.hub_id = %s AND n.slug = %s AND n.ativo = true
     """, (hub["id"], slug_negocio), one=True)
     if not negocio:
@@ -642,7 +642,7 @@ def _negocios_cidade(hub_id, cidade_variantes=None, cat_slug=None, bairro_varian
         SELECT n.*, c.nome as categoria_nome, c.slug as categoria_slug
         FROM hub_negocios n
         JOIN hub_negocio_hubs nh ON nh.negocio_id = n.id
-        JOIN hub_categorias c ON c.id = n.categoria_id
+        LEFT JOIN hub_categorias c ON c.id = n.categoria_id
         WHERE nh.hub_id = %s AND n.ativo = true
     """
     params = [hub_id]
@@ -677,7 +677,7 @@ def _contar_negocios_cidade(hub_id, cidade_variantes=None, cat_slug=None, bairro
         SELECT COUNT(*) as total
         FROM hub_negocios n
         JOIN hub_negocio_hubs nh ON nh.negocio_id = n.id
-        JOIN hub_categorias c ON c.id = n.categoria_id
+        LEFT JOIN hub_categorias c ON c.id = n.categoria_id
         WHERE nh.hub_id = %s AND n.ativo = true
     """
     params = [hub_id]
@@ -1455,6 +1455,7 @@ def admin_negocio_editar(negocio_id):
                     INSERT INTO hub_negocio_hubs (negocio_id, hub_id)
                     VALUES (%s, %s) ON CONFLICT DO NOTHING
                 """, (negocio_id, hub_id), commit=True)
+        _cache_invalidar()
         return jsonify({"ok": True})
     hubs_do_negocio = [r["hub_id"] for r in query(
         "SELECT hub_id FROM hub_negocio_hubs WHERE negocio_id = %s", (negocio_id,)
@@ -1468,6 +1469,7 @@ def admin_negocio_editar(negocio_id):
 @login_required
 def admin_negocio_deletar(negocio_id):
     query("DELETE FROM hub_negocios WHERE id = %s", (negocio_id,), commit=True)
+    _cache_invalidar()
     return jsonify({"ok": True})
 
 
@@ -1494,6 +1496,7 @@ def admin_negocios_bulk():
             "UPDATE hub_negocios SET bairro = %s WHERE bairro = ANY(%s)",
             (bairro_destino, bairros_origem), commit=True
         )
+        _cache_invalidar()
         return jsonify({"ok": True, "affected": affected})
 
     if action == "normalizar_case_bairros":
@@ -1512,6 +1515,7 @@ def admin_negocios_bulk():
                 "UPDATE hub_negocios SET bairro = %s WHERE lower(trim(bairro)) = lower(trim(%s)) AND bairro <> %s",
                 (bairro_escolhido, chave, bairro_escolhido), commit=True
             )
+        _cache_invalidar()
         return jsonify({"ok": True, "affected": total_afetado})
 
     ids    = [int(i) for i in data.get("ids", []) if str(i).isdigit()]
@@ -1560,6 +1564,7 @@ def admin_negocios_bulk():
     else:
         return jsonify({"error": "Ação inválida"}), 400
 
+    _cache_invalidar()
     return jsonify({"ok": True, "affected": len(ids)})
 
 
@@ -2107,6 +2112,7 @@ def admin_pendente_aprovar(pendente_id):
     """, (pendente_id,))
 
     db.commit()
+    _cache_invalidar()
     return jsonify({"ok": True, "negocio_id": negocio_id, "slug": slug})
 
 
@@ -2156,7 +2162,7 @@ def api_negocios():
         SELECT n.*, c.nome as categoria_nome, c.slug as categoria_slug
         FROM hub_negocios n
         JOIN hub_negocio_hubs nh ON nh.negocio_id = n.id
-        JOIN hub_categorias c ON c.id = n.categoria_id
+        LEFT JOIN hub_categorias c ON c.id = n.categoria_id
         WHERE nh.hub_id = %s AND n.ativo = true
     """
     params = [hub["id"]]
