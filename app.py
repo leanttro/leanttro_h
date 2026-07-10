@@ -789,7 +789,7 @@ def pagina_cidade(cidade_slug):
     cidade_nome, cidade_var = _resolve_cidade(hub["id"], cidade_slug)
     if not cidade_nome:
         return "Cidade não encontrada", 404
-    negocios   = _negocios_cidade(hub["id"], cidade_variantes=cidade_var, limit=100)
+    negocios   = _negocios_cidade(hub["id"], cidade_variantes=cidade_var)
     total      = _contar_negocios_cidade(hub["id"], cidade_variantes=cidade_var)
     categorias = query("SELECT * FROM hub_categorias WHERE ativo = true ORDER BY nome")
     bairros    = _bairros_cidade(hub["id"], cidade_var)
@@ -816,7 +816,7 @@ def pagina_cidade_segundo(cidade_slug, segundo_slug):
     bairros    = _bairros_cidade(hub["id"], cidade_var)
     cats_disp  = _categorias_cidade(hub["id"], cidade_var)
     if categoria:
-        negocios = _negocios_cidade(hub["id"], cidade_variantes=cidade_var, cat_slug=segundo_slug, limit=100)
+        negocios = _negocios_cidade(hub["id"], cidade_variantes=cidade_var, cat_slug=segundo_slug)
         total    = _contar_negocios_cidade(hub["id"], cidade_variantes=cidade_var, cat_slug=segundo_slug)
         return _render_cidade(hub, negocios, categorias, cidade_nome,
                               categoria=dict(categoria),
@@ -828,7 +828,7 @@ def pagina_cidade_segundo(cidade_slug, segundo_slug):
         if not bairro_nome:
             bairro_nome = segundo_slug.replace("-", " ").title()
             bairro_var  = [bairro_nome]
-        negocios    = _negocios_cidade(hub["id"], cidade_variantes=cidade_var, bairro_variantes=bairro_var, limit=100)
+        negocios    = _negocios_cidade(hub["id"], cidade_variantes=cidade_var, bairro_variantes=bairro_var)
         total       = _contar_negocios_cidade(hub["id"], cidade_variantes=cidade_var, bairro_variantes=bairro_var)
         return _render_cidade(hub, negocios, categorias, cidade_nome,
                               bairro=bairro_nome,
@@ -857,7 +857,7 @@ def pagina_cidade_bairro_cat(cidade_slug, bairro_slug, cat_slug):
         bairro_nome = bairro_slug.replace("-", " ").title()
         bairro_var  = [bairro_nome]
     negocios    = _negocios_cidade(hub["id"], cidade_variantes=cidade_var,
-                                   cat_slug=cat_slug, bairro_variantes=bairro_var, limit=100)
+                                   cat_slug=cat_slug, bairro_variantes=bairro_var)
     total       = _contar_negocios_cidade(hub["id"], cidade_variantes=cidade_var,
                                           cat_slug=cat_slug, bairro_variantes=bairro_var)
     return _render_cidade(hub, negocios, categorias, cidade_nome,
@@ -884,7 +884,7 @@ def pagina_cat_cidade(cat_slug, cidade_slug):
     cidade_nome, cidade_var = _resolve_cidade(hub["id"], cidade_slug)
     if not cidade_nome:
         return "Cidade não encontrada", 404
-    negocios   = _negocios_cidade(hub["id"], cidade_variantes=cidade_var, cat_slug=cat_slug, limit=100)
+    negocios   = _negocios_cidade(hub["id"], cidade_variantes=cidade_var, cat_slug=cat_slug)
     total      = _contar_negocios_cidade(hub["id"], cidade_variantes=cidade_var, cat_slug=cat_slug)
     categorias = query("SELECT * FROM hub_categorias WHERE ativo = true ORDER BY nome")
     bairros    = _bairros_cidade(hub["id"], cidade_var)
@@ -917,7 +917,7 @@ def pagina_cat_cidade_bairro(cat_slug, cidade_slug, bairro_slug):
         bairro_nome = bairro_slug.replace("-", " ").title()
         bairro_var  = [bairro_nome]
     negocios    = _negocios_cidade(hub["id"], cidade_variantes=cidade_var,
-                                    cat_slug=cat_slug, bairro_variantes=bairro_var, limit=100)
+                                    cat_slug=cat_slug, bairro_variantes=bairro_var)
     total       = _contar_negocios_cidade(hub["id"], cidade_variantes=cidade_var,
                                           cat_slug=cat_slug, bairro_variantes=bairro_var)
     categorias  = query("SELECT * FROM hub_categorias WHERE ativo = true ORDER BY nome")
@@ -1394,16 +1394,58 @@ def admin_negocio_novo():
     d = request.form
     cidade_norm, bairro_norm = _normalizar_cidade_bairro(d.get("cidade", "São Paulo"), d.get("bairro"))
     cur = get_db().cursor()
-    try:
+    cur.execute("""
+        INSERT INTO hub_negocios
+        (categoria_id, nome, slug, descricao, foto_url, endereco, bairro, cidade,
+         lat, lng, whatsapp, telefone, instagram, site_url,
+         mostrar_foto, mostrar_descricao, mostrar_whatsapp,
+         mostrar_instagram, mostrar_telefone, mostrar_site,
+         mostrar_endereco, mostrar_mapa, ativo)
+        VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)
+        RETURNING id
+    """, (
+        d.get("categoria_id") or None, d["nome"], d["slug"],
+        d.get("descricao") or None, d.get("foto_url") or None,
+        d.get("endereco") or None, bairro_norm,
+        cidade_norm,
+        _parse_coord(d.get("lat")), _parse_coord(d.get("lng")),
+        d.get("whatsapp") or None, d.get("telefone") or None,
+        d.get("instagram") or None, d.get("site_url") or None,
+        "mostrar_foto"      in d, "mostrar_descricao" in d,
+        "mostrar_whatsapp"  in d, "mostrar_instagram" in d,
+        "mostrar_telefone"  in d, "mostrar_site"      in d,
+        "mostrar_endereco"  in d, "mostrar_mapa"      in d,
+        "ativo"             in d,
+    ))
+    negocio_id = cur.fetchone()["id"]
+    for hub_id in request.form.getlist("hubs"):
         cur.execute("""
-            INSERT INTO hub_negocios
-            (categoria_id, nome, slug, descricao, foto_url, endereco, bairro, cidade,
-             lat, lng, whatsapp, telefone, instagram, site_url,
-             mostrar_foto, mostrar_descricao, mostrar_whatsapp,
-             mostrar_instagram, mostrar_telefone, mostrar_site,
-             mostrar_endereco, mostrar_mapa, ativo)
-            VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)
-            RETURNING id
+            INSERT INTO hub_negocio_hubs (negocio_id, hub_id)
+            VALUES (%s, %s) ON CONFLICT DO NOTHING
+        """, (negocio_id, hub_id))
+    get_db().commit()
+    _cache_invalidar()
+    return jsonify({"ok": True})
+
+
+@app.route("/admin/negocios/<int:negocio_id>/editar", methods=["GET", "POST"])
+@login_required
+def admin_negocio_editar(negocio_id):
+    negocio = query("SELECT * FROM hub_negocios WHERE id = %s", (negocio_id,), one=True)
+    if not negocio:
+        return jsonify({"erro": "Negócio não encontrado"}), 404
+    if request.method == "POST":
+        d = request.form
+        cidade_norm, bairro_norm = _normalizar_cidade_bairro(d.get("cidade", "São Paulo"), d.get("bairro"))
+        query("""
+            UPDATE hub_negocios SET
+            categoria_id=%s, nome=%s, slug=%s, descricao=%s, foto_url=%s,
+            endereco=%s, bairro=%s, cidade=%s, lat=%s, lng=%s,
+            whatsapp=%s, telefone=%s, instagram=%s, site_url=%s,
+            mostrar_foto=%s, mostrar_descricao=%s, mostrar_whatsapp=%s,
+            mostrar_instagram=%s, mostrar_telefone=%s, mostrar_site=%s,
+            mostrar_endereco=%s, mostrar_mapa=%s, ativo=%s
+            WHERE id=%s
         """, (
             d.get("categoria_id") or None, d["nome"], d["slug"],
             d.get("descricao") or None, d.get("foto_url") or None,
@@ -1416,66 +1458,8 @@ def admin_negocio_novo():
             "mostrar_whatsapp"  in d, "mostrar_instagram" in d,
             "mostrar_telefone"  in d, "mostrar_site"      in d,
             "mostrar_endereco"  in d, "mostrar_mapa"      in d,
-            "ativo"             in d,
-        ))
-    except psycopg2.errors.UniqueViolation:
-        # Slug já existe em outro negócio (provavelmente um cadastro
-        # duplicado com o mesmo nome). Sem isso, o INSERT falhava com um
-        # 500 genérico e o painel só mostrava "Erro ao salvar", sem dizer
-        # o motivo — daí parecia que "não tava adicionando" sem pista
-        # nenhuma do porquê.
-        get_db().rollback()
-        return jsonify({"erro": f"Já existe um negócio com o slug '{d.get('slug')}'. "
-                                 f"Verifique se não é um cadastro duplicado, ou use um slug diferente."}), 409
-    negocio_id = cur.fetchone()["id"]
-    for hub_id in request.form.getlist("hubs"):
-        cur.execute("""
-            INSERT INTO hub_negocio_hubs (negocio_id, hub_id)
-            VALUES (%s, %s) ON CONFLICT DO NOTHING
-        """, (negocio_id, hub_id))
-    get_db().commit()
-    _cache_invalidar()
-    return jsonify({"ok": True})
-
-
-
-@app.route("/admin/negocios/<int:negocio_id>/editar", methods=["GET", "POST"])
-@login_required
-def admin_negocio_editar(negocio_id):
-    negocio = query("SELECT * FROM hub_negocios WHERE id = %s", (negocio_id,), one=True)
-    if not negocio:
-        return jsonify({"erro": "Negócio não encontrado"}), 404
-    if request.method == "POST":
-        d = request.form
-        cidade_norm, bairro_norm = _normalizar_cidade_bairro(d.get("cidade", "São Paulo"), d.get("bairro"))
-        try:
-            query("""
-                UPDATE hub_negocios SET
-                categoria_id=%s, nome=%s, slug=%s, descricao=%s, foto_url=%s,
-                endereco=%s, bairro=%s, cidade=%s, lat=%s, lng=%s,
-                whatsapp=%s, telefone=%s, instagram=%s, site_url=%s,
-                mostrar_foto=%s, mostrar_descricao=%s, mostrar_whatsapp=%s,
-                mostrar_instagram=%s, mostrar_telefone=%s, mostrar_site=%s,
-                mostrar_endereco=%s, mostrar_mapa=%s, ativo=%s
-                WHERE id=%s
-            """, (
-                d.get("categoria_id") or None, d["nome"], d["slug"],
-                d.get("descricao") or None, d.get("foto_url") or None,
-                d.get("endereco") or None, bairro_norm,
-                cidade_norm,
-                _parse_coord(d.get("lat")), _parse_coord(d.get("lng")),
-                d.get("whatsapp") or None, d.get("telefone") or None,
-                d.get("instagram") or None, d.get("site_url") or None,
-                "mostrar_foto"      in d, "mostrar_descricao" in d,
-                "mostrar_whatsapp"  in d, "mostrar_instagram" in d,
-                "mostrar_telefone"  in d, "mostrar_site"      in d,
-                "mostrar_endereco"  in d, "mostrar_mapa"      in d,
-                "ativo"             in d, negocio_id
-            ), commit=True)
-        except psycopg2.errors.UniqueViolation:
-            get_db().rollback()
-            return jsonify({"erro": f"Já existe outro negócio com o slug '{d.get('slug')}'. "
-                                     f"Verifique se não é um cadastro duplicado, ou use um slug diferente."}), 409
+            "ativo"             in d, negocio_id
+        ), commit=True)
         if "hubs" in request.form:
             query("DELETE FROM hub_negocio_hubs WHERE negocio_id = %s", (negocio_id,), commit=True)
             for hub_id in request.form.getlist("hubs"):
@@ -2174,15 +2158,13 @@ def api_negocios():
     categoria = request.args.get("categoria")
     bairro    = request.args.get("bairro")
     cidade    = request.args.get("cidade")
-    # O corte por categoria (CATEGORIAS_TETO_ALTO) foi removido — ele travava
-    # QUALQUER categoria fora de uma lista fixa em 4000 resultados, em ordem
-    # alfabética. Isso escondia negócios de verdade sempre que o hub tinha
-    # mais de 4000 cadastros no total: o "Mais próximo" pedia a lista inteira
-    # (limit=20000) pra ordenar por distância, mas o backend cortava pra 4000
-    # de qualquer jeito — e tudo que vinha depois da posição 4000 em ordem
-    # alfabética nunca aparecia, não importa a distância real. Agora o teto
-    # de 20000 vale pra qualquer categoria.
-    teto = 20000
+    # Categorias com volume muito maior que a média (ex.: pontos de ônibus, que
+    # numa cidade grande passam de milhares de registros). Pra essas, o corte de
+    # 200 em ordem alfabética escondia o resultado mais próximo de verdade —
+    # então liberamos um teto bem mais alto só pra elas. Ajuste essa lista
+    # conforme identificar outras categorias com o mesmo problema.
+    CATEGORIAS_TETO_ALTO = {"ponto-de-onibus"}
+    teto = 20000 if categoria in CATEGORIAS_TETO_ALTO else 4000
     try:
         limit  = min(int(request.args.get("limit",  96)), teto)
         offset = max(int(request.args.get("offset",  0)),   0)
