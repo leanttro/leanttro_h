@@ -376,9 +376,8 @@ def pagina_filtro(segmento):
     # Mesma lógica da home: só os templates com JS de infinite-scroll
     # (busca o resto via /api/hub/negocios?offset=...) recebem a página
     # inicial cortada em 48. Os demais carregam a lista inteira do filtro.
-    TEMPLATES_INFINITE_SCROLL = {"filtro_otp"}
     template_filtro_nome = hub.get("template_filtro") or "filtro_padrao"
-    limite = 48 if template_filtro_nome in TEMPLATES_INFINITE_SCROLL else 5000
+    limite = 4000
 
     if hub["tipo"] == "bairro":
         total = query("""
