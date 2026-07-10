@@ -244,10 +244,6 @@
         .empty-state i { font-size: 2.5em; color: var(--medium-gray); display: block; margin-bottom: 14px; }
 
         /* ══ BOTÃO LOCALIZAÇÃO ══ */
-        .btn-localizacao { display: inline-flex; align-items: center; gap: 7px; padding: 9px 16px; border-radius: 10px; border: 2px solid var(--medium-gray); background: #fff; font-size: 0.88em; font-weight: 600; color: var(--dark-gray); cursor: pointer; transition: all 0.18s; font-family: inherit; white-space: nowrap; flex-shrink: 0; }
-        .btn-localizacao:hover { border-color: var(--primary); color: var(--primary); }
-        .btn-localizacao.ativo { border-color: var(--primary); color: var(--primary); background: var(--light); }
-        .btn-localizacao i { font-size: 0.9em; }
 
         /* ══ RESPONSIVE ══ */
         @media (max-width: 768px) {
@@ -401,10 +397,7 @@
                 </div>
             </div>
             {% endif %}
-            <button class="btn-localizacao" id="btnLocalizacao" onclick="usarLocalizacao()" type="button" title="Ordenar por mais próximo">
-                <i class="fas fa-location-arrow"></i>
-                <span id="btnLocLabel">Mais próximo</span>
-            </button>
+            
             <div class="busca-input-wrap">
                 <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
                 <input type="text" placeholder="Buscar negócio..." oninput="buscarDebounce(this.value)">
@@ -551,8 +544,7 @@ var _apiFim     = {{ 'true' if negocios | length < 48 else 'false' }};
 var _apiCarregando = false;
 var _totalReal  = {{ total_negocios }};
 var _totalVisivelLocal = {{ negocios | length }};
-var _userLat = null, _userLng = null;
-var _locAtiva = false;
+
 var _IMG_FALLBACK = 'https://res.cloudinary.com/desvazant/image/upload/v1782962461/Cesta_de_Presentes_250_x_250_px_6_jbnclr.png';
 
 // Guarda TODOS os negócios já buscados (inicial + lotes lazy) — igual
@@ -591,50 +583,14 @@ function negocioCardHTML(n){
         '</a>';
 }
 
-// Distância Haversine (km) — copiada igual do index_otp, que já funciona.
-function calcDistancia(lat1,lng1,lat2,lng2){
-    var R=6371,dLat=(lat2-lat1)*Math.PI/180,dLng=(lng2-lng1)*Math.PI/180;
-    var a=Math.sin(dLat/2)*Math.sin(dLat/2)+Math.cos(lat1*Math.PI/180)*Math.cos(lat2*Math.PI/180)*Math.sin(dLng/2)*Math.sin(dLng/2);
-    return R*2*Math.atan2(Math.sqrt(a),Math.sqrt(1-a));
-}
 
-// Renderiza o grid a partir de negociosCarregados. Se "Mais próximo" estiver
-// ativo, ordena por distância no navegador (igual index_otp) — não depende
-// do backend calcular nada.
-function renderGridComCoords(userLat, userLng){
-    var grid = document.getElementById('negociosGrid');
-    if(!grid) return;
-    var lista = negociosCarregados;
-    if(userLat && userLng){
-        lista = lista.map(function(n){
-            var d = (n.lat && n.lng) ? calcDistancia(userLat, userLng, parseFloat(n.lat), parseFloat(n.lng)) : 9999;
-            return Object.assign({}, n, {_dist: d});
-        }).sort(function(a,b){ return a._dist - b._dist; });
-    }
-    if(_filtroAtualBusca){
-        var termo = _filtroAtualBusca;
-        lista = lista.filter(function(n){
-            return (n.nome||'').toLowerCase().indexOf(termo) !== -1 ||
-                   (n.bairro||'').toLowerCase().indexOf(termo) !== -1;
-        });
-    }
-    grid.innerHTML = lista.map(negocioCardHTML).join('');
-}
 
 function renderGrid(){
     var grid = document.getElementById('negociosGrid');
     if(!grid) return;
     var lista = negociosCarregados;
 
-    // 1) Calcula distância e ordena (se "Mais próximo" ativo) — mas AINDA
-    // NÃO corta pra 48 aqui. Cortar antes da busca escondia negócios que
-    // existiam mas ficavam fora do top-48 mais próximo.
-    if(_locAtiva && _userLat && _userLng){
-        lista = lista.map(function(n){
-            var d = (n.lat && n.lng) ? calcDistancia(_userLat, _userLng, parseFloat(n.lat), parseFloat(n.lng)) : 9999;
-            return Object.assign({}, n, {_dist: d});
-        }).sort(function(a,b){ return a._dist - b._dist; });
-    }
+
 
     // 2) Aplica a busca por nome/bairro na lista INTEIRA (já ordenada por
     // distância quando aplicável), antes de qualquer corte de exibição.
@@ -651,8 +607,6 @@ function renderGrid(){
     // (sem localização), que já mostra a lista inteira.
     if(_filtroAtualBusca){
         atualizarSubtitulo(lista.length + ' negócio(s) encontrado(s)');
-    } else if(_locAtiva && _userLat && _userLng){
-        atualizarSubtitulo(lista.length + ' mais próximos de você');
     }
 
     grid.innerHTML = lista.map(negocioCardHTML).join('');
@@ -745,64 +699,6 @@ function buscarDebounce(q){
 // ══ LOCALIZAÇÃO ══
 var locAtiva = false;
 
-function usarLocalizacao(){
-    var btn = document.getElementById('btnLocalizacao');
-    var label = document.getElementById('btnLocLabel');
-    if(_locAtiva){
-        _locAtiva = false; locAtiva = false;
-        _userLat = null; _userLng = null;
-        btn.classList.remove('ativo');
-        label.textContent = 'Mais próximo';
-        // Volta pro modo lazy paginado normal (o array em memória pode
-        // conter TUDO do filtro, então recomeça do zero em vez de listar
-        // 20 mil cards de uma vez na tela).
-        _recarregarGrid();
-        return;
-    }
-    if(!navigator.geolocation){ alert('Seu navegador não suporta geolocalização.'); return; }
-    label.textContent = 'Localizando...';
-    btn.classList.add('ativo');
-    navigator.geolocation.getCurrentPosition(
-        function(pos){
-            _locAtiva = true; locAtiva = true;
-            _userLat = pos.coords.latitude;
-            _userLng = pos.coords.longitude;
-            label.textContent = 'Mais próximo ✓';
-            var loading = document.getElementById('lazy-loading');
-            if(loading) loading.style.display = 'block';
-            // Trava o lazy load ANTES de iniciar o fetch — sem isso o
-            // IntersectionObserver dispara _carregarLote() enquanto o fetch
-            // de 20000 ainda está em andamento, concatena lotes na lista e
-            // chama renderGrid() fora de ordem, resultando em exibição
-            // alfabética mesmo com "Mais próximo" ativo.
-            _apiFim = true;
-            _apiCarregando = true;
-            var snapLat = _userLat, snapLng = _userLng;
-            fetch(_buildApiUrl(0, 20000))
-                .then(function(r){ return r.json(); })
-                .then(function(data){
-                    _apiCarregando = false;
-                    if(loading) loading.style.display = 'none';
-                    if(Array.isArray(data) && data.length){
-                        negociosCarregados = data;
-                    }
-                    renderGridComCoords(snapLat, snapLng);
-                })
-                .catch(function(){
-                    _apiCarregando = false;
-                    if(loading) loading.style.display = 'none';
-                    renderGridComCoords(snapLat, snapLng);
-                });
-        },
-        function(){
-            _locAtiva = false; locAtiva = false;
-            btn.classList.remove('ativo');
-            label.textContent = 'Mais próximo';
-            alert('Não foi possível obter sua localização. Verifique as permissões do navegador.');
-        },
-        { timeout: 10000 }
-    );
-}
 
 
 
