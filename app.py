@@ -127,6 +127,18 @@ def _slugify(texto):
     texto = "".join(c for c in texto if _uc.category(c) != "Mn")
     return texto.replace(" ", "-").strip("-")
 
+def _parse_coord(valor):
+    """Aceita '-23.6430556' ou '-23,6430556' (vírgula BR); retorna float ou None."""
+    if valor is None:
+        return None
+    valor = str(valor).strip().replace(",", ".")
+    if not valor:
+        return None
+    try:
+        return float(valor)
+    except ValueError:
+        return None
+
 @app.template_filter("slugify")
 def _jinja_slugify(texto):
     return _slugify(texto) if texto else ""
@@ -1396,7 +1408,7 @@ def admin_negocio_novo():
         d.get("descricao") or None, d.get("foto_url") or None,
         d.get("endereco") or None, bairro_norm,
         cidade_norm,
-        d.get("lat") or None, d.get("lng") or None,
+        _parse_coord(d.get("lat")), _parse_coord(d.get("lng")),
         d.get("whatsapp") or None, d.get("telefone") or None,
         d.get("instagram") or None, d.get("site_url") or None,
         "mostrar_foto"      in d, "mostrar_descricao" in d,
@@ -1439,7 +1451,7 @@ def admin_negocio_editar(negocio_id):
             d.get("descricao") or None, d.get("foto_url") or None,
             d.get("endereco") or None, bairro_norm,
             cidade_norm,
-            d.get("lat") or None, d.get("lng") or None,
+            _parse_coord(d.get("lat")), _parse_coord(d.get("lng")),
             d.get("whatsapp") or None, d.get("telefone") or None,
             d.get("instagram") or None, d.get("site_url") or None,
             "mostrar_foto"      in d, "mostrar_descricao" in d,
