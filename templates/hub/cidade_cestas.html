@@ -289,7 +289,9 @@
         select.filtro-select:focus { outline: none; border-color: var(--primary); }
         .btn-limpar { padding: 8px 16px; border-radius: 8px; border: 2px solid var(--medium-gray); background: none; font-family: inherit; font-size: 0.88em; cursor: pointer; color: #6c757d; transition: all 0.2s; }
         .btn-limpar:hover { border-color: var(--primary); color: var(--primary); }
-        .btn-geo { padding: 8px 16px; border-radius: 8px; background: var(--primary); color: #fff; border: 2px solid var(--primary); font-family: inherit; font-size: 0.88em; cursor: pointer; transition: all 0.2s; font-weight: 600; white-space: nowrap; }
+        .btn-loc { padding: 8px 16px; border-radius: 8px; border: 2px solid var(--medium-gray); background: none; font-family: inherit; font-size: 0.88em; cursor: pointer; color: #6c757d; transition: all 0.2s; font-weight: 600; white-space: nowrap; }
+        .btn-loc:hover { border-color: var(--primary); color: var(--primary); }
+        .btn-loc.ativo { border-color: var(--primary); background: var(--primary); color: #fff; }
         .resultados-count { font-size: 0.88em; color: #6c757d; margin-left: auto; }
 
         /* ══ ANUNCIE / FOOTER ══ */
@@ -404,7 +406,7 @@
         <p class="hero-sub-filtro">Explore estabelecimentos, lojas e serviços em {{ cidade }}.</p>
         {% endif %}
         <div class="hero-btns">
-            <button class="btn-hero" onclick="buscarProximos()"><i class="fas fa-location-arrow"></i> Ver o que tem perto de mim</button>
+            <button class="btn-hero" onclick="toggleLocalizacao()"><i class="fas fa-location-arrow"></i> Ver o que tem perto de mim</button>
             <a href="#negocios" class="btn-hero-outline"><i class="fas fa-list"></i> Ver estabelecimentos</a>
         </div>
     </div>
@@ -558,7 +560,9 @@
             </select>
             {% endif %}
             <button class="btn-limpar" onclick="limparFiltros()"><i class="fas fa-times"></i> Limpar</button>
-            <button class="btn-geo" onclick="buscarProximos()" title="Usar minha localização"><i class="fas fa-map-marker-alt"></i> Localização</button>
+            <button class="btn-loc" id="btnLoc" onclick="toggleLocalizacao()" type="button">
+                <i class="fas fa-location-arrow"></i> Mais próximo
+            </button>
             <span class="resultados-count" id="resultados-count"></span>
         </div>
 
@@ -749,22 +753,71 @@ var carouselPos=0, carouselView='carousel';
 var _filtroBairroAtivo    = {{ (bairro or '') | tojson }} || null;
 var _filtroCategoriaAtiva = {{ (categoria.slug if categoria else (categorias_disponiveis[0].slug if categorias_disponiveis else '')) | tojson }} || null;
 
-function calcDistancia(lat1,lng1,lat2,lng2){
-    var R=6371,dLat=(lat2-lat1)*Math.PI/180,dLng=(lng2-lng1)*Math.PI/180;
-    var a=Math.sin(dLat/2)*Math.sin(dLat/2)+Math.cos(lat1*Math.PI/180)*Math.cos(lat2*Math.PI/180)*Math.sin(dLng/2)*Math.sin(dLng/2);
-    return R*2*Math.atan2(Math.sqrt(a),Math.sqrt(1-a));
+function haversineKm(lat1, lng1, lat2, lng2) {
+    var R = 6371;
+    var dLat = (lat2 - lat1) * Math.PI / 180;
+    var dLng = (lng2 - lng1) * Math.PI / 180;
+    var a = Math.sin(dLat/2)*Math.sin(dLat/2) +
+            Math.cos(lat1*Math.PI/180)*Math.cos(lat2*Math.PI/180)*
+            Math.sin(dLng/2)*Math.sin(dLng/2);
+    return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
 }
 
-function buscarProximos(){
-    if(!navigator.geolocation){ alert('Geolocalização não suportada.'); return; }
-    navigator.geolocation.getCurrentPosition(function(pos){
-        userLat=pos.coords.latitude; userLng=pos.coords.longitude; geoAtivo=true;
-        document.getElementById('negocios').scrollIntoView({behavior:'smooth',block:'start'});
-        // Recarrega direto da API: o banco calcula a distância de TODOS os negócios
-        // da cidade (não só dos poucos já carregados no navegador) e devolve os mais
-        // próximos primeiro — antes só reordenava o que já estava carregado localmente.
+function _aplicarDistancias() {
+    todosNegocios.forEach(function(n) {
+        var lat = parseFloat(n.lat);
+        var lng = parseFloat(n.lng);
+        if (userLat !== null && !isNaN(lat) && !isNaN(lng) && lat !== 0 && lng !== 0) {
+            n._dist = haversineKm(userLat, userLng, lat, lng);
+        } else {
+            n._dist = 99999;
+        }
+    });
+    todosNegocios.sort(function(a, b) {
+        return (a._dist || 99999) - (b._dist || 99999);
+    });
+}
+
+function toggleLocalizacao() {
+    var btn = document.getElementById('btnLoc');
+    if (geoAtivo) {
+        geoAtivo = false;
+        userLat = null;
+        userLng = null;
+        if (btn) { btn.classList.remove('ativo'); btn.innerHTML = '<i class="fas fa-location-arrow"></i> Mais próximo'; }
+        todosNegocios.forEach(function(n) { delete n._dist; });
+        // Recarrega da API sem lat/lng para restaurar a ordem padrão da cidade
+        // (o resto dos negócios não está no navegador, então não dá pra só reordenar local).
         _resetEFiltrar();
-    }, function(){ alert('Não foi possível obter sua localização.'); });
+        return;
+    }
+    if (!navigator.geolocation) {
+        alert('Geolocalização não suportada.');
+        return;
+    }
+    if (btn) { btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Localizando...'; btn.disabled = true; }
+    navigator.geolocation.getCurrentPosition(
+        function(pos) {
+            userLat = pos.coords.latitude;
+            userLng = pos.coords.longitude;
+            geoAtivo = true;
+            if (btn) {
+                btn.classList.add('ativo');
+                btn.innerHTML = '<i class="fas fa-location-arrow"></i> Mais próximo ✓';
+                btn.disabled = false;
+            }
+            document.getElementById('negocios').scrollIntoView({behavior:'smooth',block:'start'});
+            // Recarrega direto da API: o banco calcula a distância de TODOS os negócios
+            // da cidade (não só dos poucos já carregados no navegador) e devolve os mais
+            // próximos primeiro — antes só reordenava o que já estava carregado localmente.
+            _resetEFiltrar();
+        },
+        function() {
+            if (btn) { btn.innerHTML = '<i class="fas fa-location-arrow"></i> Mais próximo'; btn.disabled = false; }
+            alert('Não foi possível obter sua localização. Verifique as permissões.');
+        },
+        { timeout: 10000, maximumAge: 60000 }
+    );
 }
 
 function cardHTML(n){
@@ -846,11 +899,9 @@ function renderNegocios(lista){
     var vc=document.getElementById('view-controls');
     var vazio=document.getElementById('negocios-vazio');
     var count=document.getElementById('resultados-count');
-    if(geoAtivo&&userLat&&userLng){
-        lista=lista.map(function(n){
-            var d=(n.lat&&n.lng)?calcDistancia(userLat,userLng,parseFloat(n.lat),parseFloat(n.lng)):9999;
-            return Object.assign({},n,{_dist:d});
-        }).sort(function(a,b){ return a._dist-b._dist; });
+    if(geoAtivo && userLat !== null){
+        _aplicarDistancias();
+        lista = todosNegocios.slice();
     }
     negociosFiltrados = lista;
     // Mostra "+" enquanto ainda houver mais páginas pra carregar da API
@@ -945,13 +996,8 @@ function _carregarAPIUmaVez(callback){
 }
 
 function _renderizarProximoLote(){
-    var lista = negociosFiltrados;
-    if(geoAtivo && userLat && userLng){
-        lista = lista.map(function(n){
-            var d = (n.lat && n.lng) ? calcDistancia(userLat, userLng, parseFloat(n.lat), parseFloat(n.lng)) : 9999;
-            return Object.assign({}, n, {_dist: d});
-        }).sort(function(a,b){ return a._dist - b._dist; });
-    }
+    if (geoAtivo && userLat !== null) _aplicarDistancias();
+    var lista = negociosFiltrados = todosNegocios.slice();
     var trackCards = document.getElementById('negocios-track') ? document.getElementById('negocios-track').querySelectorAll('.negocio-card').length : 0;
     if(trackCards < lista.length){
         var proximo = lista.slice(trackCards, trackCards + _loteSize);
