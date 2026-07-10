@@ -887,7 +887,12 @@ function _resetEFiltrar(){
     _apiCarregando = true;
     var loading = document.getElementById('lazy-loading');
     if(loading) loading.style.display = 'block';
-    fetch(_buildApiUrl(0, _loteSize))
+    // Com localização ativa, pede um teto bem mais alto: precisamos comparar a
+    // distância de TODOS os negócios da categoria/cidade pra achar os mais
+    // próximos de verdade — só o primeiro lote (96) pode deixar de fora quem
+    // está mais perto mas não entrou nesse recorte.
+    var limiteBusca = (geoAtivo && userLat && userLng) ? 20000 : _loteSize;
+    fetch(_buildApiUrl(0, limiteBusca))
         .then(function(r){ return r.json(); })
         .then(function(data){
             _apiCarregando = false;
@@ -895,7 +900,7 @@ function _resetEFiltrar(){
             if(Array.isArray(data)){
                 todosNegocios = data;
                 _apiOffset = data.length;
-                if(data.length < _loteSize) _apiFim = true;
+                if(data.length < limiteBusca) _apiFim = true;
             } else {
                 todosNegocios = [];
                 _apiFim = true;
