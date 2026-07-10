@@ -605,27 +605,41 @@ function renderGrid(){
     var grid = document.getElementById('negociosGrid');
     if(!grid) return;
     var lista = negociosCarregados;
+
+    // 1) Calcula distância e ordena (se "Mais próximo" ativo) — mas AINDA
+    // NÃO corta pra 48 aqui. Cortar antes da busca escondia negócios que
+    // existiam mas ficavam fora do top-48 mais próximo.
     if(_locAtiva && _userLat && _userLng){
         lista = lista.map(function(n){
             var d = (n.lat && n.lng) ? calcDistancia(_userLat, _userLng, parseFloat(n.lat), parseFloat(n.lng)) : 9999;
             return Object.assign({}, n, {_dist: d});
         }).sort(function(a,b){ return a._dist - b._dist; });
-        // Com "mais próximo" ativo, negociosCarregados pode ter até 20 mil
-        // itens (categorias grandes) — precisamos de todos pra achar os
-        // mais próximos de verdade, mas só RENDERIZAMOS os 48 primeiros
-        // (já ordenados), senão o navegador trava jogando milhares de
-        // cards no DOM de uma vez. Igual o index_otp faz.
-        lista = lista.slice(0, 48);
-        atualizarSubtitulo(lista.length + ' mais próximos de você');
     }
+
+    // 2) Aplica a busca por nome/bairro na lista INTEIRA (já ordenada por
+    // distância quando aplicável), antes de qualquer corte de exibição.
     if(_filtroAtualBusca){
         var termo = _filtroAtualBusca;
         lista = lista.filter(function(n){
             return (n.nome||'').toLowerCase().indexOf(termo) !== -1 ||
                    (n.bairro||'').toLowerCase().indexOf(termo) !== -1;
         });
-        atualizarSubtitulo(lista.length + ' negócio(s) encontrado(s)');
     }
+
+    // 3) Só agora, se "Mais próximo" está ativo E não tem busca digitada,
+    // corta pros 48 primeiros só pra não travar o navegador jogando
+    // milhares de cards no DOM de uma vez. Com busca ativa, mostra todos
+    // os resultados encontrados (normalmente são poucos).
+    if(_locAtiva && _userLat && _userLng && !_filtroAtualBusca){
+        lista = lista.slice(0, 48);
+    }
+
+    if(_filtroAtualBusca){
+        atualizarSubtitulo(lista.length + ' negócio(s) encontrado(s)');
+    } else if(_locAtiva && _userLat && _userLng){
+        atualizarSubtitulo(lista.length + ' mais próximos de você');
+    }
+
     grid.innerHTML = lista.map(negocioCardHTML).join('');
 }
 
