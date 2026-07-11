@@ -1050,9 +1050,13 @@ var _loteSize = 96;
 // variável Jinja2 "negocios") por categoria_slug. ATENÇÃO: ajuste os slugs
 // abaixo para os slugs reais das categorias cadastradas no backend.
 var CATEGORIAS_AGENCIA = ['agencia-de-publicidade', 'estudio-de-fotografia', 'produtora-de-video', 'design-grafico'];
-var CATEGORIAS_FREELANCER = ['freelancer', 'freelancers', 'autonomo'];
+// Freelancers: qualquer categoria cujo SLUG COMECE com "freelancer" entra
+// automaticamente nesse grupo (ex: freelancer-designer-grafico,
+// freelancer-tecnologia, freelancer-redator...). Não precisa mais listar
+// slug por slug aqui — basta o slug da categoria nova começar com "freelancer".
+function _ehSlugFreelancer(slug){ return !!slug && slug.toLowerCase().indexOf('freelancer') === 0; }
 function _isAgencia(n){ return CATEGORIAS_AGENCIA.indexOf(n.categoria_slug) !== -1; }
-function _isFreelancer(n){ return CATEGORIAS_FREELANCER.indexOf(n.categoria_slug) !== -1; }
+function _isFreelancer(n){ return _ehSlugFreelancer(n.categoria_slug); }
 
 // negociosFiltrados alimenta o carrossel de Agências e Estúdios (seção com
 // busca por localização); freelancersFiltrados alimenta o carrossel de
@@ -1340,7 +1344,10 @@ function buscarProximos(){
         // em filtrarCategoria) — por isso buscamos o conjunto completo de Agências/
         // Estúdios e de Freelancers, um slug de cada vez, e substituímos essas
         // categorias dentro de todosNegocios pelo conjunto cheio antes de ordenar.
-        var slugsCompletos = CATEGORIAS_AGENCIA.concat(CATEGORIAS_FREELANCER);
+        var slugsFreelancerConhecidos = todosNegocios
+            .map(function(n){ return n.categoria_slug; })
+            .filter(function(slug, idx, arr){ return _ehSlugFreelancer(slug) && arr.indexOf(slug) === idx; });
+        var slugsCompletos = CATEGORIAS_AGENCIA.concat(slugsFreelancerConhecidos);
         Promise.all(slugsCompletos.map(function(slug){
             return fetch('/api/hub/negocios?limit=20000&offset=0&categoria=' + encodeURIComponent(slug))
                 .then(function(r){ return r.json(); })
@@ -1453,10 +1460,24 @@ function _nomeTagSazonal(slug){
     return el ? el.textContent : slug;
 }
 
+// Deriva um rótulo legível a partir do slug da categoria de freelancer,
+// removendo o prefixo "freelancer" e transformando o resto em texto normal.
+// Ex: "freelancer-designer-grafico" -> "Designer Grafico"
+// Obs: como o slug não tem acentos, o rótulo derivado também não terá
+// (ex: "Grafico" em vez de "Gráfico"). Se quiser acentuação perfeita no
+// selo, dá pra manter um mapinha slug -> nome bonito à parte.
+function _rotuloFreelancerPorSlug(slug){
+    var resto = (slug || '').replace(/^freelancer-?/i, '').trim();
+    if(!resto) return 'Freelancer';
+    return resto.split('-').filter(Boolean).map(function(p){
+        return p.charAt(0).toUpperCase() + p.slice(1);
+    }).join(' ');
+}
+
 // Selo exibido ao lado do nome, de acordo com o tipo de profissional
 function _seloProfissional(n){
     if(n.categoria_slug === 'ferramenta-de-ia') return '<span class="as-card-selo">🤖 Curadoria IA</span>';
-    if(CATEGORIAS_FREELANCER.indexOf(n.categoria_slug) !== -1) return '<span class="as-card-selo">🎨 Portfólio</span>';
+    if(_ehSlugFreelancer(n.categoria_slug)) return '<span class="as-card-selo">🎨 '+_rotuloFreelancerPorSlug(n.categoria_slug)+'</span>';
     return '<span class="as-card-selo">⭐ Verificado</span>';
 }
 
@@ -2741,6 +2762,14 @@ function _semAcento(str){
   return (str || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
 }
 
+// Remove o prefixo "Freelancer" (com traço, dois-pontos, travessão etc.)
+// do início do nome, só para exibição no <select> — o texto original
+// completo (com "Freelancer -") continua sendo o nome real salvo no banco;
+// isso aqui não muda o que é enviado, só o rótulo mostrado na tela.
+function _rotuloSemPrefixoFreelancer(texto){
+  return (texto || '').replace(/^\s*freelancers?\s*[-:–—]?\s*/i, '').trim() || texto;
+}
+
 function _classificarCategorias(){
   var select = document.getElementById('select-categoria');
   if(!select) return;
@@ -2748,10 +2777,12 @@ function _classificarCategorias(){
   _todasCategoriaOptions = options
     .filter(function(opt){ return opt.value !== ''; })
     .map(function(opt){
+      var ehFreelancer = _semAcento(opt.textContent).indexOf('freelancer') !== -1;
       return {
         value: opt.value,
         texto: opt.textContent,
-        grupo: _semAcento(opt.textContent).indexOf('freelancer') !== -1 ? 'freelancer' : 'agencia'
+        rotulo: ehFreelancer ? _rotuloSemPrefixoFreelancer(opt.textContent) : opt.textContent,
+        grupo: ehFreelancer ? 'freelancer' : 'agencia'
       };
     });
   _popularSelectCategoria('agencia');
@@ -2767,7 +2798,7 @@ function _popularSelectCategoria(tipo){
     .forEach(function(c){
       var opt = document.createElement('option');
       opt.value = c.value;
-      opt.textContent = c.texto;
+      opt.textContent = c.rotulo;
       select.appendChild(opt);
     });
   // Mantém a categoria selecionada se ela ainda existir no novo grupo
