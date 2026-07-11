@@ -822,7 +822,7 @@ function toggleLocalizacao(){
 
 function cardHTML(n){
     var dist=(n._dist&&n._dist<9999)?'<span class="card-dist"><i class="fas fa-map-marker-alt"></i> '+n._dist.toFixed(1)+' km de você</span>':'';
-    var foto=n.foto_url||'https://res.cloudinary.com/dhu1cqvrb/image/upload/v1783643721/Massas_Sabores_6_utat55.png';
+    var foto=n.foto_url||'https://res.cloudinary.com/dhu1cqvrb/image/upload/v1783799149/Massas_Sabores_7_nyobke.png';
     var local=[n.bairro,n.cidade].filter(Boolean).join(', ');
     return '<a href="/'+n.categoria_slug+'/'+n.slug+'/" class="negocio-card">'+
         '<div class="card-foto"><img src="'+foto+'" alt="'+n.nome+'" loading="lazy" width="400" height="180"><span class="badge-cat">'+(n.categoria_nome||'')+'</span></div>'+
