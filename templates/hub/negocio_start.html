@@ -1365,6 +1365,67 @@ function abrirMaps(){
 </script>
 
 <script>
+/* Telefone embutido na descrição: extrai e move para o bloco de Contato.
+   Só roda quando o negócio NÃO tem telefone nem WhatsApp cadastrados na tabela. */
+var NEGOCIO_TEM_TELEFONE_OU_WPP = {{ 'true' if ((negocio.telefone and negocio.mostrar_telefone) or (negocio.whatsapp and negocio.mostrar_whatsapp)) else 'false' }};
+
+(function(){
+  if(NEGOCIO_TEM_TELEFONE_OU_WPP) return; // já tem contato cadastrado, não mexe na descrição
+
+  function extrairTelefone(texto){
+    if(!texto) return null;
+    // Pega "Telefone: (11) 95619-0228" (ou variações) sempre no final do texto
+    var regex = /telefone\s*:?\s*(\(?\d{2}\)?\s*\d{4,5}[-.\s]?\d{4})\s*\.?\s*$/i;
+    var m = texto.match(regex);
+    if(!m) return null;
+    var textoLimpo = texto.slice(0, m.index).trim().replace(/[,;.\-–]\s*$/, '').trim();
+    return { textoLimpo: textoLimpo, telefone: m[1].replace(/\s+/g, ' ').trim() };
+  }
+
+  function paraTelLink(telefone){
+    return '+55' + telefone.replace(/\D/g, '');
+  }
+
+  document.addEventListener('DOMContentLoaded', function(){
+    var blocos = document.querySelectorAll('.sobre-text, .perfil-descricao-curta');
+    var telefoneEncontrado = null;
+
+    blocos.forEach(function(el){
+      var resultado = extrairTelefone(el.textContent);
+      if(resultado && !telefoneEncontrado){
+        telefoneEncontrado = resultado.telefone;
+      }
+    });
+
+    if(!telefoneEncontrado) return;
+
+    // Botão no bloco Contato da sidebar (só adiciona se ainda não existe um link de telefone)
+    var sidebarBody = document.querySelector('.negocio-sidebar .sidebar-block.destaque .sidebar-block-body');
+    if(sidebarBody && !sidebarBody.querySelector('.contact-link[href^="tel:"]')){
+      var semContato = sidebarBody.querySelector('p');
+      if(semContato) semContato.remove();
+
+      var linkFone = document.createElement('a');
+      linkFone.href = 'tel:' + paraTelLink(telefoneEncontrado);
+      linkFone.className = 'contact-link';
+      linkFone.innerHTML = '<i class="fas fa-phone"></i><span>' + telefoneEncontrado + '</span>';
+      sidebarBody.appendChild(linkFone);
+    }
+
+    // Botão "Ligar" junto às ações do topo do perfil (só adiciona se ainda não existe um)
+    var botoesAcao = document.querySelector('.perfil-acoes');
+    if(botoesAcao && !botoesAcao.querySelector('.btn-pf[href^="tel:"]')){
+      var btnLigar = document.createElement('a');
+      btnLigar.href = 'tel:' + paraTelLink(telefoneEncontrado);
+      btnLigar.className = 'btn-pf btn-pf-outline';
+      btnLigar.innerHTML = '<i class="fas fa-phone"></i> Ligar';
+      botoesAcao.appendChild(btnLigar);
+    }
+  });
+})();
+</script>
+
+<script>
 /* Carrossel relacionados */
 var _relPos = 0;
 var _relTrack = document.getElementById('rel-track');
