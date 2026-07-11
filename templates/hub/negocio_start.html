@@ -1,0 +1,1567 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta name="google-adsense-account" content="ca-pub-7617881885143728">
+<!-- Google tag (gtag.js) -->
+<script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-7617881885143728" crossorigin="anonymous"></script>
+<script async src="https://www.googletagmanager.com/gtag/js?id={{ hub.ga4_id or 'G-KDP5FYQVHX' }}"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+  gtag('config', '{{ hub.ga4_id or "G-KDP5FYQVHX" }}');
+</script>
+
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>{{ negocio.nome }} — {{ hub.nome or 'AgênciaStart' }}</title>
+<meta name="description" content="{% if negocio.descricao %}{{ negocio.descricao | truncate(160) }}{% else %}{{ negocio.nome }} — {{ negocio.categoria_nome }}. Portfólio, contato e informações completas no AgênciaStart.{% endif %}">
+<meta name="keywords" content="{{ negocio.nome }}, {{ negocio.categoria_nome }}, {% if negocio.cidade %}{{ negocio.cidade }}, {% endif %}agência criativa, AgênciaStart">
+<meta name="robots" content="index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1">
+<meta name="theme-color" content="#FFC107">
+<meta name="author" content="{{ hub.nome or 'AgênciaStart' }}">
+<link rel="canonical" href="https://{{ request.host }}/{{ segmento }}/{{ negocio.slug }}/">
+<link rel="icon" type="image/png" href="https://res.cloudinary.com/dhu1cqvrb/image/upload/v1783643721/Massas_Sabores_6_utat55.png">
+<link rel="apple-touch-icon" href="https://res.cloudinary.com/dhu1cqvrb/image/upload/v1783643721/Massas_Sabores_6_utat55.png">
+
+<!-- Open Graph -->
+<meta property="og:type" content="{% if negocio.categoria_slug == 'ferramenta-de-ia' %}website{% else %}business.business{% endif %}">
+<meta property="og:site_name" content="{{ hub.nome or 'AgênciaStart' }}">
+<meta property="og:url" content="https://{{ request.host }}/{{ segmento }}/{{ negocio.slug }}/">
+<meta property="og:title" content="{{ negocio.nome }} — {{ hub.nome or 'AgênciaStart' }}">
+<meta property="og:description" content="{% if negocio.descricao %}{{ negocio.descricao | truncate(160) }}{% else %}Conheça {{ negocio.nome }}. Informações, contato e mais no AgênciaStart.{% endif %}">
+{% if negocio.foto_url and negocio.mostrar_foto %}<meta property="og:image" content="{{ negocio.foto_url }}">{% else %}<meta property="og:image" content="https://res.cloudinary.com/dhu1cqvrb/image/upload/v1783643721/Massas_Sabores_6_utat55.png">{% endif %}
+<meta property="og:locale" content="pt_BR">
+
+<!-- Twitter Card -->
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="{{ negocio.nome }} — {{ hub.nome or 'AgênciaStart' }}">
+<meta name="twitter:description" content="{% if negocio.descricao %}{{ negocio.descricao | truncate(160) }}{% else %}Conheça {{ negocio.nome }} no AgênciaStart.{% endif %}">
+{% if negocio.foto_url and negocio.mostrar_foto %}<meta name="twitter:image" content="{{ negocio.foto_url }}">{% endif %}
+
+<!-- JSON-LD -->
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  {% if negocio.categoria_slug == 'ferramenta-de-ia' %}
+  "@type": "SoftwareApplication",
+  "name": "{{ negocio.nome }}",
+  "url": "https://{{ request.host }}/{{ segmento }}/{{ negocio.slug }}/",
+  {% if negocio.descricao %}"description": "{{ negocio.descricao }}",{% endif %}
+  "applicationCategory": "BusinessApplication",
+  "operatingSystem": "Web"
+  {% else %}
+  "@type": "LocalBusiness",
+  "@id": "https://{{ request.host }}/{{ segmento }}/{{ negocio.slug }}/",
+  "name": "{{ negocio.nome }}",
+  "url": "https://{{ request.host }}/{{ segmento }}/{{ negocio.slug }}/",
+  {% if negocio.descricao %}"description": "{{ negocio.descricao }}",{% endif %}
+  {% if negocio.foto_url and negocio.mostrar_foto %}"image": ["{{ negocio.foto_url }}"],{% endif %}
+  {% if negocio.endereco and negocio.mostrar_endereco %}
+  "address": {
+    "@type": "PostalAddress",
+    "streetAddress": "{{ negocio.endereco }}",
+    "addressLocality": "{{ negocio.cidade or 'São Paulo' }}",
+    "addressRegion": "SP",
+    "postalCode": "{{ negocio.cep or '' }}",
+    "addressCountry": "BR"
+  },
+  {% endif %}
+  {% if negocio.telefone and negocio.mostrar_telefone %}"telephone": "{{ negocio.telefone }}",{% endif %}
+  {% if negocio.whatsapp and negocio.mostrar_whatsapp %}"contactPoint": {"@type":"ContactPoint","contactType":"Customer Service","telephone":"{{ negocio.whatsapp }}"},{% endif %}
+  "areaServed": "{{ negocio.cidade or 'Brasil' }}",
+  "knowsAbout": "{{ negocio.categoria_nome }}"
+  {% endif %}
+}
+</script>
+
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "BreadcrumbList",
+  "itemListElement": [
+    {"@type":"ListItem","position":1,"name":"{{ hub.nome or 'AgênciaStart' }}","item":"https://{{ request.host }}/"},
+    {"@type":"ListItem","position":2,"name":"{{ negocio.categoria_nome }}","item":"https://{{ request.host }}/{{ segmento }}/"},
+    {"@type":"ListItem","position":3,"name":"{{ negocio.nome }}","item":"https://{{ request.host }}/{{ segmento }}/{{ negocio.slug }}/"}
+  ]
+}
+</script>
+
+<link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700;900&display=swap" rel="stylesheet">
+<link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+
+<style>
+:root {
+  --primary:       #FFC107;
+  --dark:          #8a6d00;
+  --light:         #3a3000;
+  --light-gray:    #0a0a0a;
+  --medium-gray:   #2a2a2a;
+  --dark-gray:     #343a40;
+  --text-color:    #e5e5e5;
+  --text-dark:     #4a4a4a;
+  --white:         #ffffff;
+  --shadow-light:  rgba(0,0,0,0.35);
+  --shadow-medium: rgba(0,0,0,0.55);
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html { scroll-behavior: smooth; }
+body { font-family: 'Roboto', sans-serif; background: var(--light-gray); color: var(--text-color); line-height: 1.6; }
+.container { max-width: 1200px; margin: 0 auto; padding: 0 20px; }
+a { text-decoration: none; color: inherit; }
+img { max-width: 100%; display: block; }
+
+/* ══ HEADER (idêntico ao index_start) ══ */
+body > header {
+  background: #111111;
+  border-bottom: 3px solid var(--primary);
+  padding: 6px 24px 0;
+  display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+  position: relative;
+  box-shadow: 0 2px 10px rgba(0,0,0,0.15);
+}
+.header-logo { margin-bottom: 0; }
+.header-logo a { display: block; text-align: center; }
+.header-logo img { height: 144px; width: auto; display: block; margin: 0 auto; }
+.header-subtitle {
+  color: #cfcfcf; text-align: center; font-size: 0.95em; font-weight: 500;
+  letter-spacing: 0.3px; margin-top: -6px; margin-bottom: 10px;
+}
+.hamburger-btn {
+  display: none; background: none; border: none; color: #fff;
+  font-size: 1.8em; cursor: pointer; padding: 6px;
+  position: absolute; right: 20px; top: 20px;
+}
+nav.desktop-nav { width: 100%; }
+nav.desktop-nav ul { list-style: none; display: flex; align-items: center; justify-content: center; flex-wrap: wrap; }
+nav.desktop-nav ul li { position: relative; }
+nav.desktop-nav ul li a {
+  color: #fff; font-weight: 600; font-size: 0.95em;
+  padding: 12px 20px; display: block;
+  border-bottom: 3px solid transparent; transition: border-color 0.2s, background 0.2s;
+}
+nav.desktop-nav ul li a:hover { border-bottom-color: var(--primary); background: rgba(255,193,7,0.1); }
+.nav-dropdown {
+  display: none; position: absolute; top: 100%; left: 50%; transform: translateX(-50%);
+  background: #fff; border-radius: 12px; box-shadow: 0 8px 32px rgba(0,0,0,0.15);
+  min-width: 220px; max-height: 360px; overflow-y: auto;
+  z-index: 999; padding: 8px 0;
+}
+nav.desktop-nav ul li:hover .nav-dropdown { display: block; }
+.nav-dropdown a {
+  display: block; padding: 10px 20px; color: var(--dark-gray) !important;
+  font-size: 0.9em; font-weight: 500; border-bottom: none !important;
+  background: none !important; transition: background 0.15s; white-space: nowrap;
+}
+.nav-dropdown a:hover { background: #3a3000 !important; color: var(--primary) !important; }
+
+/* ══ MOBILE NAV ══ */
+.mobile-nav-overlay {
+  display: none; position: fixed; inset: 0;
+  background: rgba(0,0,0,0.95); z-index: 1000;
+  flex-direction: column; justify-content: center; align-items: center;
+  opacity: 0; transition: opacity 0.25s;
+}
+.mobile-nav-overlay.active { display: flex; opacity: 1; }
+.mobile-nav-close { position: absolute; top: 20px; left: 24px; background: none; border: none; color: #fff; font-size: 2em; cursor: pointer; }
+.mobile-nav-overlay nav ul { list-style: none; text-align: center; max-height: 80vh; overflow-y: auto; }
+.mobile-nav-overlay nav ul li { margin: 12px 0; }
+.mobile-nav-overlay nav ul li a { color: #fff; font-size: 1.5em; font-weight: 700; }
+
+/* ══ BANNER TOPO ══ */
+.banner-topo { background: var(--white); border-bottom: 1px solid var(--medium-gray); padding: 10px 20px; text-align: center; }
+.banner-placeholder { display: inline-block; background: var(--light-gray); border: 2px dashed var(--medium-gray); border-radius: 8px; padding: 12px 36px; color: #aaa; font-size: 0.9em; font-weight: 500; transition: all 0.2s; }
+.banner-placeholder:hover { border-color: var(--primary); color: var(--dark); }
+
+/* ══ BREADCRUMB ══ */
+.breadcrumb-strip {
+  background: #161616;
+  border-bottom: 1px solid var(--medium-gray);
+  padding: 10px 0;
+}
+.breadcrumb-inner {
+  display: flex; align-items: center; gap: 8px;
+  font-size: 0.82em; color: #888; flex-wrap: wrap;
+}
+.breadcrumb-inner a { color: #888; transition: color 0.2s; }
+.breadcrumb-inner a:hover { color: var(--primary); }
+.breadcrumb-inner .bc-sep { color: #444; }
+.breadcrumb-inner .bc-atual { color: var(--primary); font-weight: 600; }
+
+/* ══ PERFIL HERO ══ */
+.perfil-hero {
+  background:
+    radial-gradient(circle at 10% 30%, rgba(255,193,7,0.14), transparent 50%),
+    radial-gradient(circle at 90% 70%, rgba(255,193,7,0.09), transparent 45%),
+    linear-gradient(160deg, #111 0%, #1a1a1a 60%, #0d0d0d 100%);
+  padding: 44px 0 36px;
+  border-bottom: 1px solid var(--medium-gray);
+}
+.perfil-hero-inner {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 32px;
+  align-items: flex-start;
+}
+.perfil-avatar-wrap { flex-shrink: 0; }
+.perfil-avatar {
+  width: 120px; height: 120px;
+  border-radius: 18px;
+  border: 3px solid var(--primary);
+  overflow: hidden;
+  background: #1e1e1e;
+  flex-shrink: 0;
+  box-shadow: 0 8px 28px rgba(0,0,0,0.55);
+}
+.perfil-avatar img { width: 100%; height: 100%; object-fit: cover; }
+.perfil-avatar-placeholder {
+  width: 100%; height: 100%;
+  display: flex; align-items: center; justify-content: center;
+  background: linear-gradient(135deg, #1e1e1e, #2a2a2a);
+  font-size: 2.8em; color: var(--primary);
+}
+.perfil-meta { min-width: 0; }
+.perfil-categoria-badge {
+  display: inline-flex; align-items: center; gap: 6px;
+  background: rgba(255,193,7,0.12); border: 1px solid rgba(255,193,7,0.3);
+  color: var(--primary); font-size: 0.75em; font-weight: 800;
+  text-transform: uppercase; letter-spacing: 0.06em;
+  padding: 4px 12px; border-radius: 20px; margin-bottom: 10px;
+}
+.perfil-nome {
+  font-size: 2.3em; font-weight: 900; color: #fff; line-height: 1.15;
+  margin-bottom: 10px;
+  text-shadow: 0 2px 10px rgba(0,0,0,0.5);
+}
+.perfil-selos { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 14px; }
+.perfil-selo {
+  display: inline-flex; align-items: center; gap: 5px;
+  font-size: 0.75em; font-weight: 700;
+  padding: 4px 11px; border-radius: 20px;
+  color: #1a1a1a; background: var(--primary);
+}
+.perfil-selo.outline {
+  background: transparent; color: #aaa;
+  border: 1px solid #444;
+}
+.perfil-descricao-curta {
+  font-size: 1em; color: #bbb; line-height: 1.6;
+  max-width: 680px; margin-bottom: 20px;
+}
+.perfil-acoes { display: flex; gap: 10px; flex-wrap: wrap; }
+.btn-pf {
+  display: inline-flex; align-items: center; gap: 8px;
+  padding: 11px 22px; border-radius: 8px;
+  font-size: 0.95em; font-weight: 700; border: none; cursor: pointer;
+  transition: all 0.2s; font-family: inherit;
+}
+.btn-pf-primary { background: var(--primary); color: #1a1a1a; }
+.btn-pf-primary:hover { background: #e0a800; transform: translateY(-2px); }
+.btn-pf-outline { background: transparent; color: #fff; border: 2px solid rgba(255,255,255,0.35); }
+.btn-pf-outline:hover { border-color: var(--primary); color: var(--primary); background: rgba(255,193,7,0.07); }
+.btn-pf-wpp { background: #25D366; color: #fff; }
+.btn-pf-wpp:hover { background: #1aaf55; transform: translateY(-2px); }
+
+/* Botão "Acessar ferramenta" — só pra IA */
+.btn-pf-ia {
+  background: var(--primary); color: #1a1a1a;
+  padding: 13px 28px; font-size: 1.05em;
+}
+.btn-pf-ia:hover { background: #e0a800; transform: translateY(-2px); }
+
+/* ══ STAT STRIP ══ */
+.stat-strip {
+  background: #161616;
+  border-bottom: 1px solid var(--medium-gray);
+  padding: 14px 0;
+}
+.stat-strip-inner {
+  display: flex; flex-wrap: wrap; gap: 0;
+  align-items: stretch;
+}
+.stat-item {
+  flex: 1; min-width: 140px;
+  display: flex; align-items: center; gap: 10px;
+  padding: 10px 20px;
+  border-right: 1px solid var(--medium-gray);
+}
+.stat-item:last-child { border-right: none; }
+.stat-item i { color: var(--primary); font-size: 1.1em; flex-shrink: 0; }
+.stat-item-text { display: flex; flex-direction: column; gap: 1px; }
+.stat-item-label { font-size: 0.72em; text-transform: uppercase; letter-spacing: 0.05em; color: #666; font-weight: 700; }
+.stat-item-val { font-size: 0.9em; font-weight: 600; color: #ddd; }
+
+/* ══ LAYOUT PRINCIPAL ══ */
+.negocio-body { padding: 44px 0 60px; }
+.negocio-grid {
+  display: grid;
+  grid-template-columns: 1fr 300px;
+  gap: 28px;
+  align-items: start;
+}
+
+/* ══ COLUNA PRINCIPAL ══ */
+.negocio-main { display: flex; flex-direction: column; gap: 20px; }
+
+.content-card {
+  background: #141414;
+  border: 1px solid var(--medium-gray);
+  border-radius: 14px;
+  overflow: hidden;
+}
+.content-card-header {
+  display: flex; align-items: center; gap: 10px;
+  padding: 16px 22px;
+  border-bottom: 1px solid var(--medium-gray);
+  background: #1a1a1a;
+}
+.content-card-header i { color: var(--primary); font-size: 1em; }
+.content-card-header h2 { font-size: 1em; font-weight: 700; color: #e5e5e5; }
+.content-card-body { padding: 22px; }
+
+/* Info grid */
+.info-chips { display: flex; flex-wrap: wrap; gap: 10px; }
+.info-chip {
+  display: flex; align-items: flex-start; flex-direction: column; gap: 2px;
+  background: #1e1e1e; border: 1px solid #2e2e2e; border-radius: 10px;
+  padding: 12px 16px; flex: 1; min-width: 150px;
+}
+.info-chip-label { font-size: 0.72em; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; color: #666; }
+.info-chip-val { font-size: 0.95em; font-weight: 600; color: #ddd; word-break: break-word; }
+
+/* Descrição sobre */
+.sobre-text { font-size: 0.97em; line-height: 1.8; color: #bbb; }
+
+/* Mapa btn */
+.btn-maps-dark {
+  display: inline-flex; align-items: center; gap: 8px;
+  background: #1a73e8; color: #fff;
+  padding: 11px 20px; border-radius: 8px;
+  font-weight: 700; font-size: 0.9em;
+  margin-top: 16px; cursor: pointer; border: none; font-family: inherit;
+  transition: background 0.2s, transform 0.2s; width: 100%; justify-content: center;
+}
+.btn-maps-dark:hover { background: #1558b0; transform: translateY(-2px); }
+
+/* Seção IA — campos específicos */
+.ia-info-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 14px; }
+.ia-info-card {
+  background: #1e1e1e; border: 1px solid rgba(255,193,7,0.2);
+  border-radius: 12px; padding: 16px;
+}
+.ia-info-card .ia-label { font-size: 0.72em; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; color: var(--primary); margin-bottom: 4px; }
+.ia-info-card .ia-val { font-size: 0.97em; font-weight: 600; color: #ddd; }
+
+/* ══ SIDEBAR STICKY ══ */
+.negocio-sidebar { position: sticky; top: 20px; display: flex; flex-direction: column; gap: 16px; }
+
+.sidebar-block {
+  background: #141414;
+  border: 1px solid var(--medium-gray);
+  border-radius: 14px;
+  overflow: hidden;
+}
+.sidebar-block.destaque { border-color: rgba(255,193,7,0.4); }
+.sidebar-block-header {
+  background: #1a1a1a;
+  border-bottom: 1px solid var(--medium-gray);
+  padding: 13px 18px;
+  font-size: 0.88em; font-weight: 700; color: #e5e5e5;
+  display: flex; align-items: center; gap: 8px;
+}
+.sidebar-block-header i { color: var(--primary); }
+.sidebar-block-body { padding: 16px 18px; display: flex; flex-direction: column; gap: 10px; }
+
+.contact-link {
+  display: flex; align-items: center; gap: 12px;
+  background: #1e1e1e; border: 1px solid #2e2e2e;
+  color: #ddd; padding: 12px 14px; border-radius: 9px;
+  font-weight: 600; font-size: 0.9em;
+  transition: all 0.2s;
+}
+.contact-link:hover { border-color: var(--primary); color: var(--primary); background: rgba(255,193,7,0.05); }
+.contact-link i { font-size: 1.1em; flex-shrink: 0; color: var(--primary); }
+.contact-link.wpp { background: rgba(37,211,102,0.08); border-color: rgba(37,211,102,0.25); color: #4ade80; }
+.contact-link.wpp i { color: #25D366; }
+.contact-link.wpp:hover { background: rgba(37,211,102,0.15); border-color: #25D366; }
+
+.btn-voltar {
+  display: flex; align-items: center; gap: 8px;
+  font-size: 0.85em; font-weight: 600; color: #888;
+  padding: 10px 18px;
+  transition: color 0.2s;
+}
+.btn-voltar:hover { color: var(--primary); }
+.btn-voltar i { font-size: 0.85em; }
+
+/* Sidebar relacionados mini-list */
+.mini-relacionados { display: flex; flex-direction: column; gap: 10px; }
+.mini-card {
+  display: flex; align-items: center; gap: 10px;
+  padding: 10px 12px; border-radius: 9px;
+  background: #1e1e1e; border: 1px solid #2e2e2e;
+  transition: border-color 0.2s, background 0.2s;
+}
+.mini-card:hover { border-color: var(--primary); background: rgba(255,193,7,0.04); }
+.mini-card-avatar {
+  width: 40px; height: 40px; border-radius: 8px;
+  overflow: hidden; flex-shrink: 0;
+  border: 2px solid #333; background: #252525;
+}
+.mini-card-avatar img { width: 100%; height: 100%; object-fit: cover; }
+.mini-card-avatar-ph { width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; font-size: 1em; color: var(--primary); }
+.mini-card-info { min-width: 0; flex: 1; }
+.mini-card-nome { font-size: 0.85em; font-weight: 700; color: #ddd; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.mini-card-sub { font-size: 0.75em; color: #666; }
+.mini-card-arrow { color: #444; font-size: 0.8em; flex-shrink: 0; }
+
+/* ══ SEÇÃO RELACIONADOS (carrossel inferior) ══ */
+.relacionados-section {
+  background: #0d0d0d;
+  border-top: 1px solid var(--medium-gray);
+  padding: 48px 0;
+}
+.rel-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 28px; flex-wrap: wrap; gap: 12px; }
+.rel-titulo { font-size: 1.5em; font-weight: 800; color: #fff; }
+.rel-titulo span { color: var(--primary); }
+.rel-ver-mais {
+  display: inline-flex; align-items: center; gap: 6px;
+  color: var(--primary); font-size: 0.88em; font-weight: 700;
+  border: 1px solid rgba(255,193,7,0.3); padding: 7px 16px; border-radius: 20px;
+  transition: background 0.2s, border-color 0.2s;
+}
+.rel-ver-mais:hover { background: rgba(255,193,7,0.08); border-color: var(--primary); }
+
+/* Cards do carrossel de relacionados */
+.rel-carousel-outer { overflow: hidden; border-radius: 12px; }
+.rel-carousel-track {
+  display: flex; gap: 18px;
+  transition: transform 0.4s ease;
+  will-change: transform; cursor: grab; user-select: none;
+}
+.rel-carousel-track.dragging { transition: none; cursor: grabbing; }
+
+.rel-card {
+  flex: 0 0 calc(25% - 14px); min-width: 0;
+  background: #141414; border: 1px solid var(--medium-gray);
+  border-radius: 12px; overflow: hidden;
+  display: flex; flex-direction: column;
+  transition: transform 0.3s, box-shadow 0.3s, border-color 0.2s;
+}
+.rel-card:hover { transform: translateY(-5px); border-color: rgba(255,193,7,0.4); box-shadow: 0 10px 28px rgba(0,0,0,0.5); }
+.rel-card-topo { display: flex; align-items: center; gap: 10px; padding: 14px 14px 0; }
+.rel-card-avatar {
+  width: 52px; height: 52px; border-radius: 50%; overflow: hidden;
+  border: 2px solid var(--primary); flex-shrink: 0; background: #1e1e1e;
+}
+.rel-card-avatar img { width: 100%; height: 100%; object-fit: cover; }
+.rel-card-avatar-ph { width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; font-size: 1.2em; color: var(--primary); }
+.rel-card-headline { min-width: 0; }
+.rel-card-nome { font-size: 0.9em; font-weight: 700; color: #e5e5e5; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.rel-card-cat {
+  display: inline-flex; align-items: center; gap: 4px;
+  font-size: 0.66em; font-weight: 700; color: #1a1a1a;
+  background: var(--primary); padding: 2px 8px; border-radius: 20px;
+  margin-top: 3px; white-space: nowrap;
+}
+.rel-card-body { padding: 10px 14px 14px; flex: 1; display: flex; flex-direction: column; gap: 4px; }
+.rel-card-local { font-size: 0.82em; color: #666; display: flex; align-items: center; gap: 4px; }
+.rel-card-btn {
+  margin-top: auto; padding-top: 10px;
+  display: block; background: #1e1e1e; border: 1px solid var(--medium-gray);
+  color: var(--primary); padding: 8px 14px; border-radius: 6px;
+  font-size: 0.82em; font-weight: 700; text-align: center;
+  transition: background 0.2s, border-color 0.2s;
+}
+.rel-card:hover .rel-card-btn { background: var(--primary); color: #1a1a1a; border-color: var(--primary); }
+
+.rel-nav {
+  display: flex; align-items: center; justify-content: center;
+  gap: 12px; margin-top: 20px;
+}
+.rel-arrow {
+  background: #1a1a1a; border: 2px solid var(--medium-gray);
+  border-radius: 50%; width: 40px; height: 40px;
+  display: flex; align-items: center; justify-content: center;
+  cursor: pointer; font-size: 0.95em; color: #aaa;
+  transition: all 0.2s; flex-shrink: 0;
+}
+.rel-arrow:hover:not(:disabled) { background: var(--primary); border-color: var(--primary); color: #1a1a1a; }
+.rel-arrow:disabled { opacity: 0.3; cursor: not-allowed; }
+.rel-progress-bar { flex: 1; max-width: 180px; height: 4px; background: var(--medium-gray); border-radius: 4px; overflow: hidden; }
+.rel-progress-fill { height: 100%; background: var(--primary); border-radius: 4px; transition: width 0.35s cubic-bezier(.4,0,.2,1); }
+
+/* ══ BANNER MEIO ══ */
+.banner-meio {
+  background: #111; padding: 28px 20px; text-align: center;
+  border-top: 1px solid var(--medium-gray); border-bottom: 1px solid var(--medium-gray);
+}
+
+/* ══ FOOTER ══ */
+footer { background: #111; color: #999; text-align: center; padding: 32px 20px; font-size: 0.88em; }
+footer a { color: var(--dark); }
+footer a:hover { text-decoration: underline; }
+.footer-logo { margin-bottom: 14px; }
+.footer-logo img { height: 36px; width: auto; opacity: 0.85; margin: 0 auto; }
+
+/* ══ WHATSAPP FLUTUANTE ══ */
+.wpp-float {
+  position: fixed; bottom: 88px; right: 24px;
+  background: #25D366; color: #fff;
+  width: 56px; height: 56px; border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  box-shadow: 0 4px 20px rgba(37,211,102,0.4);
+  z-index: 999; transition: transform 0.2s;
+}
+.wpp-float:hover { transform: scale(1.1); }
+
+/* ══ BADGE CURADORIA ══ */
+.badge-curadoria {
+  display: block; width: fit-content; margin: 0 0 14px;
+  background: var(--primary); color: #1a1a1a;
+  font-size: 0.8em; font-weight: 800; letter-spacing: 0.03em;
+  text-transform: uppercase; padding: 6px 16px; border-radius: 20px;
+}
+
+/* ══ RESPONSIVE ══ */
+@media (max-width: 900px) {
+  .negocio-grid { grid-template-columns: 1fr; }
+  .negocio-sidebar { position: static; }
+  .perfil-hero-inner { grid-template-columns: auto 1fr; gap: 20px; }
+  .rel-card { flex: 0 0 calc(50% - 9px); }
+}
+@media (max-width: 768px) {
+  body > header { padding: 16px 60px 16px 20px; flex-direction: row; justify-content: center; }
+  .header-logo img { height: 86px; }
+  .header-subtitle { font-size: 0.8em; }
+  nav.desktop-nav { display: none; }
+  .hamburger-btn { display: block; top: 50%; transform: translateY(-50%); }
+  .perfil-hero-inner { grid-template-columns: 1fr; text-align: center; }
+  .perfil-avatar { margin: 0 auto; }
+  .perfil-acoes { justify-content: center; }
+  .perfil-selos { justify-content: center; }
+  .perfil-nome { font-size: 1.7em; }
+  .stat-strip-inner { gap: 0; }
+  .stat-item { min-width: 50%; border-right: none; border-bottom: 1px solid var(--medium-gray); }
+  .stat-item:nth-last-child(-n+2) { border-bottom: none; }
+  .rel-card { flex: 0 0 78%; }
+}
+@media (max-width: 480px) {
+  .perfil-avatar { width: 90px; height: 90px; }
+  .perfil-nome { font-size: 1.4em; }
+  .rel-card { flex: 0 0 85%; }
+  .rel-carousel-outer { overflow-x: scroll; -webkit-overflow-scrolling: touch; scroll-snap-type: x mandatory; scrollbar-width: none; }
+  .rel-carousel-outer::-webkit-scrollbar { display: none; }
+  .rel-carousel-track { transform: none !important; transition: none !important; cursor: default; }
+  .rel-card { scroll-snap-align: start; }
+  .rel-nav { display: none; }
+}
+
+/* Modal */
+.modal-oculto { display: none !important; }
+.cad-input {
+  width: 100%; padding: 10px 12px;
+  border: 1.5px solid #ddd; border-radius: 8px;
+  font-size: 14px; box-sizing: border-box;
+  outline: none; transition: border 0.15s;
+  font-family: 'Roboto', sans-serif;
+  background: #fff; color: #333;
+}
+.cad-input:focus { border-color: var(--primary); }
+@keyframes spin-imgur { to { transform: rotate(360deg); } }
+</style>
+</head>
+<body>
+
+<!-- HEADER -->
+<header>
+  <div class="header-logo">
+    <a href="/" aria-label="{{ hub.nome or 'AgênciaStart' }} — Página inicial">
+      <img src="https://res.cloudinary.com/dhu1cqvrb/image/upload/v1783643721/Massas_Sabores_6_utat55.png"
+           alt="{{ hub.nome or 'AgênciaStart' }}" height="80" loading="eager">
+    </a>
+  </div>
+  <p class="header-subtitle">Diretório de Agências, Estúdios e&nbsp;Freelancers</p>
+  <nav class="desktop-nav" aria-label="Navegação principal">
+    <ul>
+      <li><a href="/">Início</a></li>
+      <li>
+        <a href="/#categorias">Categorias ▾</a>
+        <div class="nav-dropdown">
+          {% set cat_ids_hub = negocios_relacionados | map(attribute='categoria_id') | list | unique | list if negocios_relacionados else [] %}
+          {% for cat in categorias %}
+          <a href="/{{ cat.slug }}/">{{ cat.nome }}</a>
+          {% endfor %}
+        </div>
+      </li>
+      <li><a href="/blog/">Blog</a></li>
+      <li><a href="https://wa.me/55{{ hub.whatsapp or '11913324827' }}?text=Olá,+quero+saber+mais" target="_blank" rel="noopener">Contato</a></li>
+    </ul>
+  </nav>
+  <button class="hamburger-btn" id="hamburger-btn" aria-label="Abrir menu">
+    <i class="fas fa-bars"></i>
+  </button>
+</header>
+
+<!-- MOBILE NAV -->
+<div class="mobile-nav-overlay" id="mobile-nav" role="dialog" aria-modal="true">
+  <button class="mobile-nav-close" onclick="closeMobileNav()" aria-label="Fechar menu">&#x2715;</button>
+  <nav>
+    <ul>
+      <li><a href="/" onclick="closeMobileNav()">Início</a></li>
+      <li><a href="/{{ segmento }}/" onclick="closeMobileNav()">{{ negocio.categoria_nome }}</a></li>
+      <li><a href="/blog/" onclick="closeMobileNav()">Blog</a></li>
+      <li><a href="https://wa.me/55{{ hub.whatsapp or '11913324827' }}?text=Olá,+quero+saber+mais" target="_blank" rel="noopener" onclick="closeMobileNav()">Contato</a></li>
+    </ul>
+  </nav>
+</div>
+
+<!-- BANNER TOPO -->
+<div class="banner-topo">
+  {% if anuncio_topo %}
+  <a href="{{ anuncio_topo.link }}" target="_blank" rel="noopener sponsored">
+    <img src="{{ anuncio_topo.foto_url }}" alt="{{ anuncio_topo.titulo or 'Publicidade' }}"
+         style="max-height:90px; width:auto; max-width:100%; border-radius:8px; margin:0 auto;">
+  </a>
+  {% elif hub.banner1_foto_url %}
+  <a href="{{ hub.banner1_link or '#' }}" target="_blank" rel="noopener sponsored">
+    <img src="{{ hub.banner1_foto_url }}" alt="Publicidade"
+         style="max-height:90px; width:auto; max-width:100%; border-radius:8px; margin:0 auto;">
+  </a>
+  {% else %}
+  <a class="banner-placeholder"
+     href="https://wa.me/55{{ hub.whatsapp or '11913324827' }}?text=Quero+anunciar+no+AgênciaStart"
+     target="_blank" rel="noopener">📣 Anuncie aqui — espaço disponível</a>
+  {% endif %}
+</div>
+
+<!-- BREADCRUMB -->
+<div class="breadcrumb-strip">
+  <div class="container breadcrumb-inner">
+    <a href="/"><i class="fas fa-home" style="font-size:0.9em;"></i> Início</a>
+    <span class="bc-sep">/</span>
+    <a href="/{{ segmento }}/">{{ negocio.categoria_nome }}</a>
+    <span class="bc-sep">/</span>
+    <span class="bc-atual">{{ negocio.nome }}</span>
+  </div>
+</div>
+
+<!-- PERFIL HERO -->
+<div class="perfil-hero">
+  <div class="container perfil-hero-inner">
+
+    <!-- Avatar -->
+    <div class="perfil-avatar-wrap">
+      <div class="perfil-avatar">
+        {% if negocio.foto_url and negocio.mostrar_foto %}
+        <img src="{{ negocio.foto_url }}" alt="{{ negocio.nome }}" loading="eager">
+        {% else %}
+        <div class="perfil-avatar-placeholder">
+          {% if negocio.categoria_slug == 'ferramenta-de-ia' %}
+          <i class="fas fa-robot"></i>
+          {% elif negocio.categoria_slug in ['estudio-de-fotografia'] %}
+          <i class="fas fa-camera"></i>
+          {% elif negocio.categoria_slug in ['produtora-de-video'] %}
+          <i class="fas fa-video"></i>
+          {% elif negocio.categoria_slug in ['design-grafico'] %}
+          <i class="fas fa-pen-nib"></i>
+          {% else %}
+          <i class="fas fa-building"></i>
+          {% endif %}
+        </div>
+        {% endif %}
+      </div>
+    </div>
+
+    <!-- Meta -->
+    <div class="perfil-meta">
+      <span class="perfil-categoria-badge">
+        <i class="fas fa-tag"></i> {{ negocio.categoria_nome }}
+      </span>
+      <h1 class="perfil-nome">{{ negocio.nome }}</h1>
+
+      <!-- Selos -->
+      <div class="perfil-selos">
+        {% if negocio.categoria_slug == 'ferramenta-de-ia' %}
+        <span class="perfil-selo">🤖 Ferramenta de IA</span>
+        <span class="badge-curadoria" style="margin:0;">✨ Curadoria AgênciaStart</span>
+        {% else %}
+        {% if negocio.foto_url and negocio.mostrar_foto %}
+        <span class="perfil-selo">🎨 Portfólio</span>
+        {% endif %}
+        {% if negocio.whatsapp and negocio.mostrar_whatsapp %}
+        <span class="perfil-selo">✅ Verificado</span>
+        {% endif %}
+        {% if negocio.cidade %}
+        <span class="perfil-selo outline"><i class="fas fa-map-marker-alt"></i> {{ negocio.cidade }}</span>
+        {% endif %}
+        {% endif %}
+      </div>
+
+      {% if negocio.descricao and negocio.mostrar_descricao %}
+      <p class="perfil-descricao-curta">{{ negocio.descricao | truncate(200) }}</p>
+      {% endif %}
+
+      <!-- Botões de ação -->
+      <div class="perfil-acoes">
+        {% if negocio.categoria_slug == 'ferramenta-de-ia' %}
+          {% if negocio.site_url and negocio.mostrar_site %}
+          <a href="{{ negocio.site_url }}" class="btn-pf btn-pf-ia" target="_blank" rel="noopener">
+            <i class="fas fa-external-link-alt"></i> Acessar ferramenta
+          </a>
+          {% endif %}
+          {% if negocio.whatsapp and negocio.mostrar_whatsapp %}
+          <a href="https://wa.me/55{{ negocio.whatsapp | replace(' ','') | replace('-','') | replace('(','') | replace(')','') }}"
+             class="btn-pf btn-pf-wpp" target="_blank" rel="noopener">
+            <i class="fab fa-whatsapp"></i> WhatsApp
+          </a>
+          {% endif %}
+        {% else %}
+          {% if negocio.whatsapp and negocio.mostrar_whatsapp %}
+          <a href="https://wa.me/55{{ negocio.whatsapp | replace(' ','') | replace('-','') | replace('(','') | replace(')','') }}"
+             class="btn-pf btn-pf-wpp" target="_blank" rel="noopener">
+            <i class="fab fa-whatsapp"></i> WhatsApp
+          </a>
+          {% elif hub.whatsapp %}
+          <a href="https://wa.me/55{{ hub.whatsapp | replace(' ','') | replace('-','') | replace('(','') | replace(')','') }}"
+             class="btn-pf btn-pf-wpp" target="_blank" rel="noopener">
+            <i class="fab fa-whatsapp"></i> WhatsApp
+          </a>
+          {% endif %}
+          {% if negocio.telefone and negocio.mostrar_telefone %}
+          <a href="tel:{{ negocio.telefone }}" class="btn-pf btn-pf-outline">
+            <i class="fas fa-phone"></i> Ligar
+          </a>
+          {% endif %}
+          {% if negocio.endereco and negocio.mostrar_endereco %}
+          <button class="btn-pf btn-pf-outline" onclick="abrirMaps()">
+            <i class="fas fa-map-marker-alt"></i> Como chegar
+          </button>
+          {% endif %}
+        {% endif %}
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- STAT STRIP -->
+<div class="stat-strip">
+  <div class="container stat-strip-inner">
+    <div class="stat-item">
+      <i class="fas fa-tag"></i>
+      <div class="stat-item-text">
+        <span class="stat-item-label">Categoria</span>
+        <span class="stat-item-val">{{ negocio.categoria_nome }}</span>
+      </div>
+    </div>
+    {% if negocio.categoria_slug == 'ferramenta-de-ia' %}
+    <div class="stat-item">
+      <i class="fas fa-robot"></i>
+      <div class="stat-item-text">
+        <span class="stat-item-label">Tipo</span>
+        <span class="stat-item-val">Ferramenta Online</span>
+      </div>
+    </div>
+    {% if negocio.horario_funcionamento %}
+    <div class="stat-item">
+      <i class="fas fa-dollar-sign"></i>
+      <div class="stat-item-text">
+        <span class="stat-item-label">Modelo</span>
+        <span class="stat-item-val">{{ negocio.horario_funcionamento }}</span>
+      </div>
+    </div>
+    {% endif %}
+    {% else %}
+    {% if negocio.cidade %}
+    <div class="stat-item">
+      <i class="fas fa-city"></i>
+      <div class="stat-item-text">
+        <span class="stat-item-label">Cidade</span>
+        <span class="stat-item-val">{{ negocio.cidade }}</span>
+      </div>
+    </div>
+    {% endif %}
+    {% if negocio.bairro %}
+    <div class="stat-item">
+      <i class="fas fa-map-marker-alt"></i>
+      <div class="stat-item-text">
+        <span class="stat-item-label">Bairro</span>
+        <span class="stat-item-val">{{ negocio.bairro }}</span>
+      </div>
+    </div>
+    {% endif %}
+    {% if negocio.horario_funcionamento %}
+    <div class="stat-item">
+      <i class="fas fa-clock"></i>
+      <div class="stat-item-text">
+        <span class="stat-item-label">Horário</span>
+        <span class="stat-item-val">{{ negocio.horario_funcionamento }}</span>
+      </div>
+    </div>
+    {% endif %}
+    {% endif %}
+    <div class="stat-item">
+      <i class="fas fa-check-circle"></i>
+      <div class="stat-item-text">
+        <span class="stat-item-label">Status</span>
+        <span class="stat-item-val" style="color: #4ade80;">Ativo no diretório</span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- CONTEÚDO PRINCIPAL -->
+<div class="negocio-body">
+  <div class="container negocio-grid">
+
+    <!-- COLUNA PRINCIPAL -->
+    <div class="negocio-main">
+
+      {% if negocio.categoria_slug == 'ferramenta-de-ia' %}
+      <!-- ══ BLOCO IA: SOBRE ══ -->
+      {% if negocio.descricao and negocio.mostrar_descricao %}
+      <div class="content-card">
+        <div class="content-card-header">
+          <i class="fas fa-robot"></i>
+          <h2>Sobre esta ferramenta</h2>
+        </div>
+        <div class="content-card-body">
+          <p class="sobre-text">{{ negocio.descricao }}</p>
+        </div>
+      </div>
+      {% endif %}
+
+      <!-- ══ BLOCO IA: INFORMAÇÕES ══ -->
+      <div class="content-card">
+        <div class="content-card-header">
+          <i class="fas fa-info-circle"></i>
+          <h2>Informações da ferramenta</h2>
+        </div>
+        <div class="content-card-body">
+          <div class="ia-info-grid">
+            <div class="ia-info-card">
+              <div class="ia-label">Categoria</div>
+              <div class="ia-val">{{ negocio.categoria_nome }}</div>
+            </div>
+            {% if negocio.horario_funcionamento %}
+            <div class="ia-info-card">
+              <div class="ia-label">Modelo de preço</div>
+              <div class="ia-val">{{ negocio.horario_funcionamento }}</div>
+            </div>
+            {% endif %}
+            {% if negocio.site_url and negocio.mostrar_site %}
+            <div class="ia-info-card">
+              <div class="ia-label">Acesso</div>
+              <div class="ia-val" style="word-break:break-all;">{{ negocio.site_url }}</div>
+            </div>
+            {% endif %}
+            {% if negocio.instagram and negocio.mostrar_instagram %}
+            <div class="ia-info-card">
+              <div class="ia-label">Instagram</div>
+              <div class="ia-val">@{{ negocio.instagram }}</div>
+            </div>
+            {% endif %}
+          </div>
+        </div>
+      </div>
+
+      {% else %}
+      <!-- ══ BLOCO LOCALIZAÇÃO (não-IA) ══ -->
+      {% if negocio.endereco and negocio.mostrar_endereco %}
+      <div class="content-card">
+        <div class="content-card-header">
+          <i class="fas fa-map-marker-alt"></i>
+          <h2>Localização</h2>
+        </div>
+        <div class="content-card-body">
+          <div class="info-chips">
+            <div class="info-chip">
+              <span class="info-chip-label">Endereço</span>
+              <span class="info-chip-val">{{ negocio.endereco }}</span>
+            </div>
+            {% if negocio.bairro %}
+            <div class="info-chip">
+              <span class="info-chip-label">Bairro</span>
+              <span class="info-chip-val">{{ negocio.bairro }}</span>
+            </div>
+            {% endif %}
+            {% if negocio.cidade %}
+            <div class="info-chip">
+              <span class="info-chip-label">Cidade</span>
+              <span class="info-chip-val">{{ negocio.cidade }}</span>
+            </div>
+            {% endif %}
+            {% if negocio.cep %}
+            <div class="info-chip">
+              <span class="info-chip-label">CEP</span>
+              <span class="info-chip-val">{{ negocio.cep }}</span>
+            </div>
+            {% endif %}
+          </div>
+          <button class="btn-maps-dark" onclick="abrirMaps()">
+            <i class="fas fa-map-marked-alt"></i> Abrir rota no Google Maps
+          </button>
+        </div>
+      </div>
+      {% endif %}
+
+      <!-- ══ BLOCO INFORMAÇÕES (não-IA) ══ -->
+      <div class="content-card">
+        <div class="content-card-header">
+          <i class="fas fa-info-circle"></i>
+          <h2>Informações</h2>
+        </div>
+        <div class="content-card-body">
+          <div class="info-chips">
+            <div class="info-chip">
+              <span class="info-chip-label">Categoria</span>
+              <span class="info-chip-val">{{ negocio.categoria_nome }}</span>
+            </div>
+            {% if negocio.horario_funcionamento %}
+            <div class="info-chip">
+              <span class="info-chip-label">Horário</span>
+              <span class="info-chip-val">{{ negocio.horario_funcionamento }}</span>
+            </div>
+            {% endif %}
+            {% if negocio.cidade %}
+            <div class="info-chip">
+              <span class="info-chip-label">Cidade</span>
+              <span class="info-chip-val">{{ negocio.cidade }}</span>
+            </div>
+            {% endif %}
+          </div>
+        </div>
+      </div>
+
+      <!-- ══ BLOCO SOBRE (não-IA) ══ -->
+      {% if negocio.descricao and negocio.mostrar_descricao %}
+      <div class="content-card">
+        <div class="content-card-header">
+          <i class="fas fa-align-left"></i>
+          <h2>Sobre</h2>
+        </div>
+        <div class="content-card-body">
+          <p class="sobre-text">{{ negocio.descricao }}</p>
+        </div>
+      </div>
+      {% endif %}
+      {% endif %}
+
+    </div><!-- /negocio-main -->
+
+    <!-- SIDEBAR -->
+    <aside class="negocio-sidebar">
+
+      <!-- Contato -->
+      <div class="sidebar-block destaque">
+        <div class="sidebar-block-header">
+          <i class="fas fa-phone-alt"></i> Contato
+        </div>
+        <div class="sidebar-block-body">
+          {% if negocio.categoria_slug == 'ferramenta-de-ia' %}
+            {% if negocio.site_url and negocio.mostrar_site %}
+            <a href="{{ negocio.site_url }}" class="contact-link" target="_blank" rel="noopener">
+              <i class="fas fa-external-link-alt"></i>
+              <span>Acessar ferramenta</span>
+            </a>
+            {% endif %}
+          {% else %}
+            {% if negocio.whatsapp and negocio.mostrar_whatsapp %}
+            <a href="https://wa.me/55{{ negocio.whatsapp | replace(' ','') | replace('-','') | replace('(','') | replace(')','') }}"
+               class="contact-link wpp" target="_blank" rel="noopener">
+              <i class="fab fa-whatsapp"></i>
+              <span>WhatsApp</span>
+            </a>
+            {% endif %}
+            {% if negocio.telefone and negocio.mostrar_telefone %}
+            <a href="tel:{{ negocio.telefone }}" class="contact-link">
+              <i class="fas fa-phone"></i>
+              <span>{{ negocio.telefone }}</span>
+            </a>
+            {% endif %}
+          {% endif %}
+          {% if negocio.site_url and negocio.mostrar_site and negocio.categoria_slug != 'ferramenta-de-ia' %}
+          <a href="{{ negocio.site_url }}" class="contact-link" target="_blank" rel="noopener">
+            <i class="fas fa-globe"></i>
+            <span>Site</span>
+          </a>
+          {% endif %}
+          {% if negocio.instagram and negocio.mostrar_instagram %}
+          <a href="https://instagram.com/{{ negocio.instagram }}" class="contact-link" target="_blank" rel="noopener">
+            <i class="fab fa-instagram"></i>
+            <span>@{{ negocio.instagram }}</span>
+          </a>
+          {% endif %}
+          {% if not negocio.mostrar_whatsapp and not negocio.mostrar_telefone and not negocio.mostrar_instagram and not negocio.mostrar_site %}
+          <p style="text-align:center; color:#666; font-size:0.85em; padding:10px 0;">Sem contato disponível.</p>
+          {% endif %}
+        </div>
+      </div>
+
+      <!-- Mini relacionados na sidebar -->
+      {% if negocios_relacionados %}
+      <div class="sidebar-block">
+        <div class="sidebar-block-header">
+          <i class="fas fa-layer-group"></i>
+          {% if negocio.categoria_slug == 'ferramenta-de-ia' %}
+          Outras ferramentas
+          {% else %}
+          Outros em {{ negocio.categoria_nome }}
+          {% endif %}
+        </div>
+        <div class="sidebar-block-body">
+          <div class="mini-relacionados">
+            {% for rel in negocios_relacionados[:4] if rel.slug != negocio.slug %}
+            <a href="/{{ segmento }}/{{ rel.slug }}/" class="mini-card">
+              <div class="mini-card-avatar">
+                {% if rel.foto_url and rel.mostrar_foto %}
+                <img src="{{ rel.foto_url }}" alt="{{ rel.nome }}" loading="lazy">
+                {% else %}
+                <div class="mini-card-avatar-ph"><i class="fas fa-building"></i></div>
+                {% endif %}
+              </div>
+              <div class="mini-card-info">
+                <div class="mini-card-nome">{{ rel.nome }}</div>
+                <div class="mini-card-sub">
+                  {% if rel.cidade %}{{ rel.cidade }}{% else %}{{ rel.categoria_nome }}{% endif %}
+                </div>
+              </div>
+              <i class="fas fa-chevron-right mini-card-arrow"></i>
+            </a>
+            {% endfor %}
+          </div>
+        </div>
+      </div>
+      {% endif %}
+
+      <!-- Voltar -->
+      <a href="/{{ segmento }}/" class="btn-voltar">
+        <i class="fas fa-arrow-left"></i> Voltar para {{ negocio.categoria_nome }}
+      </a>
+
+    </aside>
+
+  </div>
+</div>
+
+<!-- BANNER MEIO -->
+<div class="banner-meio">
+  {% if anuncio_meio %}
+  <a href="{{ anuncio_meio.link }}" target="_blank" rel="noopener sponsored">
+    <img src="{{ anuncio_meio.foto_url }}" alt="{{ anuncio_meio.titulo or 'Publicidade' }}"
+         style="max-height:120px; width:auto; max-width:100%; border-radius:8px; margin:0 auto;">
+  </a>
+  {% elif hub.banner2_foto_url %}
+  <a href="{{ hub.banner2_link or '#' }}" target="_blank" rel="noopener sponsored">
+    <img src="{{ hub.banner2_foto_url }}" alt="Publicidade"
+         style="max-height:120px; width:auto; max-width:100%; border-radius:8px; margin:0 auto;">
+  </a>
+  {% else %}
+  <a class="banner-placeholder"
+     href="https://wa.me/55{{ hub.whatsapp or '11913324827' }}?text=Quero+anunciar+no+AgênciaStart"
+     target="_blank" rel="noopener">📣 Anuncie aqui — espaço disponível</a>
+  {% endif %}
+</div>
+
+<!-- RELACIONADOS (carrossel) -->
+{% if negocios_relacionados %}
+<section class="relacionados-section" aria-label="Mais em {{ negocio.categoria_nome }}">
+  <div class="container">
+    <div class="rel-header">
+      <h2 class="rel-titulo">
+        Mais em <span>{{ negocio.categoria_nome }}</span>
+      </h2>
+      <a href="/{{ segmento }}/" class="rel-ver-mais">
+        Ver todos <i class="fas fa-arrow-right"></i>
+      </a>
+    </div>
+    <div class="rel-carousel-outer">
+      <div class="rel-carousel-track" id="rel-track">
+        {% for rel in negocios_relacionados if rel.slug != negocio.slug %}
+        <div class="rel-card">
+          <div class="rel-card-topo">
+            <div class="rel-card-avatar">
+              {% if rel.foto_url and rel.mostrar_foto %}
+              <img src="{{ rel.foto_url }}" alt="{{ rel.nome }}" loading="lazy">
+              {% else %}
+              <div class="rel-card-avatar-ph">
+                {% if negocio.categoria_slug == 'ferramenta-de-ia' %}
+                <i class="fas fa-robot"></i>
+                {% else %}
+                <i class="fas fa-building"></i>
+                {% endif %}
+              </div>
+              {% endif %}
+            </div>
+            <div class="rel-card-headline">
+              <div class="rel-card-nome">{{ rel.nome }}</div>
+              <span class="rel-card-cat">{{ rel.categoria_nome }}</span>
+            </div>
+          </div>
+          <div class="rel-card-body">
+            {% if rel.cidade and negocio.categoria_slug != 'ferramenta-de-ia' %}
+            <div class="rel-card-local"><i class="fas fa-map-marker-alt"></i> {{ rel.cidade }}</div>
+            {% endif %}
+            {% if rel.descricao and rel.mostrar_descricao %}
+            <div style="font-size:0.8em; color:#666; line-height:1.5; margin-top:4px;">{{ rel.descricao | truncate(80) }}</div>
+            {% endif %}
+            <a href="/{{ segmento }}/{{ rel.slug }}/" class="rel-card-btn">Ver perfil</a>
+          </div>
+        </div>
+        {% endfor %}
+      </div>
+    </div>
+    <div class="rel-nav" id="rel-nav">
+      <button class="rel-arrow" id="rel-prev" onclick="moverRel(-1)" aria-label="Anterior"><i class="fas fa-chevron-left"></i></button>
+      <div class="rel-progress-bar"><div class="rel-progress-fill" id="rel-progress-fill"></div></div>
+      <button class="rel-arrow" id="rel-next" onclick="moverRel(1)" aria-label="Próximo"><i class="fas fa-chevron-right"></i></button>
+    </div>
+  </div>
+</section>
+{% endif %}
+
+<!-- FOOTER -->
+<footer>
+  <div class="footer-logo">
+    <img src="https://res.cloudinary.com/dhu1cqvrb/image/upload/v1783643721/Massas_Sabores_6_utat55.png"
+         alt="{{ hub.nome or 'AgênciaStart' }}" loading="lazy">
+  </div>
+  <p>&copy; 2026 <strong>{{ hub.nome or 'AgênciaStart' }}</strong> — Todos os direitos reservados</p>
+  <p style="margin-top:10px;">
+    <a href="/sitemap.xml">Sitemap</a> &middot;
+    <a href="/robots.txt">Robots.txt</a> &middot;
+    <a href="/blog/">Blog</a>
+  </p>
+</footer>
+
+<!-- WHATSAPP FLUTUANTE -->
+{% if negocio.whatsapp and negocio.mostrar_whatsapp %}
+<a href="https://wa.me/55{{ negocio.whatsapp | replace(' ','') | replace('-','') | replace('(','') | replace(')','') }}"
+   target="_blank" rel="noopener" class="wpp-float" aria-label="WhatsApp">
+  <svg width="28" height="28" viewBox="0 0 24 24" fill="#fff"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
+</a>
+{% endif %}
+
+<!-- BOTÃO CADASTRAR -->
+<button
+  id="btn-cadastrar"
+  onclick="document.getElementById('modal-cadastro').classList.remove('modal-oculto')"
+  style="
+    position:fixed; bottom:24px; right:24px; z-index:8900;
+    background:var(--primary); color:#1a1a1a; border:none;
+    border-radius:50px; padding:13px 20px;
+    font-size:14px; font-weight:700; cursor:pointer;
+    box-shadow:0 4px 16px rgba(0,0,0,.35);
+    display:flex; align-items:center; gap:8px;
+    font-family:'Roboto',sans-serif;
+    transition:transform .15s, box-shadow .15s;
+  "
+  onmouseover="this.style.transform='scale(1.05)'"
+  onmouseout="this.style.transform='scale(1)'"
+>
+  <svg width="17" height="17" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg>
+  Cadastre seu negócio
+</button>
+
+<!-- MODAL CADASTRO -->
+<div id="modal-cadastro" class="modal-oculto" style="
+  position:fixed; inset:0; z-index:9999;
+  background:rgba(0,0,0,.7); backdrop-filter:blur(4px);
+  display:flex; align-items:center; justify-content:center; padding:16px;
+">
+  <div style="
+    background:#fff; border-radius:16px;
+    width:100%; max-width:560px; max-height:92vh;
+    overflow-y:auto; padding:32px 28px; position:relative;
+    box-shadow:0 20px 60px rgba(0,0,0,.5);
+    font-family:'Roboto',sans-serif;
+  ">
+    <button onclick="fecharModalCadastro()" style="
+      position:absolute; top:16px; right:16px;
+      background:#f0f0f0; border:none; border-radius:50%;
+      width:32px; height:32px; cursor:pointer; font-size:20px;
+      line-height:32px; text-align:center; color:#555;
+    ">×</button>
+
+    <h2 style="margin:0 0 4px; font-size:22px; font-weight:800; color:#1a1a1a;">Cadastre seu negócio</h2>
+    <p style="margin:0 0 24px; color:#666; font-size:14px;">
+      Preencha os dados abaixo. Após análise, seu negócio aparecerá no diretório gratuitamente.
+    </p>
+
+    <div id="cadastro-sucesso" style="display:none; text-align:center; padding:32px 0;">
+      <div style="font-size:52px;">🎉</div>
+      <h3 style="color:#1a1a1a; margin:12px 0 8px; font-size:20px;">Cadastro enviado!</h3>
+      <p style="color:#555; margin:0 0 24px;">Vamos analisar e publicar em breve. Obrigado!</p>
+      <button onclick="fecharModalCadastro()" style="
+        background:var(--primary); color:#1a1a1a; border:none; border-radius:8px;
+        padding:12px 28px; font-size:15px; cursor:pointer; font-weight:700;
+        font-family:'Roboto',sans-serif;
+      ">Fechar</button>
+    </div>
+
+    <form id="form-cadastro" onsubmit="enviarCadastroNegocio(event)" style="display:flex; flex-direction:column; gap:14px;">
+
+      <!-- Tabs Agência / Freelancer -->
+      <div style="display:flex; gap:8px; margin-bottom:4px;">
+        <button type="button" id="tab-agencia" onclick="selecionarTipoCadastro('agencia')"
+          class="cad-tab-active"
+          style="flex:1; padding:9px; border-radius:8px; font-size:13px; font-weight:700; cursor:pointer; font-family:inherit; border:2px solid #ddd; background:#fff; color:#333; transition:all .15s;"
+        >🏢 Agência / Estúdio</button>
+        <button type="button" id="tab-freelancer" onclick="selecionarTipoCadastro('freelancer')"
+          style="flex:1; padding:9px; border-radius:8px; font-size:13px; font-weight:700; cursor:pointer; font-family:inherit; border:2px solid #ddd; background:#fff; color:#333; transition:all .15s;"
+        >👤 Freelancer</button>
+      </div>
+
+      <div>
+        <label style="font-size:13px; font-weight:600; color:#333; display:block; margin-bottom:5px;">
+          Nome do negócio <span style="color:#e53935">*</span>
+        </label>
+        <input name="nome" required maxlength="255" placeholder="Ex: Agência Criativa SP" class="cad-input">
+      </div>
+
+      <div>
+        <label style="font-size:13px; font-weight:600; color:#333; display:block; margin-bottom:5px;">Categoria</label>
+        <select name="categoria_id" id="select-categoria" class="cad-input">
+          <option value="">Selecione uma categoria</option>
+          {% for cat in categorias %}
+          <option value="{{ cat.id }}">{{ cat.nome }}</option>
+          {% endfor %}
+        </select>
+      </div>
+
+      <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px;">
+        <div>
+          <label style="font-size:13px; font-weight:600; color:#333; display:block; margin-bottom:5px;">Cidade</label>
+          <input name="cidade" maxlength="255" placeholder="São Paulo" class="cad-input">
+        </div>
+        <div>
+          <label style="font-size:13px; font-weight:600; color:#333; display:block; margin-bottom:5px;">Bairro</label>
+          <input name="bairro" maxlength="255" placeholder="Centro" class="cad-input">
+        </div>
+      </div>
+
+      <div>
+        <label style="font-size:13px; font-weight:600; color:#333; display:block; margin-bottom:5px;">Endereço</label>
+        <input name="endereco" maxlength="255" placeholder="Rua das Flores, 123" class="cad-input">
+      </div>
+
+      <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px;">
+        <div>
+          <label style="font-size:13px; font-weight:600; color:#333; display:block; margin-bottom:5px;">WhatsApp</label>
+          <input name="whatsapp" maxlength="50" placeholder="(11) 99999-9999" class="cad-input">
+        </div>
+        <div>
+          <label style="font-size:13px; font-weight:600; color:#333; display:block; margin-bottom:5px;">Telefone</label>
+          <input name="telefone" maxlength="50" placeholder="(11) 3333-3333" class="cad-input">
+        </div>
+      </div>
+
+      <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px;">
+        <div>
+          <label style="font-size:13px; font-weight:600; color:#333; display:block; margin-bottom:5px;">Instagram</label>
+          <input name="instagram" maxlength="255" placeholder="@seunegocio" class="cad-input">
+        </div>
+        <div>
+          <label style="font-size:13px; font-weight:600; color:#333; display:block; margin-bottom:5px;">Site</label>
+          <input name="site_url" maxlength="255" placeholder="https://seusite.com" class="cad-input">
+        </div>
+      </div>
+
+      <div>
+        <label style="font-size:13px; font-weight:600; color:#333; display:block; margin-bottom:5px;">Descrição</label>
+        <textarea name="descricao" rows="3" maxlength="1000" class="cad-input"
+                  placeholder="Fale um pouco sobre seu negócio..." style="resize:vertical;"></textarea>
+      </div>
+
+      <!-- Upload foto via Imgur -->
+      <div>
+        <label style="font-size:13px; font-weight:600; color:#333; display:block; margin-bottom:8px;">Logo / foto do negócio</label>
+        <div id="imgur-area" style="
+          border:2px dashed #ddd; border-radius:10px; padding:18px;
+          text-align:center; cursor:pointer; transition:border-color .2s, background .2s;
+          background:#fafafa;"
+          onclick="document.getElementById('imgur-file-input').click()"
+          ondragover="imgurDragOver(event)" ondragleave="imgurDragLeave(event)" ondrop="imgurDrop(event)">
+          <input type="file" id="imgur-file-input" accept="image/*" style="display:none" onchange="imgurUpload(this.files[0])">
+          <div id="imgur-idle">
+            <svg width="32" height="32" fill="none" stroke="#bbb" stroke-width="1.5" viewBox="0 0 24 24" style="margin-bottom:8px;">
+              <rect x="3" y="3" width="18" height="18" rx="3"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/>
+            </svg>
+            <p style="margin:0; font-size:13px; color:#888;">Clique ou arraste uma imagem aqui<br>
+              <span style="font-size:12px; color:#bbb;">JPG, PNG, GIF, WebP — máx. 10 MB</span></p>
+          </div>
+          <div id="imgur-loading" style="display:none;">
+            <div style="width:28px;height:28px;border:3px solid #eee;border-top-color:var(--primary);border-radius:50%;animation:spin-imgur .7s linear infinite;margin:0 auto 8px;"></div>
+            <p style="margin:0;font-size:13px;color:#888;">Enviando imagem...</p>
+          </div>
+          <div id="imgur-preview" style="display:none;">
+            <img id="imgur-preview-img" src="" alt="Preview" style="max-height:120px;max-width:100%;border-radius:8px;object-fit:contain;">
+            <p id="imgur-preview-nome" style="margin:8px 0 0;font-size:12px;color:#888;"></p>
+            <button type="button" onclick="imgurLimpar(event)" style="margin-top:6px;background:none;border:none;color:#e53935;font-size:12px;cursor:pointer;font-family:'Roboto',sans-serif;">✕ Remover foto</button>
+          </div>
+        </div>
+        <div id="imgur-erro" style="display:none;color:#c0392b;font-size:12px;margin-top:6px;"></div>
+        <input type="hidden" name="foto_url" id="foto_url_hidden">
+        <details style="margin-top:10px;">
+          <summary style="font-size:12px;color:#888;cursor:pointer;user-select:none;">Prefere colar um link de imagem?</summary>
+          <input id="foto_url_manual" maxlength="512" placeholder="https://link-da-sua-imagem.com"
+                 class="cad-input" style="margin-top:6px;" oninput="imgurManualUrl(this.value)">
+        </details>
+      </div>
+
+      <div id="cadastro-erro" style="display:none; color:#c0392b; font-size:13px;
+           background:#fdf0ef; border:1px solid #f5c6c6; border-radius:8px; padding:10px 12px;"></div>
+
+      <button type="submit" id="btn-submit-cadastro" style="
+        background:var(--primary); color:#1a1a1a; border:none; border-radius:10px;
+        padding:14px; font-size:16px; font-weight:700; cursor:pointer;
+        font-family:'Roboto',sans-serif; transition:background .2s; margin-top:4px;
+      "
+      onmouseover="this.style.background='#e0a800'"
+      onmouseout="this.style.background='var(--primary)'"
+      >Enviar cadastro</button>
+    </form>
+  </div>
+</div>
+
+<!-- SCRIPTS -->
+<script>
+/* Mobile nav */
+document.getElementById('hamburger-btn').addEventListener('click', function(){
+  document.getElementById('mobile-nav').classList.add('active');
+  document.body.style.overflow = 'hidden';
+});
+function closeMobileNav(){
+  document.getElementById('mobile-nav').classList.remove('active');
+  document.body.style.overflow = '';
+}
+document.addEventListener('keydown', function(e){ if(e.key === 'Escape') closeMobileNav(); });
+</script>
+
+<script>
+/* Maps */
+var DEST_LAT = {{ negocio.lat or 'null' }};
+var DEST_LNG = {{ negocio.lng or 'null' }};
+var DEST_END = encodeURIComponent("{{ negocio.endereco or '' }}, {{ negocio.cidade or 'São Paulo' }}");
+
+function abrirMaps(){
+  var destino = DEST_END ? DEST_END : (DEST_LAT && DEST_LNG ? DEST_LAT+','+DEST_LNG : '');
+  if(navigator.geolocation){
+    navigator.geolocation.getCurrentPosition(
+      function(pos){
+        var origem = pos.coords.latitude+','+pos.coords.longitude;
+        window.open('https://www.google.com/maps/dir/?api=1&origin='+origem+'&destination='+destino+'&travelmode=driving','_blank');
+      },
+      function(){ window.open('https://www.google.com/maps/search/?api=1&query='+destino,'_blank'); },
+      { timeout: 5000 }
+    );
+  } else {
+    window.open('https://www.google.com/maps/search/?api=1&query='+destino,'_blank');
+  }
+}
+</script>
+
+<script>
+/* Carrossel relacionados */
+var _relPos = 0;
+var _relTrack = document.getElementById('rel-track');
+
+function _relCards(){ return _relTrack ? _relTrack.querySelectorAll('.rel-card') : []; }
+function _relVisiveis(){
+  var w = window.innerWidth;
+  if(w <= 480) return 1;
+  if(w <= 900) return 2;
+  return 4;
+}
+
+function _relUpdate(){
+  if(!_relTrack) return;
+  var cards = _relCards();
+  var vis = _relVisiveis();
+  var max = Math.max(0, cards.length - vis);
+  _relPos = Math.max(0, Math.min(_relPos, max));
+  if(cards.length <= 1){ return; }
+  var cardW = cards[0] ? cards[0].offsetWidth : 0;
+  var gap = 18;
+  _relTrack.style.transform = 'translateX(-' + (_relPos * (cardW + gap)) + 'px)';
+  var prev = document.getElementById('rel-prev');
+  var next = document.getElementById('rel-next');
+  var fill = document.getElementById('rel-progress-fill');
+  if(prev) prev.disabled = _relPos <= 0;
+  if(next) next.disabled = _relPos >= max;
+  if(fill) fill.style.width = max > 0 ? ((_relPos / max) * 100) + '%' : '100%';
+  var nav = document.getElementById('rel-nav');
+  if(nav) nav.style.display = max > 0 ? 'flex' : 'none';
+}
+
+function moverRel(dir){
+  _relPos += dir;
+  _relUpdate();
+}
+
+/* Drag to scroll */
+(function(){
+  var outer = document.querySelector('.rel-carousel-outer');
+  if(!outer) return;
+  var startX, startScroll, dragging = false;
+  outer.addEventListener('mousedown', function(e){
+    dragging = true; startX = e.pageX; startScroll = _relPos;
+    _relTrack && _relTrack.classList.add('dragging');
+  });
+  document.addEventListener('mousemove', function(e){
+    if(!dragging) return;
+    var dx = e.pageX - startX;
+    var cards = _relCards();
+    var cardW = cards[0] ? cards[0].offsetWidth + 18 : 260;
+    var moved = Math.round(-dx / cardW);
+    _relPos = Math.max(0, Math.min(startScroll + moved, cards.length - _relVisiveis()));
+    _relUpdate();
+  });
+  document.addEventListener('mouseup', function(){
+    dragging = false;
+    _relTrack && _relTrack.classList.remove('dragging');
+  });
+})();
+
+document.addEventListener('DOMContentLoaded', _relUpdate);
+window.addEventListener('resize', _relUpdate);
+</script>
+
+<script>
+/* Modal cadastro */
+function fecharModalCadastro(){
+  document.getElementById('modal-cadastro').classList.add('modal-oculto');
+  document.getElementById('form-cadastro').reset();
+  document.getElementById('form-cadastro').style.display = 'flex';
+  document.getElementById('cadastro-sucesso').style.display = 'none';
+  document.getElementById('cadastro-erro').style.display = 'none';
+  selecionarTipoCadastro('agencia');
+}
+document.getElementById('modal-cadastro').addEventListener('click', function(e){
+  if(e.target === this) fecharModalCadastro();
+});
+document.addEventListener('keydown', function(e){
+  if(e.key === 'Escape' && !document.getElementById('modal-cadastro').classList.contains('modal-oculto'))
+    fecharModalCadastro();
+});
+
+/* Tabs agência/freelancer */
+var _todasCategoriaOptions = [];
+var _tipoCadastroAtivo = 'agencia';
+
+function _semAcento(str){
+  return (str||'').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'');
+}
+function _classificarCategorias(){
+  var select = document.getElementById('select-categoria');
+  if(!select) return;
+  var options = Array.prototype.slice.call(select.querySelectorAll('option'));
+  _todasCategoriaOptions = options
+    .filter(function(opt){ return opt.value !== ''; })
+    .map(function(opt){
+      return {
+        value: opt.value,
+        texto: opt.textContent,
+        grupo: _semAcento(opt.textContent).indexOf('freelancer') !== -1 ? 'freelancer' : 'agencia'
+      };
+    });
+  _popularSelectCategoria('agencia');
+}
+function _popularSelectCategoria(tipo){
+  var select = document.getElementById('select-categoria');
+  if(!select) return;
+  var atual = select.value;
+  select.innerHTML = '<option value="">Selecione uma categoria</option>';
+  _todasCategoriaOptions
+    .filter(function(c){ return c.grupo === tipo; })
+    .forEach(function(c){
+      var opt = document.createElement('option');
+      opt.value = c.value; opt.textContent = c.texto;
+      select.appendChild(opt);
+    });
+  if(Array.prototype.some.call(select.options, function(o){ return o.value === atual; }))
+    select.value = atual;
+}
+function selecionarTipoCadastro(tipo){
+  _tipoCadastroAtivo = tipo;
+  var tabA = document.getElementById('tab-agencia');
+  var tabF = document.getElementById('tab-freelancer');
+  var activeStyle = 'background:var(--primary);color:#1a1a1a;border-color:var(--primary);';
+  var inactiveStyle = 'background:#fff;color:#333;border-color:#ddd;';
+  if(tabA) tabA.style.cssText += tipo === 'agencia' ? activeStyle : inactiveStyle;
+  if(tabF) tabF.style.cssText += tipo === 'freelancer' ? activeStyle : inactiveStyle;
+  _popularSelectCategoria(tipo);
+}
+document.addEventListener('DOMContentLoaded', _classificarCategorias);
+if(document.readyState === 'complete' || document.readyState === 'interactive') _classificarCategorias();
+
+async function enviarCadastroNegocio(e){
+  e.preventDefault();
+  var btn = document.getElementById('btn-submit-cadastro');
+  var erro = document.getElementById('cadastro-erro');
+  erro.style.display = 'none';
+  btn.disabled = true; btn.textContent = 'Enviando...';
+  try {
+    var res = await fetch('/cadastrar-negocio', { method:'POST', body: new FormData(e.target) });
+    var data = await res.json();
+    if(res.ok && data.ok){
+      document.getElementById('form-cadastro').style.display = 'none';
+      document.getElementById('cadastro-sucesso').style.display = 'block';
+    } else {
+      erro.textContent = data.erro || 'Erro ao enviar. Tente novamente.';
+      erro.style.display = 'block';
+    }
+  } catch(err){
+    erro.textContent = 'Erro de conexão. Verifique sua internet e tente novamente.';
+    erro.style.display = 'block';
+  } finally {
+    btn.disabled = false; btn.textContent = 'Enviar cadastro';
+  }
+}
+</script>
+
+<script>
+/* Imgur upload */
+const IMGUR_CLIENT_ID = '546c25a59c58ad7';
+function imgurDragOver(e){ e.preventDefault(); document.getElementById('imgur-area').style.borderColor='var(--primary)'; document.getElementById('imgur-area').style.background='#fffbf0'; }
+function imgurDragLeave(){ document.getElementById('imgur-area').style.borderColor='#ddd'; document.getElementById('imgur-area').style.background='#fafafa'; }
+function imgurDrop(e){ e.preventDefault(); imgurDragLeave(); const f=e.dataTransfer.files[0]; if(f) imgurUpload(f); }
+async function imgurUpload(file){
+  if(!file) return;
+  if(file.size > 10*1024*1024){ document.getElementById('imgur-erro').textContent='Imagem muito grande (máx. 10 MB).'; document.getElementById('imgur-erro').style.display='block'; return; }
+  document.getElementById('imgur-erro').style.display='none';
+  document.getElementById('imgur-idle').style.display='none';
+  document.getElementById('imgur-preview').style.display='none';
+  document.getElementById('imgur-loading').style.display='block';
+  try {
+    const body=new FormData(); body.append('image',file);
+    const res=await fetch('https://api.imgur.com/3/image',{method:'POST',headers:{Authorization:'Client-ID '+IMGUR_CLIENT_ID},body});
+    const data=await res.json();
+    if(!res.ok||!data.success) throw new Error(data.data?.error||'Erro no Imgur');
+    const url=data.data.link;
+    document.getElementById('foto_url_hidden').value=url;
+    document.getElementById('imgur-preview-img').src=url;
+    document.getElementById('imgur-preview-nome').textContent=file.name;
+    document.getElementById('imgur-loading').style.display='none';
+    document.getElementById('imgur-preview').style.display='block';
+    document.getElementById('imgur-area').style.borderColor='var(--primary)';
+  } catch(err){
+    document.getElementById('imgur-loading').style.display='none';
+    document.getElementById('imgur-idle').style.display='block';
+    document.getElementById('imgur-erro').textContent='Falha no upload: '+(err.message||'tente novamente.');
+    document.getElementById('imgur-erro').style.display='block';
+  }
+}
+function imgurLimpar(e){ e.stopPropagation(); document.getElementById('foto_url_hidden').value=''; document.getElementById('imgur-file-input').value=''; document.getElementById('imgur-preview').style.display='none'; document.getElementById('imgur-idle').style.display='block'; document.getElementById('imgur-area').style.borderColor='#ddd'; document.getElementById('imgur-area').style.background='#fafafa'; document.getElementById('imgur-erro').style.display='none'; }
+function imgurManualUrl(val){ document.getElementById('foto_url_hidden').value=val.trim(); }
+</script>
+
+{% if hub.pixel_id %}
+<script>!function(f,b,e,v,n,t,s){if(f.fbq)return;n=f.fbq=function(){n.callMethod?n.callMethod.apply(n,arguments):n.queue.push(arguments)};if(!f._fbq)f._fbq=n;n.push=n;n.loaded=!0;n.version='2.0';n.queue=[];t=b.createElement(e);t.async=!0;t.src=v;s=b.getElementsByTagName(e)[0];s.parentNode.insertBefore(t,s)}(window,document,'script','https://connect.facebook.net/en_US/fbevents.js');fbq('init','{{ hub.pixel_id }}');fbq('track','PageView');</script>
+{% endif %}
+
+</body>
+</html>
