@@ -297,7 +297,12 @@
         .ferramentas-ia-section .as-titulo-secao { color: var(--primary); font-size: 2.3em; }
         .ferramentas-ia-section .section-subtitle { color: #d8d8d8; }
         .badge-curadoria { display: block; width: fit-content; margin: 0 auto 14px; background: var(--primary); color: #1a1a1a; font-size: 0.8em; font-weight: 800; letter-spacing: 0.03em; text-transform: uppercase; padding: 6px 16px; border-radius: 20px; }
+        .ferramentas-ia-filtros { display: flex; flex-wrap: wrap; justify-content: center; gap: 8px; margin: 22px 0 26px; }
+        .ferramentas-ia-filtro { border: 1.5px solid var(--primary); background: transparent; color: var(--primary); font-size: 0.82em; font-weight: 700; letter-spacing: 0.03em; text-transform: uppercase; padding: 7px 16px; border-radius: 20px; cursor: pointer; transition: background 0.2s, color 0.2s; }
+        .ferramentas-ia-filtro:hover { background: rgba(255,193,7,0.12); }
+        .ferramentas-ia-filtro.active { background: var(--primary); color: #1a1a1a; }
         .as-grid-profissionais--ferramenta { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 16px; }
+        .as-ia-subcat { display: block; font-size: 0.68em; font-weight: 800; letter-spacing: 0.06em; color: var(--primary); text-transform: uppercase; margin-bottom: 3px; }
         .as-grid-profissionais--ferramenta .as-profissional-card { box-shadow: none; border: 1px solid var(--primary); border-radius: 10px; }
         .as-grid-profissionais--ferramenta .as-profissional-card:hover { transform: translateY(-3px); box-shadow: 0 6px 16px var(--shadow-light); }
         .as-grid-profissionais--ferramenta .as-card-topo { padding: 12px 12px 0; }
@@ -682,6 +687,7 @@
         <span class="badge-curadoria">✨ Curadoria AgênciaStart</span>
         <h2 class="as-titulo-secao">Ferramentas de IA grátis para criativos</h2>
         <p class="section-subtitle">Recursos online pra agilizar seu trabalho</p>
+        <div class="ferramentas-ia-filtros" id="ferramentas-ia-filtros" style="display:none;"></div>
         <div class="as-grid-profissionais as-grid-profissionais--ferramenta" id="ferramentas-ia-grid"></div>
         <p class="info-message" id="ferramentas-ia-vazio" style="display:none;">Nenhuma ferramenta encontrada ainda.</p>
     </div>
@@ -977,8 +983,21 @@ function _comTags(lista){
 </script>
 
 <script>
+// Remove negócios duplicados (mesmo slug) — protege contra registros repetidos
+// vindos do backend ou sobreposição entre o lote inicial (HTML) e os lotes
+// buscados via API (paginação por offset).
+function _dedupPorSlug(lista){
+    var vistos = {};
+    return (lista||[]).filter(function(n){
+        var chave = n.slug || (n.categoria_slug + '|' + n.nome);
+        if(vistos[chave]) return false;
+        vistos[chave] = true;
+        return true;
+    });
+}
+
 // Apenas 48 negócios vêm no HTML — o resto é buscado em lotes via API com offset
-var todosNegocios = _comTags({{ negocios | tojson }});
+var todosNegocios = _dedupPorSlug(_comTags({{ negocios | tojson }}));
 var _apiOffset = 48;          // próximo offset a buscar
 var _apiFim = false;          // true quando API retornar array vazio
 var _apiCarregando = false;
@@ -1027,7 +1046,7 @@ function _carregarAPIUmaVez(callback) {
             if(Array.isArray(data) && data.length > 0){
                 data = _comTags(data);
                 _apiOffset += data.length;
-                todosNegocios = todosNegocios.concat(data);
+                todosNegocios = _dedupPorSlug(todosNegocios.concat(data));
                 if(!_lazyCategoriaAtiva) negociosFiltrados = todosNegocios.filter(_isAgencia);
                 else negociosFiltrados = todosNegocios.filter(function(n){ return n.categoria_slug === _lazyCategoriaAtiva; });
                 renderNegociosPorTipo();
@@ -1092,9 +1111,44 @@ function _renderGrupoNegocios(lista, gridId, vazioId){
 
 // Agências e Freelancers agora são carrosséis próprios (ver renderNegocios
 // e renderFreelancers); esta função cuida só da grade estática de Ferramentas.
+
+// null = mostra todas as ferramentas; string = mostra só as dessa subcategoria
+var _ferramentaIASubcatAtiva = null;
+
+function filtrarFerramentasIA(subcat){
+    _ferramentaIASubcatAtiva = subcat;
+    renderNegociosPorTipo();
+}
+
+function _renderFiltrosFerramentasIA(lista){
+    var cont = document.getElementById('ferramentas-ia-filtros');
+    if(!cont) return;
+    var subcats = [];
+    lista.forEach(function(n){
+        var s = _parseFerramentaIA(n).subcategoria;
+        if(s && subcats.indexOf(s) === -1) subcats.push(s);
+    });
+    if(!subcats.length){
+        cont.style.display = 'none';
+        cont.innerHTML = '';
+        return;
+    }
+    subcats.sort();
+    var pills = ['<button type="button" class="ferramentas-ia-filtro' + (!_ferramentaIASubcatAtiva ? ' active' : '') + '" onclick="filtrarFerramentasIA(null)">Todos</button>'];
+    subcats.forEach(function(s){
+        pills.push('<button type="button" class="ferramentas-ia-filtro' + (_ferramentaIASubcatAtiva === s ? ' active' : '') + '" onclick="filtrarFerramentasIA(\'' + s.replace(/'/g, "\\'") + '\')">' + s + '</button>');
+    });
+    cont.innerHTML = pills.join('');
+    cont.style.display = 'flex';
+}
+
 function renderNegociosPorTipo(){
     var ferramentasIA = todosNegocios.filter(function(n){ return n.categoria_slug === 'ferramenta-de-ia'; });
-    _renderGrupoNegocios(ferramentasIA, 'ferramentas-ia-grid', 'ferramentas-ia-vazio');
+    _renderFiltrosFerramentasIA(ferramentasIA);
+    var listaFiltrada = _ferramentaIASubcatAtiva
+        ? ferramentasIA.filter(function(n){ return _parseFerramentaIA(n).subcategoria === _ferramentaIASubcatAtiva; })
+        : ferramentasIA;
+    _renderGrupoNegocios(listaFiltrada, 'ferramentas-ia-grid', 'ferramentas-ia-vazio');
 }
 
 function calcDistancia(lat1,lng1,lat2,lng2){
@@ -1161,7 +1215,7 @@ function buscarProximos(){
             });
             if(completos.length){
                 var resto = todosNegocios.filter(function(n){ return slugsCompletos.indexOf(n.categoria_slug) === -1; });
-                todosNegocios = resto.concat(completos);
+                todosNegocios = _dedupPorSlug(resto.concat(completos));
                 negociosFiltrados = todosNegocios.filter(_isAgencia);
                 freelancersFiltrados = todosNegocios.filter(_isFreelancer);
                 _apiFim = true;
@@ -1268,14 +1322,30 @@ function _seloProfissional(n){
     return '<span class="as-card-selo">⭐ Verificado</span>';
 }
 
+// Subcategoria "manual" das Ferramentas de IA: em vez de mexer no backend/
+// schema, a subcategoria vira um prefixo no próprio campo nome, separado por
+// "|" — ex: "IMAGEM | Leonardo.IA" ou "VÍDEO | Google Flow". Se não houver
+// "|" no nome, a ferramenta simplesmente não entra em nenhum filtro (mostra
+// normal, sem badge, e aparece sempre em "Todos").
+function _parseFerramentaIA(n){
+    var partes = (n.nome || '').split('|');
+    if(partes.length >= 2 && partes[0].trim()){
+        return { subcategoria: partes[0].trim().toUpperCase(), nomeExibido: partes.slice(1).join('|').trim() };
+    }
+    return { subcategoria: null, nomeExibido: n.nome };
+}
+
 function cardHTML(n){
     if(n.categoria_slug === 'ferramenta-de-ia' || n.exibir_geo === false){
         var fotoIA = n.foto_url || 'https://placehold.co/600x600/1a1a1a/FFC107?font=roboto&text=IA';
+        var parsedIA = _parseFerramentaIA(n);
+        var subcatHTML = parsedIA.subcategoria ? '<span class="as-ia-subcat">'+parsedIA.subcategoria+'</span>' : '';
         return '<a href="/'+n.categoria_slug+'/'+n.slug+'/" class="as-profissional-card">'+
             '<div class="as-card-topo">'+
-                '<div class="as-card-avatar"><img src="'+fotoIA+'" alt="'+n.nome+'" loading="lazy" width="60" height="60"></div>'+
+                '<div class="as-card-avatar"><img src="'+fotoIA+'" alt="'+parsedIA.nomeExibido+'" loading="lazy" width="60" height="60"></div>'+
                 '<div class="as-card-headline">'+
-                    '<h3>'+n.nome+'</h3>'+
+                    subcatHTML+
+                    '<h3>'+parsedIA.nomeExibido+'</h3>'+
                     _seloProfissional(n)+
                 '</div>'+
             '</div>'+
