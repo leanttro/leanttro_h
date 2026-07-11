@@ -385,7 +385,7 @@
 
         /* ══ CARROSSEL DE NEGÓCIOS ══ */
         .carousel-wrapper { position: relative; }
-        .carousel-track-outer { overflow: hidden; border-radius: 12px; }
+        .carousel-track-outer { overflow: hidden; border-radius: 12px; padding: 8px 0 14px; margin: -8px 0 -14px; }
         .carousel-track {
             display: flex; gap: 22px;
             transition: transform 0.4s ease;
@@ -688,6 +688,18 @@
         <h2 class="as-titulo-secao">As melhores ferramentas de IA para criativos</h2>
         <p class="section-subtitle">Recursos online pra agilizar seu trabalho</p>
         <div class="ferramentas-ia-filtros" id="ferramentas-ia-filtros" style="display:none;"></div>
+
+        <!-- Controles de visualização -->
+        <div class="view-controls" id="ferramentas-ia-view-controls" style="display:none;">
+            <span>Ver como:</span>
+            <button class="view-btn active" id="ferramentas-ia-btn-carousel" title="Carrossel" onclick="setViewFerramentasIA('carousel')">
+                <i class="fas fa-grip-lines"></i>
+            </button>
+            <button class="view-btn" id="ferramentas-ia-btn-grade" title="Grade" onclick="setViewFerramentasIA('grade')">
+                <i class="fas fa-th"></i>
+            </button>
+        </div>
+
         <div class="carousel-wrapper" id="ferramentas-ia-carousel-wrapper">
             <div class="carousel-track-outer">
                 <div class="carousel-track as-grid-profissionais--ferramenta" id="ferramentas-ia-grid"></div>
@@ -698,6 +710,10 @@
                 <button class="carousel-arrow" id="ferramentas-ia-next" onclick="moveCarouselFerramentasIA(1)"><i class="fas fa-chevron-right"></i></button>
             </div>
         </div>
+
+        <!-- Grade (oculta inicialmente) -->
+        <div class="as-grid-profissionais as-grid-profissionais--ferramenta" id="ferramentas-ia-grade" style="display:none;"></div>
+
         <p class="info-message" id="ferramentas-ia-vazio" style="display:none;">Nenhuma ferramenta encontrada ainda.</p>
     </div>
 </section>
@@ -1047,7 +1063,7 @@ var freelancersFiltrados = todosNegocios.filter(_isFreelancer);
 var userLat = null, userLng = null, geoAtivo = false;
 var carouselPos = 0, carouselView = 'carousel';
 var freelancerCarouselPos = 0, freelancerCarouselView = 'carousel';
-var ferramentasIACarouselPos = 0;
+var ferramentasIACarouselPos = 0, ferramentasIACarouselView = 'carousel';
 
 // _categoriaAtiva: null = tudo; string = slug da categoria filtrada
 var _lazyCategoriaAtiva = null;
@@ -1127,21 +1143,40 @@ function _renderGrupoNegocios(lista, gridId, vazioId){
     var grid = document.getElementById(gridId);
     var vazio = document.getElementById(vazioId);
     var wrapper = document.getElementById(gridId.replace('-grid', '-carousel-wrapper'));
+    var vc = document.getElementById(gridId.replace('-grid', '-view-controls'));
+    var grade = document.getElementById(gridId.replace('-grid', '-grade'));
     if(!grid) return;
     if(!lista.length){
         grid.innerHTML = '';
         if(wrapper) wrapper.style.display = 'none';
+        if(grade) grade.style.display = 'none';
+        if(vc) vc.style.display = 'none';
         if(vazio) vazio.style.display = '';
         return;
     }
     if(vazio) vazio.style.display = 'none';
-    if(wrapper) wrapper.style.display = '';
+    if(vc) vc.style.display = 'flex';
     var cards = lista.map(cardHTML);
     if(gridId === 'ferramentas-ia-grid'){
         buildCarouselFerramentasIA(cards);
+        if(grade) grade.innerHTML = cards.join('');
+        setViewFerramentasIA(ferramentasIACarouselView);
     } else {
+        if(wrapper) wrapper.style.display = '';
         grid.innerHTML = cards.join('');
     }
+}
+
+function setViewFerramentasIA(mode){
+    ferramentasIACarouselView = mode;
+    var cw = document.getElementById('ferramentas-ia-carousel-wrapper');
+    var gd = document.getElementById('ferramentas-ia-grade');
+    var btnCarousel = document.getElementById('ferramentas-ia-btn-carousel');
+    var btnGrade = document.getElementById('ferramentas-ia-btn-grade');
+    if(btnCarousel) btnCarousel.classList.toggle('active', mode === 'carousel');
+    if(btnGrade) btnGrade.classList.toggle('active', mode === 'grade');
+    if(cw) cw.style.display = mode === 'carousel' ? '' : 'none';
+    if(gd) gd.style.display = mode === 'grade' ? 'grid' : 'none';
 }
 
 // ── Carrossel de Ferramentas de IA (mesmo padrão do carrossel de Agências:
