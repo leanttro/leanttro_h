@@ -305,8 +305,8 @@
         .ferramentas-ia-filtro { border: 1.5px solid var(--primary); background: transparent; color: var(--primary); font-size: 0.82em; font-weight: 700; letter-spacing: 0.03em; text-transform: uppercase; padding: 7px 16px; border-radius: 20px; cursor: pointer; transition: background 0.2s, color 0.2s; }
         .ferramentas-ia-filtro:hover { background: rgba(255,193,7,0.12); }
         .ferramentas-ia-filtro.active { background: var(--primary); color: #1a1a1a; }
-        .as-grid-profissionais--ferramenta { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 16px; }
         .as-ia-subcat { display: block; font-size: 0.68em; font-weight: 800; letter-spacing: 0.06em; color: var(--primary); text-transform: uppercase; margin-bottom: 3px; }
+        .as-card-selo-preco { align-self: flex-start; display: inline-flex; align-items: center; gap: 4px; font-size: 0.68em; font-weight: 700; color: #1a1a1a; background: var(--primary); padding: 3px 9px; border-radius: 20px; white-space: nowrap; }
         .as-grid-profissionais--ferramenta .as-profissional-card { box-shadow: none; border: 1px solid var(--primary); border-radius: 10px; }
         .as-grid-profissionais--ferramenta .as-profissional-card:hover { transform: translateY(-3px); box-shadow: 0 6px 16px var(--shadow-light); }
         .as-grid-profissionais--ferramenta .as-card-topo { padding: 12px 12px 0; }
@@ -688,7 +688,16 @@
         <h2 class="as-titulo-secao">As melhores ferramentas de IA para criativos</h2>
         <p class="section-subtitle">Recursos online pra agilizar seu trabalho</p>
         <div class="ferramentas-ia-filtros" id="ferramentas-ia-filtros" style="display:none;"></div>
-        <div class="as-grid-profissionais as-grid-profissionais--ferramenta" id="ferramentas-ia-grid"></div>
+        <div class="carousel-wrapper" id="ferramentas-ia-carousel-wrapper">
+            <div class="carousel-track-outer">
+                <div class="carousel-track as-grid-profissionais--ferramenta" id="ferramentas-ia-grid"></div>
+            </div>
+            <div class="carousel-nav" id="ferramentas-ia-carousel-nav">
+                <button class="carousel-arrow" id="ferramentas-ia-prev" onclick="moveCarouselFerramentasIA(-1)"><i class="fas fa-chevron-left"></i></button>
+                <div class="carousel-progress-bar"><div class="carousel-progress-fill" id="ferramentas-ia-progress-fill"></div></div>
+                <button class="carousel-arrow" id="ferramentas-ia-next" onclick="moveCarouselFerramentasIA(1)"><i class="fas fa-chevron-right"></i></button>
+            </div>
+        </div>
         <p class="info-message" id="ferramentas-ia-vazio" style="display:none;">Nenhuma ferramenta encontrada ainda.</p>
     </div>
 </section>
@@ -1038,6 +1047,7 @@ var freelancersFiltrados = todosNegocios.filter(_isFreelancer);
 var userLat = null, userLng = null, geoAtivo = false;
 var carouselPos = 0, carouselView = 'carousel';
 var freelancerCarouselPos = 0, freelancerCarouselView = 'carousel';
+var ferramentasIACarouselPos = 0;
 
 // _categoriaAtiva: null = tudo; string = slug da categoria filtrada
 var _lazyCategoriaAtiva = null;
@@ -1116,14 +1126,89 @@ function _renderizarProximoLote(){
 function _renderGrupoNegocios(lista, gridId, vazioId){
     var grid = document.getElementById(gridId);
     var vazio = document.getElementById(vazioId);
+    var wrapper = document.getElementById(gridId.replace('-grid', '-carousel-wrapper'));
     if(!grid) return;
     if(!lista.length){
         grid.innerHTML = '';
+        if(wrapper) wrapper.style.display = 'none';
         if(vazio) vazio.style.display = '';
         return;
     }
     if(vazio) vazio.style.display = 'none';
-    grid.innerHTML = lista.map(cardHTML).join('');
+    if(wrapper) wrapper.style.display = '';
+    var cards = lista.map(cardHTML);
+    if(gridId === 'ferramentas-ia-grid'){
+        buildCarouselFerramentasIA(cards);
+    } else {
+        grid.innerHTML = cards.join('');
+    }
+}
+
+// ── Carrossel de Ferramentas de IA (mesmo padrão do carrossel de Agências:
+// getCardWidth/clampAndUpdate/snapCarousel/buildCarousel/moveCarousel) ──
+function getCardWidthFerramentasIA(){
+    var track=document.getElementById('ferramentas-ia-grid');
+    var card=track.querySelector('.as-profissional-card');
+    if(!card) return 240;
+    return card.offsetWidth+22;
+}
+
+function clampAndUpdateFerramentasIA(){
+    if(isMobile()) return;
+    var track=document.getElementById('ferramentas-ia-grid');
+    var cards=track.querySelectorAll('.as-profissional-card');
+    if(!cards.length) return;
+    var maxPos=Math.max(0,(cards.length)*getCardWidthFerramentasIA()-track.parentElement.offsetWidth);
+    ferramentasIACarouselPos=Math.max(0,Math.min(ferramentasIACarouselPos,maxPos));
+    track.style.transform='translateX(-'+ferramentasIACarouselPos+'px)';
+    var fill=document.getElementById('ferramentas-ia-progress-fill');
+    var prev=document.getElementById('ferramentas-ia-prev');
+    var next=document.getElementById('ferramentas-ia-next');
+    if(fill) fill.style.width=maxPos>0?Math.min(100,(ferramentasIACarouselPos/maxPos)*100)+'%':'0%';
+    if(prev) prev.disabled=ferramentasIACarouselPos<=0;
+    if(next) next.disabled=maxPos<=0||ferramentasIACarouselPos>=maxPos;
+}
+
+function snapCarouselFerramentasIA(){
+    var w=getCardWidthFerramentasIA(); if(!w) return;
+    ferramentasIACarouselPos=Math.round(ferramentasIACarouselPos/w)*w;
+    clampAndUpdateFerramentasIA();
+}
+
+function buildCarouselFerramentasIA(cards){
+    var track=document.getElementById('ferramentas-ia-grid');
+    track.innerHTML=cards.join('');
+    ferramentasIACarouselPos=0;
+    track.style.transform='translateX(0)';
+    clampAndUpdateFerramentasIA();
+    // drag
+    var isDragging=false,startX=0,startPos=0;
+    var newTrack=track.cloneNode(true);
+    track.parentNode.replaceChild(newTrack,track);
+    track=document.getElementById('ferramentas-ia-grid');
+    function onStart(x){ isDragging=true; startX=x; startPos=ferramentasIACarouselPos; track.classList.add('dragging'); }
+    function onMove(x){ if(!isDragging) return; ferramentasIACarouselPos=startPos-(x-startX); clampAndUpdateFerramentasIA(); }
+    function onEnd(){ isDragging=false; track.classList.remove('dragging'); snapCarouselFerramentasIA(); }
+    if(!isMobile()){
+        track.addEventListener('mousedown',function(e){ onStart(e.clientX); e.preventDefault(); });
+        window.addEventListener('mousemove',function(e){ if(isDragging) onMove(e.clientX); });
+        window.addEventListener('mouseup',function(){ if(isDragging) onEnd(); });
+        var _ty=0,_horiz=false,_det=false;
+        track.addEventListener('touchstart',function(e){ _ty=e.touches[0].clientY; _horiz=false; _det=false; onStart(e.touches[0].clientX); },{passive:true});
+        track.addEventListener('touchmove',function(e){
+            if(!isDragging) return;
+            if(!_det){ var dx=Math.abs(e.touches[0].clientX-startX),dy=Math.abs(e.touches[0].clientY-_ty); if(dx>5||dy>5){_horiz=dx>=dy;_det=true;} }
+            if(!_det||!_horiz) return; e.preventDefault(); onMove(e.touches[0].clientX);
+        },{passive:false});
+        track.addEventListener('touchend',function(e){ if(_horiz) onEnd(); else isDragging=false; });
+    }
+}
+
+function moveCarouselFerramentasIA(dir){
+    var outer=document.getElementById('ferramentas-ia-grid').parentElement;
+    var visivel=Math.max(1,Math.floor(outer.offsetWidth/getCardWidthFerramentasIA()));
+    ferramentasIACarouselPos+=dir*visivel*getCardWidthFerramentasIA();
+    clampAndUpdateFerramentasIA();
 }
 
 // Agências e Freelancers agora são carrosséis próprios (ver renderNegocios
@@ -1353,11 +1438,26 @@ function _parseFerramentaIA(n){
     return { subcategoria: null, nomeExibido: n.nome };
 }
 
+// Extrai o valor X do prefixo "💰 Modelo: X" na primeira linha do campo
+// `descricao` de uma ferramenta de IA — usado só para exibir o selo de
+// preço no card da home. Não existe lista fixa de valores (texto livre) e
+// nem toda ferramenta tem esse prefixo; quando não tem, retorna null e
+// nenhum selo é exibido. Isso não altera `n.descricao` nem o texto
+// mostrado em negocio_start.html — é puramente visual pro card.
+function _extrairModeloPreco(descricao){
+    if(!descricao) return null;
+    var primeiraLinha = String(descricao).split('\n')[0];
+    var m = primeiraLinha.match(/^\s*💰\s*Modelo:\s*(.+?)\s*$/);
+    return m ? m[1] : null;
+}
+
 function cardHTML(n){
     if(n.categoria_slug === 'ferramenta-de-ia' || n.exibir_geo === false){
         var fotoIA = n.foto_url || 'https://placehold.co/600x600/1a1a1a/FFC107?font=roboto&text=IA';
         var parsedIA = _parseFerramentaIA(n);
         var subcatHTML = parsedIA.subcategoria ? '<span class="as-ia-subcat">'+parsedIA.subcategoria+'</span>' : '';
+        var modeloPreco = n.categoria_slug === 'ferramenta-de-ia' ? _extrairModeloPreco(n.descricao) : null;
+        var precoHTML = modeloPreco ? '<span class="as-card-selo-preco">💰 '+modeloPreco+'</span>' : '';
         return '<a href="/'+n.categoria_slug+'/'+n.slug+'/" class="as-profissional-card">'+
             '<div class="as-card-topo">'+
                 '<div class="as-card-avatar"><img src="'+fotoIA+'" alt="'+parsedIA.nomeExibido+'" loading="lazy" width="60" height="60"></div>'+
@@ -1365,6 +1465,7 @@ function cardHTML(n){
                     subcatHTML+
                     '<h3>'+parsedIA.nomeExibido+'</h3>'+
                     _seloProfissional(n)+
+                    precoHTML+
                 '</div>'+
             '</div>'+
             '<div class="as-card-info">'+
