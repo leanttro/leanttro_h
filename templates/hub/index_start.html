@@ -137,49 +137,47 @@
         .banner-rotativo { display: none; }
         .banner-rotativo img { max-height: 90px; width: auto; max-width: 100%; border-radius: 8px; transition: opacity 0.3s; }
 
-        /* ══ HERO ══ */
-        .hero-section {
-            color: #fff; text-align: center; min-height: 540px;
-            display: flex; align-items: center; justify-content: center;
+        /* ══ HERO (duas colunas: conteúdo + destaque) ══ */
+        .as-hero {
+            color: #fff; min-height: 540px;
+            display: flex; align-items: center;
             background:
                 radial-gradient(circle at 20% 20%, rgba(255,193,7,0.18), transparent 55%),
                 radial-gradient(circle at 85% 75%, rgba(255,193,7,0.12), transparent 50%),
                 linear-gradient(160deg, #0a0a0a 0%, #1a1a1a 55%, #0a0a0a 100%);
         }
-        .hero-inner { padding: 48px 20px; }
-        .hero-section h1 { font-size: 3em; font-weight: 900; line-height: 1.2; text-shadow: 2px 2px 8px rgba(0,0,0,0.6); margin-bottom: 16px; }
-        .hero-section h1 em { color: var(--primary); font-style: normal; }
-        .hero-section .hero-sub { font-size: 1.25em; max-width: 660px; margin: 0 auto 32px; text-shadow: 1px 1px 4px rgba(0,0,0,0.5); opacity: 0.92; }
-        .hero-btns { display: flex; gap: 14px; justify-content: center; flex-wrap: wrap; }
+        .as-hero-grid { display: grid; grid-template-columns: 1.3fr 1fr; align-items: center; gap: 40px; padding: 48px 20px; }
+        .as-hero-conteudo h1 { font-size: 3em; font-weight: 900; line-height: 1.2; text-shadow: 2px 2px 8px rgba(0,0,0,0.6); margin-bottom: 16px; }
+        .as-hero-conteudo h1 em { color: var(--primary); font-style: normal; }
+        .as-hero-sub { font-size: 1.2em; margin: 0 0 28px; text-shadow: 1px 1px 4px rgba(0,0,0,0.5); opacity: 0.92; }
+        .as-hero-acoes { display: flex; gap: 14px; flex-wrap: wrap; }
         .btn-hero { display: inline-flex; align-items: center; gap: 8px; background: var(--primary); color: #1a1a1a; padding: 15px 34px; border-radius: 8px; font-size: 1.1em; font-weight: 700; border: none; cursor: pointer; transition: background 0.3s, transform 0.2s; }
         .btn-hero:hover { background: var(--dark); transform: translateY(-2px); }
         .btn-hero-outline { display: inline-flex; align-items: center; gap: 8px; background: transparent; color: #fff; padding: 15px 34px; border-radius: 8px; font-size: 1.1em; font-weight: 700; border: 2px solid rgba(255,255,255,0.8); transition: all 0.2s; }
         .btn-hero-outline:hover { background: rgba(255,255,255,0.15); }
 
-        /* ══ HERO STATS ══ */
-        .hero-stats {
-            display: flex; align-items: center; justify-content: center;
-            gap: 0; margin-top: 36px; flex-wrap: wrap;
+        /* ══ HERO DESTAQUE (coluna direita: cartões de estatística empilhados) ══ */
+        .as-hero-destaque { display: flex; flex-direction: column; gap: 16px; }
+        .as-hero-stat-card {
+            background: rgba(255,255,255,0.06); border: 1px solid rgba(255,193,7,0.35);
+            border-radius: 14px; padding: 22px 26px;
         }
-        .hero-stat {
-            display: flex; flex-direction: column; align-items: center;
-            padding: 0 28px;
-        }
-        .hero-stat-num {
-            font-size: 1.8em; font-weight: 900; color: #ffffff;
+        .as-hero-stat-num {
+            display: block; font-size: 2.4em; font-weight: 900; color: var(--primary);
             line-height: 1; letter-spacing: -0.5px;
             text-shadow: 0 2px 8px rgba(0,0,0,0.4);
         }
-        .hero-stat-label {
-            font-size: 0.82em; font-weight: 500; color: rgba(255,255,255,0.85);
-            margin-top: 4px; text-transform: uppercase; letter-spacing: 0.5px;
+        .as-hero-stat-label {
+            display: block; font-size: 0.9em; font-weight: 500; color: rgba(255,255,255,0.85);
+            margin-top: 6px; text-transform: uppercase; letter-spacing: 0.5px;
         }
-        .hero-stat-divider {
-            width: 1px; height: 36px; background: rgba(255,255,255,0.3);
+        @media (max-width: 900px) {
+            .as-hero-grid { grid-template-columns: 1fr; text-align: center; }
+            .as-hero-acoes { justify-content: center; }
+            .as-hero-destaque { flex-direction: row; justify-content: center; flex-wrap: wrap; }
         }
         @media (max-width: 480px) {
-            .hero-stat { padding: 0 16px; }
-            .hero-stat-num { font-size: 1.4em; }
+            .as-hero-stat-num { font-size: 1.8em; }
         }
 
         /* ══ BUSCA ══ */
@@ -189,6 +187,8 @@
         .busca-topo p { color: #6c757d; margin-bottom: 20px; font-size: 1.05em; }
         .btn-geo { background: var(--primary); color: #1a1a1a; border: none; padding: 13px 28px; border-radius: 8px; font-size: 1em; font-weight: 700; cursor: pointer; display: inline-flex; align-items: center; gap: 8px; transition: background 0.3s; }
         .btn-geo:hover { background: var(--dark); }
+        .btn-loc-toggle.ativo { background: var(--dark); color: #fff; }
+        .btn-loc-toggle.ativo:hover { background: var(--dark); }
 
         /* Chips de categoria (usados dentro do painel do slicer) */
         .chip-cat { padding: 7px 20px; border-radius: 20px; border: 2px solid var(--medium-gray); background: var(--white); color: var(--text-dark); font-family: inherit; font-size: 0.9em; font-weight: 600; cursor: pointer; transition: all 0.2s; }
@@ -249,43 +249,61 @@
             .categoria-slicer { max-width: 100%; }
         }
 
-        /* Cards negócio */
-        .negocios-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 22px; }
-        .negocio-card { background: var(--white); border-radius: 14px; overflow: hidden; box-shadow: 0 4px 14px var(--shadow-light); transition: transform 0.3s, box-shadow 0.3s; display: flex; flex-direction: column; }
-        .negocio-card:hover { transform: translateY(-5px); box-shadow: 0 10px 28px var(--shadow-medium); }
-        .card-foto { width: 100%; height: 0; padding-bottom: 100%; overflow: hidden; position: relative; background: #f5f5f5; }
-        .card-foto img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: contain; padding: 12px; transition: transform 0.4s; }
-        .negocio-card:hover .card-foto img { transform: scale(1.06); }
-        .badge-cat { position: absolute; top: 10px; left: 10px; background: var(--primary); color: #1a1a1a; font-size: 0.72em; font-weight: 700; padding: 3px 10px; border-radius: 20px; }
-        .card-body { padding: 16px; flex: 1; display: flex; flex-direction: column; gap: 4px; }
-        .card-body h3 { font-size: 1.05em; font-weight: 700; color: var(--dark-gray); }
-        .card-bairro { font-size: 0.88em; color: #6c757d; display: flex; align-items: center; gap: 5px; }
-        .card-dist { font-size: 0.85em; color: var(--dark); font-weight: 700; margin-top: 4px; }
-        .card-tags { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 6px; }
-        .card-tag { font-size: 0.72em; font-weight: 600; color: var(--dark); background: var(--light); padding: 2px 9px; border-radius: 20px; }
+        /* Cards de profissional: avatar circular + headline horizontal + selo */
+        .as-grid-profissionais { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 22px; }
+        .as-profissional-card { background: var(--white); border-radius: 14px; overflow: hidden; box-shadow: 0 4px 14px var(--shadow-light); transition: transform 0.3s, box-shadow 0.3s; display: flex; flex-direction: column; }
+        .as-profissional-card:hover { transform: translateY(-5px); box-shadow: 0 10px 28px var(--shadow-medium); }
+        .as-card-topo { display: flex; align-items: center; gap: 12px; padding: 16px 16px 0; }
+        .as-card-avatar { width: 60px; height: 60px; flex-shrink: 0; border-radius: 50%; overflow: hidden; border: 3px solid var(--primary); background: #f5f5f5; }
+        .as-card-avatar img { width: 100%; height: 100%; object-fit: cover; transition: transform 0.4s; }
+        .as-profissional-card:hover .as-card-avatar img { transform: scale(1.1); }
+        .as-card-headline { display: flex; flex-direction: column; gap: 5px; min-width: 0; }
+        .as-card-headline h3 { font-size: 1.02em; font-weight: 700; color: var(--dark-gray); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .as-card-selo { align-self: flex-start; display: inline-flex; align-items: center; gap: 4px; font-size: 0.68em; font-weight: 700; color: var(--dark); background: var(--light); padding: 3px 9px; border-radius: 20px; white-space: nowrap; }
+        .as-card-info { padding: 12px 16px 16px; flex: 1; display: flex; flex-direction: column; gap: 4px; }
+        .as-card-local { font-size: 0.88em; color: #6c757d; display: flex; align-items: center; gap: 5px; }
+        .as-card-local--remoto { color: var(--dark); font-style: italic; }
+        .as-card-dist { font-size: 0.85em; color: var(--dark); font-weight: 700; margin-top: 4px; }
+        .as-card-tags { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 6px; }
+        .as-card-tag { font-size: 0.72em; font-weight: 600; color: var(--dark); background: var(--light); padding: 2px 9px; border-radius: 20px; }
         .btn-ver { margin-top: auto; padding-top: 12px; display: inline-block; background: var(--primary); color: #1a1a1a; padding: 9px 18px; border-radius: 6px; font-size: 0.88em; font-weight: 700; text-align: center; transition: background 0.2s; }
-        .negocio-card:hover .btn-ver { background: var(--dark); color: #fff; }
+        .as-profissional-card:hover .btn-ver { background: var(--dark); color: #fff; }
         .info-message { text-align: center; color: #6c757d; padding: 50px 0; font-size: 1.05em; }
 
         /* ══ AGÊNCIAS E ESTÚDIOS (premium) ══ */
         .agencias-section { background: var(--white); }
-        .negocios-grid--agencia { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 28px; }
-        .negocios-grid--agencia .negocio-card { border-top: 4px solid var(--primary); box-shadow: 0 8px 26px var(--shadow-medium); }
-        .negocios-grid--agencia .negocio-card:hover { transform: translateY(-7px); }
-        .negocios-grid--agencia .card-body { padding: 20px; gap: 6px; }
-        .negocios-grid--agencia .card-body h3 { font-size: 1.15em; }
-        .negocios-grid--agencia .btn-ver { padding: 11px 18px; font-size: 0.92em; }
+        .as-grid-profissionais--agencia { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 28px; }
+        .as-grid-profissionais--agencia .as-profissional-card { border-top: 4px solid var(--primary); box-shadow: 0 8px 26px var(--shadow-medium); }
+        .as-grid-profissionais--agencia .as-profissional-card:hover { transform: translateY(-7px); }
+        .as-grid-profissionais--agencia .as-card-topo { padding: 20px 20px 0; }
+        .as-grid-profissionais--agencia .as-card-info { padding: 12px 20px 20px; gap: 6px; }
+        .as-grid-profissionais--agencia .as-card-headline h3 { font-size: 1.15em; }
+        .as-grid-profissionais--agencia .btn-ver { padding: 11px 18px; font-size: 0.92em; }
 
         /* ══ FREELANCERS E AUTÔNOMOS (simples) ══ */
         .freelancers-section { background: var(--light-gray); }
-        .freelancers-section .section-title { color: #ffffff; }
+        .freelancers-section .as-titulo-secao { color: #ffffff; }
         .freelancers-section .section-subtitle { color: #cfcfcf; }
-        .negocios-grid--freelancer { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 16px; }
-        .negocios-grid--freelancer .negocio-card { box-shadow: none; border: 1px solid var(--medium-gray); border-radius: 10px; }
-        .negocios-grid--freelancer .negocio-card:hover { transform: translateY(-3px); box-shadow: 0 6px 16px var(--shadow-light); }
-        .negocios-grid--freelancer .card-body { padding: 12px; gap: 3px; }
-        .negocios-grid--freelancer .card-body h3 { font-size: 0.95em; }
-        .negocios-grid--freelancer .btn-ver { padding: 7px 14px; font-size: 0.82em; }
+        .as-grid-profissionais--freelancer { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 16px; }
+        .as-grid-profissionais--freelancer .as-profissional-card { box-shadow: none; border: 1px solid var(--medium-gray); border-radius: 10px; }
+        .as-grid-profissionais--freelancer .as-profissional-card:hover { transform: translateY(-3px); box-shadow: 0 6px 16px var(--shadow-light); }
+        .as-grid-profissionais--freelancer .as-card-topo { padding: 12px 12px 0; }
+        .as-grid-profissionais--freelancer .as-card-info { padding: 8px 12px 12px; gap: 3px; }
+        .as-grid-profissionais--freelancer .as-card-headline h3 { font-size: 0.95em; }
+        .as-grid-profissionais--freelancer .btn-ver { padding: 7px 14px; font-size: 0.82em; }
+
+        /* ══ FERRAMENTAS DE IA (cards simplificados, com destaque) ══ */
+        .ferramentas-ia-section { background: linear-gradient(135deg, var(--light-gray) 0%, var(--light) 100%); }
+        .ferramentas-ia-section .as-titulo-secao { color: var(--primary); font-size: 2.3em; }
+        .ferramentas-ia-section .section-subtitle { color: #d8d8d8; }
+        .badge-curadoria { display: block; width: fit-content; margin: 0 auto 14px; background: var(--primary); color: #1a1a1a; font-size: 0.8em; font-weight: 800; letter-spacing: 0.03em; text-transform: uppercase; padding: 6px 16px; border-radius: 20px; }
+        .as-grid-profissionais--ferramenta { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 16px; }
+        .as-grid-profissionais--ferramenta .as-profissional-card { box-shadow: none; border: 1px solid var(--primary); border-radius: 10px; }
+        .as-grid-profissionais--ferramenta .as-profissional-card:hover { transform: translateY(-3px); box-shadow: 0 6px 16px var(--shadow-light); }
+        .as-grid-profissionais--ferramenta .as-card-topo { padding: 12px 12px 0; }
+        .as-grid-profissionais--ferramenta .as-card-info { padding: 8px 12px 12px; gap: 3px; }
+        .as-grid-profissionais--ferramenta .as-card-headline h3 { font-size: 0.95em; }
+        .as-grid-profissionais--ferramenta .btn-ver { padding: 7px 14px; font-size: 0.82em; }
 
         /* ══ BANNER MEIO ══ */
         .banner-meio { background: var(--light); padding: 28px 20px; text-align: center; border-top: 1px solid var(--medium-gray); border-bottom: 1px solid var(--medium-gray); }
@@ -293,7 +311,7 @@
 
         /* ══ CATEGORIAS ══ */
         .section { padding: 62px 0; }
-        .section-title { text-align: center; font-size: 2em; font-weight: 800; color: var(--dark-gray); margin-bottom: 10px; }
+        .as-titulo-secao { text-align: center; font-size: 2em; font-weight: 800; color: var(--dark-gray); margin-bottom: 10px; }
         .section-subtitle { text-align: center; color: #6c757d; margin-bottom: 40px; font-size: 1.05em; }
         .categorias-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 20px; }
         .categoria-card { background: var(--white); border-radius: 14px; overflow: hidden; box-shadow: 0 4px 12px var(--shadow-light); transition: transform 0.3s, box-shadow 0.3s; display: flex; flex-direction: column; align-items: center; padding-bottom: 20px; text-align: center; }
@@ -335,11 +353,12 @@
             .header-subtitle { font-size: 0.8em; margin-top: -2px; }
             nav.desktop-nav { display: none; }
             .hamburger-btn { display: block; top: 50%; transform: translateY(-50%); }
-            .hero-section { min-height: 440px; }
-            .hero-section h1 { font-size: 2.1em; }
-            .hero-section .hero-sub { font-size: 1em; }
+            .as-hero { min-height: 440px; }
+            .as-hero-conteudo h1 { font-size: 2.1em; }
+            .as-hero-sub { font-size: 1em; }
             .section { padding: 44px 0; }
-            .section-title { font-size: 1.6em; }
+            .as-titulo-secao { font-size: 1.6em; }
+            .ferramentas-ia-section .as-titulo-secao { font-size: 1.9em; }
             .busca-section { padding: 36px 0; }
              /* ══ BANNER TOPO E MEIO - ALTURA ══ */
           .banner-rotativo img {
@@ -364,11 +383,11 @@
             will-change: transform; cursor: grab; user-select: none;
         }
         .carousel-track.dragging { transition: none; cursor: grabbing; }
-        .carousel-track .negocio-card, .carousel-track .categoria-card, .carousel-track .blog-card, .carousel-track .cidade-card {
+        .carousel-track .as-profissional-card, .carousel-track .categoria-card, .carousel-track .blog-card, .carousel-track .cidade-card {
             flex: 0 0 calc(25% - 17px); min-width: 0;
         }
         @media (max-width: 900px) {
-            .carousel-track .negocio-card, .carousel-track .categoria-card, .carousel-track .blog-card, .carousel-track .cidade-card { flex: 0 0 calc(50% - 11px); }
+            .carousel-track .as-profissional-card, .carousel-track .categoria-card, .carousel-track .blog-card, .carousel-track .cidade-card { flex: 0 0 calc(50% - 11px); }
         }
         @media (max-width: 768px) {
             .carousel-track-outer {
@@ -378,12 +397,12 @@
             }
             .carousel-track-outer::-webkit-scrollbar { display: none; }
             .carousel-track { transform: none !important; transition: none !important; cursor: default; gap: 14px; padding: 4px 0; }
-            .carousel-track .negocio-card, .carousel-track .categoria-card, .carousel-track .blog-card, .carousel-track .cidade-card { scroll-snap-align: start; flex: 0 0 78%; min-width: 0; }
+            .carousel-track .as-profissional-card, .carousel-track .categoria-card, .carousel-track .blog-card, .carousel-track .cidade-card { scroll-snap-align: start; flex: 0 0 78%; min-width: 0; }
             /* Esconder arrows no mobile */
             .carousel-nav { display: none; }
         }
         @media (max-width: 480px) {
-            .carousel-track .negocio-card, .carousel-track .categoria-card, .carousel-track .cidade-card { flex: 0 0 calc(85%); }
+            .carousel-track .as-profissional-card, .carousel-track .categoria-card, .carousel-track .cidade-card { flex: 0 0 calc(85%); }
         }
         .carousel-nav {
             display: flex; align-items: center; justify-content: center;
@@ -401,7 +420,7 @@
         .carousel-progress-bar { flex: 1; max-width: 200px; height: 4px; background: var(--medium-gray); border-radius: 4px; overflow: hidden; }
         .carousel-progress-fill { height: 100%; background: var(--primary); border-radius: 4px; transition: width 0.35s cubic-bezier(.4,0,.2,1); }
         /* grade */
-        .negocios-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 22px; }
+        .as-grid-profissionais { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 22px; }
         /* view controls */
         .view-controls { display: flex; align-items: center; justify-content: flex-end; margin-bottom: 16px; gap: 8px; }
         .view-controls span { font-size: 0.85em; color: #6c757d; margin-right: 4px; }
@@ -433,7 +452,7 @@
 
         /* ══ SEÇÃO BLOG ══ */
         .blog-section { background: var(--light-gray); }
-        .blog-section .section-title, .blog-section-header .section-title { color: #ffffff; }
+        .blog-section .as-titulo-secao, .blog-section-header .as-titulo-secao { color: #ffffff; }
         .blog-section .section-subtitle { color: #cfcfcf; }
         .blog-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 22px; }
         .blog-card {
@@ -457,12 +476,12 @@
         .blog-card-btn { margin-top: 10px; display: inline-block; background: var(--primary); color: #1a1a1a; padding: 8px 16px; border-radius: 6px; font-size: 0.85em; font-weight: 700; text-align: center; transition: background 0.2s; }
         .blog-card:hover .blog-card-btn { background: var(--dark); color: #fff; }
         .blog-section-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; flex-wrap: wrap; gap: 12px; }
-        .blog-section-header .section-title { margin-bottom: 0; text-align: left; }
+        .blog-section-header .as-titulo-secao { margin-bottom: 0; text-align: left; }
         .btn-ver-blog { display: inline-flex; align-items: center; gap: 6px; background: var(--primary); color: #1a1a1a; padding: 10px 22px; border-radius: 8px; font-size: 0.92em; font-weight: 700; transition: background 0.2s, transform 0.15s; white-space: nowrap; }
         .btn-ver-blog:hover { background: var(--dark); color: #fff; transform: translateY(-1px); }
         @media (max-width: 600px) {
             .blog-section-header { flex-direction: column; align-items: flex-start; }
-            .blog-section-header .section-title { font-size: 1.4em; }
+            .blog-section-header .as-titulo-secao { font-size: 1.4em; }
         }
 
         /* ══ SEÇÃO CIDADES ══ */
@@ -569,6 +588,15 @@
         <ul>
             <li><a href="/">Início</a></li>
             <li>
+                <a href="#categorias">Categorias ▾</a>
+                <div class="nav-dropdown">
+                    {% set cat_ids_hub = negocios | map(attribute='categoria_id') | list | unique | list %}
+                    {% for cat in categorias if cat.id in cat_ids_hub %}
+                    <a href="/{{ cat.slug }}/">{{ cat.nome }}</a>
+                    {% endfor %}
+                </div>
+            </li>
+            <li>
                 <a href="#cidades">Cidades ▾</a>
                 <div class="nav-dropdown" id="nav-dropdown-cidades">
                     <a href="#cidades">Ver todas as cidades</a>
@@ -589,6 +617,7 @@
     <nav>
         <ul>
             <li><a href="/" onclick="closeMobileNav()">Início</a></li>
+            <li><a href="#categorias" onclick="closeMobileNav()">Categorias</a></li>
             <li><a href="#cidades" onclick="closeMobileNav()">Cidades</a></li>
             <li><a href="/blog/" onclick="closeMobileNav()">Blog</a></li>
             <li><a href="https://wa.me/55{{ hub.whatsapp or '11913324827' }}?text=Olá,+quero+saber+mais" target="_blank" rel="noopener" onclick="closeMobileNav()">Contato</a></li>
@@ -616,39 +645,91 @@
 </div>
 
 <!-- HERO -->
-<section class="hero-section" aria-label="As melhores agências e criativos perto de você">
-    <div class="hero-inner container">
-        <h1>Agências e criativos<br><em>perto de você</em></h1>
-        <p class="hero-sub">Encontre rapidamente agências de publicidade, estúdios de fotografia, produtoras de vídeo e estúdios de design gráfico perto de você, com portfólio, contato e localização — em qualquer cidade do Brasil.</p>
-        <div class="hero-btns">
-            <button class="btn-hero" onclick="buscarProximos()">
-                <i class="fas fa-bullhorn"></i> Ver agências perto de mim
-            </button>
-            <a href="#cidades" class="btn-hero-outline">
-                <i class="fas fa-city"></i> Ver cidades atendidas
-            </a>
-        </div>
-        <div class="hero-stats">
-            <div class="hero-stat">
-                <span class="hero-stat-num" id="stat-negocios">—</span>
-                <span class="hero-stat-label">negócios cadastrados</span>
-            </div>
-            <div class="hero-stat-divider"></div>
-            <div class="hero-stat">
-                <span class="hero-stat-num" id="stat-cidades">—</span>
-                <span class="hero-stat-label">cidades</span>
+<section class="as-hero" aria-label="As melhores agências e criativos perto de você">
+    <div class="as-hero-grid container">
+        <div class="as-hero-conteudo">
+            <h1>Agências e criativos<br><em>perto de você</em></h1>
+            <p class="as-hero-sub">Encontre rapidamente agências de publicidade, estúdios de fotografia, produtoras de vídeo e estúdios de design gráfico perto de você, com portfólio, contato e localização — em qualquer cidade do Brasil.</p>
+            <div class="as-hero-acoes">
+                <button class="btn-hero btn-loc-toggle" onclick="buscarProximos()">
+                    <i class="fas fa-bullhorn"></i> Ver agências perto de mim
+                </button>
+                <a href="#cidades" class="btn-hero-outline">
+                    <i class="fas fa-city"></i> Ver cidades atendidas
+                </a>
             </div>
         </div>
+        <aside class="as-hero-destaque" aria-label="Números da plataforma">
+            <div class="as-hero-stat-card">
+                <span class="as-hero-stat-num" id="stat-negocios">—</span>
+                <span class="as-hero-stat-label">profissionais cadastrados</span>
+            </div>
+            <div class="as-hero-stat-card">
+                <span class="as-hero-stat-num" id="stat-cidades">—</span>
+                <span class="as-hero-stat-label">cidades atendidas</span>
+            </div>
+            <div class="as-hero-stat-card">
+                <span class="as-hero-stat-num" id="stat-ferramentas-ia">—</span>
+                <span class="as-hero-stat-label">IAs indicadas</span>
+            </div>
+        </aside>
     </div>
 </section>
 
-<!-- BUSCA -->
+<!-- FERRAMENTAS DE IA GRÁTIS (destaque) -->
+<section class="section ferramentas-ia-section" id="ferramentas-ia">
+    <div class="container">
+        <span class="badge-curadoria">✨ Curadoria AgênciaStart</span>
+        <h2 class="as-titulo-secao">Ferramentas de IA grátis para criativos</h2>
+        <p class="section-subtitle">Recursos online pra agilizar seu trabalho</p>
+        <div class="as-grid-profissionais as-grid-profissionais--ferramenta" id="ferramentas-ia-grid"></div>
+        <p class="info-message" id="ferramentas-ia-vazio" style="display:none;">Nenhuma ferramenta encontrada ainda.</p>
+    </div>
+</section>
+
+<!-- FREELANCERS E AUTÔNOMOS -->
+<section class="section freelancers-section" id="freelancers">
+    <div class="container">
+        <h2 class="as-titulo-secao">Freelancers e Autônomos</h2>
+        <p class="section-subtitle">Profissionais independentes prontos para o seu projeto</p>
+
+        <!-- Controles de visualização -->
+        <div class="view-controls" id="freelancers-view-controls" style="display:none;">
+            <span>Ver como:</span>
+            <button class="view-btn active" id="freelancers-btn-carousel" title="Carrossel" onclick="setViewFreelancers('carousel')">
+                <i class="fas fa-grip-lines"></i>
+            </button>
+            <button class="view-btn" id="freelancers-btn-grade" title="Grade" onclick="setViewFreelancers('grade')">
+                <i class="fas fa-th"></i>
+            </button>
+        </div>
+
+        <!-- Carrossel de freelancers -->
+        <div id="freelancers-carousel-wrapper" class="carousel-wrapper">
+            <div class="carousel-track-outer">
+                <div class="carousel-track" id="freelancers-track"></div>
+            </div>
+            <div class="carousel-nav" id="freelancers-carousel-nav">
+                <button class="carousel-arrow" id="freelancers-prev" onclick="moveCarouselFreelancers(-1)"><i class="fas fa-chevron-left"></i></button>
+                <div class="carousel-progress-bar"><div class="carousel-progress-fill" id="freelancers-progress-fill"></div></div>
+                <button class="carousel-arrow" id="freelancers-next" onclick="moveCarouselFreelancers(1)"><i class="fas fa-chevron-right"></i></button>
+            </div>
+        </div>
+
+        <!-- Grade (oculta inicialmente) -->
+        <div class="as-grid-profissionais as-grid-profissionais--freelancer" id="freelancers-grade" style="display:none;"></div>
+        <p class="info-message" id="freelancers-vazio" style="display:none;">Nenhum freelancer encontrado ainda.</p>
+        <div id="freelancers-lazy-sentinel" style="height:1px; margin-top:10px;"></div>
+    </div>
+</section>
+
+<!-- AGÊNCIAS E ESTÚDIOS (carrossel com busca por localização) -->
 <section class="busca-section" id="busca">
     <div class="container">
         <div class="busca-topo">
             <h2>Agências e estúdios perto de mim agora</h2>
             <p>Ative sua localização e veja as agências e estúdios mais próximos de você primeiro</p>
-            <button class="btn-geo" onclick="buscarProximos()">
+            <button class="btn-geo btn-loc-toggle" id="btnLoc" onclick="buscarProximos()">
                 <i class="fas fa-map-marker-alt"></i> Usar minha localização
             </button>
         </div>
@@ -677,30 +758,10 @@
         </div>
 
         <!-- Grade (oculta inicialmente) -->
-        <div class="negocios-grid" id="negocios-grade" style="display:none;"></div>
+        <div class="as-grid-profissionais" id="negocios-grade" style="display:none;"></div>
         <p class="info-message" id="negocios-vazio" style="display:none;">Nenhum estabelecimento encontrado.</p>
         <div id="lazy-sentinel" style="height:1px; margin-top:10px;"></div>
         <p id="lazy-loading" style="display:none; text-align:center; color: var(--dark); padding:20px; font-size:0.95em;"><i class="fas fa-spinner fa-spin"></i> Carregando mais estabelecimentos...</p>
-    </div>
-</section>
-
-<!-- FREELANCERS E AUTÔNOMOS -->
-<section class="section freelancers-section" id="freelancers">
-    <div class="container">
-        <h2 class="section-title">Freelancers e Autônomos</h2>
-        <p class="section-subtitle">Profissionais independentes prontos para o seu projeto</p>
-        <div class="negocios-grid negocios-grid--freelancer" id="freelancers-grid"></div>
-        <p class="info-message" id="freelancers-vazio" style="display:none;">Nenhum freelancer encontrado ainda.</p>
-    </div>
-</section>
-
-<!-- AGÊNCIAS E ESTÚDIOS -->
-<section class="section agencias-section" id="agencias">
-    <div class="container">
-        <h2 class="section-title">Agências e Estúdios</h2>
-        <p class="section-subtitle">Empresas e estúdios estabelecidos, prontos para o seu projeto</p>
-        <div class="negocios-grid negocios-grid--agencia" id="agencias-grid"></div>
-        <p class="info-message" id="agencias-vazio" style="display:none;">Nenhuma agência ou estúdio encontrado ainda.</p>
     </div>
 </section>
 
@@ -727,7 +788,7 @@
 <section class="section blog-section" id="blog">
     <div class="container">
         <div class="blog-section-header">
-            <h2 class="section-title">Do nosso blog</h2>
+            <h2 class="as-titulo-secao">Do nosso blog</h2>
             <a href="/blog/" class="btn-ver-blog"><i class="fas fa-newspaper"></i> Ver todos os posts</a>
         </div>
         <p class="section-subtitle" style="text-align:left; margin-bottom:28px;">Dicas, guias e novidades para você</p>
@@ -756,7 +817,7 @@
 <!-- CIDADES -->
 <section class="section cidades-section" id="cidades">
     <div class="container">
-        <h2 class="section-title">Cidades disponíveis</h2>
+        <h2 class="as-titulo-secao">Cidades disponíveis</h2>
         <p class="section-subtitle">Encontre o que tem perto em cada cidade</p>
 
         <!-- Controles topo: dropdown lista + busca + view toggle -->
@@ -812,7 +873,7 @@
 <!-- COMO FUNCIONA -->
 <section class="section como-funciona">
     <div class="container">
-        <h2 class="section-title">Como funciona</h2>
+        <h2 class="as-titulo-secao">Como funciona</h2>
         <p class="section-subtitle">Encontre a agência ou estúdio ideal em segundos</p>
         <div class="steps-grid">
             <div class="step-card">
@@ -922,9 +983,25 @@ var _apiOffset = 48;          // próximo offset a buscar
 var _apiFim = false;          // true quando API retornar array vazio
 var _apiCarregando = false;
 var _loteSize = 96;
-var negociosFiltrados = todosNegocios.slice();
+
+// ── Agências x Freelancers x Ferramentas ─────────────────────────────
+// Classifica os negócios de todosNegocios (mesma variável alimentada pela
+// variável Jinja2 "negocios") por categoria_slug. ATENÇÃO: ajuste os slugs
+// abaixo para os slugs reais das categorias cadastradas no backend.
+var CATEGORIAS_AGENCIA = ['agencia-de-publicidade', 'estudio-de-fotografia', 'produtora-de-video', 'design-grafico'];
+var CATEGORIAS_FREELANCER = ['freelancer', 'freelancers', 'autonomo'];
+function _isAgencia(n){ return CATEGORIAS_AGENCIA.indexOf(n.categoria_slug) !== -1; }
+function _isFreelancer(n){ return CATEGORIAS_FREELANCER.indexOf(n.categoria_slug) !== -1; }
+
+// negociosFiltrados alimenta o carrossel de Agências e Estúdios (seção com
+// busca por localização); freelancersFiltrados alimenta o carrossel de
+// Freelancers e Autônomos — ambos derivados do mesmo pool todosNegocios,
+// que cresce conforme mais lotes chegam da API (offset paginado).
+var negociosFiltrados = todosNegocios.filter(_isAgencia);
+var freelancersFiltrados = todosNegocios.filter(_isFreelancer);
 var userLat = null, userLng = null, geoAtivo = false;
 var carouselPos = 0, carouselView = 'carousel';
+var freelancerCarouselPos = 0, freelancerCarouselView = 'carousel';
 
 // _categoriaAtiva: null = tudo; string = slug da categoria filtrada
 var _lazyCategoriaAtiva = null;
@@ -951,9 +1028,10 @@ function _carregarAPIUmaVez(callback) {
                 data = _comTags(data);
                 _apiOffset += data.length;
                 todosNegocios = todosNegocios.concat(data);
-                if(!_lazyCategoriaAtiva) negociosFiltrados = todosNegocios.slice();
+                if(!_lazyCategoriaAtiva) negociosFiltrados = todosNegocios.filter(_isAgencia);
                 else negociosFiltrados = todosNegocios.filter(function(n){ return n.categoria_slug === _lazyCategoriaAtiva; });
                 renderNegociosPorTipo();
+                _absorverNovoLoteFreelancers();
             } else {
                 _apiFim = true;
             }
@@ -973,13 +1051,11 @@ function _carregarAPIUmaVez(callback) {
 function _renderizarProximoLote(){
     // Se ainda há dados locais não renderizados, renderiza
     var lista = negociosFiltrados;
-    if(geoAtivo && userLat && userLng){
-        lista = lista.map(function(n){
-            var d = (n.lat && n.lng) ? calcDistancia(userLat, userLng, parseFloat(n.lat), parseFloat(n.lng)) : 9999;
-            return Object.assign({}, n, {_dist: d});
-        }).sort(function(a,b){ return a._dist - b._dist; });
+    if(geoAtivo){
+        _aplicarDistancias();
+        lista = lista.slice().sort(function(a,b){ return a._dist - b._dist; });
     }
-    var trackCards = document.getElementById('negocios-track') ? document.getElementById('negocios-track').querySelectorAll('.negocio-card').length : 0;
+    var trackCards = document.getElementById('negocios-track') ? document.getElementById('negocios-track').querySelectorAll('.as-profissional-card').length : 0;
     if(trackCards < lista.length){
         var proximo = lista.slice(trackCards, trackCards + _loteSize);
         if(!proximo.length) return;
@@ -1001,14 +1077,6 @@ function _renderizarProximoLote(){
     }
 }
 
-// ── Agências x Freelancers ───────────────────────────────
-// Classifica os negócios de todosNegocios (mesma variável alimentada
-// pela variável Jinja2 "negocios") em duas seções, por categoria_slug.
-// ATENÇÃO: ajuste os slugs abaixo para os slugs reais das categorias
-// cadastradas no backend (categoria_slug de cada negócio).
-var CATEGORIAS_AGENCIA = ['agencia-de-publicidade', 'estudio-de-fotografia', 'produtora-de-video', 'design-grafico'];
-var CATEGORIAS_FREELANCER = ['freelancer', 'freelancers', 'autonomo'];
-
 function _renderGrupoNegocios(lista, gridId, vazioId){
     var grid = document.getElementById(gridId);
     var vazio = document.getElementById(vazioId);
@@ -1022,11 +1090,11 @@ function _renderGrupoNegocios(lista, gridId, vazioId){
     grid.innerHTML = lista.map(cardHTML).join('');
 }
 
+// Agências e Freelancers agora são carrosséis próprios (ver renderNegocios
+// e renderFreelancers); esta função cuida só da grade estática de Ferramentas.
 function renderNegociosPorTipo(){
-    var agencias = todosNegocios.filter(function(n){ return CATEGORIAS_AGENCIA.indexOf(n.categoria_slug) !== -1; });
-    var freelancers = todosNegocios.filter(function(n){ return CATEGORIAS_FREELANCER.indexOf(n.categoria_slug) !== -1; });
-    _renderGrupoNegocios(agencias, 'agencias-grid', 'agencias-vazio');
-    _renderGrupoNegocios(freelancers, 'freelancers-grid', 'freelancers-vazio');
+    var ferramentasIA = todosNegocios.filter(function(n){ return n.categoria_slug === 'ferramenta-de-ia'; });
+    _renderGrupoNegocios(ferramentasIA, 'ferramentas-ia-grid', 'ferramentas-ia-vazio');
 }
 
 function calcDistancia(lat1,lng1,lat2,lng2){
@@ -1035,33 +1103,74 @@ function calcDistancia(lat1,lng1,lat2,lng2){
     return R*2*Math.atan2(Math.sqrt(a),Math.sqrt(1-a));
 }
 
+// Única fonte de cálculo de distância: percorre todosNegocios, marca _dist
+// em cada negócio (ferramentas de IA não têm localização real, então ficam
+// sempre no fim da lista com _dist = 99999) e ordena todosNegocios pelo
+// resultado. Qualquer lista derivada dela (negociosFiltrados, grids por
+// categoria etc.) deve ser reordenada localmente por _dist depois de chamar
+// esta função, já que os objetos são os mesmos por referência.
+function _aplicarDistancias(){
+    todosNegocios.forEach(function(n){
+        if(n.categoria_slug === 'ferramenta-de-ia'){
+            n._dist = 99999;
+            return;
+        }
+        n._dist = (userLat && userLng && n.lat && n.lng)
+            ? calcDistancia(userLat, userLng, parseFloat(n.lat), parseFloat(n.lng))
+            : 99999;
+    });
+    todosNegocios.sort(function(a,b){ return a._dist - b._dist; });
+}
+
+function _setBtnLocAtivo(ativo){
+    document.querySelectorAll('.btn-loc-toggle').forEach(function(b){
+        b.classList.toggle('ativo', ativo);
+    });
+}
+
 function buscarProximos(){
+    if(geoAtivo){
+        // Já está ativo: desativa em vez de buscar de novo
+        geoAtivo = false;
+        userLat = null;
+        userLng = null;
+        todosNegocios.forEach(function(n){ delete n._dist; });
+        _setBtnLocAtivo(false);
+        renderNegociosPorTipo();
+        renderNegocios(negociosFiltrados);
+        renderFreelancers(freelancersFiltrados);
+        return;
+    }
     if(!navigator.geolocation){ alert('Geolocalização não suportada.'); return; }
     navigator.geolocation.getCurrentPosition(function(pos){
         userLat=pos.coords.latitude; userLng=pos.coords.longitude; geoAtivo=true;
-        if(!_apiFim){
-            // Precisa mandar a categoria explicitamente: sem ela o backend limita
-            // a resposta a 200 registros, mesmo pedindo limit=20000 (ver filtrarCategoria).
-            var catAtual = _lazyCategoriaAtiva || (todosNegocios[0] && todosNegocios[0].categoria_slug) || '';
-            var urlProximos = '/api/hub/negocios?limit=20000&offset=0';
-            if(catAtual) urlProximos += '&categoria=' + encodeURIComponent(catAtual);
-            fetch(urlProximos)
-            .then(function(r){ return r.json(); })
-            .then(function(data){
-                if(Array.isArray(data) && data.length){
-                    data = _comTags(data);
-                    todosNegocios = data;
-                    negociosFiltrados = todosNegocios.slice();
-                    _apiFim = true;
-                }
-                renderNegociosPorTipo();
-                renderNegocios(negociosFiltrados);
-                document.getElementById('busca').scrollIntoView({behavior:'smooth',block:'start'});
+        _setBtnLocAtivo(true);
+        // Sem categoria o backend limita a resposta a 200 registros (ver comentário
+        // em filtrarCategoria) — por isso buscamos o conjunto completo de Agências/
+        // Estúdios e de Freelancers, um slug de cada vez, e substituímos essas
+        // categorias dentro de todosNegocios pelo conjunto cheio antes de ordenar.
+        var slugsCompletos = CATEGORIAS_AGENCIA.concat(CATEGORIAS_FREELANCER);
+        Promise.all(slugsCompletos.map(function(slug){
+            return fetch('/api/hub/negocios?limit=20000&offset=0&categoria=' + encodeURIComponent(slug))
+                .then(function(r){ return r.json(); })
+                .catch(function(){ return []; });
+        })).then(function(resultados){
+            var completos = [];
+            resultados.forEach(function(data){
+                if(Array.isArray(data) && data.length) completos = completos.concat(_comTags(data));
             });
-        } else {
+            if(completos.length){
+                var resto = todosNegocios.filter(function(n){ return slugsCompletos.indexOf(n.categoria_slug) === -1; });
+                todosNegocios = resto.concat(completos);
+                negociosFiltrados = todosNegocios.filter(_isAgencia);
+                freelancersFiltrados = todosNegocios.filter(_isFreelancer);
+                _apiFim = true;
+            }
+            renderNegociosPorTipo();
             renderNegocios(negociosFiltrados);
+            renderFreelancers(freelancersFiltrados);
             document.getElementById('busca').scrollIntoView({behavior:'smooth',block:'start'});
-        }
+        });
     }, function(){ alert('Não foi possível obter sua localização. Verifique as permissões.'); });
 }
 
@@ -1152,20 +1261,51 @@ function _nomeTagSazonal(slug){
     return el ? el.textContent : slug;
 }
 
+// Selo exibido ao lado do nome, de acordo com o tipo de profissional
+function _seloProfissional(n){
+    if(n.categoria_slug === 'ferramenta-de-ia') return '<span class="as-card-selo">🤖 Curadoria IA</span>';
+    if(CATEGORIAS_FREELANCER.indexOf(n.categoria_slug) !== -1) return '<span class="as-card-selo">🎨 Portfólio</span>';
+    return '<span class="as-card-selo">⭐ Verificado</span>';
+}
+
 function cardHTML(n){
-    var dist=(n._dist&&n._dist<9999)?'<span class="card-dist"><i class="fas fa-map-marker-alt"></i> '+n._dist.toFixed(1)+' km de você</span>':'';
+    if(n.categoria_slug === 'ferramenta-de-ia' || n.exibir_geo === false){
+        var fotoIA = n.foto_url || 'https://placehold.co/600x600/1a1a1a/FFC107?font=roboto&text=IA';
+        return '<a href="/'+n.categoria_slug+'/'+n.slug+'/" class="as-profissional-card">'+
+            '<div class="as-card-topo">'+
+                '<div class="as-card-avatar"><img src="'+fotoIA+'" alt="'+n.nome+'" loading="lazy" width="60" height="60"></div>'+
+                '<div class="as-card-headline">'+
+                    '<h3>'+n.nome+'</h3>'+
+                    _seloProfissional(n)+
+                '</div>'+
+            '</div>'+
+            '<div class="as-card-info">'+
+                '<span class="btn-ver">Ver ferramenta →</span>'+
+            '</div>'+
+        '</a>';
+    }
+    var dist=(n._dist&&n._dist<9999)?'<span class="as-card-dist"><i class="fas fa-map-marker-alt"></i> '+n._dist.toFixed(1)+' km de você</span>':'';
     var foto=n.foto_url||'https://placehold.co/600x600/1a1a1a/FFC107?font=roboto&text=AgenciaStart';
     var local=[n.bairro,n.cidade].filter(Boolean).join(', ');
+    // Freelancer sem bairro/cidade cadastrados: provavelmente atende de forma
+    // remota, então trocamos o "pino de mapa" por um aviso de online/domicílio
+    // em vez de simplesmente esconder a linha de localização.
+    var localHTML = local
+        ? '<p class="as-card-local"><i class="fas fa-map-marker-alt" style="color: var(--dark)"></i> '+local+'</p>'
+        : (_isFreelancer(n) ? '<p class="as-card-local as-card-local--remoto"><i class="fas fa-wifi" style="color: var(--dark)"></i> Atende online / a domicílio</p>' : '');
     var tagsHTML = (Array.isArray(n.tags) && n.tags.length)
-        ? '<div class="card-tags">'+n.tags.slice(0,3).map(function(t){ return '<span class="card-tag">'+_nomeTagSazonal(t)+'</span>'; }).join('')+'</div>'
+        ? '<div class="as-card-tags">'+n.tags.slice(0,3).map(function(t){ return '<span class="as-card-tag">'+_nomeTagSazonal(t)+'</span>'; }).join('')+'</div>'
         : '';
-    return '<a href="/'+n.categoria_slug+'/'+n.slug+'/" class="negocio-card">'+
-        '<div class="card-foto">'+
-            '<img src="'+foto+'" alt="'+n.nome+' perto de mim" loading="lazy" width="400" height="180">'+
+    return '<a href="/'+n.categoria_slug+'/'+n.slug+'/" class="as-profissional-card">'+
+        '<div class="as-card-topo">'+
+            '<div class="as-card-avatar"><img src="'+foto+'" alt="'+n.nome+' perto de mim" loading="lazy" width="60" height="60"></div>'+
+            '<div class="as-card-headline">'+
+                '<h3>'+n.nome+'</h3>'+
+                _seloProfissional(n)+
+            '</div>'+
         '</div>'+
-        '<div class="card-body">'+
-            '<h3>'+n.nome+'</h3>'+
-            (local?'<p class="card-bairro"><i class="fas fa-map-marker-alt" style="color: var(--dark)"></i> '+local+'</p>':'')+
+        '<div class="as-card-info">'+
+            localHTML+
             dist+
             tagsHTML+
             '<span class="btn-ver">Ver detalhes →</span>'+
@@ -1175,7 +1315,7 @@ function cardHTML(n){
 
 function getCardWidth(){
     var track=document.getElementById('negocios-track');
-    var card=track.querySelector('.negocio-card');
+    var card=track.querySelector('.as-profissional-card');
     if(!card) return 280;
     return card.offsetWidth+22;
 }
@@ -1185,7 +1325,7 @@ function isMobile(){ return window.innerWidth <= 768; }
 function clampAndUpdate(){
     if(isMobile()) return;
     var track=document.getElementById('negocios-track');
-    var cards=track.querySelectorAll('.negocio-card');
+    var cards=track.querySelectorAll('.as-profissional-card');
     if(!cards.length) return;
     var maxPos=Math.max(0,(cards.length)*getCardWidth()-document.getElementById('negocios-track').parentElement.offsetWidth);
     carouselPos=Math.max(0,Math.min(carouselPos,maxPos));
@@ -1254,11 +1394,9 @@ function renderNegocios(lista){
     negociosFiltrados = lista;
     var vc=document.getElementById('view-controls');
     var vazio=document.getElementById('negocios-vazio');
-    if(geoAtivo&&userLat&&userLng){
-        lista=lista.map(function(n){
-            var d=(n.lat&&n.lng)?calcDistancia(userLat,userLng,parseFloat(n.lat),parseFloat(n.lng)):9999;
-            return Object.assign({},n,{_dist:d});
-        }).sort(function(a,b){ return a._dist-b._dist; });
+    if(geoAtivo){
+        _aplicarDistancias();
+        lista = lista.slice().sort(function(a,b){ return a._dist - b._dist; });
     }
     if(!lista.length){
         if(vc) vc.style.display='none';
@@ -1266,7 +1404,7 @@ function renderNegocios(lista){
         var gd=document.getElementById('negocios-grade');
         if(cw) cw.style.display='none';
         if(gd) gd.style.display='none';
-        if(vazio){ vazio.style.display=''; vazio.textContent='Nenhum resultado encontrado.'; }
+        if(vazio){ vazio.style.display=''; vazio.textContent='Nenhuma agência ou estúdio encontrado.'; }
         return;
     }
     if(vazio) vazio.style.display='none';
@@ -1278,19 +1416,172 @@ function renderNegocios(lista){
     setView(carouselView);
 }
 
-// Estado inicial: mostra todos os negócios no carrossel
+// ── Carrossel de Freelancers e Autônomos (mesmo padrão do carrossel de
+// Agências acima, em elementos próprios: freelancers-track/freelancers-grade) ──
+function getCardWidthFreelancers(){
+    var track=document.getElementById('freelancers-track');
+    var card=track.querySelector('.as-profissional-card');
+    if(!card) return 220;
+    return card.offsetWidth+16;
+}
+
+function clampAndUpdateFreelancers(){
+    if(isMobile()) return;
+    var track=document.getElementById('freelancers-track');
+    var cards=track.querySelectorAll('.as-profissional-card');
+    if(!cards.length) return;
+    var maxPos=Math.max(0,(cards.length)*getCardWidthFreelancers()-track.parentElement.offsetWidth);
+    freelancerCarouselPos=Math.max(0,Math.min(freelancerCarouselPos,maxPos));
+    track.style.transform='translateX(-'+freelancerCarouselPos+'px)';
+    var fill=document.getElementById('freelancers-progress-fill');
+    var prev=document.getElementById('freelancers-prev');
+    var next=document.getElementById('freelancers-next');
+    if(fill) fill.style.width=maxPos>0?Math.min(100,(freelancerCarouselPos/maxPos)*100)+'%':'0%';
+    if(prev) prev.disabled=freelancerCarouselPos<=0;
+    if(next) next.disabled=maxPos<=0||freelancerCarouselPos>=maxPos;
+}
+
+function snapCarouselFreelancers(){
+    var w=getCardWidthFreelancers(); if(!w) return;
+    freelancerCarouselPos=Math.round(freelancerCarouselPos/w)*w;
+    clampAndUpdateFreelancers();
+}
+
+function buildCarouselFreelancers(cards){
+    var track=document.getElementById('freelancers-track');
+    track.innerHTML=cards.join('');
+    freelancerCarouselPos=0;
+    track.style.transform='translateX(0)';
+    clampAndUpdateFreelancers();
+    // drag
+    var isDragging=false,startX=0,startPos=0;
+    var newTrack=track.cloneNode(true);
+    track.parentNode.replaceChild(newTrack,track);
+    track=document.getElementById('freelancers-track');
+    function onStart(x){ isDragging=true; startX=x; startPos=freelancerCarouselPos; track.classList.add('dragging'); }
+    function onMove(x){ if(!isDragging) return; freelancerCarouselPos=startPos-(x-startX); clampAndUpdateFreelancers(); }
+    function onEnd(){ isDragging=false; track.classList.remove('dragging'); snapCarouselFreelancers(); }
+    if(!isMobile()){
+        track.addEventListener('mousedown',function(e){ onStart(e.clientX); e.preventDefault(); });
+        window.addEventListener('mousemove',function(e){ if(isDragging) onMove(e.clientX); });
+        window.addEventListener('mouseup',function(){ if(isDragging) onEnd(); });
+        var _ty=0,_horiz=false,_det=false;
+        track.addEventListener('touchstart',function(e){ _ty=e.touches[0].clientY; _horiz=false; _det=false; onStart(e.touches[0].clientX); },{passive:true});
+        track.addEventListener('touchmove',function(e){
+            if(!isDragging) return;
+            if(!_det){ var dx=Math.abs(e.touches[0].clientX-startX),dy=Math.abs(e.touches[0].clientY-_ty); if(dx>5||dy>5){_horiz=dx>=dy;_det=true;} }
+            if(!_det||!_horiz) return; e.preventDefault(); onMove(e.touches[0].clientX);
+        },{passive:false});
+        track.addEventListener('touchend',function(){ if(_horiz) onEnd(); else isDragging=false; });
+    }
+}
+
+function moveCarouselFreelancers(dir){
+    var outer=document.getElementById('freelancers-track').parentElement;
+    var visivel=Math.max(1,Math.floor(outer.offsetWidth/getCardWidthFreelancers()));
+    freelancerCarouselPos+=dir*visivel*getCardWidthFreelancers();
+    clampAndUpdateFreelancers();
+}
+
+function setViewFreelancers(mode){
+    freelancerCarouselView=mode;
+    var cw=document.getElementById('freelancers-carousel-wrapper');
+    var gd=document.getElementById('freelancers-grade');
+    document.getElementById('freelancers-btn-carousel').classList.toggle('active',mode==='carousel');
+    document.getElementById('freelancers-btn-grade').classList.toggle('active',mode==='grade');
+    if(cw) cw.style.display=mode==='carousel'?'':'none';
+    if(gd) gd.style.display=mode==='grade'?'grid':'none';
+}
+
+function renderFreelancers(lista){
+    freelancersFiltrados = lista;
+    var vc=document.getElementById('freelancers-view-controls');
+    var vazio=document.getElementById('freelancers-vazio');
+    if(geoAtivo){
+        _aplicarDistancias();
+        lista = lista.slice().sort(function(a,b){ return a._dist - b._dist; });
+    }
+    if(!lista.length){
+        if(vc) vc.style.display='none';
+        var cw=document.getElementById('freelancers-carousel-wrapper');
+        var gd=document.getElementById('freelancers-grade');
+        if(cw) cw.style.display='none';
+        if(gd) gd.style.display='none';
+        if(vazio) vazio.style.display='';
+        return;
+    }
+    if(vazio) vazio.style.display='none';
+    if(vc) vc.style.display='flex';
+    var cards=lista.slice(0,48).map(cardHTML);
+    buildCarouselFreelancers(cards);
+    var gd=document.getElementById('freelancers-grade');
+    if(gd) gd.innerHTML=cards.join('');
+    setViewFreelancers(freelancerCarouselView);
+}
+
+// Chamado a cada lote novo vindo da API (via _carregarAPIUmaVez): só acrescenta
+// os freelancers que ainda não estão renderizados, sem re-disparar outro fetch.
+function _absorverNovoLoteFreelancers(){
+    var lista = todosNegocios.filter(_isFreelancer);
+    if(geoAtivo){
+        _aplicarDistancias();
+        lista = lista.slice().sort(function(a,b){ return a._dist - b._dist; });
+    }
+    var track = document.getElementById('freelancers-track');
+    if(!track) return;
+    var trackCards = track.querySelectorAll('.as-profissional-card').length;
+    if(trackCards < lista.length){
+        var novos = lista.slice(trackCards, trackCards + _loteSize).map(cardHTML);
+        var tmp = document.createElement('div');
+        tmp.innerHTML = novos.join('');
+        while(tmp.firstChild) track.appendChild(tmp.firstChild);
+        clampAndUpdateFreelancers();
+        var gd = document.getElementById('freelancers-grade');
+        if(gd && gd.style.display !== 'none') gd.innerHTML += novos.join('');
+    }
+    var vazio = document.getElementById('freelancers-vazio');
+    if(vazio) vazio.style.display = lista.length ? 'none' : '';
+}
+
+function _renderizarProximoLoteFreelancers(){
+    var lista = freelancersFiltrados;
+    if(geoAtivo){
+        _aplicarDistancias();
+        lista = lista.slice().sort(function(a,b){ return a._dist - b._dist; });
+    }
+    var track = document.getElementById('freelancers-track');
+    var trackCards = track ? track.querySelectorAll('.as-profissional-card').length : 0;
+    if(trackCards < lista.length){
+        _absorverNovoLoteFreelancers();
+        return;
+    }
+    if(!_apiFim){
+        _carregarAPIUmaVez(function(){ _renderizarProximoLoteFreelancers(); });
+    }
+}
+
+// Estado inicial: mostra Agências/Estúdios e Freelancers em seus carrosséis
 (function mostrarTodosInicial(){
     renderNegocios(negociosFiltrados);
+    renderFreelancers(freelancersFiltrados);
     renderNegociosPorTipo();
 })();
 
-// IntersectionObserver: ao rolar até o fim, busca próximo lote
+// IntersectionObserver: ao rolar até o fim de cada carrossel, busca próximo lote
 (function(){
     var sentinel = document.getElementById('lazy-sentinel');
     if(!sentinel || !('IntersectionObserver' in window)) return;
     new IntersectionObserver(function(entries){
         if(!entries[0].isIntersecting) return;
         _renderizarProximoLote();
+    }, { rootMargin: '400px' }).observe(sentinel);
+})();
+(function(){
+    var sentinel = document.getElementById('freelancers-lazy-sentinel');
+    if(!sentinel || !('IntersectionObserver' in window)) return;
+    new IntersectionObserver(function(entries){
+        if(!entries[0].isIntersecting) return;
+        _renderizarProximoLoteFreelancers();
     }, { rootMargin: '400px' }).observe(sentinel);
 })();
 </script>
@@ -1635,6 +1926,15 @@ function renderNegocios(lista){
             atualizarHeroStats(data);
         })
         .catch(function(){});
+
+    // Contagem real de ferramentas de IA indicadas (não só as 48 iniciais)
+    fetch('/api/hub/negocios?limit=20000&offset=0&categoria=' + encodeURIComponent('ferramenta-de-ia'))
+        .then(function(r){ return r.json(); })
+        .then(function(data){
+            var elF = document.getElementById('stat-ferramentas-ia');
+            if(elF && Array.isArray(data)) elF.textContent = formatNum(data.length);
+        })
+        .catch(function(){});
 })();
 
 </script>
@@ -1924,7 +2224,7 @@ document.addEventListener('click', function(e) {
         <label style="font-size:13px; font-weight:600; color:#333; display:block; margin-bottom:5px;">Categoria</label>
         <select name="categoria_id" id="select-categoria" class="cad-input">
           <option value="">Selecione uma categoria</option>
-          {% for cat in categorias %}
+          {% for cat in categorias if cat.id in cat_ids_hub %}
           <option value="{{ cat.id }}">{{ cat.nome }}</option>
           {% endfor %}
         </select>
