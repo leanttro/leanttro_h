@@ -307,6 +307,16 @@
         .ferramentas-ia-filtro.active { background: var(--primary); color: #1a1a1a; }
         .as-ia-subcat { display: block; font-size: 0.68em; font-weight: 800; letter-spacing: 0.06em; color: var(--primary); text-transform: uppercase; margin-bottom: 3px; }
         .as-card-selo-preco { align-self: flex-start; display: inline-flex; align-items: center; gap: 4px; font-size: 0.68em; font-weight: 700; color: #1a1a1a; background: var(--primary); padding: 3px 9px; border-radius: 20px; white-space: nowrap; }
+
+        /* ══ CARD FREELANCER — foto em destaque, centralizada e maior ══ */
+        .as-profissional-card--freelancer .as-card-topo { flex-direction: column; align-items: center; text-align: center; gap: 10px; padding-top: 20px; }
+        .as-profissional-card--freelancer .as-card-avatar { width: 96px; height: 96px; border-width: 4px; }
+        .as-profissional-card--freelancer .as-card-headline { align-items: center; }
+        .as-profissional-card--freelancer .as-card-headline h3 { white-space: normal; }
+        .as-profissional-card--freelancer .as-card-selo { align-self: center; }
+        .as-profissional-card--freelancer .as-card-info { align-items: center; text-align: center; }
+        .as-profissional-card--freelancer .as-card-local { justify-content: center; }
+        .as-profissional-card--freelancer .as-card-tags { justify-content: center; }
         .as-grid-profissionais--ferramenta .as-profissional-card { box-shadow: none; border: 1px solid var(--primary); border-radius: 10px; }
         .as-grid-profissionais--ferramenta .as-profissional-card:hover { transform: translateY(-3px); box-shadow: 0 6px 16px var(--shadow-light); }
         .as-grid-profissionais--ferramenta .as-card-topo { padding: 12px 12px 0; }
@@ -1460,6 +1470,15 @@ function _nomeTagSazonal(slug){
     return el ? el.textContent : slug;
 }
 
+// Mapa slug -> nome bonito (com acento) pra exibir no selo do card.
+// Toda vez que criar uma categoria freelancer nova no admin, adicione uma
+// linha aqui com o mesmo slug. Se o slug não estiver mapeado, o rótulo é
+// derivado automaticamente do próprio slug (sem acento).
+var NOMES_FREELANCER = {
+    'freelancer-designer-grafico': 'Designer Gráfico',
+    'freelancer-tecnologia':       'Tecnologia'
+};
+
 // Deriva um rótulo legível a partir do slug da categoria de freelancer,
 // removendo o prefixo "freelancer" e transformando o resto em texto normal.
 // Ex: "freelancer-designer-grafico" -> "Designer Grafico"
@@ -1467,6 +1486,7 @@ function _nomeTagSazonal(slug){
 // (ex: "Grafico" em vez de "Gráfico"). Se quiser acentuação perfeita no
 // selo, dá pra manter um mapinha slug -> nome bonito à parte.
 function _rotuloFreelancerPorSlug(slug){
+    if(NOMES_FREELANCER[slug]) return NOMES_FREELANCER[slug];
     var resto = (slug || '').replace(/^freelancer-?/i, '').trim();
     if(!resto) return 'Freelancer';
     return resto.split('-').filter(Boolean).map(function(p){
@@ -1541,9 +1561,12 @@ function cardHTML(n){
     var tagsHTML = (Array.isArray(n.tags) && n.tags.length)
         ? '<div class="as-card-tags">'+n.tags.slice(0,3).map(function(t){ return '<span class="as-card-tag">'+_nomeTagSazonal(t)+'</span>'; }).join('')+'</div>'
         : '';
-    return '<a href="/'+n.categoria_slug+'/'+n.slug+'/" class="as-profissional-card">'+
+    var ehFreelancer = _isFreelancer(n);
+    var classeCard = ehFreelancer ? 'as-profissional-card as-profissional-card--freelancer' : 'as-profissional-card';
+    var tamanhoAvatar = ehFreelancer ? '96' : '60';
+    return '<a href="/'+n.categoria_slug+'/'+n.slug+'/" class="'+classeCard+'">'+
         '<div class="as-card-topo">'+
-            '<div class="as-card-avatar"><img src="'+foto+'" alt="'+n.nome+' perto de mim" loading="lazy" width="60" height="60"></div>'+
+            '<div class="as-card-avatar"><img src="'+foto+'" alt="'+n.nome+' perto de mim" loading="lazy" width="'+tamanhoAvatar+'" height="'+tamanhoAvatar+'"></div>'+
             '<div class="as-card-headline">'+
                 '<h3>'+n.nome+'</h3>'+
                 _seloProfissional(n)+
