@@ -1373,7 +1373,7 @@ function cardHTML(n){
         '</a>';
     }
     var dist=(n._dist&&n._dist<9999)?'<span class="as-card-dist"><i class="fas fa-map-marker-alt"></i> '+n._dist.toFixed(1)+' km de você</span>':'';
-    var foto=n.foto_url||'https://placehold.co/600x600/1a1a1a/FFC107?font=roboto&text=AgenciaStart';
+    var foto=n.foto_url||'https://res.cloudinary.com/dhu1cqvrb/image/upload/v1783798743/cidades_c9jneh.png';
     var local=[n.bairro,n.cidade].filter(Boolean).join(', ');
     // Freelancer sem bairro/cidade cadastrados: provavelmente atende de forma
     // remota, então trocamos o "pino de mapa" por um aviso de online/domicílio
