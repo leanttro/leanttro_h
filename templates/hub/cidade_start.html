@@ -1,0 +1,1530 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<!-- Google tag (gtag.js) -->
+<script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-7617881885143728"
+     crossorigin="anonymous"></script>
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-KDP5FYQVHX"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+
+  gtag('config', 'G-KDP5FYQVHX');
+</script>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    {# ══ SEO dinâmico por contexto ══ #}
+    {% if categoria and bairro %}
+      {% set seo_title = categoria.nome ~ " no " ~ bairro ~ " — " ~ cidade ~ " | AgênciaStart" %}
+      {% set seo_desc  = "Encontre " ~ categoria.nome ~ " no bairro " ~ bairro ~ " em " ~ cidade ~ ". Endereços, telefones e muito mais perto de você." %}
+      {% set seo_url   = "https://" ~ request.host ~ "/cidade/" ~ (cidade | slugify) ~ "/" ~ (bairro | slugify) ~ "/" ~ categoria.slug ~ "/" %}
+    {% elif categoria %}
+      {% set seo_title = categoria.nome ~ " em " ~ cidade ~ " | AgênciaStart" %}
+      {% set seo_desc  = "Encontre " ~ categoria.nome ~ " em " ~ cidade ~ ". Lista completa com endereços, telefones e localização perto de você." %}
+      {% set seo_url   = "https://" ~ request.host ~ "/cidade/" ~ (cidade | slugify) ~ "/" ~ categoria.slug ~ "/" %}
+    {% elif bairro %}
+      {% set seo_title = "Agências e criativos no " ~ bairro ~ " — " ~ cidade ~ " | AgênciaStart" %}
+      {% set seo_desc  = "Descubra agências, estúdios e profissionais criativos no bairro " ~ bairro ~ " em " ~ cidade ~ ". Encontre tudo perto de você." %}
+      {% set seo_url   = "https://" ~ request.host ~ "/cidade/" ~ (cidade | slugify) ~ "/" ~ (bairro | slugify) ~ "/" %}
+    {% else %}
+      {% set seo_title = "Agências e criativos em " ~ cidade ~ " perto de mim | AgênciaStart" %}
+      {% set seo_desc  = "Encontre agências de publicidade, fotógrafos, produtoras de vídeo e estúdios de design em " ~ cidade ~ ". O guia completo de agências e criativos perto de você." %}
+      {% set seo_url   = "https://" ~ request.host ~ "/cidade/" ~ (cidade | slugify) ~ "/" %}
+    {% endif %}
+
+    <title>{{ seo_title }}</title>
+    <meta name="description" content="{{ seo_desc }}">
+    <meta name="robots" content="index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1">
+    <meta name="theme-color" content="#FFC107">
+    <link rel="canonical" href="{{ seo_url }}">
+
+    <link rel="icon" type="image/png" href="{{ hub.logo_url or 'https://res.cloudinary.com/dhu1cqvrb/image/upload/v1783643721/Massas_Sabores_6_utat55.png' }}">
+    <link rel="apple-touch-icon" href="{{ hub.logo_url or 'https://res.cloudinary.com/dhu1cqvrb/image/upload/v1783643721/Massas_Sabores_6_utat55.png' }}">
+
+    <meta property="og:type"         content="website">
+    <meta property="og:site_name"    content="{{ hub.nome or 'AgênciaStart' }}">
+    <meta property="og:url"          content="{{ seo_url }}">
+    <meta property="og:title"        content="{{ seo_title }}">
+    <meta property="og:description"  content="{{ seo_desc }}">
+    <meta property="og:image"        content="{{ hub.banner_fundo_url or 'https://res.cloudinary.com/dhu1cqvrb/image/upload/v1783643721/Massas_Sabores_6_utat55.png' }}">
+    <meta property="og:image:width"  content="1200">
+    <meta property="og:image:height" content="630">
+    <meta property="og:locale"       content="pt_BR">
+    <meta name="twitter:card"        content="summary_large_image">
+    <meta name="twitter:title"       content="{{ seo_title }}">
+    <meta name="twitter:description" content="{{ seo_desc }}">
+    <meta name="twitter:image"       content="{{ hub.banner_fundo_url or 'https://res.cloudinary.com/dhu1cqvrb/image/upload/v1783643721/Massas_Sabores_6_utat55.png' }}">
+
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@graph": [
+        {
+          "@type": "BreadcrumbList",
+          "itemListElement": [
+            {"@type":"ListItem","position":1,"item":{"@id":"https://{{ request.host }}/","name":"Início"}},
+            {"@type":"ListItem","position":2,"item":{"@id":"https://{{ request.host }}/cidade/{{ cidade | slugify }}/","name":"{{ cidade }}"}}
+            {% if bairro %},{"@type":"ListItem","position":3,"item":{"@id":"https://{{ request.host }}/cidade/{{ cidade | slugify }}/{{ bairro | slugify }}/","name":"{{ bairro }}"}}{% endif %}
+            {% if categoria %},{"@type":"ListItem","position":{{ 4 if bairro else 3 }},"item":{"@id":"https://{{ request.host }}/cidade/{{ cidade | slugify }}/{{ categoria.slug }}/","name":"{{ categoria.nome }}"}}{% endif %}
+          ]
+        },
+        {
+          "@type": "WebPage",
+          "@id": "{{ seo_url }}",
+          "url": "{{ seo_url }}",
+          "name": "{{ seo_title }}",
+          "description": "{{ seo_desc }}",
+          "inLanguage": "pt-BR",
+          "isPartOf": {"@id": "https://{{ request.host }}/#website"}
+        }
+      ]
+    }
+    </script>
+
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700;900&display=swap" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+
+    <style>
+        :root {
+            --primary:       #FFC107;
+            --dark:          #8a6d00;
+            --light:         #3a3000;
+            --light-gray:    #0a0a0a;
+            --medium-gray:   #2a2a2a;
+            --dark-gray:     #343a40;
+            --text-color:    #e5e5e5;
+            --white:         #ffffff;
+            --shadow-light:  rgba(0,0,0,0.35);
+            --shadow-medium: rgba(0,0,0,0.55);
+        }
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        html { scroll-behavior: smooth; }
+        body { font-family: 'Roboto', sans-serif; background: var(--light-gray); color: var(--text-color); line-height: 1.6; }
+        .container { max-width: 1200px; margin: 0 auto; padding: 0 20px; }
+        a { text-decoration: none; color: inherit; }
+
+        /* ══ HEADER ══ */
+        body > header {
+            background: #111111; border-bottom: 3px solid var(--primary); padding: 6px 24px 0;
+            display: flex; flex-direction: column; align-items: center; justify-content: center;
+            position: relative;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.15);
+        }
+        .header-logo { margin-bottom: 0; }
+        .header-logo a { display: block; text-align: center; }
+        .header-logo img { height: 144px; width: auto; display: block; margin: 0 auto; }
+        .header-subtitle { color: #cfcfcf; text-align: center; font-size: 0.95em; font-weight: 500; letter-spacing: 0.3px; margin-top: -6px; margin-bottom: 10px; }
+        .hamburger-btn { display: none; background: none; border: none; color: #fff; font-size: 1.8em; cursor: pointer; padding: 6px; position: absolute; right: 20px; top: 20px; }
+        nav.desktop-nav { width: 100%; }
+        nav.desktop-nav ul { list-style: none; display: flex; align-items: center; justify-content: center; flex-wrap: wrap; }
+        nav.desktop-nav ul li { position: relative; }
+        nav.desktop-nav ul li a { color: #fff; font-weight: 600; font-size: 0.95em; padding: 12px 20px; display: block; border-bottom: 3px solid transparent; transition: border-color 0.2s, background 0.2s; }
+        nav.desktop-nav ul li a:hover { border-bottom-color: var(--primary); background: rgba(255,193,7,0.1); }
+        .nav-dropdown { display: none; position: absolute; top: 100%; left: 50%; transform: translateX(-50%); background: #fff; border-radius: 12px; box-shadow: 0 8px 32px rgba(0,0,0,0.15); min-width: 220px; max-height: 360px; overflow-y: auto; z-index: 999; padding: 8px 0; }
+        nav.desktop-nav ul li:hover .nav-dropdown { display: block; }
+        .nav-dropdown a { display: block; padding: 10px 20px; color: var(--dark-gray) !important; font-size: 0.9em; font-weight: 500; border-bottom: none !important; background: none !important; transition: background 0.15s; white-space: nowrap; }
+        .nav-dropdown a:hover { background: var(--light) !important; color: var(--primary) !important; }
+
+        /* ══ MOBILE NAV ══ */
+        .mobile-nav-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.95); z-index: 1000; flex-direction: column; justify-content: center; align-items: center; opacity: 0; transition: opacity 0.25s; }
+        .mobile-nav-overlay.active { display: flex; opacity: 1; }
+        .mobile-nav-close { position: absolute; top: 20px; left: 24px; background: none; border: none; color: #fff; font-size: 2em; cursor: pointer; }
+        .mobile-nav-overlay nav ul { list-style: none; text-align: center; max-height: 80vh; overflow-y: auto; }
+        .mobile-nav-overlay nav ul li { margin: 12px 0; }
+        .mobile-nav-overlay nav ul li a { color: #fff; font-size: 1.5em; font-weight: 700; }
+
+        /* ══ BANNER ══ */
+        .banner-topo { background: var(--white); border-bottom: 1px solid var(--medium-gray); padding: 10px 20px; text-align: center; }
+        .banner-placeholder { display: inline-block; background: var(--light-gray); border: 2px dashed var(--medium-gray); border-radius: 8px; padding: 12px 36px; color: #aaa; font-size: 0.9em; font-weight: 500; transition: all 0.2s; }
+        .banner-placeholder:hover { border-color: var(--primary); color: var(--primary); }
+        .banner-rotativo { display: none; }
+        .banner-rotativo img { max-height: 90px; width: auto; max-width: 100%; border-radius: 8px; }
+        .banner-meio { background: var(--light); padding: 28px 20px; text-align: center; border-top: 1px solid #ffe0b2; border-bottom: 1px solid #ffe0b2; }
+
+        /* ══ BREADCRUMB ══ */
+        .breadcrumb-bar { background: var(--white); border-bottom: 1px solid var(--medium-gray); padding: 10px 20px; font-size: 0.88em; color: #6c757d; }
+        .breadcrumb-bar a { color: var(--primary); }
+        .breadcrumb-bar a:hover { text-decoration: underline; }
+        .breadcrumb-bar span { margin: 0 6px; }
+
+        /* ══ HERO ══ */
+        .hero-section { color: #fff; text-align: center; min-height: 420px; display: flex; align-items: center; justify-content: center;
+            background: linear-gradient(rgba(0,0,0,0.55), rgba(0,0,0,0.55)), url('{{ hub.banner_fundo_url or "https://res.cloudinary.com/dhu1cqvrb/image/upload/v1783797460/ChatGPT_Image_11_de_jul._de_2026_16_13_59_za92f7.png" }}') center/cover no-repeat; }
+        .hero-inner { padding: 48px 20px; }
+        .hero-label { font-size: 0.9em; font-weight: 600; text-transform: uppercase; letter-spacing: 2px; color: var(--primary); margin-bottom: 10px; }
+        .hero-section h1 { font-size: 3em; font-weight: 900; line-height: 1.2; text-shadow: 2px 2px 8px rgba(0,0,0,0.6); margin-bottom: 8px; }
+        .hero-section h1 em { color: var(--primary); font-style: normal; }
+        .hero-sub-filtro { font-size: 1em; margin-bottom: 24px; opacity: 0.85; }
+        .hero-btns { display: flex; gap: 14px; justify-content: center; flex-wrap: wrap; }
+        .btn-hero { display: inline-flex; align-items: center; gap: 8px; background: var(--primary); color: #1a1a1a; padding: 13px 28px; border-radius: 8px; font-size: 1.05em; font-weight: 700; border: none; cursor: pointer; transition: background 0.3s, transform 0.2s; }
+        .btn-hero:hover { background: var(--dark); transform: translateY(-2px); }
+        .btn-hero-outline { display: inline-flex; align-items: center; gap: 8px; background: transparent; color: #fff; padding: 13px 28px; border-radius: 8px; font-size: 1.05em; font-weight: 700; border: 2px solid rgba(255,255,255,0.8); transition: all 0.2s; }
+        .btn-hero-outline:hover { background: rgba(255,255,255,0.15); }
+
+        /* ══ SEÇÃO ══ */
+        .section { padding: 62px 0; }
+        .section-title { text-align: center; font-size: 2em; font-weight: 800; color: var(--dark-gray); margin-bottom: 10px; }
+        .section-subtitle { text-align: center; color: #6c757d; margin-bottom: 28px; font-size: 1.05em; }
+
+        /* ══ CABEÇALHO DE SEÇÃO COM TOGGLE ══ */
+        .secao-header { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px; margin-bottom: 24px; }
+        .secao-header-left h2 { font-size: 1.9em; font-weight: 800; color: var(--dark-gray); }
+        .secao-header-left p { color: #6c757d; font-size: 0.95em; margin-top: 4px; }
+        .toggle-view-btns { display: flex; gap: 6px; align-items: center; }
+        .toggle-view-btns span { font-size: 0.82em; color: #6c757d; margin-right: 4px; }
+        .tvbtn { background: var(--white); border: 2px solid var(--medium-gray); border-radius: 8px; width: 36px; height: 36px; display: flex; align-items: center; justify-content: center; cursor: pointer; transition: all 0.2s; color: #6c757d; font-size: 1em; }
+        .tvbtn:hover { border-color: var(--primary); color: var(--primary); }
+        .tvbtn.active { background: var(--primary); border-color: var(--primary); color: #1a1a1a; }
+
+        /* Seção sobre fundo escuro (categorias) — título e legenda claros */
+        #categorias .secao-header-left h2, #categorias .secao-header-left p,
+        #categorias .toggle-view-btns span { color: #fff; }
+        #categorias .secao-header-left p, #categorias .toggle-view-btns span { color: #cfcfcf; }
+
+        /* ══ CARROSSEL GENÉRICO ══ */
+        .gen-carousel-wrapper { position: relative; }
+        .gen-carousel-outer { overflow: hidden; border-radius: 12px; }
+        .gen-carousel-track { display: flex; gap: 16px; transition: transform 0.4s ease; will-change: transform; cursor: grab; user-select: none; }
+        .gen-carousel-track.dragging { transition: none; cursor: grabbing; }
+        .gen-carousel-nav { display: flex; align-items: center; justify-content: center; gap: 12px; margin-top: 16px; }
+        .gen-carousel-arrow { background: var(--white); border: 2px solid var(--medium-gray); border-radius: 50%; width: 40px; height: 40px; display: flex; align-items: center; justify-content: center; cursor: pointer; font-size: 0.95em; color: var(--dark-gray); transition: all 0.2s; flex-shrink: 0; }
+        .gen-carousel-arrow:hover:not(:disabled) { background: var(--primary); border-color: var(--primary); color: #fff; }
+        .gen-carousel-arrow:disabled { opacity: 0.3; cursor: not-allowed; }
+        .gen-progress-bar { flex: 1; max-width: 180px; height: 4px; background: var(--medium-gray); border-radius: 4px; overflow: hidden; }
+        .gen-progress-fill { height: 100%; background: var(--primary); border-radius: 4px; transition: width 0.35s cubic-bezier(.4,0,.2,1); }
+
+        /* ══ CARDS BAIRRO ══ */
+        .bairro-card { background: var(--white); border-radius: 12px; padding: 18px 16px; border: 2px solid var(--medium-gray); text-align: center; font-weight: 700; font-size: 0.95em; color: var(--dark-gray); transition: all 0.2s; display: flex; flex-direction: column; align-items: center; gap: 8px; flex: 0 0 calc(16.66% - 14px); min-width: 0; }
+        .bairro-card:hover { border-color: var(--primary); color: var(--primary); transform: translateY(-3px); box-shadow: 0 6px 18px var(--shadow-medium); }
+        .bairro-card i { font-size: 1.3em; color: var(--primary); }
+        @media (max-width: 1100px) { .bairro-card { flex: 0 0 calc(25% - 12px); } }
+        @media (max-width: 768px) { .bairro-card { flex: 0 0 42vw; max-width: 180px; } }
+        @media (max-width: 480px) { .bairro-card { flex: 0 0 38vw; max-width: 160px; } }
+
+        /* LISTA BAIRROS */
+        .bairros-lista { display: none; }
+        .bairros-lista.ativo { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 12px; }
+        .bairro-lista-item { background: var(--white); border: 2px solid var(--medium-gray); border-radius: 10px; padding: 10px 14px; font-weight: 600; font-size: 0.9em; color: var(--dark-gray); display: flex; align-items: center; gap: 8px; transition: all 0.2s; }
+        .bairro-lista-item:hover { border-color: var(--primary); color: var(--primary); }
+        .bairro-lista-item i { color: var(--primary); font-size: 0.9em; flex-shrink: 0; }
+
+        /* ══ CARDS CATEGORIA ══ */
+        .categoria-card { background: var(--white); border-radius: 14px; overflow: hidden; box-shadow: 0 4px 12px var(--shadow-light); transition: transform 0.3s, box-shadow 0.3s; display: flex; flex-direction: column; align-items: center; padding-bottom: 18px; text-align: center; flex: 0 0 calc(20% - 13px); min-width: 0; }
+        .categoria-card:hover { transform: translateY(-6px); box-shadow: 0 10px 26px var(--shadow-medium); }
+        .cat-photo { width: 100%; aspect-ratio: 1/1; overflow: hidden; background: #eee; }
+        .cat-photo img { width: 100%; height: 100%; object-fit: cover; transition: transform 0.4s; }
+        .categoria-card:hover .cat-photo img { transform: scale(1.07); }
+        .categoria-card h3 { font-size: 0.92em; font-weight: 700; color: var(--dark-gray); margin: 12px 10px 4px; }
+        .categoria-card .btn-ver { margin-top: 8px; background: var(--primary); color: #1a1a1a; padding: 7px 16px; border-radius: 6px; font-weight: 600; font-size: 0.85em; transition: background 0.3s; display: inline-block; }
+        .categoria-card:hover .btn-ver { background: var(--dark); color: #fff; }
+        @media (max-width: 900px) { .categoria-card { flex: 0 0 calc(33.33% - 11px); } }
+        @media (max-width: 600px) { .categoria-card { flex: 0 0 calc(60%); } }
+
+        /* LISTA CATEGORIAS */
+        .categorias-lista { display: none; }
+        .categorias-lista.ativo { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 12px; }
+        .cat-lista-item { background: var(--white); border: 2px solid var(--medium-gray); border-radius: 10px; padding: 12px 16px; font-weight: 700; font-size: 0.92em; color: var(--dark-gray); display: flex; align-items: center; gap: 10px; transition: all 0.2s; }
+        .cat-lista-item:hover { border-color: var(--primary); color: var(--primary); }
+        .cat-lista-thumb { width: 36px; height: 36px; border-radius: 8px; object-fit: cover; flex-shrink: 0; background: #eee; }
+
+        /* ══ NEGÓCIOS ══ */
+        .negocio-card { background: var(--white); border-radius: 14px; overflow: hidden; box-shadow: 0 4px 14px var(--shadow-light); transition: transform 0.3s, box-shadow 0.3s; display: flex; flex-direction: column; }
+        .negocio-card:hover { transform: translateY(-5px); box-shadow: 0 10px 28px var(--shadow-medium); }
+        .card-foto { width: 100%; height: 0; padding-bottom: 100%; overflow: hidden; position: relative; background: #f5f5f5; }
+        .card-foto img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: contain; padding: 12px; transition: transform 0.4s; }
+        .negocio-card:hover .card-foto img { transform: scale(1.06); }
+        .badge-cat { position: absolute; top: 10px; left: 10px; background: var(--primary); color: #fff; font-size: 0.72em; font-weight: 700; padding: 3px 10px; border-radius: 20px; }
+        .card-body { padding: 16px; flex: 1; display: flex; flex-direction: column; gap: 4px; }
+        .card-body h3 { font-size: 1.05em; font-weight: 700; color: var(--dark-gray); }
+        .card-bairro { font-size: 0.88em; color: #6c757d; display: flex; align-items: center; gap: 5px; }
+        .card-dist { font-size: 0.85em; color: var(--primary); font-weight: 700; margin-top: 4px; }
+        .btn-ver { margin-top: auto; padding-top: 12px; display: inline-block; background: var(--primary); color: #fff; padding: 9px 18px; border-radius: 6px; font-size: 0.88em; font-weight: 700; text-align: center; transition: background 0.2s; }
+        .negocio-card:hover .btn-ver { background: var(--dark); }
+        .info-message { text-align: center; color: #6c757d; padding: 50px 0; font-size: 1.05em; }
+
+        /* ══ CARROSSEL NEGÓCIOS ══ */
+        .carousel-wrapper { position: relative; }
+        .carousel-track-outer { overflow: hidden; border-radius: 12px; }
+        .carousel-track { display: flex; gap: 22px; transition: transform 0.4s ease; will-change: transform; cursor: grab; user-select: none; }
+        .carousel-track.dragging { transition: none; cursor: grabbing; }
+        .carousel-track .negocio-card { flex: 0 0 calc(25% - 17px); min-width: 0; }
+        @media (max-width: 900px) { .carousel-track .negocio-card { flex: 0 0 calc(50% - 11px); } }
+        @media (max-width: 768px) {
+            /* NEGÓCIOS — scroll nativo */
+            .carousel-track-outer { overflow-x: scroll; overflow-y: hidden; -webkit-overflow-scrolling: touch; scroll-snap-type: x mandatory; scrollbar-width: none; }
+            .carousel-track-outer::-webkit-scrollbar { display: none; }
+            .carousel-track { transform: none !important; transition: none !important; cursor: default; gap: 14px; padding: 4px 4px 4px 0; }
+            .carousel-track .negocio-card { scroll-snap-align: start; flex: 0 0 78%; min-width: 0; }
+            /* CARROSSEL GENÉRICO (bairros/cats) — scroll nativo */
+            .gen-carousel-outer { overflow-x: scroll; overflow-y: hidden; -webkit-overflow-scrolling: touch; scroll-snap-type: x mandatory; scrollbar-width: none; }
+            .gen-carousel-outer::-webkit-scrollbar { display: none; }
+            .gen-carousel-track { transform: none !important; transition: none !important; cursor: default; gap: 12px; padding: 4px 0; }
+            .gen-carousel-track > * { scroll-snap-align: start; flex-shrink: 0; }
+            /* Esconder arrows no mobile — swipe nativo */
+            .carousel-nav { display: none; }
+            .gen-carousel-nav { display: none; }
+        }
+        @media (max-width: 480px) { .carousel-track .negocio-card { flex: 0 0 85%; } }
+        .carousel-nav { display: flex; align-items: center; justify-content: center; gap: 12px; margin-top: 20px; }
+        .carousel-arrow { background: var(--white); border: 2px solid var(--medium-gray); border-radius: 50%; width: 42px; height: 42px; display: flex; align-items: center; justify-content: center; cursor: pointer; font-size: 1em; color: var(--dark-gray); transition: all 0.2s; flex-shrink: 0; }
+        .carousel-arrow:hover:not(:disabled) { background: var(--primary); border-color: var(--primary); color: #fff; }
+        .carousel-arrow:disabled { opacity: 0.3; cursor: not-allowed; }
+        .carousel-progress-bar { flex: 1; max-width: 200px; height: 4px; background: var(--medium-gray); border-radius: 4px; overflow: hidden; }
+        .carousel-progress-fill { height: 100%; background: var(--primary); border-radius: 4px; transition: width 0.35s cubic-bezier(.4,0,.2,1); }
+        .negocios-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 22px; }
+        .view-controls { display: flex; align-items: center; justify-content: flex-end; margin-bottom: 16px; gap: 8px; }
+        .view-controls span { font-size: 0.85em; color: #6c757d; margin-right: 4px; }
+        .view-btn { background: var(--white); border: 2px solid var(--medium-gray); border-radius: 8px; width: 36px; height: 36px; display: flex; align-items: center; justify-content: center; cursor: pointer; transition: all 0.2s; color: #6c757d; font-size: 1em; }
+        .view-btn:hover { border-color: var(--primary); color: var(--primary); }
+        .view-btn.active { background: var(--primary); border-color: var(--primary); color: #fff; }
+
+        /* ══ CHIPS ══ */
+        .chips-row { display: flex; flex-wrap: wrap; gap: 10px; justify-content: center; margin-bottom: 28px; }
+        .chip { padding: 7px 20px; border-radius: 20px; border: 2px solid var(--medium-gray); background: var(--white); color: var(--text-color); font-family: inherit; font-size: 0.9em; font-weight: 600; cursor: pointer; transition: all 0.2s; }
+        .chip:hover { border-color: var(--primary); color: var(--primary); }
+        .chip.active { background: var(--primary); border-color: var(--primary); color: #1a1a1a; }
+        @media (max-width: 600px) { .chips-row { flex-wrap: nowrap; overflow-x: auto; justify-content: flex-start; -webkit-overflow-scrolling: touch; scrollbar-width: none; padding-bottom: 4px; } .chips-row::-webkit-scrollbar { display: none; } .chip { flex-shrink: 0; } }
+
+        /* ══ FILTROS NEGÓCIOS ══ */
+        .filtros-wrapper { display: flex; gap: 12px; flex-wrap: wrap; align-items: center; margin-bottom: 24px; }
+        .filtros-label { font-size: 0.85em; font-weight: 700; color: #6c757d; text-transform: uppercase; letter-spacing: 0.5px; }
+        select.filtro-select { padding: 8px 14px; border-radius: 8px; border: 2px solid var(--medium-gray); font-family: inherit; font-size: 0.92em; font-weight: 600; color: var(--dark-gray); background: var(--white); cursor: pointer; transition: border-color 0.2s; appearance: none; -webkit-appearance: none; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath fill='%23FFC107' d='M6 8L0 0h12z'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right 12px center; padding-right: 36px; }
+        select.filtro-select:focus { outline: none; border-color: var(--primary); }
+        .btn-limpar { padding: 8px 16px; border-radius: 8px; border: 2px solid var(--medium-gray); background: none; font-family: inherit; font-size: 0.88em; cursor: pointer; color: #6c757d; transition: all 0.2s; }
+        .btn-limpar:hover { border-color: var(--primary); color: var(--primary); }
+        .btn-geo { padding: 8px 16px; border-radius: 8px; background: var(--primary); color: #1a1a1a; border: 2px solid var(--primary); font-family: inherit; font-size: 0.88em; cursor: pointer; transition: all 0.2s; font-weight: 600; white-space: nowrap; }
+        .btn-geo.ativo { background: var(--dark); border-color: var(--dark); color: #fff; }
+        .btn-geo:disabled { opacity: 0.7; cursor: default; }
+        .resultados-count { font-size: 0.88em; color: #6c757d; margin-left: auto; }
+
+        /* ══ ANUNCIE / FOOTER ══ */
+        .anuncie-section { background: var(--dark-gray); color: #fff; padding: 64px 20px; text-align: center; }
+        .anuncie-section h2 { font-size: 2em; font-weight: 800; margin-bottom: 12px; }
+        .anuncie-section p { font-size: 1.05em; color: #ccc; margin-bottom: 30px; max-width: 560px; margin-left: auto; margin-right: auto; }
+        .btn-anuncie { display: inline-flex; align-items: center; gap: 8px; background: var(--primary); color: #1a1a1a; padding: 15px 34px; border-radius: 8px; font-size: 1.05em; font-weight: 700; transition: background 0.3s, transform 0.2s; }
+        .btn-anuncie:hover { background: var(--dark); transform: translateY(-2px); }
+        footer { background: #111; color: #999; text-align: center; padding: 32px 20px; font-size: 0.88em; }
+        footer a { color: var(--primary); }
+        footer a:hover { text-decoration: underline; }
+        .footer-logo { margin-bottom: 14px; }
+        .footer-logo img { height: 36px; width: auto; opacity: 0.85; }
+
+        /* ══ RESPONSIVE ══ */
+        @media (max-width: 768px) {
+            body > header { padding: 16px 60px 16px 20px; flex-direction: row; justify-content: center; }
+            .header-logo img { height: 96px; }
+            nav.desktop-nav { display: none; }
+            .hamburger-btn { display: block; top: 50%; transform: translateY(-50%); }
+            .hero-section { min-height: 360px; }
+            .hero-section h1 { font-size: 2.2em; }
+            .section { padding: 44px 0; }
+            .section-title { font-size: 1.6em; }
+            .secao-header { flex-direction: column; align-items: flex-start; }
+        }
+    </style>
+</head>
+<body>
+
+<!-- HEADER -->
+<header>
+    <div class="header-logo">
+        <a href="/" aria-label="{{ hub.nome or 'AgênciaStart' }} — Página inicial">
+            <img src="{{ hub.logo_url or 'https://res.cloudinary.com/dhu1cqvrb/image/upload/v1783643721/Massas_Sabores_6_utat55.png' }}"
+                 alt="{{ hub.nome or 'AgênciaStart' }}" height="80" loading="eager">
+        </a>
+    </div>
+    <p class="header-subtitle">Diretório de Agências, Estúdios e&nbsp;Freelancers</p>
+    <nav class="desktop-nav" aria-label="Navegação principal">
+        <ul>
+            <li><a href="/">Início</a></li>
+            <li>
+                <a href="#categorias">Categorias ▾</a>
+                <div class="nav-dropdown">
+                    {% for cat in categorias %}
+                    <a href="/{{ cat.slug }}/">{{ cat.nome }}</a>
+                    {% endfor %}
+                </div>
+            </li>
+            <li><a href="#negocios">Agências e Estúdios</a></li>
+            <li><a href="https://wa.me/55{{ hub.whatsapp or '11913324827' }}?text=Olá,+quero+saber+mais" target="_blank" rel="noopener">Contato</a></li>
+        </ul>
+    </nav>
+    <button class="hamburger-btn" id="hamburger-btn" aria-label="Abrir menu"><i class="fas fa-bars"></i></button>
+</header>
+
+<!-- MOBILE NAV -->
+<div class="mobile-nav-overlay" id="mobile-nav" role="dialog" aria-modal="true">
+    <button class="mobile-nav-close" onclick="closeMobileNav()" aria-label="Fechar menu">&#x2715;</button>
+    <nav>
+        <ul>
+            <li><a href="/" onclick="closeMobileNav()">Início</a></li>
+            <li><a href="#categorias" onclick="closeMobileNav()">Categorias</a></li>
+            <li><a href="#negocios" onclick="closeMobileNav()">Agências e Estúdios</a></li>
+            <li><a href="https://wa.me/55{{ hub.whatsapp or '11913324827' }}?text=Olá,+quero+saber+mais" target="_blank" rel="noopener" onclick="closeMobileNav()">Contato</a></li>
+        </ul>
+    </nav>
+</div>
+
+<!-- BANNER TOPO -->
+<div class="banner-topo">
+    {% if anuncio_topo %}
+    <a href="{{ anuncio_topo.link }}" target="_blank" rel="noopener sponsored">
+        <img src="{{ anuncio_topo.foto_url }}" alt="{{ anuncio_topo.titulo or 'Publicidade' }}"
+             style="max-height:90px; width:auto; max-width:100%; border-radius:8px;">
+    </a>
+    {% elif hub.banner1_foto_url %}
+    <a href="{{ hub.banner1_link or '#' }}" target="_blank" rel="noopener sponsored">
+        <img src="{{ hub.banner1_foto_url }}" alt="Publicidade"
+             style="max-height:90px; width:auto; max-width:100%; border-radius:8px;">
+    </a>
+    {% else %}
+    <a class="banner-placeholder"
+       href="https://wa.me/55{{ hub.whatsapp or '11913324827' }}?text=Quero+cadastrar+minha+agência+ou+estúdio"
+       target="_blank" rel="noopener">📣 Anuncie aqui — espaço disponível</a>
+    {% endif %}
+</div>
+
+<!-- BREADCRUMB -->
+<div class="breadcrumb-bar">
+    <div class="container">
+        <a href="/">Início</a><span>›</span>
+        <a href="/cidade/{{ cidade | slugify }}/">{{ cidade }}</a>
+        {% if bairro %}<span>›</span><a href="/cidade/{{ cidade | slugify }}/{{ bairro | slugify }}/">{{ bairro }}</a>{% endif %}
+        {% if categoria %}<span>›</span><span>{{ categoria.nome }}</span>{% endif %}
+    </div>
+</div>
+
+<!-- HERO -->
+<section class="hero-section" aria-label="Cidade {{ cidade }}">
+    <div class="hero-inner container">
+        <p class="hero-label"><i class="fas fa-map-marker-alt"></i> {{ cidade }}</p>
+        <h1>
+            {% if categoria and bairro %}{{ categoria.nome }} em <em>{{ bairro }}</em>
+            {% elif categoria %}{{ categoria.nome }} em <em>{{ cidade }}</em>
+            {% elif bairro %}Agências e criativos em <em>{{ bairro }}</em>
+            {% else %}Agências e criativos em <em>{{ cidade }}</em>{% endif %}
+        </h1>
+        {% if bairro or categoria %}
+        <p class="hero-sub-filtro">Mostrando {% if categoria %}{{ categoria.nome | lower }}{% else %}todas as agências e estúdios{% endif %}{% if bairro %} no bairro {{ bairro }}{% endif %} em {{ cidade }}.</p>
+        {% else %}
+        <p class="hero-sub-filtro">Explore agências, estúdios e profissionais criativos em {{ cidade }}.</p>
+        {% endif %}
+        <div class="hero-btns">
+            <button class="btn-hero" onclick="toggleLocalizacao()"><i class="fas fa-location-arrow"></i> Ver o que tem perto de mim</button>
+            <a href="#negocios" class="btn-hero-outline"><i class="fas fa-list"></i> Ver agências e estúdios</a>
+        </div>
+    </div>
+</section>
+
+<!-- BAIRROS — carrossel com toggle lista -->
+{% if not bairro and bairros_disponiveis %}
+<section class="section" style="background:var(--white);" id="bairros">
+    <div class="container">
+        <div class="secao-header">
+            <div class="secao-header-left">
+                <h2>Bairros em {{ cidade }}</h2>
+                <p>Filtre por bairro para encontrar o que tem mais perto de você</p>
+            </div>
+            <div class="toggle-view-btns" id="bairros-toggle">
+                <span>Ver como:</span>
+                <button class="tvbtn active" id="bairros-btn-carousel" title="Carrossel" onclick="setBairrosView('carousel')"><i class="fas fa-grip-lines"></i></button>
+                <button class="tvbtn" id="bairros-btn-lista" title="Lista" onclick="setBairrosView('lista')"><i class="fas fa-list"></i></button>
+            </div>
+        </div>
+
+        <!-- Carrossel de bairros -->
+        <div id="bairros-carousel-wrapper" class="gen-carousel-wrapper">
+            <div class="gen-carousel-outer">
+                <div class="gen-carousel-track" id="bairros-track">
+                    {% for b in bairros_disponiveis %}
+                    {% set b_slug = b | slugify %}
+                    <a href="/cidade/{{ cidade | slugify }}/{{ b_slug }}/" class="bairro-card">
+                        <i class="fas fa-map-pin"></i>{{ b }}
+                    </a>
+                    {% endfor %}
+                </div>
+            </div>
+            <div class="gen-carousel-nav" id="bairros-carousel-nav">
+                <button class="gen-carousel-arrow" id="bairros-prev" onclick="moverGenCarousel('bairros',-1)"><i class="fas fa-chevron-left"></i></button>
+                <div class="gen-progress-bar"><div class="gen-progress-fill" id="bairros-progress-fill"></div></div>
+                <button class="gen-carousel-arrow" id="bairros-next" onclick="moverGenCarousel('bairros',1)"><i class="fas fa-chevron-right"></i></button>
+            </div>
+        </div>
+
+        <!-- Lista de bairros (oculta por padrão) -->
+        <div class="bairros-lista" id="bairros-lista">
+            {% for b in bairros_disponiveis %}
+            {% set b_slug = b | slugify %}
+            <a href="/cidade/{{ cidade | slugify }}/{{ b_slug }}/" class="bairro-lista-item">
+                <i class="fas fa-map-pin"></i>{{ b }}
+            </a>
+            {% endfor %}
+        </div>
+    </div>
+</section>
+{% endif %}
+
+<!-- CATEGORIAS — carrossel com toggle lista -->
+{% if not categoria and categorias_disponiveis %}
+<section class="section" id="categorias" style="background:var(--light-gray);">
+    <div class="container">
+        <div class="secao-header">
+            <div class="secao-header-left">
+                <h2>Categorias em {{ cidade }}</h2>
+                <p>O que você está procurando em {{ cidade }}?</p>
+            </div>
+            <div class="toggle-view-btns" id="cats-toggle">
+                <span>Ver como:</span>
+                <button class="tvbtn active" id="cats-btn-carousel" title="Carrossel" onclick="setCatsView('carousel')"><i class="fas fa-grip-lines"></i></button>
+                <button class="tvbtn" id="cats-btn-lista" title="Lista" onclick="setCatsView('lista')"><i class="fas fa-list"></i></button>
+            </div>
+        </div>
+
+        <!-- Carrossel de categorias -->
+        <div id="cats-carousel-wrapper" class="gen-carousel-wrapper">
+            <div class="gen-carousel-outer">
+                <div class="gen-carousel-track" id="cats-track">
+                    {% for cat in categorias_disponiveis %}
+                    <a href="/cidade/{{ cidade | slugify }}/{{ cat.slug }}/" class="categoria-card">
+                        <div class="cat-photo">
+                            <img src="{{ cat.icone_url or 'https://res.cloudinary.com/dhu1cqvrb/image/upload/v1783643721/Massas_Sabores_6_utat55.png' }}"
+                                 alt="{{ cat.nome }} em {{ cidade }}" loading="lazy" width="300" height="300">
+                        </div>
+                        <h3>{{ cat.nome }}</h3>
+                        <span class="btn-ver">Ver todos →</span>
+                    </a>
+                    {% endfor %}
+                </div>
+            </div>
+            <div class="gen-carousel-nav" id="cats-carousel-nav">
+                <button class="gen-carousel-arrow" id="cats-prev" onclick="moverGenCarousel('cats',-1)"><i class="fas fa-chevron-left"></i></button>
+                <div class="gen-progress-bar"><div class="gen-progress-fill" id="cats-progress-fill"></div></div>
+                <button class="gen-carousel-arrow" id="cats-next" onclick="moverGenCarousel('cats',1)"><i class="fas fa-chevron-right"></i></button>
+            </div>
+        </div>
+
+        <!-- Lista de categorias (oculta por padrão) -->
+        <div class="categorias-lista" id="cats-lista">
+            {% for cat in categorias_disponiveis %}
+            <a href="/cidade/{{ cidade | slugify }}/{{ cat.slug }}/" class="cat-lista-item">
+                <img class="cat-lista-thumb" src="{{ cat.icone_url or 'https://res.cloudinary.com/dhu1cqvrb/image/upload/v1783643721/Massas_Sabores_6_utat55.png' }}" alt="{{ cat.nome }}" loading="lazy">
+                {{ cat.nome }}
+            </a>
+            {% endfor %}
+        </div>
+    </div>
+</section>
+{% endif %}
+
+<!-- BANNER MEIO -->
+<div class="banner-meio">
+    {% if anuncio_meio %}
+    <a href="{{ anuncio_meio.link }}" target="_blank" rel="noopener sponsored">
+        <img src="{{ anuncio_meio.foto_url }}" alt="{{ anuncio_meio.titulo or 'Publicidade' }}"
+             style="max-height:120px; width:auto; max-width:100%; border-radius:8px;">
+    </a>
+    {% elif hub.banner2_foto_url %}
+    <a href="{{ hub.banner2_link or '#' }}" target="_blank" rel="noopener sponsored">
+        <img src="{{ hub.banner2_foto_url }}" alt="Publicidade"
+             style="max-height:120px; width:auto; max-width:100%; border-radius:8px;">
+    </a>
+    {% else %}
+    <a class="banner-placeholder"
+       href="https://wa.me/55{{ hub.whatsapp or '11913324827' }}?text=Quero+cadastrar+minha+agência+ou+estúdio"
+       target="_blank" rel="noopener">📣 Anuncie aqui — espaço disponível</a>
+    {% endif %}
+</div>
+
+<!-- NEGÓCIOS -->
+<section class="section" id="negocios" style="background:var(--white);">
+    <div class="container">
+        <h2 class="section-title">
+            {% if categoria %}{{ categoria.nome }}{% else %}Agências e Estúdios{% endif %}
+            {% if bairro %} em {{ bairro }}{% else %} em {{ cidade }}{% endif %}
+        </h2>
+        <p class="section-subtitle">
+            {% if total_negocios == 0 %}Nenhum resultado encontrado.
+            {% elif total_negocios == 1 %}1 estabelecimento encontrado
+            {% else %}{{ total_negocios }} agências e estúdios encontrados{% endif %}
+        </p>
+
+        <!-- Filtros -->
+        <div class="filtros-wrapper">
+            {% if bairros_disponiveis %}
+            <label class="filtros-label">Bairro:</label>
+            <select class="filtro-select" id="filtro-bairro" onchange="aplicarFiltros()">
+                <option value="">Todos</option>
+                {% for b in bairros_disponiveis %}<option value="{{ b }}" {% if bairro == b %}selected{% endif %}>{{ b }}</option>{% endfor %}
+            </select>
+            {% endif %}
+            {% if categorias_disponiveis %}
+            <label class="filtros-label">Categoria:</label>
+            <select class="filtro-select" id="filtro-categoria" onchange="aplicarFiltros()">
+                {% for cat in categorias_disponiveis %}<option value="{{ cat.slug }}" {% if (categoria and categoria.slug == cat.slug) or (not categoria and loop.first) %}selected{% endif %}>{{ cat.nome }}</option>{% endfor %}
+            </select>
+            {% endif %}
+            <button class="btn-limpar" onclick="limparFiltros()"><i class="fas fa-times"></i> Limpar</button>
+            <button class="btn-geo" id="btnLoc" onclick="toggleLocalizacao()" title="Usar minha localização" type="button"><i class="fas fa-map-marker-alt"></i> Localização</button>
+            <span class="resultados-count" id="resultados-count"></span>
+        </div>
+
+        <!-- Chips rápidos -->
+        <div class="chips-row" id="chips-row" role="group" aria-label="Filtrar por categoria">
+            {% for cat in categorias_disponiveis %}
+            <button class="chip{% if (categoria and categoria.slug == cat.slug) or (not categoria and loop.first) %} active{% endif %}" onclick="filtrarCategoriaChip('{{ cat.slug }}', this)">{{ cat.nome }}</button>
+            {% endfor %}
+        </div>
+
+        <!-- Controles visualização -->
+        <div class="view-controls" id="view-controls" style="display:none;">
+            <span>Ver como:</span>
+            <button class="view-btn active" id="btn-carousel" title="Carrossel" onclick="setView('carousel')"><i class="fas fa-grip-lines"></i></button>
+            <button class="view-btn" id="btn-grade" title="Grade" onclick="setView('grade')"><i class="fas fa-th"></i></button>
+        </div>
+
+        <!-- Carrossel negócios -->
+        <div id="negocios-carousel-wrapper" class="carousel-wrapper">
+            <div class="carousel-track-outer">
+                <div class="carousel-track" id="negocios-track"></div>
+            </div>
+            <div class="carousel-nav">
+                <button class="carousel-arrow" id="negocios-prev" onclick="moveCarousel(-1)"><i class="fas fa-chevron-left"></i></button>
+                <div class="carousel-progress-bar"><div class="carousel-progress-fill" id="negocios-progress-fill"></div></div>
+                <button class="carousel-arrow" id="negocios-next" onclick="moveCarousel(1)"><i class="fas fa-chevron-right"></i></button>
+            </div>
+        </div>
+        <div class="negocios-grid" id="negocios-grade" style="display:none;"></div>
+        <p class="info-message" id="negocios-vazio" style="display:none;">Nenhum estabelecimento encontrado com esses filtros.</p>
+        <div id="lazy-sentinel" style="height:1px; margin-top:10px;"></div>
+        <p id="lazy-loading" style="display:none; text-align:center; color:var(--primary); padding:20px; font-size:0.95em;"><i class="fas fa-spinner fa-spin"></i> Carregando mais agências e estúdios...</p>
+    </div>
+</section>
+
+<!-- ANUNCIE -->
+<section class="anuncie-section">
+    <div class="container">
+        <h2>Seu negócio em {{ cidade }}</h2>
+        <p>Apareça para marcas e clientes que buscam criativos em {{ cidade }} todos os dias.</p>
+        <a href="https://wa.me/55{{ hub.whatsapp or '11913324827' }}?text=Quero+cadastrar+minha+agência+em+{{ cidade | urlencode }}"
+           target="_blank" rel="noopener" class="btn-anuncie">
+            <i class="fab fa-whatsapp"></i> Quero cadastrar minha agência
+        </a>
+    </div>
+</section>
+
+<!-- FOOTER -->
+<footer>
+    <div class="footer-logo">
+        <img src="{{ hub.logo_url or 'https://res.cloudinary.com/dhu1cqvrb/image/upload/v1783643721/Massas_Sabores_6_utat55.png' }}"
+             alt="{{ hub.nome or 'AgênciaStart' }}" loading="lazy">
+    </div>
+    <p>© 2026 <strong>{{ hub.nome or 'AgênciaStart' }}</strong> — Todos os direitos reservados</p>
+    <p style="margin-top:10px;"><a href="/">Início</a> &middot; <a href="/sitemap.xml">Sitemap</a> &middot; <a href="/robots.txt">Robots.txt</a></p>
+</footer>
+
+<script>
+/* ══ NAV ══ */
+document.getElementById('hamburger-btn').addEventListener('click', function(){
+    document.getElementById('mobile-nav').classList.add('active');
+    document.body.style.overflow = 'hidden';
+});
+function closeMobileNav(){
+    document.getElementById('mobile-nav').classList.remove('active');
+    document.body.style.overflow = '';
+}
+document.addEventListener('keydown', function(e){ if(e.key==='Escape') closeMobileNav(); });
+
+/* ══ CARROSSEL GENÉRICO (bairros / categorias) ══ */
+var genPos = { bairros: 0, cats: 0 };
+
+function genCardWidth(id){
+    var track = document.getElementById(id+'-track');
+    if(!track) return 200;
+    var card = track.firstElementChild;
+    if(!card) return 200;
+    return card.offsetWidth + 16;
+}
+
+function isMobile(){ return window.innerWidth <= 768; }
+
+function genClamp(id){
+    if(isMobile()) return; // mobile usa scroll nativo
+    var track = document.getElementById(id+'-track');
+    if(!track) return;
+    var cards = track.children;
+    if(!cards.length) return;
+    var outer = track.parentElement;
+    var maxPos = Math.max(0, cards.length * genCardWidth(id) - outer.offsetWidth);
+    genPos[id] = Math.max(0, Math.min(genPos[id], maxPos));
+    track.style.transform = 'translateX(-'+genPos[id]+'px)';
+    var fill = document.getElementById(id+'-progress-fill');
+    var prev = document.getElementById(id+'-prev');
+    var next = document.getElementById(id+'-next');
+    if(fill) fill.style.width = maxPos > 0 ? Math.min(100,(genPos[id]/maxPos)*100)+'%' : '0%';
+    if(prev) prev.disabled = genPos[id] <= 0;
+    if(next) next.disabled = maxPos <= 0 || genPos[id] >= maxPos;
+}
+
+function moverGenCarousel(id, dir){
+    var outer = document.getElementById(id+'-track').parentElement;
+    var w = genCardWidth(id);
+    var vis = Math.max(1, Math.floor(outer.offsetWidth / w));
+    genPos[id] += dir * vis * w;
+    genClamp(id);
+}
+
+function initGenDrag(id){
+    if(isMobile()) return; // mobile usa scroll nativo do browser
+    var track = document.getElementById(id+'-track');
+    if(!track) return;
+    var isDragging=false, startX=0, startPos=0, _ty=0, _horiz=false, _det=false;
+    function onStart(x){ isDragging=true; startX=x; startPos=genPos[id]; track.classList.add('dragging'); }
+    function onMove(x){ if(!isDragging) return; genPos[id]=startPos-(x-startX); genClamp(id); }
+    function onEnd(){ if(!isDragging) return; isDragging=false; track.classList.remove('dragging');
+        var w=genCardWidth(id); if(w) genPos[id]=Math.round(genPos[id]/w)*w; genClamp(id); }
+    track.addEventListener('mousedown',function(e){ onStart(e.clientX); e.preventDefault(); });
+    window.addEventListener('mousemove',function(e){ if(isDragging) onMove(e.clientX); });
+    window.addEventListener('mouseup',function(){ onEnd(); });
+    track.addEventListener('touchstart',function(e){ _ty=e.touches[0].clientY;_horiz=false;_det=false; onStart(e.touches[0].clientX); },{passive:true});
+    track.addEventListener('touchmove',function(e){
+        if(!isDragging) return;
+        if(!_det){ var dx=Math.abs(e.touches[0].clientX-startX),dy=Math.abs(e.touches[0].clientY-_ty); if(dx>5||dy>5){_horiz=dx>=dy;_det=true;} }
+        if(!_det||!_horiz) return; e.preventDefault(); onMove(e.touches[0].clientX);
+    },{passive:false});
+    track.addEventListener('touchend',function(e){ if(_horiz) onEnd(); else isDragging=false; });
+}
+
+function setBairrosView(mode){
+    var cw = document.getElementById('bairros-carousel-wrapper');
+    var lista = document.getElementById('bairros-lista');
+    var bc = document.getElementById('bairros-btn-carousel');
+    var bl = document.getElementById('bairros-btn-lista');
+    if(!cw) return;
+    if(mode==='carousel'){
+        cw.style.display = ''; lista.classList.remove('ativo');
+        bc.classList.add('active'); bl.classList.remove('active');
+        setTimeout(function(){ genClamp('bairros'); }, 50);
+    } else {
+        cw.style.display = 'none'; lista.classList.add('ativo');
+        bc.classList.remove('active'); bl.classList.add('active');
+    }
+}
+
+function setCatsView(mode){
+    var cw = document.getElementById('cats-carousel-wrapper');
+    var lista = document.getElementById('cats-lista');
+    var bc = document.getElementById('cats-btn-carousel');
+    var bl = document.getElementById('cats-btn-lista');
+    if(!cw) return;
+    if(mode==='carousel'){
+        cw.style.display = ''; lista.classList.remove('ativo');
+        bc.classList.add('active'); bl.classList.remove('active');
+        setTimeout(function(){ genClamp('cats'); }, 50);
+    } else {
+        cw.style.display = 'none'; lista.classList.add('ativo');
+        bc.classList.remove('active'); bl.classList.add('active');
+    }
+}
+
+// inicia carrosseis após DOM pronto
+window.addEventListener('load', function(){
+    initGenDrag('bairros');
+    initGenDrag('cats');
+    setTimeout(function(){ genClamp('bairros'); genClamp('cats'); }, 100);
+});
+window.addEventListener('resize', function(){ genClamp('bairros'); genClamp('cats'); });
+</script>
+
+<script>
+/* ══ NEGÓCIOS ══ */
+// Igual ao index_otp.html: só os 48 primeiros vêm no HTML — o resto é buscado
+// em lotes via API com offset. Aqui também filtramos por cidade (e bairro/categoria
+// quando o usuário troca o filtro), porque o resto dos negócios não está no navegador.
+var _cidadeAtual    = {{ cidade | tojson }};
+var _totalServidor  = {{ total_negocios | tojson }};
+var todosNegocios   = {{ negocios | tojson }};
+var _apiOffset       = 48;
+var _apiFim          = todosNegocios.length >= _totalServidor;
+var _apiCarregando   = false;
+var _loteSize        = 96;
+var negociosFiltrados = todosNegocios.slice();
+var userLat=null, userLng=null, geoAtivo=false;
+var carouselPos=0, carouselView='carousel';
+
+// Filtros de bairro/categoria ativos AGORA (começam com o que já veio da URL/Jinja)
+var _filtroBairroAtivo    = {{ (bairro or '') | tojson }} || null;
+var _filtroCategoriaAtiva = {{ (categoria.slug if categoria else (categorias_disponiveis[0].slug if categorias_disponiveis else '')) | tojson }} || null;
+
+function haversineKm(lat1, lng1, lat2, lng2){
+    var R=6371,dLat=(lat2-lat1)*Math.PI/180,dLng=(lng2-lng1)*Math.PI/180;
+    var a=Math.sin(dLat/2)*Math.sin(dLat/2)+Math.cos(lat1*Math.PI/180)*Math.cos(lat2*Math.PI/180)*Math.sin(dLng/2)*Math.sin(dLng/2);
+    return R*2*Math.atan2(Math.sqrt(a),Math.sqrt(1-a));
+}
+
+// Única função responsável por calcular E ordenar por distância — evita o bug
+// de cada função de render ter sua própria lógica de sort (o que fazia a lista
+// ficar "ordenada em blocos" em vez de ordenada por inteiro, ex: lote 1 sai
+// ordenado, lote 2 sai ordenado, mas o resultado final vem em blocos soltos).
+function _aplicarDistancias(){
+    todosNegocios.forEach(function(n){
+        var lat=parseFloat(n.lat), lng=parseFloat(n.lng);
+        if(userLat!==null && !isNaN(lat) && !isNaN(lng) && lat!==0 && lng!==0){
+            n._dist = haversineKm(userLat, userLng, lat, lng);
+        } else {
+            n._dist = 99999;
+        }
+    });
+    todosNegocios.sort(function(a,b){ return (a._dist||99999)-(b._dist||99999); });
+}
+
+function toggleLocalizacao(){
+    var btn = document.getElementById('btnLoc');
+    if(geoAtivo){
+        // Desativa: limpa a distância e volta pra ordem normal
+        geoAtivo = false;
+        userLat = null;
+        userLng = null;
+        if(btn){
+            btn.classList.remove('ativo');
+            btn.innerHTML = '<i class="fas fa-map-marker-alt"></i> Localização';
+        }
+        todosNegocios.forEach(function(n){ delete n._dist; });
+        renderNegocios(todosNegocios.slice());
+        return;
+    }
+    if(!navigator.geolocation){ alert('Geolocalização não suportada.'); return; }
+    if(btn){
+        btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Localizando...';
+        btn.disabled = true;
+    }
+    navigator.geolocation.getCurrentPosition(function(pos){
+        userLat=pos.coords.latitude; userLng=pos.coords.longitude; geoAtivo=true;
+        if(btn){
+            btn.classList.add('ativo');
+            btn.innerHTML = '<i class="fas fa-map-marker-alt"></i> Localização ✓';
+            btn.disabled = false;
+        }
+        document.getElementById('negocios').scrollIntoView({behavior:'smooth',block:'start'});
+        // Ordena localmente TODOS os negócios já carregados — nada de pedir
+        // pro back-end reordenar, é isso que causava blocos fora de ordem.
+        _aplicarDistancias();
+        renderNegocios(todosNegocios.slice());
+    }, function(){
+        if(btn){
+            btn.innerHTML = '<i class="fas fa-map-marker-alt"></i> Localização';
+            btn.disabled = false;
+        }
+        alert('Não foi possível obter sua localização. Verifique as permissões.');
+    }, { timeout: 10000, maximumAge: 60000 });
+}
+
+function cardHTML(n){
+    var dist=(n._dist&&n._dist<9999)?'<span class="card-dist"><i class="fas fa-map-marker-alt"></i> '+n._dist.toFixed(1)+' km de você</span>':'';
+    var foto=n.foto_url||'https://res.cloudinary.com/dhu1cqvrb/image/upload/v1783643721/Massas_Sabores_6_utat55.png';
+    var local=[n.bairro,n.cidade].filter(Boolean).join(', ');
+    return '<a href="/'+n.categoria_slug+'/'+n.slug+'/" class="negocio-card">'+
+        '<div class="card-foto"><img src="'+foto+'" alt="'+n.nome+'" loading="lazy" width="400" height="180"><span class="badge-cat">'+(n.categoria_nome||'')+'</span></div>'+
+        '<div class="card-body"><h3>'+n.nome+'</h3>'+(local?'<p class="card-bairro"><i class="fas fa-map-marker-alt" style="color:var(--primary)"></i> '+local+'</p>':'')+dist+'<span class="btn-ver">Ver detalhes →</span></div>'+
+    '</a>';
+}
+
+function getCardWidth(){
+    var track=document.getElementById('negocios-track');
+    var card=track.querySelector('.negocio-card');
+    return card ? card.offsetWidth+22 : 280;
+}
+
+function clampAndUpdate(){
+    if(isMobile()) return; // mobile usa scroll nativo
+    var track=document.getElementById('negocios-track');
+    var cards=track.querySelectorAll('.negocio-card');
+    if(!cards.length) return;
+    var maxPos=Math.max(0,cards.length*getCardWidth()-track.parentElement.offsetWidth);
+    carouselPos=Math.max(0,Math.min(carouselPos,maxPos));
+    track.style.transform='translateX(-'+carouselPos+'px)';
+    var fill=document.getElementById('negocios-progress-fill');
+    var prev=document.getElementById('negocios-prev');
+    var next=document.getElementById('negocios-next');
+    if(fill) fill.style.width=maxPos>0?Math.min(100,(carouselPos/maxPos)*100)+'%':'0%';
+    if(prev) prev.disabled=carouselPos<=0;
+    if(next) next.disabled=maxPos<=0||carouselPos>=maxPos;
+}
+
+function snapCarousel(){ var w=getCardWidth(); if(w){ carouselPos=Math.round(carouselPos/w)*w; clampAndUpdate(); } }
+
+function buildCarousel(cards){
+    var track=document.getElementById('negocios-track');
+    track.innerHTML=cards.join('');
+    carouselPos=0; track.style.transform='translateX(0)'; clampAndUpdate();
+    var isDragging=false,startX=0,startPos=0,_ty=0,_horiz=false,_det=false;
+    var newTrack=track.cloneNode(true);
+    track.parentNode.replaceChild(newTrack,track);
+    track=document.getElementById('negocios-track');
+    function onStart(x){ isDragging=true; startX=x; startPos=carouselPos; track.classList.add('dragging'); }
+    function onMove(x){ if(!isDragging) return; carouselPos=startPos-(x-startX); clampAndUpdate(); }
+    function onEnd(){ isDragging=false; track.classList.remove('dragging'); snapCarousel(); }
+    if(!isMobile()){
+        track.addEventListener('mousedown',function(e){ onStart(e.clientX); e.preventDefault(); });
+        window.addEventListener('mousemove',function(e){ if(isDragging) onMove(e.clientX); });
+        window.addEventListener('mouseup',function(){ if(isDragging) onEnd(); });
+        track.addEventListener('touchstart',function(e){ _ty=e.touches[0].clientY;_horiz=false;_det=false; onStart(e.touches[0].clientX); },{passive:true});
+        track.addEventListener('touchmove',function(e){
+            if(!isDragging) return;
+            if(!_det){ var dx=Math.abs(e.touches[0].clientX-startX),dy=Math.abs(e.touches[0].clientY-_ty); if(dx>5||dy>5){_horiz=dx>=dy;_det=true;} }
+            if(!_det||!_horiz) return; e.preventDefault(); onMove(e.touches[0].clientX);
+        },{passive:false});
+        track.addEventListener('touchend',function(e){ if(_horiz) onEnd(); else isDragging=false; });
+    }
+}
+
+function moveCarousel(dir){
+    var outer=document.getElementById('negocios-track').parentElement;
+    var vis=Math.max(1,Math.floor(outer.offsetWidth/getCardWidth()));
+    carouselPos+=dir*vis*getCardWidth(); clampAndUpdate();
+}
+
+function setView(mode){
+    carouselView=mode;
+    var cw=document.getElementById('negocios-carousel-wrapper');
+    var gd=document.getElementById('negocios-grade');
+    document.getElementById('btn-carousel').classList.toggle('active',mode==='carousel');
+    document.getElementById('btn-grade').classList.toggle('active',mode==='grade');
+    if(cw) cw.style.display=mode==='carousel'?'':'none';
+    if(gd) gd.style.display=mode==='grade'?'grid':'none';
+}
+
+function renderNegocios(lista){
+    var vc=document.getElementById('view-controls');
+    var vazio=document.getElementById('negocios-vazio');
+    var count=document.getElementById('resultados-count');
+    negociosFiltrados = lista;
+    // Mostra "+" enquanto ainda houver mais páginas pra carregar da API
+    if(count) count.textContent = lista.length + (!_apiFim ? '+' : '') + ' resultado' + (lista.length!==1?'s':'');
+    if(!lista.length){
+        if(vc) vc.style.display='none';
+        var cw=document.getElementById('negocios-carousel-wrapper');
+        var gd=document.getElementById('negocios-grade');
+        if(cw) cw.style.display='none'; if(gd) gd.style.display='none';
+        if(vazio) vazio.style.display=''; return;
+    }
+    if(vazio) vazio.style.display='none';
+    if(vc) vc.style.display='flex';
+    var cards=lista.slice(0,48).map(cardHTML);
+    buildCarousel(cards);
+    var gd=document.getElementById('negocios-grade');
+    if(gd) gd.innerHTML=cards.join('');
+    setView(carouselView);
+}
+
+// Monta a URL da API sempre com a cidade atual + filtros de bairro/categoria ativos
+function _buildApiUrl(offset, limit){
+    var url = '/api/hub/negocios?limit='+limit+'&offset='+offset+'&cidade='+encodeURIComponent(_cidadeAtual);
+    if(_filtroCategoriaAtiva) url += '&categoria='+encodeURIComponent(_filtroCategoriaAtiva);
+    if(_filtroBairroAtivo)    url += '&bairro='+encodeURIComponent(_filtroBairroAtivo);
+    if(geoAtivo && userLat && userLng) url += '&lat='+userLat+'&lng='+userLng;
+    return url;
+}
+
+// Quando o filtro de bairro/categoria muda, recomeça do zero buscando da API
+// (porque o restante dos negócios da cidade não está carregado no navegador)
+function _resetEFiltrar(){
+    _apiOffset = 0;
+    _apiFim = false;
+    _apiCarregando = true;
+    var loading = document.getElementById('lazy-loading');
+    if(loading) loading.style.display = 'block';
+    // Sempre pede um teto bem alto: carrega TODOS os negócios da categoria/cidade
+    // de uma vez (antes o primeiro lote ficava travado em 96 e escondia o resto
+    // até rolar a página — e com localização ativa isso também deixava de fora
+    // quem estava mais perto mas não entrava nesse recorte).
+    var limiteBusca = 20000;
+    fetch(_buildApiUrl(0, limiteBusca))
+        .then(function(r){ return r.json(); })
+        .then(function(data){
+            _apiCarregando = false;
+            if(loading) loading.style.display = 'none';
+            if(Array.isArray(data)){
+                todosNegocios = data;
+                _apiOffset = data.length;
+                if(data.length < limiteBusca) _apiFim = true;
+            } else {
+                todosNegocios = [];
+                _apiFim = true;
+            }
+            if(geoAtivo && userLat !== null) _aplicarDistancias();
+            renderNegocios(todosNegocios.slice());
+        })
+        .catch(function(){
+            _apiCarregando = false;
+            _apiFim = true;
+            if(loading) loading.style.display = 'none';
+            renderNegocios([]);
+        });
+}
+
+// Busca o próximo lote da API (rolagem) com paginação por offset
+var _apiCallbacksProximoLote = [];
+function _carregarAPIUmaVez(callback){
+    if(_apiFim){ if(callback) callback(); return; }
+    if(callback) _apiCallbacksProximoLote.push(callback);
+    if(_apiCarregando) return;
+    _apiCarregando = true;
+    var loading = document.getElementById('lazy-loading');
+    if(loading) loading.style.display = 'block';
+    fetch(_buildApiUrl(_apiOffset, _loteSize))
+        .then(function(r){ return r.json(); })
+        .then(function(data){
+            _apiCarregando = false;
+            if(Array.isArray(data) && data.length > 0){
+                _apiOffset += data.length;
+                todosNegocios = todosNegocios.concat(data);
+                if(geoAtivo && userLat !== null) _aplicarDistancias();
+                negociosFiltrados = todosNegocios.slice();
+            } else {
+                _apiFim = true;
+            }
+            if(loading) loading.style.display = 'none';
+            var cbs = _apiCallbacksProximoLote.slice(); _apiCallbacksProximoLote = [];
+            cbs.forEach(function(cb){ cb(); });
+        })
+        .catch(function(){
+            _apiCarregando = false;
+            _apiFim = true;
+            if(loading) loading.style.display = 'none';
+            var cbs = _apiCallbacksProximoLote.slice(); _apiCallbacksProximoLote = [];
+            cbs.forEach(function(cb){ cb(); });
+        });
+}
+
+function _renderizarProximoLote(){
+    var lista = negociosFiltrados;
+    var trackCards = document.getElementById('negocios-track') ? document.getElementById('negocios-track').querySelectorAll('.negocio-card').length : 0;
+    if(trackCards < lista.length){
+        var proximo = lista.slice(trackCards, trackCards + _loteSize);
+        if(!proximo.length) return;
+        var novosCards = proximo.map(cardHTML);
+        var track = document.getElementById('negocios-track');
+        if(track){
+            var tmp = document.createElement('div');
+            tmp.innerHTML = novosCards.join('');
+            while(tmp.firstChild) track.appendChild(tmp.firstChild);
+            clampAndUpdate();
+        }
+        var gd = document.getElementById('negocios-grade');
+        if(gd && gd.style.display !== 'none') gd.innerHTML += novosCards.join('');
+        var count=document.getElementById('resultados-count');
+        if(count) count.textContent = lista.length + (!_apiFim ? '+' : '') + ' resultado' + (lista.length!==1?'s':'');
+        return;
+    }
+    if(!_apiFim){
+        _carregarAPIUmaVez(function(){ _renderizarProximoLote(); });
+    }
+}
+
+function aplicarFiltros(){
+    var bVal=document.getElementById('filtro-bairro')?document.getElementById('filtro-bairro').value:'';
+    var cVal=document.getElementById('filtro-categoria')?document.getElementById('filtro-categoria').value:'';
+    _filtroBairroAtivo    = bVal || null;
+    _filtroCategoriaAtiva = cVal || null;
+    _resetEFiltrar();
+}
+
+function limparFiltros(){
+    var b=document.getElementById('filtro-bairro'); if(b) b.value='';
+    document.querySelectorAll('.chip').forEach(function(ch){ ch.classList.remove('active'); });
+    var first=document.querySelector('.chip'); if(first) first.classList.add('active');
+    var c=document.getElementById('filtro-categoria');
+    var primeiraCategoria = first ? first.getAttribute('onclick').match(/filtrarCategoriaChip\('([^']*)'/) : null;
+    var slugPrimeira = primeiraCategoria ? primeiraCategoria[1] : null;
+    if(c) c.value = slugPrimeira || '';
+    _filtroBairroAtivo = null;
+    _filtroCategoriaAtiva = slugPrimeira || null;
+    _resetEFiltrar();
+}
+
+function filtrarCategoriaChip(slug, btn){
+    document.querySelectorAll('.chip').forEach(function(c){ c.classList.remove('active'); });
+    btn.classList.add('active');
+    var catSel=document.getElementById('filtro-categoria'); if(catSel) catSel.value=slug||'';
+    _filtroCategoriaAtiva = slug || null;
+    var bSel=document.getElementById('filtro-bairro');
+    _filtroBairroAtivo = (bSel && bSel.value) ? bSel.value : null;
+    _resetEFiltrar();
+}
+
+{% if categoria %}
+// Pinta rápido com o que já veio no HTML e, na sequência, busca TODOS os
+// negócios da categoria de uma vez (sem depender de rolar a página).
+renderNegocios(negociosFiltrados);
+{% endif %}
+_resetEFiltrar();
+
+// IntersectionObserver: ao rolar até o fim, busca o próximo lote (igual ao index)
+(function(){
+    var sentinel = document.getElementById('lazy-sentinel');
+    if(!sentinel || !('IntersectionObserver' in window)) return;
+    new IntersectionObserver(function(entries){
+        if(!entries[0].isIntersecting) return;
+        _renderizarProximoLote();
+    }, { rootMargin: '400px' }).observe(sentinel);
+})();
+</script>
+
+
+
+{% if hub.ga4_id %}
+<script async src="https://www.googletagmanager.com/gtag/js?id={{ hub.ga4_id }}"></script>
+<script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag('js',new Date());gtag('config','{{ hub.ga4_id }}');</script>
+{% endif %}
+
+{% if hub.pixel_id %}
+<script>!function(f,b,e,v,n,t,s){if(f.fbq)return;n=f.fbq=function(){n.callMethod?n.callMethod.apply(n,arguments):n.queue.push(arguments)};if(!f._fbq)f._fbq=n;n.push=n;n.loaded=!0;n.version='2.0';n.queue=[];t=b.createElement(e);t.async=!0;t.src=v;s=b.getElementsByTagName(e)[0];s.parentNode.insertBefore(t,s)}(window,document,'script','https://connect.facebook.net/en_US/fbevents.js');fbq('init','{{ hub.pixel_id }}');fbq('track','PageView');</script>
+{% endif %}
+
+<!-- ── Google Translate (widget nativo oculto) ── -->
+<div id="google_translate_element"></div>
+<script>
+function googleTranslateElementInit() {
+    new google.translate.TranslateElement({ pageLanguage: 'pt', autoDisplay: false }, 'google_translate_element');
+}
+</script>
+<script src="//translate.google.com/translate_a/element.js?cb=googleTranslateElementInit"></script>
+
+<!-- ── Botão flutuante de tradução ── -->
+<button id="translate-btn" onclick="toggleTranslateDrawer()">
+    <i class="fas fa-language"></i> Traduzir
+</button>
+
+<!-- ── Drawer de idiomas ── -->
+<div id="translate-drawer">
+    <div class="td-header">
+        <input class="td-search" id="td-search" type="text" placeholder="Buscar idioma…" oninput="filterLangs(this.value)">
+        <button class="td-close" onclick="toggleTranslateDrawer()">&#10005;</button>
+    </div>
+    <div class="td-list" id="td-list"></div>
+</div>
+
+<style>
+    #google_translate_element { position: absolute; visibility: hidden; pointer-events: none; }
+    .goog-te-banner-frame, .skiptranslate { display: none !important; }
+    body { top: 0 !important; }
+
+    #translate-btn {
+        position: fixed; bottom: 20px; right: 20px; z-index: 999;
+        background: var(--white); border: none; border-radius: 50px;
+        padding: 10px 18px; display: flex; align-items: center; gap: 8px;
+        font-family: 'Roboto', sans-serif; font-size: 14px; font-weight: 600;
+        color: var(--dark); cursor: pointer;
+        box-shadow: 0 4px 20px rgba(0,0,0,0.18);
+        transition: box-shadow 0.2s, transform 0.15s;
+    }
+    #translate-btn:hover { box-shadow: 0 6px 28px rgba(0,0,0,0.25); transform: translateY(-1px); }
+    #translate-btn i { color: var(--primary); font-size: 16px; }
+
+    #translate-drawer {
+        position: fixed; bottom: 70px; right: 20px; z-index: 1000;
+        background: var(--white); border-radius: 16px;
+        box-shadow: 0 8px 40px rgba(0,0,0,0.2);
+        width: 280px; max-height: 420px;
+        display: none; flex-direction: column;
+        overflow: hidden;
+    }
+    #translate-drawer.open { display: flex; }
+    .td-header {
+        padding: 12px 14px; border-bottom: 1px solid var(--medium-gray);
+        display: flex; align-items: center; gap: 8px;
+    }
+    .td-search {
+        flex: 1; border: 1.5px solid var(--medium-gray);
+        border-radius: 8px; padding: 8px 12px;
+        font-family: 'Roboto', sans-serif; font-size: 13px;
+        outline: none; transition: border-color 0.2s;
+    }
+    .td-search:focus { border-color: var(--primary); }
+    .td-close {
+        background: none; border: none; color: #aaa;
+        font-size: 18px; cursor: pointer; line-height: 1; padding: 2px 4px;
+    }
+    .td-close:hover { color: var(--dark-gray); }
+    .td-list { overflow-y: auto; flex: 1; padding: 6px 0; }
+    .td-item {
+        padding: 9px 18px; font-size: 14px; cursor: pointer;
+        color: var(--text-color); transition: background 0.1s;
+        display: flex; align-items: center; gap: 10px;
+    }
+    .td-item:hover { background: var(--light); color: var(--dark); }
+    .td-item.active { color: var(--primary); font-weight: 600; background: #fff3e0; }
+    .td-item .flag { font-size: 18px; flex-shrink: 0; }
+    .td-empty { padding: 24px; text-align: center; color: #bbb; font-size: 13px; }
+
+    @media (max-width: 480px) {
+        #translate-drawer { width: calc(100vw - 32px); right: 16px; bottom: 72px; max-height: 55vh; }
+        #translate-btn { bottom: 16px; right: 16px; }
+    }
+</style>
+
+<script>
+const LANGS = [
+    {code:'af',name:'Afrikaans',flag:'🇿🇦'},{code:'sq',name:'Albanian',flag:'🇦🇱'},{code:'am',name:'Amharic',flag:'🇪🇹'},
+    {code:'ar',name:'Arabic',flag:'🇸🇦'},{code:'hy',name:'Armenian',flag:'🇦🇲'},{code:'az',name:'Azerbaijani',flag:'🇦🇿'},
+    {code:'eu',name:'Basque',flag:'🏴'},{code:'be',name:'Belarusian',flag:'🇧🇾'},{code:'bn',name:'Bengali',flag:'🇧🇩'},
+    {code:'bs',name:'Bosnian',flag:'🇧🇦'},{code:'bg',name:'Bulgarian',flag:'🇧🇬'},{code:'ca',name:'Catalan',flag:'🏴'},
+    {code:'ceb',name:'Cebuano',flag:'🇵🇭'},{code:'zh-CN',name:'Chinese (Simplified)',flag:'🇨🇳'},{code:'zh-TW',name:'Chinese (Traditional)',flag:'🇹🇼'},
+    {code:'co',name:'Corsican',flag:'🇫🇷'},{code:'hr',name:'Croatian',flag:'🇭🇷'},{code:'cs',name:'Czech',flag:'🇨🇿'},
+    {code:'da',name:'Danish',flag:'🇩🇰'},{code:'nl',name:'Dutch',flag:'🇳🇱'},{code:'en',name:'English',flag:'🇬🇧'},
+    {code:'eo',name:'Esperanto',flag:'🌍'},{code:'et',name:'Estonian',flag:'🇪🇪'},{code:'fi',name:'Finnish',flag:'🇫🇮'},
+    {code:'fr',name:'French',flag:'🇫🇷'},{code:'fy',name:'Frisian',flag:'🏴'},{code:'gl',name:'Galician',flag:'🏴'},
+    {code:'ka',name:'Georgian',flag:'🇬🇪'},{code:'de',name:'German',flag:'🇩🇪'},{code:'el',name:'Greek',flag:'🇬🇷'},
+    {code:'gu',name:'Gujarati',flag:'🇮🇳'},{code:'ht',name:'Haitian Creole',flag:'🇭🇹'},{code:'ha',name:'Hausa',flag:'🇳🇬'},
+    {code:'haw',name:'Hawaiian',flag:'🇺🇸'},{code:'he',name:'Hebrew',flag:'🇮🇱'},{code:'hi',name:'Hindi',flag:'🇮🇳'},
+    {code:'hmn',name:'Hmong',flag:'🌏'},{code:'hu',name:'Hungarian',flag:'🇭🇺'},{code:'is',name:'Icelandic',flag:'🇮🇸'},
+    {code:'ig',name:'Igbo',flag:'🇳🇬'},{code:'id',name:'Indonesian',flag:'🇮🇩'},{code:'ga',name:'Irish',flag:'🇮🇪'},
+    {code:'it',name:'Italian',flag:'🇮🇹'},{code:'ja',name:'Japanese',flag:'🇯🇵'},{code:'jv',name:'Javanese',flag:'🇮🇩'},
+    {code:'kn',name:'Kannada',flag:'🇮🇳'},{code:'kk',name:'Kazakh',flag:'🇰🇿'},{code:'km',name:'Khmer',flag:'🇰🇭'},
+    {code:'rw',name:'Kinyarwanda',flag:'🇷🇼'},{code:'ko',name:'Korean',flag:'🇰🇷'},{code:'ku',name:'Kurdish',flag:'🌍'},
+    {code:'ky',name:'Kyrgyz',flag:'🇰🇬'},{code:'lo',name:'Lao',flag:'🇱🇦'},{code:'la',name:'Latin',flag:'🏛️'},
+    {code:'lv',name:'Latvian',flag:'🇱🇻'},{code:'lt',name:'Lithuanian',flag:'🇱🇹'},{code:'lb',name:'Luxembourgish',flag:'🇱🇺'},
+    {code:'mk',name:'Macedonian',flag:'🇲🇰'},{code:'mg',name:'Malagasy',flag:'🇲🇬'},{code:'ms',name:'Malay',flag:'🇲🇾'},
+    {code:'ml',name:'Malayalam',flag:'🇮🇳'},{code:'mt',name:'Maltese',flag:'🇲🇹'},{code:'mi',name:'Maori',flag:'🇳🇿'},
+    {code:'mr',name:'Marathi',flag:'🇮🇳'},{code:'mn',name:'Mongolian',flag:'🇲🇳'},{code:'my',name:'Myanmar (Burmese)',flag:'🇲🇲'},
+    {code:'ne',name:'Nepali',flag:'🇳🇵'},{code:'no',name:'Norwegian',flag:'🇳🇴'},{code:'ny',name:'Nyanja (Chichewa)',flag:'🇲🇼'},
+    {code:'or',name:'Odia (Oriya)',flag:'🇮🇳'},{code:'ps',name:'Pashto',flag:'🇦🇫'},{code:'fa',name:'Persian',flag:'🇮🇷'},
+    {code:'pl',name:'Polish',flag:'🇵🇱'},{code:'pt',name:'Português',flag:'🇧🇷'},{code:'pa',name:'Punjabi',flag:'🇮🇳'},
+    {code:'ro',name:'Romanian',flag:'🇷🇴'},{code:'ru',name:'Russian',flag:'🇷🇺'},{code:'sm',name:'Samoan',flag:'🇼🇸'},
+    {code:'gd',name:'Scots Gaelic',flag:'🏴󠁧󠁢󠁳󠁣󠁴󠁿'},{code:'sr',name:'Serbian',flag:'🇷🇸'},{code:'st',name:'Sesotho',flag:'🇱🇸'},
+    {code:'sn',name:'Shona',flag:'🇿🇼'},{code:'sd',name:'Sindhi',flag:'🇵🇰'},{code:'si',name:'Sinhala',flag:'🇱🇰'},
+    {code:'sk',name:'Slovak',flag:'🇸🇰'},{code:'sl',name:'Slovenian',flag:'🇸🇮'},{code:'so',name:'Somali',flag:'🇸🇴'},
+    {code:'es',name:'Spanish',flag:'🇪🇸'},{code:'su',name:'Sundanese',flag:'🇮🇩'},{code:'sw',name:'Swahili',flag:'🇰🇪'},
+    {code:'sv',name:'Swedish',flag:'🇸🇪'},{code:'tl',name:'Tagalog (Filipino)',flag:'🇵🇭'},{code:'tg',name:'Tajik',flag:'🇹🇯'},
+    {code:'ta',name:'Tamil',flag:'🇮🇳'},{code:'tt',name:'Tatar',flag:'🇷🇺'},{code:'te',name:'Telugu',flag:'🇮🇳'},
+    {code:'th',name:'Thai',flag:'🇹🇭'},{code:'tr',name:'Turkish',flag:'🇹🇷'},{code:'tk',name:'Turkmen',flag:'🇹🇲'},
+    {code:'uk',name:'Ukrainian',flag:'🇺🇦'},{code:'ur',name:'Urdu',flag:'🇵🇰'},{code:'ug',name:'Uyghur',flag:'🇨🇳'},
+    {code:'uz',name:'Uzbek',flag:'🇺🇿'},{code:'vi',name:'Vietnamese',flag:'🇻🇳'},{code:'cy',name:'Welsh',flag:'🏴󠁧󠁢󠁷󠁬󠁳󠁿'},
+    {code:'xh',name:'Xhosa',flag:'🇿🇦'},{code:'yi',name:'Yiddish',flag:'🌍'},{code:'yo',name:'Yoruba',flag:'🇳🇬'},
+    {code:'zu',name:'Zulu',flag:'🇿🇦'}
+];
+
+let currentLang = 'pt';
+let drawerOpen  = false;
+
+function renderLangs(list) {
+    const el = document.getElementById('td-list');
+    if (!list.length) {
+        el.innerHTML = '<div class="td-empty">Nenhum idioma encontrado</div>';
+        return;
+    }
+    el.innerHTML = list.map(l =>
+        '<div class="td-item ' + (l.code === currentLang ? 'active' : '') + '" onclick="selectLang(\'' + l.code + '\',\'' + l.name + '\')"><span class="flag">' + l.flag + '</span> ' + l.name + '</div>'
+    ).join('');
+}
+
+function filterLangs(q) {
+    const filtered = LANGS.filter(function(l){ return l.name.toLowerCase().includes(q.toLowerCase()); });
+    renderLangs(filtered);
+}
+
+function selectLang(code, name) {
+    currentLang = code;
+    drawerOpen  = false;
+    document.getElementById('translate-drawer').classList.remove('open');
+
+    var lang = LANGS.find(function(l){ return l.code === code; });
+    document.getElementById('translate-btn').innerHTML =
+        '<i class="fas fa-language"></i> ' + (lang ? lang.flag + ' ' + name : name);
+
+    if (code === 'pt') {
+        var sel = document.querySelector('.goog-te-combo');
+        if (sel) { sel.value = ''; sel.dispatchEvent(new Event('change')); }
+        document.getElementById('translate-btn').innerHTML = '<i class="fas fa-language"></i> Traduzir';
+        return;
+    }
+
+    var tryTranslate = function(attempts) {
+        var sel = document.querySelector('.goog-te-combo');
+        if (sel) {
+            sel.value = code;
+            sel.dispatchEvent(new Event('change'));
+        } else if (attempts > 0) {
+            setTimeout(function(){ tryTranslate(attempts - 1); }, 300);
+        }
+    };
+    tryTranslate(10);
+}
+
+function toggleTranslateDrawer() {
+    drawerOpen = !drawerOpen;
+    var drawer = document.getElementById('translate-drawer');
+    if (drawerOpen) {
+        drawer.classList.add('open');
+        renderLangs(LANGS);
+        var search = document.getElementById('td-search');
+        search.value = '';
+        setTimeout(function(){ search.focus(); }, 50);
+    } else {
+        drawer.classList.remove('open');
+    }
+}
+
+document.addEventListener('click', function(e) {
+    if (drawerOpen &&
+        !document.getElementById('translate-drawer').contains(e.target) &&
+        !document.getElementById('translate-btn').contains(e.target)) {
+        drawerOpen = false;
+        document.getElementById('translate-drawer').classList.remove('open');
+    }
+});
+</script>
+
+<!-- ════════════════════════════════════════════════════
+     MODAL CADASTRO DE NEGÓCIO — botão flutuante fixo
+     ════════════════════════════════════════════════ -->
+
+<!-- Botão flutuante -->
+<button
+  id="btn-cadastrar"
+  onclick="document.getElementById('modal-cadastro').classList.remove('modal-oculto')"
+  style="
+    position: fixed; bottom: 80px; right: 20px; z-index: 8900;
+    background: #FFC107; color: #fff; border: none;
+    border-radius: 50px; padding: 13px 20px;
+    font-size: 14px; font-weight: 700; cursor: pointer;
+    box-shadow: 0 4px 16px rgba(0,0,0,.25);
+    display: flex; align-items: center; gap: 8px;
+    font-family: 'Roboto', sans-serif;
+    transition: transform .15s, box-shadow .15s;
+  "
+  onmouseover="this.style.transform='scale(1.05)'"
+  onmouseout="this.style.transform='scale(1)'"
+>
+  <svg width="17" height="17" fill="none" stroke="currentColor" stroke-width="2.5"
+       viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg>
+  Cadastre seu negócio
+</button>
+
+<!-- Overlay + Modal -->
+<div id="modal-cadastro" class="modal-oculto" style="
+  position: fixed; inset: 0; z-index: 9999;
+  background: rgba(0,0,0,.55); backdrop-filter: blur(3px);
+  display: flex; align-items: center; justify-content: center; padding: 16px;
+">
+  <div style="
+    background: #fff; border-radius: 16px;
+    width: 100%; max-width: 560px; max-height: 92vh;
+    overflow-y: auto; padding: 32px 28px; position: relative;
+    box-shadow: 0 20px 60px rgba(0,0,0,.3);
+    font-family: 'Roboto', sans-serif;
+  ">
+    <button onclick="fecharModalCadastro()" style="
+      position: absolute; top: 16px; right: 16px;
+      background: #f0f0f0; border: none; border-radius: 50%;
+      width: 32px; height: 32px; cursor: pointer; font-size: 20px;
+      line-height: 32px; text-align: center; color: #555;
+    ">×</button>
+
+    <h2 style="margin: 0 0 4px; font-size: 22px; font-weight: 800; color: #1a1a1a;">Cadastre seu negócio</h2>
+    <p style="margin: 0 0 24px; color: #666; font-size: 14px;">
+      Preencha os dados abaixo. Após análise, seu negócio aparecerá no diretório gratuitamente.
+    </p>
+
+    <div id="cadastro-sucesso" style="display:none; text-align:center; padding: 32px 0;">
+      <div style="font-size: 52px;">🎉</div>
+      <h3 style="color: #1a1a1a; margin: 12px 0 8px; font-size: 20px;">Cadastro enviado!</h3>
+      <p style="color: #555; margin: 0 0 24px;">Vamos analisar e publicar em breve. Obrigado!</p>
+      <button onclick="fecharModalCadastro()" style="
+        background: #FFC107; color: #fff; border: none; border-radius: 8px;
+        padding: 12px 28px; font-size: 15px; cursor: pointer; font-weight: 700;
+        font-family: 'Roboto', sans-serif;
+      ">Fechar</button>
+    </div>
+
+    <form id="form-cadastro" onsubmit="enviarCadastroNegocio(event)" style="display:flex; flex-direction:column; gap:14px;">
+
+      <div>
+        <label style="font-size:13px; font-weight:600; color:#333; display:block; margin-bottom:5px;">
+          Nome do negócio <span style="color:#e53935">*</span>
+        </label>
+        <input name="nome" required maxlength="255" placeholder="Ex: Barbearia do João" class="cad-input">
+      </div>
+
+      <div>
+        <label style="font-size:13px; font-weight:600; color:#333; display:block; margin-bottom:5px;">Categoria</label>
+        <select name="categoria_id" class="cad-input">
+          <option value="">Selecione uma categoria</option>
+          {% for cat in categorias %}
+          <option value="{{ cat.id }}">{{ cat.nome }}</option>
+          {% endfor %}
+        </select>
+      </div>
+
+      <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px;">
+        <div>
+          <label style="font-size:13px; font-weight:600; color:#333; display:block; margin-bottom:5px;">Cidade</label>
+          <input name="cidade" maxlength="255" placeholder="São Paulo" class="cad-input">
+        </div>
+        <div>
+          <label style="font-size:13px; font-weight:600; color:#333; display:block; margin-bottom:5px;">Bairro</label>
+          <input name="bairro" maxlength="255" placeholder="Centro" class="cad-input">
+        </div>
+      </div>
+
+      <div>
+        <label style="font-size:13px; font-weight:600; color:#333; display:block; margin-bottom:5px;">Endereço</label>
+        <input name="endereco" maxlength="255" placeholder="Rua das Flores, 123" class="cad-input">
+      </div>
+
+      <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px;">
+        <div>
+          <label style="font-size:13px; font-weight:600; color:#333; display:block; margin-bottom:5px;">WhatsApp</label>
+          <input name="whatsapp" maxlength="50" placeholder="(11) 99999-9999" class="cad-input">
+        </div>
+        <div>
+          <label style="font-size:13px; font-weight:600; color:#333; display:block; margin-bottom:5px;">Telefone</label>
+          <input name="telefone" maxlength="50" placeholder="(11) 3333-3333" class="cad-input">
+        </div>
+      </div>
+
+      <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px;">
+        <div>
+          <label style="font-size:13px; font-weight:600; color:#333; display:block; margin-bottom:5px;">Instagram</label>
+          <input name="instagram" maxlength="255" placeholder="@seunegocio" class="cad-input">
+        </div>
+        <div>
+          <label style="font-size:13px; font-weight:600; color:#333; display:block; margin-bottom:5px;">Site</label>
+          <input name="site_url" maxlength="255" placeholder="https://seusite.com" class="cad-input">
+        </div>
+      </div>
+
+      <div>
+        <label style="font-size:13px; font-weight:600; color:#333; display:block; margin-bottom:5px;">Descrição</label>
+        <textarea name="descricao" rows="3" maxlength="1000" class="cad-input"
+                  placeholder="Fale um pouco sobre seu negócio..." style="resize:vertical;"></textarea>
+      </div>
+
+      <!-- Upload de foto via Imgur -->
+      <div>
+        <label style="font-size:13px; font-weight:600; color:#333; display:block; margin-bottom:8px;">Logo / foto do negócio</label>
+        <div id="imgur-area" style="
+          border: 2px dashed #ddd; border-radius: 10px; padding: 18px;
+          text-align: center; cursor: pointer; transition: border-color .2s, background .2s;
+          background: #fafafa; position: relative;"
+          onclick="document.getElementById('imgur-file-input').click()"
+          ondragover="imgurDragOver(event)" ondragleave="imgurDragLeave(event)" ondrop="imgurDrop(event)">
+          <input type="file" id="imgur-file-input" accept="image/*" style="display:none" onchange="imgurUpload(this.files[0])">
+          <div id="imgur-idle">
+            <svg width="32" height="32" fill="none" stroke="#bbb" stroke-width="1.5" viewBox="0 0 24 24" style="margin-bottom:8px;">
+              <rect x="3" y="3" width="18" height="18" rx="3"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/>
+            </svg>
+            <p style="margin:0; font-size:13px; color:#888;">Clique ou arraste uma imagem aqui<br>
+              <span style="font-size:12px; color:#bbb;">JPG, PNG, GIF, WebP — máx. 10 MB</span></p>
+          </div>
+          <div id="imgur-loading" style="display:none;">
+            <div style="width:28px;height:28px;border:3px solid #eee;border-top-color:#FFC107;border-radius:50%;animation:spin-imgur .7s linear infinite;margin:0 auto 8px;"></div>
+            <p style="margin:0;font-size:13px;color:#888;">Enviando para o Imgur...</p>
+          </div>
+          <div id="imgur-preview" style="display:none;">
+            <img id="imgur-preview-img" src="" alt="Preview" style="max-height:120px;max-width:100%;border-radius:8px;object-fit:contain;">
+            <p id="imgur-preview-nome" style="margin:8px 0 0;font-size:12px;color:#888;"></p>
+            <button type="button" onclick="imgurLimpar(event)" style="margin-top:6px;background:none;border:none;color:#e53935;font-size:12px;cursor:pointer;font-family:'Roboto',sans-serif;">✕ Remover foto</button>
+          </div>
+        </div>
+        <div id="imgur-erro" style="display:none;color:#c0392b;font-size:12px;margin-top:6px;"></div>
+        <input type="hidden" name="foto_url" id="foto_url_hidden">
+        <details style="margin-top:10px;">
+          <summary style="font-size:12px;color:#888;cursor:pointer;user-select:none;">Prefere colar um link de imagem?</summary>
+          <input id="foto_url_manual" maxlength="512" placeholder="https://link-da-sua-imagem.com"
+                 class="cad-input" style="margin-top:6px;" oninput="imgurManualUrl(this.value)">
+        </details>
+      </div>
+
+      <div id="cadastro-erro" style="display:none; color:#c0392b; font-size:13px;
+           background:#fdf0ef; border:1px solid #f5c6c6; border-radius:8px; padding:10px 12px;"></div>
+
+      <button type="submit" id="btn-submit-cadastro" style="
+        background: #FFC107; color: #fff; border: none; border-radius: 10px;
+        padding: 14px; font-size: 16px; font-weight: 700; cursor: pointer;
+        font-family: 'Roboto', sans-serif; transition: background .2s; margin-top: 4px;
+      ">Enviar cadastro</button>
+    </form>
+  </div>
+</div>
+
+<style>
+  .modal-oculto { display: none !important; }
+  .cad-input {
+    width: 100%; padding: 10px 12px;
+    border: 1.5px solid #ddd; border-radius: 8px;
+    font-size: 14px; box-sizing: border-box;
+    outline: none; transition: border .15s;
+    font-family: 'Roboto', sans-serif;
+    background: #fff; color: #333;
+  }
+  .cad-input:focus { border-color: #FFC107; }
+  @keyframes spin-imgur { to { transform: rotate(360deg); } }
+</style>
+
+<script>
+// ── Imgur ──
+const IMGUR_CLIENT_ID = '546c25a59c58ad7';
+
+function imgurDragOver(e) { e.preventDefault(); document.getElementById('imgur-area').style.borderColor='#FFC107'; document.getElementById('imgur-area').style.background='#fff8f0'; }
+function imgurDragLeave(e) { document.getElementById('imgur-area').style.borderColor='#ddd'; document.getElementById('imgur-area').style.background='#fafafa'; }
+function imgurDrop(e) { e.preventDefault(); imgurDragLeave(e); const f=e.dataTransfer.files[0]; if(f) imgurUpload(f); }
+
+async function imgurUpload(file) {
+  if (!file) return;
+  if (file.size > 10*1024*1024) { document.getElementById('imgur-erro').textContent='Imagem muito grande (máx. 10 MB).'; document.getElementById('imgur-erro').style.display='block'; return; }
+  document.getElementById('imgur-erro').style.display='none';
+  document.getElementById('imgur-idle').style.display='none';
+  document.getElementById('imgur-preview').style.display='none';
+  document.getElementById('imgur-loading').style.display='block';
+  try {
+    const body=new FormData(); body.append('image',file);
+    const res=await fetch('https://api.imgur.com/3/image',{method:'POST',headers:{Authorization:'Client-ID '+IMGUR_CLIENT_ID},body});
+    const data=await res.json();
+    if(!res.ok||!data.success) throw new Error(data.data?.error||'Erro no Imgur');
+    const url=data.data.link;
+    document.getElementById('foto_url_hidden').value=url;
+    document.getElementById('imgur-preview-img').src=url;
+    document.getElementById('imgur-preview-nome').textContent=file.name;
+    document.getElementById('imgur-loading').style.display='none';
+    document.getElementById('imgur-preview').style.display='block';
+    document.getElementById('imgur-area').style.borderColor='#FFC107';
+    document.getElementById('imgur-area').style.background='#fff8f0';
+    document.getElementById('imgur-area').style.cursor='default';
+  } catch(err) {
+    document.getElementById('imgur-loading').style.display='none';
+    document.getElementById('imgur-idle').style.display='block';
+    document.getElementById('imgur-erro').textContent='Falha no upload: '+(err.message||'tente novamente.');
+    document.getElementById('imgur-erro').style.display='block';
+  }
+}
+function imgurLimpar(e) { e.stopPropagation(); document.getElementById('foto_url_hidden').value=''; document.getElementById('imgur-file-input').value=''; document.getElementById('imgur-preview').style.display='none'; document.getElementById('imgur-idle').style.display='block'; document.getElementById('imgur-area').style.borderColor='#ddd'; document.getElementById('imgur-area').style.background='#fafafa'; document.getElementById('imgur-area').style.cursor='pointer'; document.getElementById('imgur-erro').style.display='none'; }
+function imgurManualUrl(val) { document.getElementById('foto_url_hidden').value=val.trim(); }
+
+function fecharModalCadastro() {
+  document.getElementById('modal-cadastro').classList.add('modal-oculto');
+  document.getElementById('form-cadastro').reset();
+  document.getElementById('form-cadastro').style.display='flex';
+  document.getElementById('cadastro-sucesso').style.display='none';
+  document.getElementById('cadastro-erro').style.display='none';
+  imgurLimpar({stopPropagation:()=>{}});
+}
+document.getElementById('modal-cadastro').addEventListener('click',function(e){ if(e.target===this) fecharModalCadastro(); });
+document.addEventListener('keydown',function(e){ if(e.key==='Escape'&&!document.getElementById('modal-cadastro').classList.contains('modal-oculto')) fecharModalCadastro(); });
+
+async function enviarCadastroNegocio(e) {
+  e.preventDefault();
+  const btn=document.getElementById('btn-submit-cadastro');
+  const erro=document.getElementById('cadastro-erro');
+  erro.style.display='none'; btn.disabled=true; btn.textContent='Enviando...';
+  try {
+    const res=await fetch('/cadastrar-negocio',{method:'POST',body:new FormData(e.target)});
+    const data=await res.json();
+    if(res.ok&&data.ok){ document.getElementById('form-cadastro').style.display='none'; document.getElementById('cadastro-sucesso').style.display='block'; }
+    else { erro.textContent=data.erro||'Erro ao enviar. Tente novamente.'; erro.style.display='block'; }
+  } catch(err) { erro.textContent='Erro de conexão. Tente novamente.'; erro.style.display='block'; }
+  finally { btn.disabled=false; btn.textContent='Enviar cadastro'; }
+}
+</script>

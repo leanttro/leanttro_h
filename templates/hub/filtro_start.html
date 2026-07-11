@@ -1,0 +1,1250 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta name="google-adsense-account" content="ca-pub-7617881885143728">
+<!-- Google tag (gtag.js) -->
+<script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-7617881885143728" crossorigin="anonymous"></script>
+<script async src="https://www.googletagmanager.com/gtag/js?id={{ hub.ga4_id or 'G-KDP5FYQVHX' }}"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+  gtag('config', '{{ hub.ga4_id or "G-KDP5FYQVHX" }}');
+</script>
+
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+{# ══ SEO dinâmico ══ #}
+{% if filtro_tipo == 'categoria' %}
+  {% set seo_title = (filtro_valor | capitalize) ~ " perto de você — " ~ (hub.nome or 'AgênciaStart') %}
+  {% set seo_desc  = "Encontre " ~ filtro_valor ~ " no " ~ (hub.nome or 'AgênciaStart') ~ ". Portfólio, contato e localização de agências, estúdios e freelancers." %}
+{% else %}
+  {% set seo_title = "Agências e criativos no bairro " ~ (filtro_valor | capitalize) ~ " — " ~ (hub.nome or 'AgênciaStart') %}
+  {% set seo_desc  = "Descubra agências, estúdios e freelancers no bairro " ~ filtro_valor ~ " em " ~ (hub.nome or 'AgênciaStart') ~ ". Contato e localização perto de você." %}
+{% endif %}
+
+<title>{{ seo_title }}</title>
+<meta name="description" content="{{ seo_desc }}">
+<meta name="robots" content="index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1">
+<meta name="theme-color" content="#FFC107">
+<meta name="author" content="{{ hub.nome or 'AgênciaStart' }}">
+<link rel="canonical" href="https://{{ request.host }}/{{ segmento }}/">
+<link rel="icon" type="image/png" href="{{ hub.logo_url or 'https://res.cloudinary.com/dhu1cqvrb/image/upload/v1783643721/Massas_Sabores_6_utat55.png' }}">
+<link rel="apple-touch-icon" href="{{ hub.logo_url or 'https://res.cloudinary.com/dhu1cqvrb/image/upload/v1783643721/Massas_Sabores_6_utat55.png' }}">
+
+<!-- Open Graph -->
+<meta property="og:type"        content="website">
+<meta property="og:site_name"   content="{{ hub.nome or 'AgênciaStart' }}">
+<meta property="og:url"         content="https://{{ request.host }}/{{ segmento }}/">
+<meta property="og:title"       content="{{ seo_title }}">
+<meta property="og:description" content="{{ seo_desc }}">
+<meta property="og:image"       content="{{ hub.banner_fundo_url or 'https://res.cloudinary.com/dhu1cqvrb/image/upload/v1783643721/Massas_Sabores_6_utat55.png' }}">
+<meta property="og:image:width"  content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:locale"      content="pt_BR">
+
+<!-- Twitter Card -->
+<meta name="twitter:card"        content="summary_large_image">
+<meta name="twitter:title"       content="{{ seo_title }}">
+<meta name="twitter:description" content="{{ seo_desc }}">
+<meta name="twitter:image"       content="{{ hub.banner_fundo_url or 'https://res.cloudinary.com/dhu1cqvrb/image/upload/v1783643721/Massas_Sabores_6_utat55.png' }}">
+
+<!-- JSON-LD -->
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@graph": [
+    {
+      "@type": "BreadcrumbList",
+      "itemListElement": [
+        {"@type":"ListItem","position":1,"item":{"@id":"https://{{ request.host }}/","name":"Início"}},
+        {"@type":"ListItem","position":2,"item":{"@id":"https://{{ request.host }}/{{ segmento }}/","name":"{{ filtro_valor | capitalize }}"}}
+      ]
+    },
+    {
+      "@type": "CollectionPage",
+      "@id": "https://{{ request.host }}/{{ segmento }}/",
+      "url": "https://{{ request.host }}/{{ segmento }}/",
+      "name": "{{ seo_title }}",
+      "description": "{{ seo_desc }}",
+      "inLanguage": "pt-BR"
+    }
+  ]
+}
+</script>
+
+<link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700;900&display=swap" rel="stylesheet">
+<link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+
+<style>
+    :root {
+        --primary:       #FFC107;
+        --dark:          #8a6d00;
+        --light:         #3a3000;
+        --light-gray:    #0a0a0a;
+        --medium-gray:   #2a2a2a;
+        --dark-gray:     #343a40;
+        --text-color:    #e5e5e5;
+        --text-dark:     #4a4a4a;
+        --white:         #ffffff;
+        --shadow-light:  rgba(0,0,0,0.35);
+        --shadow-medium: rgba(0,0,0,0.55);
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    html { scroll-behavior: smooth; }
+    body { font-family: 'Roboto', sans-serif; background: var(--light-gray); color: var(--text-color); line-height: 1.6; }
+    .container { max-width: 1200px; margin: 0 auto; padding: 0 20px; }
+    a { text-decoration: none; color: inherit; }
+    img { max-width: 100%; display: block; }
+
+    /* ══ HEADER (idêntico ao index_start) ══ */
+    body > header {
+        background: #111111;
+        border-bottom: 3px solid var(--primary);
+        padding: 6px 24px 0;
+        display: flex; flex-direction: column;
+        align-items: center; justify-content: center;
+        position: relative;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.15);
+    }
+    .header-logo { margin-bottom: 0; }
+    .header-logo a { display: block; text-align: center; }
+    .header-logo img { height: 144px; width: auto; display: block; margin: 0 auto; }
+    .header-subtitle {
+        color: #cfcfcf; text-align: center; font-size: 0.95em; font-weight: 500;
+        letter-spacing: 0.3px; margin-top: -6px; margin-bottom: 10px;
+    }
+    .hamburger-btn {
+        display: none; background: none; border: none; color: #fff;
+        font-size: 1.8em; cursor: pointer; padding: 6px;
+        position: absolute; right: 20px; top: 20px;
+    }
+    nav.desktop-nav { width: 100%; }
+    nav.desktop-nav ul { list-style: none; display: flex; align-items: center; justify-content: center; flex-wrap: wrap; }
+    nav.desktop-nav ul li { position: relative; }
+    nav.desktop-nav ul li a {
+        color: #fff; font-weight: 600; font-size: 0.95em;
+        padding: 12px 20px; display: block;
+        border-bottom: 3px solid transparent; transition: border-color 0.2s, background 0.2s;
+    }
+    nav.desktop-nav ul li a:hover, nav.desktop-nav ul li a.ativo { border-bottom-color: var(--primary); background: rgba(255,193,7,0.1); }
+    .nav-dropdown {
+        display: none; position: absolute; top: 100%; left: 50%; transform: translateX(-50%);
+        background: #fff; border-radius: 12px; box-shadow: 0 8px 32px rgba(0,0,0,0.15);
+        min-width: 220px; max-height: 360px; overflow-y: auto;
+        z-index: 999; padding: 8px 0;
+    }
+    nav.desktop-nav ul li:hover .nav-dropdown { display: block; }
+    .nav-dropdown a {
+        display: block; padding: 10px 20px; color: var(--dark-gray) !important;
+        font-size: 0.9em; font-weight: 500; border-bottom: none !important;
+        background: none !important; transition: background 0.15s; white-space: nowrap;
+    }
+    .nav-dropdown a:hover { background: #3a3000 !important; color: var(--primary) !important; }
+
+    /* ══ MOBILE NAV ══ */
+    .mobile-nav-overlay {
+        display: none; position: fixed; inset: 0;
+        background: rgba(0,0,0,0.95); z-index: 1000;
+        flex-direction: column; justify-content: center; align-items: center;
+        opacity: 0; transition: opacity 0.25s;
+    }
+    .mobile-nav-overlay.active { display: flex; opacity: 1; }
+    .mobile-nav-close { position: absolute; top: 20px; left: 24px; background: none; border: none; color: #fff; font-size: 2em; cursor: pointer; }
+    .mobile-nav-overlay nav ul { list-style: none; text-align: center; max-height: 80vh; overflow-y: auto; }
+    .mobile-nav-overlay nav ul li { margin: 12px 0; }
+    .mobile-nav-overlay nav ul li a { color: #fff; font-size: 1.5em; font-weight: 700; }
+
+    /* ══ BANNER TOPO ══ */
+    .banner-topo { background: var(--white); border-bottom: 1px solid var(--medium-gray); padding: 10px 20px; text-align: center; }
+    .banner-placeholder { display: inline-block; background: var(--light-gray); border: 2px dashed var(--medium-gray); border-radius: 8px; padding: 12px 36px; color: #aaa; font-size: 0.9em; font-weight: 500; transition: all 0.2s; }
+    .banner-placeholder:hover { border-color: var(--primary); color: var(--dark); }
+
+    /* ══ BREADCRUMB ══ */
+    .breadcrumb-strip { background: #161616; border-bottom: 1px solid var(--medium-gray); padding: 10px 0; }
+    .breadcrumb-inner { display: flex; align-items: center; gap: 8px; font-size: 0.82em; color: #888; flex-wrap: wrap; }
+    .breadcrumb-inner a { color: #888; transition: color 0.2s; }
+    .breadcrumb-inner a:hover { color: var(--primary); }
+    .breadcrumb-inner .bc-sep { color: #444; }
+    .breadcrumb-inner .bc-atual { color: var(--primary); font-weight: 600; }
+
+    /* ══ HERO DO FILTRO ══ */
+    .filtro-hero {
+        background:
+            radial-gradient(circle at 15% 25%, rgba(255,193,7,0.14), transparent 50%),
+            radial-gradient(circle at 88% 70%, rgba(255,193,7,0.09), transparent 45%),
+            linear-gradient(160deg, #111 0%, #1a1a1a 60%, #0d0d0d 100%);
+        padding: 44px 0 36px;
+        border-bottom: 1px solid var(--medium-gray);
+        text-align: center;
+    }
+    .filtro-hero h1 { font-size: 2.3em; font-weight: 900; color: #fff; text-shadow: 0 2px 10px rgba(0,0,0,0.5); margin-bottom: 10px; }
+    .filtro-hero h1 em { color: var(--primary); font-style: normal; }
+    .filtro-hero p { color: #bbb; max-width: 640px; margin: 0 auto 22px; font-size: 1.02em; }
+    .filtro-hero-stats { display: flex; justify-content: center; gap: 14px; flex-wrap: wrap; }
+    .filtro-hero-stat {
+        background: #1a1a1a; border: 1px solid var(--medium-gray); border-radius: 10px;
+        padding: 10px 22px; display: flex; flex-direction: column; align-items: center; min-width: 100px;
+    }
+    .filtro-hero-stat strong { font-size: 1.3em; font-weight: 800; color: var(--primary); }
+    .filtro-hero-stat span { font-size: 0.75em; color: #999; text-transform: uppercase; letter-spacing: 0.04em; }
+
+    /* ══ BARRA DE FILTROS ══ */
+    .filtros-bar { background: #161616; border-bottom: 1px solid var(--medium-gray); padding: 16px 0; position: sticky; top: 0; z-index: 30; }
+    .filtros-bar-inner { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+    .filtros-bar-label { font-size: 0.85em; font-weight: 700; color: #999; white-space: nowrap; }
+
+    .fb-slicer-wrap { position: relative; }
+    .fb-slicer-btn {
+        display: flex; align-items: center; gap: 8px;
+        background: #1e1e1e; border: 1.5px solid var(--medium-gray); border-radius: 9px;
+        padding: 10px 16px; font-family: inherit; font-size: 0.9em; font-weight: 600;
+        color: #ddd; cursor: pointer; transition: border-color 0.2s; white-space: nowrap;
+    }
+    .fb-slicer-btn:hover, .fb-slicer-btn.open { border-color: var(--primary); }
+    .fb-slicer-btn i.fa-chevron-down { font-size: 0.8em; transition: transform 0.2s; color: #888; }
+    .fb-slicer-btn.open i.fa-chevron-down { transform: rotate(180deg); color: var(--primary); }
+
+    .fb-slicer-dropdown {
+        display: none; position: absolute; top: calc(100% + 8px); left: 0;
+        background: #1a1a1a; border: 1px solid var(--medium-gray); border-radius: 12px;
+        box-shadow: 0 14px 38px rgba(0,0,0,0.55);
+        min-width: 260px; max-height: 340px; overflow-y: auto; z-index: 31; padding: 8px;
+    }
+    .fb-slicer-dropdown.open { display: block; }
+    .fb-slicer-search {
+        width: 100%; padding: 9px 12px; border-radius: 8px; border: 1.5px solid var(--medium-gray);
+        background: #111; color: #eee; font-family: inherit; font-size: 0.88em; margin-bottom: 6px; outline: none;
+    }
+    .fb-slicer-search:focus { border-color: var(--primary); }
+    .fb-slicer-item {
+        width: 100%; text-align: left; border: none; border-radius: 8px;
+        padding: 10px 12px; background: transparent; color: #ccc; font-family: inherit; font-size: 0.88em;
+        cursor: pointer; display: flex; align-items: center; gap: 8px;
+    }
+    .fb-slicer-item:hover { background: rgba(255,193,7,0.08); color: var(--primary); }
+    .fb-slicer-item.active { background: rgba(255,193,7,0.14); color: var(--primary); font-weight: 700; }
+
+    .btn-loc-filtro {
+        display: inline-flex; align-items: center; gap: 8px;
+        background: #1e1e1e; border: 1.5px solid var(--medium-gray); border-radius: 9px;
+        padding: 10px 16px; font-size: 0.9em; font-weight: 600; color: #ddd;
+        cursor: pointer; transition: all 0.2s; font-family: inherit; white-space: nowrap;
+    }
+    .btn-loc-filtro:hover { border-color: var(--primary); color: var(--primary); }
+    .btn-loc-filtro.ativo { border-color: var(--primary); background: var(--primary); color: #1a1a1a; }
+    .btn-loc-filtro.ativo i { color: #1a1a1a; }
+    .btn-loc-filtro i { color: var(--primary); }
+
+    .fb-busca-wrap { position: relative; flex: 1; min-width: 200px; max-width: 320px; }
+    .fb-busca-wrap svg { position: absolute; left: 13px; top: 50%; transform: translateY(-50%); width: 15px; height: 15px; stroke: #777; fill: none; stroke-width: 2; }
+    .fb-busca-wrap input {
+        width: 100%; padding: 10px 14px 10px 36px; border-radius: 9px; border: 1.5px solid var(--medium-gray);
+        background: #1e1e1e; color: #eee; font-family: inherit; font-size: 0.9em; outline: none; transition: border-color 0.2s;
+    }
+    .fb-busca-wrap input:focus { border-color: var(--primary); }
+
+    /* ══ GRID DE NEGÓCIOS (idêntico ao index_start) ══ */
+    .section { padding: 44px 0 62px; }
+    .section-header { text-align: center; margin-bottom: 34px; }
+    .section-title { font-size: 1.7em; font-weight: 800; color: #fff; margin-bottom: 8px; }
+    .section-subtitle { color: #999; font-size: 0.98em; }
+
+    .as-grid-profissionais { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 22px; }
+    .as-profissional-card { background: #141414; border: 1px solid var(--medium-gray); border-radius: 14px; overflow: hidden; transition: transform 0.3s, box-shadow 0.3s, border-color 0.2s; display: flex; flex-direction: column; }
+    .as-profissional-card:hover { transform: translateY(-5px); box-shadow: 0 10px 28px rgba(0,0,0,0.5); border-color: rgba(255,193,7,0.35); }
+    .as-card-topo { display: flex; align-items: center; gap: 12px; padding: 16px 16px 0; }
+    .as-card-avatar { width: 60px; height: 60px; flex-shrink: 0; border-radius: 50%; overflow: hidden; border: 3px solid var(--primary); background: #1e1e1e; }
+    .as-card-avatar img { width: 100%; height: 100%; object-fit: cover; transition: transform 0.4s; }
+    .as-profissional-card:hover .as-card-avatar img { transform: scale(1.1); }
+    .as-card-headline { display: flex; flex-direction: column; gap: 5px; min-width: 0; }
+    .as-card-headline h3 { font-size: 1.02em; font-weight: 700; color: #eee; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .as-card-selo { align-self: flex-start; display: inline-flex; align-items: center; gap: 4px; font-size: 0.68em; font-weight: 700; color: var(--primary); background: rgba(255,193,7,0.12); padding: 3px 9px; border-radius: 20px; white-space: nowrap; }
+    .as-card-info { padding: 12px 16px 16px; flex: 1; display: flex; flex-direction: column; gap: 4px; }
+    .as-card-local { font-size: 0.88em; color: #999; display: flex; align-items: center; gap: 5px; }
+    .as-card-local--remoto { color: var(--primary); font-style: italic; }
+    .as-card-dist { font-size: 0.85em; color: var(--primary); font-weight: 700; margin-top: 4px; }
+    .as-card-tags { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 6px; }
+    .as-card-tag { font-size: 0.72em; font-weight: 600; color: var(--primary); background: rgba(255,193,7,0.1); padding: 2px 9px; border-radius: 20px; }
+    .btn-ver { margin-top: auto; padding-top: 12px; display: inline-block; background: var(--primary); color: #1a1a1a; padding: 9px 18px; border-radius: 6px; font-size: 0.88em; font-weight: 700; text-align: center; transition: background 0.2s; }
+    .as-profissional-card:hover .btn-ver { background: #e0a800; }
+    .empty-state { text-align: center; color: #888; padding: 60px 0; }
+    .empty-state i { font-size: 2.4em; color: #444; margin-bottom: 14px; display: block; }
+
+    /* ══ BANNER MEIO ══ */
+    .banner-meio { background: #111; padding: 28px 20px; text-align: center; border-top: 1px solid var(--medium-gray); border-bottom: 1px solid var(--medium-gray); }
+
+    /* ══ OUTRAS CATEGORIAS (chips) ══ */
+    .chips-row { display: flex; flex-wrap: wrap; gap: 10px; justify-content: center; }
+    .chip { display: inline-flex; align-items: center; gap: 7px; background: #1a1a1a; border: 1.5px solid var(--medium-gray); color: #ccc; padding: 9px 18px; border-radius: 20px; font-size: 0.9em; font-weight: 600; transition: all 0.2s; }
+    .chip:hover { border-color: var(--primary); color: var(--primary); background: rgba(255,193,7,0.06); }
+    .chip i { color: var(--primary); }
+
+    /* ══ ANUNCIE ══ */
+    .anuncie-section { background: #111; color: #fff; padding: 64px 20px; text-align: center; border-top: 1px solid var(--medium-gray); }
+    .anuncie-section h2 { font-size: 2em; font-weight: 800; margin-bottom: 12px; }
+    .anuncie-section p { font-size: 1.05em; color: #ccc; margin-bottom: 30px; max-width: 560px; margin-left: auto; margin-right: auto; }
+    .btn-anuncie { display: inline-flex; align-items: center; gap: 8px; background: var(--primary); color: #1a1a1a; padding: 15px 34px; border-radius: 8px; font-size: 1.05em; font-weight: 700; transition: background 0.3s, transform 0.2s; }
+    .btn-anuncie:hover { background: #e0a800; transform: translateY(-2px); }
+
+    /* ══ FOOTER ══ */
+    footer { background: #111; color: #999; text-align: center; padding: 32px 20px; font-size: 0.88em; border-top: 1px solid var(--medium-gray); }
+    footer a { color: var(--primary); }
+    footer a:hover { text-decoration: underline; }
+    .footer-logo { margin-bottom: 14px; }
+    .footer-logo img { height: 36px; width: auto; opacity: 0.85; margin: 0 auto; }
+
+    @media (max-width: 768px) {
+        .header-subtitle { font-size: 0.8em; margin-top: -2px; }
+        nav.desktop-nav { display: none; }
+        .hamburger-btn { display: block; top: 50%; transform: translateY(-50%); }
+        .filtro-hero h1 { font-size: 1.7em; }
+        .filtros-bar-inner { justify-content: flex-start; }
+        .fb-busca-wrap { max-width: 100%; flex-basis: 100%; }
+        .as-grid-profissionais { grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 14px; }
+    }
+</style>
+</head>
+<body>
+
+<!-- HEADER -->
+<header>
+    <div class="header-logo">
+        <a href="/" aria-label="{{ hub.nome or 'AgênciaStart' }} — Página inicial">
+            <img src="{{ hub.logo_url or 'https://res.cloudinary.com/dhu1cqvrb/image/upload/v1783643721/Massas_Sabores_6_utat55.png' }}"
+                 alt="{{ hub.nome or 'AgênciaStart' }}" height="80" loading="eager">
+        </a>
+    </div>
+    <p class="header-subtitle">Diretório de Agências, Estúdios e&nbsp;Freelancers</p>
+    <nav class="desktop-nav" aria-label="Navegação principal">
+        <ul>
+            <li><a href="/">Início</a></li>
+            <li>
+                <a href="/{{ segmento }}/" class="ativo">Categorias ▾</a>
+                <div class="nav-dropdown">
+                    {% for cat in categorias %}
+                    <a href="/{{ cat.slug }}/">{{ cat.nome }}</a>
+                    {% endfor %}
+                </div>
+            </li>
+            <li><a href="/#cidades">Cidades ▾</a></li>
+            <li><a href="/blog/">Blog</a></li>
+            <li><a href="https://wa.me/55{{ hub.whatsapp or '11913324827' }}?text=Olá,+quero+saber+mais" target="_blank" rel="noopener">Contato</a></li>
+        </ul>
+    </nav>
+    <button class="hamburger-btn" id="hamburger-btn" aria-label="Abrir menu">
+        <i class="fas fa-bars"></i>
+    </button>
+</header>
+
+<!-- MOBILE NAV -->
+<div class="mobile-nav-overlay" id="mobile-nav" role="dialog" aria-modal="true">
+    <button class="mobile-nav-close" onclick="closeMobileNav()" aria-label="Fechar menu">&#x2715;</button>
+    <nav>
+        <ul>
+            <li><a href="/" onclick="closeMobileNav()">Início</a></li>
+            <li><a href="/{{ segmento }}/" onclick="closeMobileNav()">Categorias</a></li>
+            <li><a href="/#cidades" onclick="closeMobileNav()">Cidades</a></li>
+            <li><a href="/blog/" onclick="closeMobileNav()">Blog</a></li>
+            <li><a href="https://wa.me/55{{ hub.whatsapp or '11913324827' }}?text=Olá,+quero+saber+mais" target="_blank" rel="noopener" onclick="closeMobileNav()">Contato</a></li>
+        </ul>
+    </nav>
+</div>
+
+<!-- BANNER TOPO -->
+<div class="banner-topo">
+    {% if anuncio_topo %}
+    <a href="{{ anuncio_topo.link }}" target="_blank" rel="noopener sponsored">
+        <img src="{{ anuncio_topo.foto_url }}" alt="{{ anuncio_topo.titulo or 'Publicidade' }}"
+             style="max-height:90px; width:auto; max-width:100%; border-radius:8px;">
+    </a>
+    {% elif hub.banner1_foto_url %}
+    <a href="{{ hub.banner1_link or '#' }}" target="_blank" rel="noopener sponsored">
+        <img src="{{ hub.banner1_foto_url }}" alt="Publicidade"
+             style="max-height:90px; width:auto; max-width:100%; border-radius:8px;">
+    </a>
+    {% else %}
+    <a class="banner-placeholder"
+       href="https://wa.me/55{{ hub.whatsapp or '11913324827' }}?text=Quero+cadastrar+minha+agência+ou+estúdio"
+       target="_blank" rel="noopener">📣 Anuncie aqui — espaço disponível</a>
+    {% endif %}
+</div>
+
+<!-- BREADCRUMB -->
+<div class="breadcrumb-strip">
+    <div class="container breadcrumb-inner">
+        <a href="/">Início</a>
+        <span class="bc-sep">/</span>
+        <span class="bc-atual">{{ filtro_valor | capitalize }}</span>
+    </div>
+</div>
+
+<!-- HERO DO FILTRO -->
+<section class="filtro-hero">
+    <div class="container">
+        <h1>
+            {% if filtro_tipo == 'categoria' %}
+            <em>{{ filtro_valor | capitalize }}</em> perto de você
+            {% else %}
+            Agências no bairro <em>{{ filtro_valor | capitalize }}</em>
+            {% endif %}
+        </h1>
+        <p>
+            {% if filtro_tipo == 'categoria' %}
+            Encontre as melhores opções de {{ filtro_valor }} com portfólio, contato e localização — tudo num só lugar.
+            {% else %}
+            Todas as agências, estúdios e freelancers cadastrados no bairro {{ filtro_valor | capitalize }}.
+            {% endif %}
+        </p>
+        <div class="filtro-hero-stats">
+            <div class="filtro-hero-stat"><strong>{{ total_negocios }}</strong><span>locais</span></div>
+            {% if filtro_tipo == 'categoria' %}
+            <div class="filtro-hero-stat"><strong>{{ bairros_disponiveis | length }}</strong><span>bairro(s)</span></div>
+            {% endif %}
+            <div class="filtro-hero-stat"><strong>Grátis</strong><span>pra encontrar</span></div>
+        </div>
+    </div>
+</section>
+
+<!-- BARRA DE FILTROS -->
+<div class="filtros-bar">
+    <div class="container filtros-bar-inner">
+        {% if filtro_tipo == 'categoria' %}
+        <span class="filtros-bar-label">Bairro:</span>
+        <div class="fb-slicer-wrap">
+            <button class="fb-slicer-btn" id="fbSlicerBtn" onclick="toggleFbSlicer()" type="button">
+                <i class="fas fa-map-marker-alt" style="color:var(--primary);font-size:0.85em;"></i>
+                <span id="fbSlicerLabel">Todos os bairros</span>
+                <i class="fas fa-chevron-down"></i>
+            </button>
+            <div class="fb-slicer-dropdown" id="fbSlicerDropdown">
+                <input class="fb-slicer-search" type="text" placeholder="Buscar bairro..." oninput="filtrarFbSlicer(this.value)" autocomplete="off">
+                <div id="fbSlicerList">
+                    <button class="fb-slicer-item active" onclick="selecionarFiltroLateral(this, '')">Todos os bairros</button>
+                    {% for b in bairros_disponiveis %}
+                    <button class="fb-slicer-item" data-val="{{ b | lower }}" onclick="selecionarFiltroLateral(this, '{{ b | lower }}')">{{ b }}</button>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+        {% else %}
+        <span class="filtros-bar-label">Categoria:</span>
+        <div class="fb-slicer-wrap">
+            <button class="fb-slicer-btn" id="fbSlicerBtn" onclick="toggleFbSlicer()" type="button">
+                <i class="fas fa-th-large" style="color:var(--primary);font-size:0.85em;"></i>
+                <span id="fbSlicerLabel">Todas as categorias</span>
+                <i class="fas fa-chevron-down"></i>
+            </button>
+            <div class="fb-slicer-dropdown" id="fbSlicerDropdown">
+                <div id="fbSlicerList">
+                    <button class="fb-slicer-item active" onclick="selecionarFiltroLateral(this, '')">Todas as categorias</button>
+                    {% for cat in categorias %}
+                    <button class="fb-slicer-item" data-val="{{ cat.slug }}" onclick="selecionarFiltroLateral(this, '{{ cat.slug }}')">{{ cat.nome }}</button>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+        {% endif %}
+        <button class="btn-loc-filtro" id="btnLocFiltro" onclick="usarLocalizacaoFiltro()" type="button" title="Ordenar por mais próximo">
+            <i class="fas fa-location-arrow"></i>
+            <span id="btnLocFiltroLabel">Mais próximo</span>
+        </button>
+        <div class="fb-busca-wrap">
+            <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+            <input type="text" placeholder="Buscar negócio..." oninput="buscarFiltroDebounce(this.value)">
+        </div>
+    </div>
+</div>
+
+<!-- GRID DE NEGÓCIOS -->
+<section class="section">
+    <div class="container">
+        <div class="section-header">
+            <h2 class="section-title">
+                {% if filtro_tipo == 'categoria' %}{{ filtro_valor | capitalize }}{% else %}Bairro {{ filtro_valor | capitalize }}{% endif %}
+            </h2>
+            <p class="section-subtitle" id="filtroGridSubtitulo">{{ total_negocios }} negócio(s) encontrado(s)</p>
+        </div>
+
+        <div class="as-grid-profissionais" id="filtroNegociosGrid">
+            <!-- cards inseridos via JS -->
+        </div>
+        <div id="filtro-lazy-sentinel" style="height:1px; margin-top:10px;"></div>
+        <p id="filtro-lazy-loading" style="display:none; text-align:center; color:var(--primary); padding:20px;"><i class="fas fa-spinner fa-spin"></i> Carregando mais...</p>
+        <div id="filtroEmptyMsg" style="display:none" class="empty-state">
+            <i class="fas fa-search"></i>
+            <p>Nenhum resultado para esse filtro.</p>
+        </div>
+    </div>
+</section>
+
+<!-- BANNER MEIO -->
+<div class="banner-meio">
+    {% if anuncio_meio %}
+    <a href="{{ anuncio_meio.link }}" target="_blank" rel="noopener sponsored">
+        <img src="{{ anuncio_meio.foto_url }}" alt="{{ anuncio_meio.titulo or 'Publicidade' }}"
+             style="max-height:120px; width:auto; max-width:100%; border-radius:8px; margin:0 auto;">
+    </a>
+    {% elif hub.banner2_foto_url %}
+    <a href="{{ hub.banner2_link or '#' }}" target="_blank" rel="noopener sponsored">
+        <img src="{{ hub.banner2_foto_url }}" alt="Publicidade"
+             style="max-height:120px; width:auto; max-width:100%; border-radius:8px; margin:0 auto;">
+    </a>
+    {% else %}
+    <a class="banner-placeholder"
+       href="https://wa.me/55{{ hub.whatsapp or '11913324827' }}?text=Quero+anunciar+no+{{ hub.nome or 'AgênciaStart' }}"
+       target="_blank" rel="noopener">📣 Anuncie aqui — espaço disponível</a>
+    {% endif %}
+</div>
+
+<!-- OUTRAS CATEGORIAS -->
+{% if filtro_tipo == 'categoria' and categorias | length > 1 %}
+<section class="section">
+    <div class="container">
+        <div class="section-header" style="margin-bottom:24px;">
+            <h2 class="section-title">Explorar outras categorias</h2>
+        </div>
+        <div class="chips-row">
+            {% for cat in categorias %}
+            {% if cat.slug != filtro_valor %}
+            <a href="/{{ cat.slug }}/" class="chip"><i class="fas fa-tag"></i> {{ cat.nome }}</a>
+            {% endif %}
+            {% endfor %}
+        </div>
+    </div>
+</section>
+{% endif %}
+
+<!-- ANUNCIE -->
+<section class="anuncie-section">
+    <div class="container">
+        <h2>Seu negócio ainda não está aqui?</h2>
+        <p>Cadastre-se gratuitamente e apareça para milhares de pessoas buscando {{ filtro_valor }} perto delas.</p>
+        <a href="https://wa.me/55{{ hub.whatsapp or '11913324827' }}?text=Quero+cadastrar+meu+negócio" target="_blank" rel="noopener" class="btn-anuncie">
+            <i class="fab fa-whatsapp"></i> Quero aparecer aqui
+        </a>
+    </div>
+</section>
+
+<!-- FOOTER -->
+<footer>
+    <div class="footer-logo">
+        <img src="{{ hub.logo_url or 'https://res.cloudinary.com/dhu1cqvrb/image/upload/v1783643721/Massas_Sabores_6_utat55.png' }}"
+             alt="{{ hub.nome or 'AgênciaStart' }}" loading="lazy">
+    </div>
+    <p>© 2026 <strong>{{ hub.nome or 'AgênciaStart' }}</strong> — Todos os direitos reservados</p>
+    <p style="margin-top:10px;">
+        <a href="/">Início</a> &middot;
+        <a href="/sitemap.xml">Sitemap</a> &middot;
+        <a href="/robots.txt">Robots.txt</a> &middot;
+        <a href="/blog/">Blog</a>
+    </p>
+</footer>
+
+<!-- Scripts -->
+<script>
+document.getElementById('hamburger-btn').addEventListener('click', function(){
+    document.getElementById('mobile-nav').classList.add('active');
+    document.body.style.overflow = 'hidden';
+});
+function closeMobileNav(){
+    document.getElementById('mobile-nav').classList.remove('active');
+    document.body.style.overflow = '';
+}
+document.addEventListener('keydown', function(e){ if(e.key === 'Escape') closeMobileNav(); });
+</script>
+
+<script>
+// ══════════════════════════════════════════════════════════════
+// FILTRO_START — grid, slicer, busca, localização, lazy-load
+// (lógica equivalente ao filtro_otp / filtro_cestas, adaptada
+// pro visual e nomenclatura do AgênciaStart)
+// ══════════════════════════════════════════════════════════════
+
+var filtroFiltroAtivo = '';
+var _fbFiltroBairro = filtroFiltroAtivo;
+var _fbFiltroBusca  = '';
+var _fbOffset  = {{ negocios | length }};
+var _fbLote    = 96;
+var _fbFim     = {{ 'true' if negocios | length < 48 else 'false' }};
+var _fbCarregando = false;
+var _fbTotalReal  = {{ total_negocios }};
+var _fbUserLat = null, _fbUserLng = null;
+var _fbLocAtiva = false;
+var _FB_IMG_FALLBACK = 'https://placehold.co/600x600/1a1a1a/FFC107?font=roboto&text=AgenciaStart';
+var CATEGORIAS_FREELANCER_FB = ['fotografo','freelancer-design','freelancer-video','freelancer'];
+
+var filtroNegociosCarregados = [];
+
+(function(){
+    filtroNegociosCarregados = {{ negocios | tojson }};
+    renderFiltroGrid();
+    atualizarFiltroSubtitulo(_fbTotalReal);
+    initFiltroLazySentinel();
+})();
+
+function _seloFiltro(n){
+    if(n.categoria_slug === 'ferramenta-de-ia') return '<span class="as-card-selo">🤖 Curadoria IA</span>';
+    if(CATEGORIAS_FREELANCER_FB.indexOf(n.categoria_slug) !== -1) return '<span class="as-card-selo">🎨 Portfólio</span>';
+    return '<span class="as-card-selo">⭐ Verificado</span>';
+}
+
+function _isFreelancerFb(n){ return CATEGORIAS_FREELANCER_FB.indexOf(n.categoria_slug) !== -1; }
+
+function filtroCardHTML(n){
+    var dist = (n._dist !== undefined && n._dist < 9999) ? '<span class="as-card-dist"><i class="fas fa-location-arrow"></i> '+n._dist.toFixed(1)+' km de você</span>' : '';
+    var foto = (n.foto_url && n.mostrar_foto !== false) ? n.foto_url : _FB_IMG_FALLBACK;
+    var local = [n.bairro, n.cidade].filter(Boolean).join(', ');
+    var localHTML = local
+        ? '<p class="as-card-local"><i class="fas fa-map-marker-alt" style="color:var(--primary)"></i> '+local+'</p>'
+        : (_isFreelancerFb(n) ? '<p class="as-card-local as-card-local--remoto"><i class="fas fa-wifi" style="color:var(--primary)"></i> Atende online / a domicílio</p>' : '');
+    var tagsHTML = (Array.isArray(n.tags) && n.tags.length)
+        ? '<div class="as-card-tags">'+n.tags.slice(0,3).map(function(t){ return '<span class="as-card-tag">'+t+'</span>'; }).join('')+'</div>'
+        : '';
+    return '<a href="/'+n.categoria_slug+'/'+n.slug+'/" class="as-profissional-card"'+
+        ' data-nome="'+n.nome.toLowerCase()+'">'+
+        '<div class="as-card-topo">'+
+            '<div class="as-card-avatar"><img src="'+foto+'" alt="'+n.nome+' perto de mim" loading="lazy" width="60" height="60"></div>'+
+            '<div class="as-card-headline">'+
+                '<h3>'+n.nome+'</h3>'+
+                _seloFiltro(n)+
+            '</div>'+
+        '</div>'+
+        '<div class="as-card-info">'+
+            localHTML+
+            dist+
+            tagsHTML+
+            '<span class="btn-ver">Ver detalhes →</span>'+
+        '</div>'+
+    '</a>';
+}
+
+function renderFiltroGrid(){
+    var grid = document.getElementById('filtroNegociosGrid');
+    if(!grid) return;
+    var lista = filtroNegociosCarregados;
+    if(_fbLocAtiva && _fbUserLat && _fbUserLng){
+        lista = lista.slice(0, 48);
+        atualizarFiltroSubtitulo(lista.length + ' mais próximos de você');
+    }
+    grid.innerHTML = lista.map(filtroCardHTML).join('');
+}
+
+function atualizarFiltroSubtitulo(total){
+    var el = document.getElementById('filtroGridSubtitulo');
+    if(el) el.textContent = total + ' negócio(s) encontrado(s)';
+}
+
+function _fbBuildApiUrl(offset){
+    var url = '/api/hub/negocios?limit=' + _fbLote + '&offset=' + offset;
+    if(_fbFiltroBairro) url += '&bairro=' + encodeURIComponent(_fbFiltroBairro);
+    {% if filtro_tipo == 'categoria' %}
+    url += '&categoria={{ segmento }}';
+    {% else %}
+    if(!_fbFiltroBairro) url += '&bairro={{ segmento }}';
+    {% endif %}
+    return url;
+}
+
+function _fbCarregarLote(){
+    if(_fbFim || _fbCarregando) return;
+    _fbCarregando = true;
+    var loading = document.getElementById('filtro-lazy-loading');
+    if(loading) loading.style.display = 'block';
+    fetch(_fbBuildApiUrl(_fbOffset))
+        .then(function(r){ return r.json(); })
+        .then(function(data){
+            _fbCarregando = false;
+            if(loading) loading.style.display = 'none';
+            if(!Array.isArray(data) || !data.length){ _fbFim = true; return; }
+            filtroNegociosCarregados = filtroNegociosCarregados.concat(data);
+            if(_fbLocAtiva && _fbUserLat !== null) _fbAplicarDistancias();
+            renderFiltroGrid();
+            _fbOffset += data.length;
+            if(data.length < _fbLote) _fbFim = true;
+        })
+        .catch(function(){ _fbCarregando = false; if(loading) loading.style.display = 'none'; _fbFim = true; });
+}
+
+function initFiltroLazySentinel(){
+    var sentinel = document.getElementById('filtro-lazy-sentinel');
+    if(!sentinel || !('IntersectionObserver' in window)) return;
+    new IntersectionObserver(function(entries){
+        if(entries[0].isIntersecting) _fbCarregarLote();
+    }, { rootMargin: '300px' }).observe(sentinel);
+}
+
+// ══ BUSCA LOCAL ══
+function buscarFiltro(q){
+    _fbFiltroBusca = q.toLowerCase().trim();
+    var cards = document.querySelectorAll('#filtroNegociosGrid .as-profissional-card');
+    var visiveis = 0;
+    cards.forEach(function(card){
+        var nome = card.getAttribute('data-nome') || '';
+        var mostra = !_fbFiltroBusca || nome.indexOf(_fbFiltroBusca) !== -1;
+        card.style.display = mostra ? '' : 'none';
+        if(mostra) visiveis++;
+    });
+    atualizarFiltroSubtitulo(visiveis);
+    var empty = document.getElementById('filtroEmptyMsg');
+    if(empty) empty.style.display = (visiveis === 0 && _fbFiltroBusca) ? 'block' : 'none';
+}
+var _fbBuscaTimer = null;
+function buscarFiltroDebounce(q){
+    clearTimeout(_fbBuscaTimer);
+    _fbBuscaTimer = setTimeout(function(){ buscarFiltro(q); }, 350);
+}
+
+// ══ SLICER (bairro ou categoria) ══
+function toggleFbSlicer(){
+    var btn = document.getElementById('fbSlicerBtn');
+    var drop = document.getElementById('fbSlicerDropdown');
+    var isOpen = drop.classList.contains('open');
+    drop.classList.toggle('open', !isOpen);
+    btn.classList.toggle('open', !isOpen);
+    if(!isOpen){ var s = drop.querySelector('.fb-slicer-search'); if(s) s.focus(); }
+}
+document.addEventListener('click', function(e){
+    if(!e.target.closest('.fb-slicer-wrap')){
+        var d = document.getElementById('fbSlicerDropdown');
+        var b = document.getElementById('fbSlicerBtn');
+        if(d) d.classList.remove('open');
+        if(b) b.classList.remove('open');
+    }
+});
+function filtrarFbSlicer(q){
+    document.querySelectorAll('#fbSlicerList .fb-slicer-item').forEach(function(item){
+        item.style.display = item.textContent.toLowerCase().includes(q.toLowerCase()) ? '' : 'none';
+    });
+}
+function selecionarFiltroLateral(el, val){
+    document.querySelectorAll('#fbSlicerList .fb-slicer-item').forEach(function(i){ i.classList.remove('active'); });
+    el.classList.add('active');
+    document.getElementById('fbSlicerLabel').textContent = el.textContent.trim();
+    document.getElementById('fbSlicerDropdown').classList.remove('open');
+    document.getElementById('fbSlicerBtn').classList.remove('open');
+    filtroFiltroAtivo = val;
+    _fbFiltroBairro = val;
+    _fbRecarregarGrid();
+}
+function _fbRecarregarGrid(){
+    var grid = document.getElementById('filtroNegociosGrid');
+    grid.innerHTML = '';
+    filtroNegociosCarregados = [];
+    _fbOffset = 0;
+    _fbFim = false;
+    atualizarFiltroSubtitulo('...');
+    _fbCarregarLote();
+}
+
+// ══ LOCALIZAÇÃO / MAIS PRÓXIMO ══
+function calcDistanciaFb(lat1,lng1,lat2,lng2){
+    var R=6371, dLat=(lat2-lat1)*Math.PI/180, dLng=(lng2-lng1)*Math.PI/180;
+    var a=Math.sin(dLat/2)*Math.sin(dLat/2)+Math.cos(lat1*Math.PI/180)*Math.cos(lat2*Math.PI/180)*Math.sin(dLng/2)*Math.sin(dLng/2);
+    return R*2*Math.atan2(Math.sqrt(a),Math.sqrt(1-a));
+}
+function _fbAplicarDistancias(){
+    filtroNegociosCarregados.forEach(function(n){
+        var lat = parseFloat(n.lat), lng = parseFloat(n.lng);
+        if(_fbUserLat !== null && !isNaN(lat) && !isNaN(lng) && lat !== 0 && lng !== 0){
+            n._dist = calcDistanciaFb(_fbUserLat, _fbUserLng, lat, lng);
+        } else { n._dist = 99999; }
+    });
+    filtroNegociosCarregados.sort(function(a,b){ return (a._dist||99999) - (b._dist||99999); });
+}
+function usarLocalizacaoFiltro(){
+    var btn = document.getElementById('btnLocFiltro');
+    var label = document.getElementById('btnLocFiltroLabel');
+    if(_fbLocAtiva){
+        _fbLocAtiva = false; _fbUserLat = null; _fbUserLng = null;
+        btn.classList.remove('ativo'); label.textContent = 'Mais próximo';
+        filtroNegociosCarregados.forEach(function(n){ delete n._dist; });
+        _fbRecarregarGrid();
+        return;
+    }
+    if(!navigator.geolocation){ alert('Seu navegador não suporta geolocalização.'); return; }
+    label.textContent = 'Localizando...';
+    btn.classList.add('ativo');
+    navigator.geolocation.getCurrentPosition(
+        function(pos){
+            _fbLocAtiva = true;
+            _fbUserLat = pos.coords.latitude;
+            _fbUserLng = pos.coords.longitude;
+            label.textContent = 'Mais próximo ✓';
+            var loading = document.getElementById('filtro-lazy-loading');
+            if(loading) loading.style.display = 'block';
+            fetch(_fbBuildApiUrl(0).replace('limit='+_fbLote, 'limit=20000'))
+                .then(function(r){ return r.json(); })
+                .then(function(data){
+                    if(loading) loading.style.display = 'none';
+                    if(Array.isArray(data)) filtroNegociosCarregados = data;
+                    _fbAplicarDistancias();
+                    renderFiltroGrid();
+                })
+                .catch(function(){ if(loading) loading.style.display = 'none'; });
+        },
+        function(){
+            label.textContent = 'Mais próximo';
+            btn.classList.remove('ativo');
+            alert('Não foi possível obter sua localização.');
+        }
+    );
+}
+</script>
+
+<!-- ── Google Translate (widget nativo oculto) ── -->
+<div id="google_translate_element"></div>
+<script>
+function googleTranslateElementInit() {
+    new google.translate.TranslateElement({ pageLanguage: 'pt', autoDisplay: false }, 'google_translate_element');
+}
+</script>
+<script src="//translate.google.com/translate_a/element.js?cb=googleTranslateElementInit"></script>
+
+<!-- ── Botão flutuante de tradução ── -->
+<button id="translate-btn" onclick="toggleTranslateDrawer()">
+    <i class="fas fa-language"></i> Traduzir
+</button>
+
+<!-- ── Drawer de idiomas ── -->
+<div id="translate-drawer">
+    <div class="td-header">
+        <input class="td-search" id="td-search" type="text" placeholder="Buscar idioma…" oninput="filterLangs(this.value)">
+        <button class="td-close" onclick="toggleTranslateDrawer()">&#10005;</button>
+    </div>
+    <div class="td-list" id="td-list"></div>
+</div>
+
+<style>
+    #google_translate_element { position: absolute; visibility: hidden; pointer-events: none; }
+    .goog-te-banner-frame, .skiptranslate { display: none !important; }
+    body { top: 0 !important; }
+
+    #translate-btn {
+        position: fixed; bottom: 20px; right: 20px; z-index: 999;
+        background: var(--white); border: none; border-radius: 50px;
+        padding: 10px 18px; display: flex; align-items: center; gap: 8px;
+        font-family: 'Roboto', sans-serif; font-size: 14px; font-weight: 600;
+        color: var(--dark); cursor: pointer;
+        box-shadow: 0 4px 20px rgba(0,0,0,0.18);
+        transition: box-shadow 0.2s, transform 0.15s;
+    }
+    #translate-btn:hover { box-shadow: 0 6px 28px rgba(0,0,0,0.25); transform: translateY(-1px); }
+    #translate-btn i { color: var(--dark); font-size: 16px; }
+
+    #translate-drawer {
+        position: fixed; bottom: 70px; right: 20px; z-index: 1000;
+        background: var(--white); border-radius: 16px;
+        box-shadow: 0 8px 40px rgba(0,0,0,0.2);
+        width: 280px; max-height: 420px;
+        display: none; flex-direction: column;
+        overflow: hidden;
+    }
+    #translate-drawer.open { display: flex; }
+    .td-header { padding: 12px 14px; border-bottom: 1px solid var(--medium-gray); display: flex; align-items: center; gap: 8px; }
+    .td-search { flex: 1; border: 1.5px solid var(--medium-gray); border-radius: 8px; padding: 8px 12px; font-family: 'Roboto', sans-serif; font-size: 13px; outline: none; transition: border-color 0.2s; }
+    .td-search:focus { border-color: var(--primary); }
+    .td-close { background: none; border: none; color: #aaa; font-size: 18px; cursor: pointer; line-height: 1; padding: 2px 4px; }
+    .td-close:hover { color: var(--dark-gray); }
+    .td-list { overflow-y: auto; flex: 1; padding: 6px 0; }
+    .td-item { padding: 9px 18px; font-size: 14px; cursor: pointer; color: var(--text-dark); transition: background 0.1s; display: flex; align-items: center; gap: 10px; }
+    .td-item:hover { background: var(--light); color: var(--dark); }
+    .td-item.active { color: var(--dark); font-weight: 600; background: #f3ead0; }
+    .td-item .flag { font-size: 18px; flex-shrink: 0; }
+    .td-empty { padding: 24px; text-align: center; color: #bbb; font-size: 13px; }
+
+    @media (max-width: 480px) {
+        #translate-drawer { width: calc(100vw - 32px); right: 16px; bottom: 72px; max-height: 55vh; }
+        #translate-btn { bottom: 16px; right: 16px; }
+    }
+</style>
+
+<script>
+const LANGS = [
+    {code:'af',name:'Afrikaans',flag:'🇿🇦'},{code:'sq',name:'Albanian',flag:'🇦🇱'},{code:'am',name:'Amharic',flag:'🇪🇹'},
+    {code:'ar',name:'Arabic',flag:'🇸🇦'},{code:'hy',name:'Armenian',flag:'🇦🇲'},{code:'az',name:'Azerbaijani',flag:'🇦🇿'},
+    {code:'de',name:'German',flag:'🇩🇪'},{code:'en',name:'English',flag:'🇬🇧'},{code:'es',name:'Spanish',flag:'🇪🇸'},
+    {code:'fr',name:'French',flag:'🇫🇷'},{code:'it',name:'Italian',flag:'🇮🇹'},{code:'ja',name:'Japanese',flag:'🇯🇵'},
+    {code:'ko',name:'Korean',flag:'🇰🇷'},{code:'pt',name:'Português',flag:'🇧🇷'},{code:'ru',name:'Russian',flag:'🇷🇺'},
+    {code:'zh-CN',name:'Chinese (Simplified)',flag:'🇨🇳'}
+];
+
+let currentLang = 'pt';
+let drawerOpen  = false;
+
+function renderLangs(list) {
+    const el = document.getElementById('td-list');
+    if (!list.length) { el.innerHTML = '<div class="td-empty">Nenhum idioma encontrado</div>'; return; }
+    el.innerHTML = list.map(l =>
+        '<div class="td-item ' + (l.code === currentLang ? 'active' : '') + '" onclick="selectLang(\'' + l.code + '\',\'' + l.name + '\')"><span class="flag">' + l.flag + '</span> ' + l.name + '</div>'
+    ).join('');
+}
+function filterLangs(q) {
+    const filtered = LANGS.filter(function(l){ return l.name.toLowerCase().includes(q.toLowerCase()); });
+    renderLangs(filtered);
+}
+function selectLang(code, name) {
+    currentLang = code; drawerOpen = false;
+    document.getElementById('translate-drawer').classList.remove('open');
+    var lang = LANGS.find(function(l){ return l.code === code; });
+    document.getElementById('translate-btn').innerHTML = '<i class="fas fa-language"></i> ' + (lang ? lang.flag + ' ' + name : name);
+    if (code === 'pt') {
+        var sel = document.querySelector('.goog-te-combo');
+        if (sel) { sel.value = ''; sel.dispatchEvent(new Event('change')); }
+        document.getElementById('translate-btn').innerHTML = '<i class="fas fa-language"></i> Traduzir';
+        return;
+    }
+    var tryTranslate = function(attempts) {
+        var sel = document.querySelector('.goog-te-combo');
+        if (sel) { sel.value = code; sel.dispatchEvent(new Event('change')); }
+        else if (attempts > 0) { setTimeout(function(){ tryTranslate(attempts - 1); }, 300); }
+    };
+    tryTranslate(10);
+}
+function toggleTranslateDrawer() {
+    drawerOpen = !drawerOpen;
+    var drawer = document.getElementById('translate-drawer');
+    if (drawerOpen) {
+        drawer.classList.add('open'); renderLangs(LANGS);
+        var search = document.getElementById('td-search');
+        search.value = ''; setTimeout(function(){ search.focus(); }, 50);
+    } else { drawer.classList.remove('open'); }
+}
+document.addEventListener('click', function(e) {
+    if (drawerOpen && !document.getElementById('translate-drawer').contains(e.target) && !document.getElementById('translate-btn').contains(e.target)) {
+        drawerOpen = false;
+        document.getElementById('translate-drawer').classList.remove('open');
+    }
+});
+</script>
+
+<!-- ════════════════════════════════════════════
+     MODAL CADASTRO DE NEGÓCIO — botão flutuante
+     ════════════════════════════════════════════ -->
+<button
+  id="btn-cadastrar"
+  onclick="document.getElementById('modal-cadastro').classList.remove('modal-oculto')"
+  style="
+    position: fixed; bottom: 80px; right: 20px; z-index: 8900;
+    background: var(--primary); color: #1a1a1a; border: none;
+    border-radius: 50px; padding: 13px 20px;
+    font-size: 14px; font-weight: 700; cursor: pointer;
+    box-shadow: 0 4px 16px rgba(0,0,0,.25);
+    display: flex; align-items: center; gap: 8px;
+    font-family: 'Roboto', sans-serif;
+    transition: transform .15s, box-shadow .15s;
+  "
+  onmouseover="this.style.transform='scale(1.05)'"
+  onmouseout="this.style.transform='scale(1)'"
+>
+  <svg width="17" height="17" fill="none" stroke="currentColor" stroke-width="2.5"
+       viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg>
+  Cadastre um negócio
+</button>
+
+<div id="modal-cadastro" class="modal-oculto" style="
+  position: fixed; inset: 0; z-index: 9999;
+  background: rgba(0,0,0,.55); backdrop-filter: blur(3px);
+  display: flex; align-items: center; justify-content: center; padding: 16px;
+">
+  <div style="
+    background: #fff; border-radius: 16px;
+    width: 100%; max-width: 560px; max-height: 92vh;
+    overflow-y: auto; padding: 32px 28px; position: relative;
+    box-shadow: 0 20px 60px rgba(0,0,0,.3);
+    font-family: 'Roboto', sans-serif;
+  ">
+    <button onclick="fecharModalCadastro()" style="
+      position: absolute; top: 16px; right: 16px;
+      background: #f0f0f0; border: none; border-radius: 50%;
+      width: 32px; height: 32px; cursor: pointer; font-size: 20px;
+      line-height: 32px; text-align: center; color: #555;
+    ">×</button>
+
+    <h2 style="margin: 0 0 4px; font-size: 22px; font-weight: 800; color: #1a1a1a;">Cadastre sua agência ou estúdio</h2>
+    <p style="margin: 0 0 24px; color: #666; font-size: 14px;">
+      Preencha os dados abaixo. Após análise, seu negócio aparecerá no diretório gratuitamente.
+    </p>
+
+    <div id="cadastro-sucesso" style="display:none; text-align:center; padding: 32px 0;">
+      <div style="font-size: 52px;">🎉</div>
+      <h3 style="color: #1a1a1a; margin: 12px 0 8px; font-size: 20px;">Cadastro enviado!</h3>
+      <p style="color: #555; margin: 0 0 24px;">Vamos analisar e publicar em breve. Obrigado!</p>
+      <button onclick="fecharModalCadastro()" style="
+        background: var(--primary); color: #1a1a1a; border: none; border-radius: 8px;
+        padding: 12px 28px; font-size: 15px; cursor: pointer; font-weight: 700;
+        font-family: 'Roboto', sans-serif;
+      ">Fechar</button>
+    </div>
+
+    <div id="cadastro-tabs" style="display:flex; gap:8px; margin-bottom:20px; border-bottom:2px solid #eee;">
+      <button type="button" id="tab-agencia" class="cad-tab cad-tab-active" onclick="selecionarTipoCadastro('agencia')">
+        Agência / Estúdio
+      </button>
+      <button type="button" id="tab-freelancer" class="cad-tab" onclick="selecionarTipoCadastro('freelancer')">
+        Freelancer
+      </button>
+    </div>
+
+    <form id="form-cadastro" onsubmit="enviarCadastroNegocio(event)" style="display:flex; flex-direction:column; gap:14px;">
+      <div>
+        <label style="font-size:13px; font-weight:600; color:#333; display:block; margin-bottom:5px;">
+          Nome do negócio <span style="color:#e53935">*</span>
+        </label>
+        <input name="nome" required maxlength="255" placeholder="Ex: Agência Criativa São Paulo" class="cad-input">
+      </div>
+
+      <div>
+        <label style="font-size:13px; font-weight:600; color:#333; display:block; margin-bottom:5px;">Categoria</label>
+        <select name="categoria_id" id="select-categoria" class="cad-input">
+          <option value="">Selecione uma categoria</option>
+          {% for cat in categorias %}
+          <option value="{{ cat.id }}">{{ cat.nome }}</option>
+          {% endfor %}
+        </select>
+      </div>
+
+      <div>
+        <label style="font-size:13px; font-weight:600; color:#333; display:block; margin-bottom:5px;">Preço (a partir de)</label>
+        <input id="campo-preco" maxlength="100" placeholder="Ex: R$150 ou A combinar" class="cad-input">
+      </div>
+
+      <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px;">
+        <div>
+          <label style="font-size:13px; font-weight:600; color:#333; display:block; margin-bottom:5px;">Cidade</label>
+          <input name="cidade" maxlength="255" placeholder="São Paulo" class="cad-input">
+        </div>
+        <div>
+          <label style="font-size:13px; font-weight:600; color:#333; display:block; margin-bottom:5px;">Bairro</label>
+          <input name="bairro" maxlength="255" placeholder="Centro" class="cad-input">
+        </div>
+      </div>
+
+      <div>
+        <label style="font-size:13px; font-weight:600; color:#333; display:block; margin-bottom:5px;">Endereço</label>
+        <input name="endereco" maxlength="255" placeholder="Av. Paulista, 123" class="cad-input">
+      </div>
+
+      <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px;">
+        <div>
+          <label style="font-size:13px; font-weight:600; color:#333; display:block; margin-bottom:5px;">WhatsApp</label>
+          <input name="whatsapp" maxlength="50" placeholder="(11) 99999-9999" class="cad-input">
+        </div>
+        <div>
+          <label style="font-size:13px; font-weight:600; color:#333; display:block; margin-bottom:5px;">Telefone</label>
+          <input name="telefone" maxlength="50" placeholder="(11) 3333-3333" class="cad-input">
+        </div>
+      </div>
+
+      <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px;">
+        <div>
+          <label style="font-size:13px; font-weight:600; color:#333; display:block; margin-bottom:5px;">Instagram</label>
+          <input name="instagram" maxlength="255" placeholder="@suaagencia" class="cad-input">
+        </div>
+        <div>
+          <label style="font-size:13px; font-weight:600; color:#333; display:block; margin-bottom:5px;">Site</label>
+          <input name="site_url" maxlength="255" placeholder="https://seusite.com" class="cad-input">
+        </div>
+      </div>
+
+      <div>
+        <label style="font-size:13px; font-weight:600; color:#333; display:block; margin-bottom:5px;">Descrição</label>
+        <textarea name="descricao" rows="3" maxlength="1000" class="cad-input"
+                  placeholder="Fale um pouco sobre seu negócio..." style="resize:vertical;"></textarea>
+      </div>
+
+      <div>
+        <label style="font-size:13px; font-weight:600; color:#333; display:block; margin-bottom:8px;">Logo / foto do negócio</label>
+        <div id="imgur-area" style="
+          border: 2px dashed #ddd; border-radius: 10px; padding: 18px;
+          text-align: center; cursor: pointer; transition: border-color .2s, background .2s;
+          background: #fafafa; position: relative;"
+          onclick="document.getElementById('imgur-file-input').click()"
+          ondragover="imgurDragOver(event)" ondragleave="imgurDragLeave(event)" ondrop="imgurDrop(event)">
+          <input type="file" id="imgur-file-input" accept="image/*" style="display:none" onchange="imgurUpload(this.files[0])">
+          <div id="imgur-idle">
+            <svg width="32" height="32" fill="none" stroke="#bbb" stroke-width="1.5" viewBox="0 0 24 24" style="margin-bottom:8px;">
+              <rect x="3" y="3" width="18" height="18" rx="3"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/>
+            </svg>
+            <p style="margin:0; font-size:13px; color:#888;">Clique ou arraste uma imagem aqui<br>
+              <span style="font-size:12px; color:#bbb;">JPG, PNG, GIF, WebP — máx. 10 MB</span></p>
+          </div>
+          <div id="imgur-loading" style="display:none;">
+            <div style="width:28px;height:28px;border:3px solid #eee;border-top-color:#FFC107;border-radius:50%;animation:spin-imgur .7s linear infinite;margin:0 auto 8px;"></div>
+            <p style="margin:0;font-size:13px;color:#888;">Enviando para o Imgur...</p>
+          </div>
+          <div id="imgur-preview" style="display:none;">
+            <img id="imgur-preview-img" src="" alt="Preview" style="max-height:120px;max-width:100%;border-radius:8px;object-fit:contain;">
+            <p id="imgur-preview-nome" style="margin:8px 0 0;font-size:12px;color:#888;"></p>
+            <button type="button" onclick="imgurLimpar(event)" style="margin-top:6px;background:none;border:none;color:#e53935;font-size:12px;cursor:pointer;font-family:'Roboto',sans-serif;">✕ Remover foto</button>
+          </div>
+        </div>
+        <div id="imgur-erro" style="display:none;color:#c0392b;font-size:12px;margin-top:6px;"></div>
+        <input type="hidden" name="foto_url" id="foto_url_hidden">
+        <details style="margin-top:10px;">
+          <summary style="font-size:12px;color:#888;cursor:pointer;user-select:none;">Prefere colar um link de imagem?</summary>
+          <input id="foto_url_manual" maxlength="512" placeholder="https://link-da-sua-imagem.com"
+                 class="cad-input" style="margin-top:6px;" oninput="imgurManualUrl(this.value)">
+        </details>
+      </div>
+
+      <div id="cadastro-erro" style="display:none; color:#c0392b; font-size:13px;
+           background:#fdf0ef; border:1px solid #f5c6c6; border-radius:8px; padding:10px 12px;"></div>
+
+      <button type="submit" id="btn-submit-cadastro" style="
+        background: #FFC107; color: #1a1a1a; border: none; border-radius: 10px;
+        padding: 14px; font-size: 16px; font-weight: 700; cursor: pointer;
+        font-family: 'Roboto', sans-serif; transition: background .2s; margin-top: 4px;
+      ">Enviar cadastro</button>
+    </form>
+  </div>
+</div>
+
+<style>
+  .modal-oculto { display: none !important; }
+  .cad-input {
+    width: 100%; padding: 10px 12px;
+    border: 1.5px solid #ddd; border-radius: 8px;
+    font-size: 14px; box-sizing: border-box;
+    outline: none; transition: border .15s;
+    font-family: 'Roboto', sans-serif;
+    background: #fff; color: #333;
+  }
+  .cad-input:focus { border-color: #FFC107; }
+  .cad-tab {
+    flex: 1; padding: 10px; border: none; background: none; cursor: pointer;
+    font-family: 'Roboto', sans-serif; font-size: 13px; font-weight: 700; color: #999;
+    border-bottom: 3px solid transparent; margin-bottom: -2px; transition: all .2s;
+  }
+  .cad-tab-active { color: #1a1a1a; border-bottom-color: #FFC107; }
+  @keyframes spin-imgur { to { transform: rotate(360deg); } }
+</style>
+
+<script>
+const IMGUR_CLIENT_ID = '546c25a59c58ad7';
+
+function imgurDragOver(e) { e.preventDefault(); document.getElementById('imgur-area').style.borderColor='#FFC107'; document.getElementById('imgur-area').style.background='#fffbf0'; }
+function imgurDragLeave(e) { document.getElementById('imgur-area').style.borderColor='#ddd'; document.getElementById('imgur-area').style.background='#fafafa'; }
+function imgurDrop(e) { e.preventDefault(); imgurDragLeave(e); const f=e.dataTransfer.files[0]; if(f) imgurUpload(f); }
+
+async function imgurUpload(file) {
+  if (!file) return;
+  if (file.size > 10*1024*1024) { document.getElementById('imgur-erro').textContent='Imagem muito grande (máx. 10 MB).'; document.getElementById('imgur-erro').style.display='block'; return; }
+  document.getElementById('imgur-erro').style.display='none';
+  document.getElementById('imgur-idle').style.display='none';
+  document.getElementById('imgur-preview').style.display='none';
+  document.getElementById('imgur-loading').style.display='block';
+  try {
+    const body=new FormData(); body.append('image',file);
+    const res=await fetch('https://api.imgur.com/3/image',{method:'POST',headers:{Authorization:'Client-ID '+IMGUR_CLIENT_ID},body});
+    const data=await res.json();
+    if(!res.ok||!data.success) throw new Error(data.data?.error||'Erro no Imgur');
+    const url=data.data.link;
+    document.getElementById('foto_url_hidden').value=url;
+    document.getElementById('imgur-preview-img').src=url;
+    document.getElementById('imgur-preview-nome').textContent=file.name;
+    document.getElementById('imgur-loading').style.display='none';
+    document.getElementById('imgur-preview').style.display='block';
+    document.getElementById('imgur-area').style.borderColor='#FFC107';
+    document.getElementById('imgur-area').style.background='#fffbf0';
+    document.getElementById('imgur-area').style.cursor='default';
+  } catch(err) {
+    document.getElementById('imgur-loading').style.display='none';
+    document.getElementById('imgur-idle').style.display='block';
+    document.getElementById('imgur-erro').textContent='Falha no upload: '+(err.message||'tente novamente.');
+    document.getElementById('imgur-erro').style.display='block';
+  }
+}
+function imgurLimpar(e) { e.stopPropagation(); document.getElementById('foto_url_hidden').value=''; document.getElementById('imgur-file-input').value=''; document.getElementById('imgur-preview').style.display='none'; document.getElementById('imgur-idle').style.display='block'; document.getElementById('imgur-area').style.borderColor='#ddd'; document.getElementById('imgur-area').style.background='#fafafa'; document.getElementById('imgur-area').style.cursor='pointer'; document.getElementById('imgur-erro').style.display='none'; }
+function imgurManualUrl(val) { document.getElementById('foto_url_hidden').value=val.trim(); }
+
+function fecharModalCadastro() {
+  document.getElementById('modal-cadastro').classList.add('modal-oculto');
+  document.getElementById('form-cadastro').reset();
+  document.getElementById('form-cadastro').style.display = 'flex';
+  document.getElementById('cadastro-sucesso').style.display = 'none';
+  document.getElementById('cadastro-erro').style.display = 'none';
+  selecionarTipoCadastro('agencia');
+}
+document.getElementById('modal-cadastro').addEventListener('click', function(e) { if (e.target === this) fecharModalCadastro(); });
+document.addEventListener('keydown', function(e) {
+  if (e.key === 'Escape' && !document.getElementById('modal-cadastro').classList.contains('modal-oculto')) fecharModalCadastro();
+});
+
+var _todasCategoriaOptions = [];
+var _tipoCadastroAtivo = 'agencia';
+function _semAcento(str){ return (str || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, ''); }
+function _classificarCategorias(){
+  var select = document.getElementById('select-categoria');
+  if(!select) return;
+  var options = Array.prototype.slice.call(select.querySelectorAll('option'));
+  _todasCategoriaOptions = options
+    .filter(function(opt){ return opt.value !== ''; })
+    .map(function(opt){
+      return { value: opt.value, texto: opt.textContent, grupo: _semAcento(opt.textContent).indexOf('freelancer') !== -1 ? 'freelancer' : 'agencia' };
+    });
+  _popularSelectCategoria('agencia');
+}
+function _popularSelectCategoria(tipo){
+  var select = document.getElementById('select-categoria');
+  if(!select) return;
+  var atual = select.value;
+  select.innerHTML = '<option value="">Selecione uma categoria</option>';
+  _todasCategoriaOptions
+    .filter(function(c){ return c.grupo === tipo; })
+    .forEach(function(c){
+      var opt = document.createElement('option');
+      opt.value = c.value; opt.textContent = c.texto;
+      select.appendChild(opt);
+    });
+  if(Array.prototype.some.call(select.options, function(o){ return o.value === atual; })) select.value = atual;
+}
+function selecionarTipoCadastro(tipo){
+  _tipoCadastroAtivo = tipo;
+  document.getElementById('tab-agencia').classList.toggle('cad-tab-active', tipo === 'agencia');
+  document.getElementById('tab-freelancer').classList.toggle('cad-tab-active', tipo === 'freelancer');
+  _popularSelectCategoria(tipo);
+}
+document.addEventListener('DOMContentLoaded', _classificarCategorias);
+if(document.readyState === 'complete' || document.readyState === 'interactive') _classificarCategorias();
+
+async function enviarCadastroNegocio(e) {
+  e.preventDefault();
+  const btn  = document.getElementById('btn-submit-cadastro');
+  const erro = document.getElementById('cadastro-erro');
+  erro.style.display = 'none';
+  btn.disabled = true;
+  btn.textContent = 'Enviando...';
+  try {
+    const formData = new FormData(e.target);
+    const preco = (document.getElementById('campo-preco').value || '').trim();
+    if (preco) {
+      const descricaoOriginal = formData.get('descricao') || '';
+      formData.set('descricao', '💰 ' + preco + '\n\n' + descricaoOriginal);
+    }
+    const res = await fetch('/cadastrar-negocio', { method: 'POST', body: formData });
+    const data = await res.json();
+    if (res.ok && data.ok) {
+      document.getElementById('form-cadastro').style.display = 'none';
+      document.getElementById('cadastro-sucesso').style.display = 'block';
+    } else {
+      erro.textContent = data.erro || 'Erro ao enviar. Tente novamente.';
+      erro.style.display = 'block';
+    }
+  } catch (err) {
+    erro.textContent = 'Erro de conexão. Verifique sua internet e tente novamente.';
+    erro.style.display = 'block';
+  } finally {
+    btn.disabled = false;
+    btn.textContent = 'Enviar cadastro';
+  }
+}
+</script>
+
+{% if hub.pixel_id %}
+<script>!function(f,b,e,v,n,t,s){if(f.fbq)return;n=f.fbq=function(){n.callMethod?n.callMethod.apply(n,arguments):n.queue.push(arguments)};if(!f._fbq)f._fbq=n;n.push=n;n.loaded=!0;n.version='2.0';n.queue=[];t=b.createElement(e);t.async=!0;t.src=v;s=b.getElementsByTagName(e)[0];s.parentNode.insertBefore(t,s)}(window,document,'script','https://connect.facebook.net/en_US/fbevents.js');fbq('init','{{ hub.pixel_id }}');fbq('track','PageView');</script>
+{% endif %}
+
+</body>
+</html>
