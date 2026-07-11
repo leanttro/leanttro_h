@@ -1498,13 +1498,6 @@ var _tipoCadastroAtivo = 'agencia';
 function _semAcento(str){
   return (str||'').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'');
 }
-// Remove o prefixo "Freelancer" (com traço, dois-pontos, travessão etc.)
-// do início do nome, só para exibição no <select> — o texto original
-// completo continua sendo o nome real salvo no banco; isso aqui não muda
-// o que é enviado, só o rótulo mostrado na tela.
-function _rotuloSemPrefixoFreelancer(texto){
-  return (texto||'').replace(/^\s*freelancers?\s*[-:–—]?\s*/i, '').trim() || texto;
-}
 function _classificarCategorias(){
   var select = document.getElementById('select-categoria');
   if(!select) return;
@@ -1512,12 +1505,10 @@ function _classificarCategorias(){
   _todasCategoriaOptions = options
     .filter(function(opt){ return opt.value !== ''; })
     .map(function(opt){
-      var ehFreelancer = _semAcento(opt.textContent).indexOf('freelancer') !== -1;
       return {
         value: opt.value,
         texto: opt.textContent,
-        rotulo: ehFreelancer ? _rotuloSemPrefixoFreelancer(opt.textContent) : opt.textContent,
-        grupo: ehFreelancer ? 'freelancer' : 'agencia'
+        grupo: _semAcento(opt.textContent).indexOf('freelancer') !== -1 ? 'freelancer' : 'agencia'
       };
     });
   _popularSelectCategoria('agencia');
@@ -1531,7 +1522,7 @@ function _popularSelectCategoria(tipo){
     .filter(function(c){ return c.grupo === tipo; })
     .forEach(function(c){
       var opt = document.createElement('option');
-      opt.value = c.value; opt.textContent = c.rotulo;
+      opt.value = c.value; opt.textContent = c.texto;
       select.appendChild(opt);
     });
   if(Array.prototype.some.call(select.options, function(o){ return o.value === atual; }))
