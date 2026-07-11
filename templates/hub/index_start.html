@@ -1373,7 +1373,7 @@ function cardHTML(n){
         '</a>';
     }
     var dist=(n._dist&&n._dist<9999)?'<span class="as-card-dist"><i class="fas fa-map-marker-alt"></i> '+n._dist.toFixed(1)+' km de você</span>':'';
-    var foto=n.foto_url||'https://res.cloudinary.com/dhu1cqvrb/image/upload/v1783798743/cidades_c9jneh.png';
+    var foto=n.foto_url||'https://res.cloudinary.com/dhu1cqvrb/image/upload/v1783799149/Massas_Sabores_7_nyobke.png';
     var local=[n.bairro,n.cidade].filter(Boolean).join(', ');
     // Freelancer sem bairro/cidade cadastrados: provavelmente atende de forma
     // remota, então trocamos o "pino de mapa" por um aviso de online/domicílio
@@ -1791,7 +1791,7 @@ function _renderizarProximoLoteFreelancers(){
 (function(){
     var _todasCidades = [];
     var cidPos = 0, cidView = 'carousel';
-    var fotoBase = 'https://placehold.co/600x600/1a1a1a/FFC107?font=roboto&text=AgenciaStart';
+    var fotoBase = 'https://res.cloudinary.com/dhu1cqvrb/image/upload/v1783798743/cidades_c9jneh.png';
 
     function _slugCidade(nome){
         return nome.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/\s+/g,'-').replace(/[^a-z0-9-]/g,'');
