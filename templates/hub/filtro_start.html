@@ -1250,11 +1250,11 @@ function _rotuloSemPrefixoFreelancer(texto){
   return (texto || '').replace(/^\s*freelancers?\s*[-:–—]?\s*/i, '').trim() || texto;
 }
 
-function _classificarCategorias(){
+async function _classificarCategorias(){
   var select = document.getElementById('select-categoria');
   if(!select) return;
   var options = Array.prototype.slice.call(select.querySelectorAll('option'));
-  _todasCategoriaOptions = options
+  var lista = options
     .filter(function(opt){ return opt.value !== ''; })
     .map(function(opt){
       var ehFreelancer = _semAcento(opt.textContent).indexOf('freelancer') !== -1;
@@ -1265,7 +1265,36 @@ function _classificarCategorias(){
         grupo: ehFreelancer ? 'freelancer' : 'agencia'
       };
     });
-  _popularSelectCategoria('agencia');
+
+  var jaTem = {};
+  lista.forEach(function(c){ jaTem[c.value] = true; });
+
+  // O <select> renderizado pelo servidor só traz categorias que já têm
+  // negócio cadastrado neste filtro. Completamos aqui as categorias de
+  // Freelancer que estiverem faltando, buscando a lista completa na API
+  // que já existe — sem mexer no backend nem em nenhuma outra parte da página.
+  try{
+    var res = await fetch('/api/hub/categorias');
+    if(res.ok){
+      var todas = await res.json();
+      todas.forEach(function(cat){
+        var id = String(cat.id);
+        if(jaTem[id]) return;
+        var ehFreelancer = _semAcento(cat.nome).indexOf('freelancer') !== -1;
+        if(!ehFreelancer) return; // só completa Freelancer; o resto fica como já vinha
+        lista.push({
+          value: id,
+          texto: cat.nome,
+          rotulo: _rotuloSemPrefixoFreelancer(cat.nome),
+          grupo: 'freelancer'
+        });
+        jaTem[id] = true;
+      });
+    }
+  }catch(e){ /* API fora do ar: mantém a lista que já tinha, sem quebrar o form */ }
+
+  _todasCategoriaOptions = lista;
+  _popularSelectCategoria(_tipoCadastroAtivo);
 }
 
 function _popularSelectCategoria(tipo){
@@ -1293,7 +1322,7 @@ function selecionarTipoCadastro(tipo){
   _popularSelectCategoria(tipo);
 }
 
-document.addEventListener('DOMContentLoaded', _classificarCategorias);
+document.addEventListener('DOMContentLoaded', function(){ _classificarCategorias(); });
 if(document.readyState === 'complete' || document.readyState === 'interactive') _classificarCategorias();
 
 async function enviarCadastroNegocio(e) {
