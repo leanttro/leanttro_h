@@ -1339,6 +1339,16 @@ document.addEventListener('click', function(e) {
       ">Fechar</button>
     </div>
 
+    <!-- Abas Agência / Freelancer -->
+    <div id="cadastro-tabs" style="display:flex; gap:8px; margin-bottom:20px; border-bottom:2px solid #eee;">
+      <button type="button" id="tab-agencia" class="cad-tab cad-tab-active" onclick="selecionarTipoCadastro('agencia')">
+        Agência / Estúdio
+      </button>
+      <button type="button" id="tab-freelancer" class="cad-tab" onclick="selecionarTipoCadastro('freelancer')">
+        Freelancer
+      </button>
+    </div>
+
     <form id="form-cadastro" onsubmit="enviarCadastroNegocio(event)" style="display:flex; flex-direction:column; gap:14px;">
 
       <div>
@@ -1350,7 +1360,7 @@ document.addEventListener('click', function(e) {
 
       <div>
         <label style="font-size:13px; font-weight:600; color:#333; display:block; margin-bottom:5px;">Categoria</label>
-        <select name="categoria_id" class="cad-input">
+        <select name="categoria_id" id="select-categoria" class="cad-input">
           <option value="">Selecione uma categoria</option>
           {% for cat in categorias %}
           <option value="{{ cat.id }}">{{ cat.nome }}</option>
@@ -1462,6 +1472,15 @@ document.addEventListener('click', function(e) {
   }
   .cad-input:focus { border-color: #FFC107; }
   @keyframes spin-imgur { to { transform: rotate(360deg); } }
+  .cad-tab {
+    background: none; border: none; cursor: pointer;
+    padding: 10px 4px; margin-bottom: -2px;
+    font-size: 14px; font-weight: 700; color: #999;
+    border-bottom: 2px solid transparent;
+    font-family: 'Roboto', sans-serif;
+  }
+  .cad-tab:hover { color: #1a1a1a; }
+  .cad-tab-active { color: #1a1a1a; border-bottom-color: #FFC107; }
 </style>
 
 <script>
@@ -1510,9 +1529,65 @@ function fecharModalCadastro() {
   document.getElementById('cadastro-sucesso').style.display='none';
   document.getElementById('cadastro-erro').style.display='none';
   imgurLimpar({stopPropagation:()=>{}});
+  selecionarTipoCadastro('agencia');
 }
 document.getElementById('modal-cadastro').addEventListener('click',function(e){ if(e.target===this) fecharModalCadastro(); });
 document.addEventListener('keydown',function(e){ if(e.key==='Escape'&&!document.getElementById('modal-cadastro').classList.contains('modal-oculto')) fecharModalCadastro(); });
+
+// ── Abas Agência x Freelancer no formulário de cadastro ──────────────
+var _todasCategoriaOptions = [];
+var _tipoCadastroAtivo = 'agencia';
+function _semAcento(str){ return (str || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, ''); }
+
+function _rotuloSemPrefixoFreelancer(texto){
+  return (texto || '').replace(/^\s*freelancers?\s*[-:–—]?\s*/i, '').trim() || texto;
+}
+
+function _classificarCategorias(){
+  var select = document.getElementById('select-categoria');
+  if(!select) return;
+  var options = Array.prototype.slice.call(select.querySelectorAll('option'));
+  _todasCategoriaOptions = options
+    .filter(function(opt){ return opt.value !== ''; })
+    .map(function(opt){
+      var ehFreelancer = _semAcento(opt.textContent).indexOf('freelancer') !== -1;
+      return {
+        value: opt.value,
+        texto: opt.textContent,
+        rotulo: ehFreelancer ? _rotuloSemPrefixoFreelancer(opt.textContent) : opt.textContent,
+        grupo: ehFreelancer ? 'freelancer' : 'agencia'
+      };
+    });
+  _popularSelectCategoria('agencia');
+}
+
+function _popularSelectCategoria(tipo){
+  var select = document.getElementById('select-categoria');
+  if(!select) return;
+  var atual = select.value;
+  select.innerHTML = '<option value="">Selecione uma categoria</option>';
+  _todasCategoriaOptions
+    .filter(function(c){ return c.grupo === tipo; })
+    .forEach(function(c){
+      var opt = document.createElement('option');
+      opt.value = c.value;
+      opt.textContent = c.rotulo;
+      select.appendChild(opt);
+    });
+  if(Array.prototype.some.call(select.options, function(o){ return o.value === atual; })){
+    select.value = atual;
+  }
+}
+
+function selecionarTipoCadastro(tipo){
+  _tipoCadastroAtivo = tipo;
+  document.getElementById('tab-agencia').classList.toggle('cad-tab-active', tipo === 'agencia');
+  document.getElementById('tab-freelancer').classList.toggle('cad-tab-active', tipo === 'freelancer');
+  _popularSelectCategoria(tipo);
+}
+
+document.addEventListener('DOMContentLoaded', _classificarCategorias);
+if(document.readyState === 'complete' || document.readyState === 'interactive') _classificarCategorias();
 
 async function enviarCadastroNegocio(e) {
   e.preventDefault();
