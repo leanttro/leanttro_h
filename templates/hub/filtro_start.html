@@ -15,20 +15,18 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-{# ══ Nome real da categoria (não o slug) + flag ferramenta-de-ia ══ #}
-{% set categoria_nome = (categorias | selectattr('slug','equalto', filtro_valor) | map(attribute='nome') | first) if filtro_tipo == 'categoria' else filtro_valor %}
-{% if not categoria_nome %}{% set categoria_nome = filtro_valor | replace('-', ' ') | capitalize %}{% endif %}
+{# ══ Nome de exibição do filtro: nome real da categoria (não o slug) quando
+     filtro_tipo == 'categoria'; nome do bairro (capitalizado) caso contrário.
+     is_ferramenta_ia liga os ajustes específicos da categoria Ferramentas de IA
+     (sem "perto de você", sem bairro/localização, cards no padrão do index). ══ #}
+{% set _cat_atual = (categorias | selectattr('slug', 'equalto', filtro_valor) | list | first) if filtro_tipo == 'categoria' else none %}
+{% set filtro_nome = _cat_atual.nome if _cat_atual else (filtro_valor | replace('-', ' ') | capitalize) %}
 {% set is_ferramenta_ia = (filtro_tipo == 'categoria' and filtro_valor == 'ferramenta-de-ia') %}
 
 {# ══ SEO dinâmico ══ #}
 {% if filtro_tipo == 'categoria' %}
-  {% if is_ferramenta_ia %}
-  {% set seo_title = categoria_nome ~ " — " ~ (hub.nome or 'AgênciaStart') %}
-  {% set seo_desc  = "Encontre " ~ categoria_nome ~ " no " ~ (hub.nome or 'AgênciaStart') ~ ". Portfólio e contato de agências, estúdios e freelancers." %}
-  {% else %}
-  {% set seo_title = categoria_nome ~ " perto de você — " ~ (hub.nome or 'AgênciaStart') %}
-  {% set seo_desc  = "Encontre " ~ categoria_nome ~ " no " ~ (hub.nome or 'AgênciaStart') ~ ". Portfólio, contato e localização de agências, estúdios e freelancers." %}
-  {% endif %}
+  {% set seo_title = (filtro_nome if is_ferramenta_ia else (filtro_nome ~ " perto de você")) ~ " — " ~ (hub.nome or 'AgênciaStart') %}
+  {% set seo_desc  = "Encontre " ~ filtro_nome ~ " no " ~ (hub.nome or 'AgênciaStart') ~ ". Portfólio, contato e localização de agências, estúdios e freelancers." %}
 {% else %}
   {% set seo_title = "Agências e criativos no bairro " ~ (filtro_valor | capitalize) ~ " — " ~ (hub.nome or 'AgênciaStart') %}
   {% set seo_desc  = "Descubra agências, estúdios e freelancers no bairro " ~ filtro_valor ~ " em " ~ (hub.nome or 'AgênciaStart') ~ ". Contato e localização perto de você." %}
@@ -69,7 +67,7 @@
       "@type": "BreadcrumbList",
       "itemListElement": [
         {"@type":"ListItem","position":1,"item":{"@id":"https://{{ request.host }}/","name":"Início"}},
-        {"@type":"ListItem","position":2,"item":{"@id":"https://{{ request.host }}/{{ segmento }}/","name":"{{ filtro_valor | capitalize }}"}}
+        {"@type":"ListItem","position":2,"item":{"@id":"https://{{ request.host }}/{{ segmento }}/","name":"{{ filtro_nome }}"}}
       ]
     },
     {
@@ -271,6 +269,8 @@
     .as-card-headline { display: flex; flex-direction: column; gap: 5px; min-width: 0; }
     .as-card-headline h3 { font-size: 1.02em; font-weight: 700; color: #eee; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
     .as-card-selo { align-self: flex-start; display: inline-flex; align-items: center; gap: 4px; font-size: 0.68em; font-weight: 700; color: var(--primary); background: rgba(255,193,7,0.12); padding: 3px 9px; border-radius: 20px; white-space: nowrap; }
+    .as-ia-subcat { display: block; font-size: 0.68em; font-weight: 800; letter-spacing: 0.06em; color: var(--primary); text-transform: uppercase; margin-bottom: 3px; }
+    .as-card-selo-preco { align-self: flex-start; display: inline-flex; align-items: center; gap: 4px; font-size: 0.68em; font-weight: 700; color: #1a1a1a; background: var(--primary); padding: 3px 9px; border-radius: 20px; white-space: nowrap; }
     .as-card-info { padding: 12px 16px 16px; flex: 1; display: flex; flex-direction: column; gap: 4px; }
     .as-card-local { font-size: 0.88em; color: #999; display: flex; align-items: center; gap: 5px; }
     .as-card-local--remoto { color: var(--primary); font-style: italic; }
@@ -386,7 +386,7 @@
     <div class="container breadcrumb-inner">
         <a href="/">Início</a>
         <span class="bc-sep">/</span>
-        <span class="bc-atual">{{ filtro_valor | capitalize }}</span>
+        <span class="bc-atual">{{ filtro_nome }}</span>
     </div>
 </div>
 
@@ -395,21 +395,29 @@
     <div class="container">
         <h1>
             {% if filtro_tipo == 'categoria' %}
-            <em>{{ filtro_valor | capitalize }}</em> perto de você
+            {% if is_ferramenta_ia %}
+            <em>{{ filtro_nome }}</em>
+            {% else %}
+            <em>{{ filtro_nome }}</em> perto de você
+            {% endif %}
             {% else %}
             Agências no bairro <em>{{ filtro_valor | capitalize }}</em>
             {% endif %}
         </h1>
         <p>
             {% if filtro_tipo == 'categoria' %}
-            Encontre as melhores opções de {{ filtro_valor }} com portfólio, contato e localização — tudo num só lugar.
+            {% if is_ferramenta_ia %}
+            Encontre as melhores {{ filtro_nome }} com descrição, modelo de preço e link direto — tudo num só lugar.
+            {% else %}
+            Encontre as melhores opções de {{ filtro_nome }} com portfólio, contato e localização — tudo num só lugar.
+            {% endif %}
             {% else %}
             Todas as agências, estúdios e freelancers cadastrados no bairro {{ filtro_valor | capitalize }}.
             {% endif %}
         </p>
         <div class="filtro-hero-stats">
-            <div class="filtro-hero-stat"><strong>{{ total_negocios }}</strong><span>locais</span></div>
-            {% if filtro_tipo == 'categoria' %}
+            <div class="filtro-hero-stat"><strong>{{ total_negocios }}</strong><span>{% if is_ferramenta_ia %}ferramentas{% else %}locais{% endif %}</span></div>
+            {% if filtro_tipo == 'categoria' and not is_ferramenta_ia %}
             <div class="filtro-hero-stat"><strong>{{ bairros_disponiveis | length }}</strong><span>bairro(s)</span></div>
             {% endif %}
             <div class="filtro-hero-stat"><strong>Grátis</strong><span>pra encontrar</span></div>
@@ -421,6 +429,7 @@
 <div class="filtros-bar">
     <div class="container filtros-bar-inner">
         {% if filtro_tipo == 'categoria' %}
+        {% if not is_ferramenta_ia %}
         <span class="filtros-bar-label">Bairro:</span>
         <div class="fb-slicer-wrap">
             <button class="fb-slicer-btn" id="fbSlicerBtn" onclick="toggleFbSlicer()" type="button">
@@ -438,6 +447,7 @@
                 </div>
             </div>
         </div>
+        {% endif %}
         {% else %}
         <span class="filtros-bar-label">Categoria:</span>
         <div class="fb-slicer-wrap">
@@ -456,10 +466,12 @@
             </div>
         </div>
         {% endif %}
+        {% if not is_ferramenta_ia %}
         <button class="btn-loc-filtro" id="btnLocFiltro" onclick="usarLocalizacaoFiltro()" type="button" title="Ordenar por mais próximo">
             <i class="fas fa-location-arrow"></i>
             <span id="btnLocFiltroLabel">Mais próximo</span>
         </button>
+        {% endif %}
         <div class="fb-busca-wrap">
             <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
             <input type="text" placeholder="Buscar negócio..." oninput="buscarFiltroDebounce(this.value)">
@@ -472,7 +484,7 @@
     <div class="container">
         <div class="section-header">
             <h2 class="section-title">
-                {% if filtro_tipo == 'categoria' %}{{ filtro_valor | capitalize }}{% else %}Bairro {{ filtro_valor | capitalize }}{% endif %}
+                {% if filtro_tipo == 'categoria' %}{{ filtro_nome }}{% else %}Bairro {{ filtro_valor | capitalize }}{% endif %}
             </h2>
             <p class="section-subtitle" id="filtroGridSubtitulo">{{ total_negocios }} negócio(s) encontrado(s)</p>
         </div>
@@ -530,7 +542,7 @@
 <section class="anuncie-section">
     <div class="container">
         <h2>Seu negócio ainda não está aqui?</h2>
-        <p>Cadastre-se gratuitamente e apareça para milhares de pessoas buscando {{ filtro_valor }} perto delas.</p>
+        <p>Cadastre-se gratuitamente e apareça para milhares de pessoas buscando {{ filtro_nome }} perto delas.</p>
         <a href="https://wa.me/55{{ hub.whatsapp or '11913324827' }}?text=Quero+cadastrar+meu+negócio" target="_blank" rel="noopener" class="btn-anuncie">
             <i class="fab fa-whatsapp"></i> Quero aparecer aqui
         </a>
@@ -602,7 +614,50 @@ function _seloFiltro(n){
 
 function _isFreelancerFb(n){ return CATEGORIAS_FREELANCER_FB.indexOf(n.categoria_slug) !== -1; }
 
+// Subcategoria "manual" das Ferramentas de IA, igual ao index_start: prefixo
+// no campo nome separado por "|" (ex: "IMAGEM | Leonardo.IA").
+function _parseFerramentaIAFb(n){
+    var partes = (n.nome || '').split('|');
+    if(partes.length >= 2 && partes[0].trim()){
+        return { subcategoria: partes[0].trim().toUpperCase(), nomeExibido: partes.slice(1).join('|').trim() };
+    }
+    return { subcategoria: null, nomeExibido: n.nome };
+}
+
+// Extrai o valor X do prefixo "💰 Modelo: X" na primeira linha da descrição
+// (mesma lógica do index_start) — puramente visual, não altera n.descricao.
+function _extrairModeloPrecoFb(descricao){
+    if(!descricao) return null;
+    var primeiraLinha = String(descricao).split('\n')[0];
+    var m = primeiraLinha.match(/^\s*💰\s*Modelo:\s*(.+?)\s*$/);
+    return m ? m[1] : null;
+}
+
 function filtroCardHTML(n){
+    // Ferramentas de IA: card no mesmo padrão do index_start (sem
+    // localização/distância, com subcategoria e selo de preço).
+    if(n.categoria_slug === 'ferramenta-de-ia'){
+        var fotoIA = n.foto_url || 'https://placehold.co/600x600/1a1a1a/FFC107?font=roboto&text=IA';
+        var parsedIA = _parseFerramentaIAFb(n);
+        var subcatHTML = parsedIA.subcategoria ? '<span class="as-ia-subcat">'+parsedIA.subcategoria+'</span>' : '';
+        var modeloPreco = _extrairModeloPrecoFb(n.descricao);
+        var precoHTML = modeloPreco ? '<span class="as-card-selo-preco">💰 '+modeloPreco+'</span>' : '';
+        return '<a href="/'+n.categoria_slug+'/'+n.slug+'/" class="as-profissional-card"'+
+            ' data-nome="'+n.nome.toLowerCase()+'">'+
+            '<div class="as-card-topo">'+
+                '<div class="as-card-avatar"><img src="'+fotoIA+'" alt="'+parsedIA.nomeExibido+'" loading="lazy" width="60" height="60"></div>'+
+                '<div class="as-card-headline">'+
+                    subcatHTML+
+                    '<h3>'+parsedIA.nomeExibido+'</h3>'+
+                    _seloFiltro(n)+
+                    precoHTML+
+                '</div>'+
+            '</div>'+
+            '<div class="as-card-info">'+
+                '<span class="btn-ver">Ver ferramenta →</span>'+
+            '</div>'+
+        '</a>';
+    }
     var dist = (n._dist !== undefined && n._dist < 9999) ? '<span class="as-card-dist"><i class="fas fa-location-arrow"></i> '+n._dist.toFixed(1)+' km de você</span>' : '';
     var foto = (n.foto_url && n.mostrar_foto !== false) ? n.foto_url : _FB_IMG_FALLBACK;
     var local = [n.bairro, n.cidade].filter(Boolean).join(', ');
