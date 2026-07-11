@@ -342,7 +342,7 @@
             <li>
                 <a href="#categorias">Categorias ▾</a>
                 <div class="nav-dropdown">
-                    {% for cat in categorias %}
+                    {% for cat in categorias_disponiveis %}
                     <a href="/{{ cat.slug }}/">{{ cat.nome }}</a>
                     {% endfor %}
                 </div>
@@ -1362,7 +1362,8 @@ document.addEventListener('click', function(e) {
         <label style="font-size:13px; font-weight:600; color:#333; display:block; margin-bottom:5px;">Categoria</label>
         <select name="categoria_id" id="select-categoria" class="cad-input">
           <option value="">Selecione uma categoria</option>
-          {% for cat in categorias %}
+          {% set ids_disponiveis = categorias_disponiveis | map(attribute='id') | list %}
+          {% for cat in categorias if cat.id in ids_disponiveis or 'freelancer' in cat.nome.lower() %}
           <option value="{{ cat.id }}">{{ cat.nome }}</option>
           {% endfor %}
         </select>
