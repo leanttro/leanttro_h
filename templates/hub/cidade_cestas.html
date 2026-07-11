@@ -939,7 +939,12 @@ function _resetEFiltrar(){
     _apiCarregando = true;
     var loading = document.getElementById('lazy-loading');
     if(loading) loading.style.display = 'block';
-    fetch(_buildApiUrl(0, _loteSize))
+    // Sempre pede um teto bem alto: carrega TODOS os negócios da categoria/cidade
+    // de uma vez (antes o primeiro lote ficava travado em 96 e escondia o resto
+    // até rolar a página — e com localização ativa isso também deixava de fora
+    // quem estava mais perto mas não entrava nesse recorte).
+    var limiteBusca = 20000;
+    fetch(_buildApiUrl(0, limiteBusca))
         .then(function(r){ return r.json(); })
         .then(function(data){
             _apiCarregando = false;
@@ -947,7 +952,7 @@ function _resetEFiltrar(){
             if(Array.isArray(data)){
                 todosNegocios = data;
                 _apiOffset = data.length;
-                if(data.length < _loteSize) _apiFim = true;
+                if(data.length < limiteBusca) _apiFim = true;
             } else {
                 todosNegocios = [];
                 _apiFim = true;
@@ -1053,10 +1058,11 @@ function filtrarCategoriaChip(slug, btn){
 }
 
 {% if categoria %}
+// Pinta rápido com o que já veio no HTML e, na sequência, busca TODOS os
+// negócios da categoria de uma vez (sem depender de rolar a página).
 renderNegocios(negociosFiltrados);
-{% else %}
-_resetEFiltrar();
 {% endif %}
+_resetEFiltrar();
 
 // IntersectionObserver: ao rolar até o fim, busca o próximo lote (igual ao index)
 (function(){
