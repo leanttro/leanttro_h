@@ -23,6 +23,12 @@ DOMINIO_BASE = os.getenv("DOMINIO_BASE", "leanttro.com")
 # campos de texto livre que sofrem de grafias inconsistentes (maiúscula/minúscula, acento, espaços)
 CAMPOS_NORMALIZAVEIS = {"bairro", "cidade"}
 
+# categorias de negócio que não têm localização física relevante pro usuário
+# (ex.: ferramentas de IA são acessadas online, não visitadas num endereço).
+# Pra essas, o template mostra um card simplificado em vez de mapa/endereço/
+# distância/WhatsApp. Ver campo derivado "exibir_geo" nas rotas públicas.
+CATEGORIAS_SEM_GEOLOCALIZACAO = {"ferramenta-de-ia"}
+
 def _chave_normalizada(texto):
     """Normaliza texto pra comparação: sem acento, minúsculo, sem espaço nas pontas/duplicado."""
     if not texto:
@@ -446,6 +452,10 @@ def pagina_filtro(segmento):
             ORDER BY n.nome LIMIT %s
         """, (hub["id"], segmento, limite))
         filtro_tipo, filtro_valor = "categoria", segmento
+
+    for n in negocios:
+        n["exibir_geo"] = n["categoria_slug"] not in CATEGORIAS_SEM_GEOLOCALIZACAO
+
     categorias = query("""
         SELECT DISTINCT c.* FROM hub_categorias c
         JOIN hub_negocios n ON n.categoria_id = c.id
@@ -492,6 +502,7 @@ def pagina_negocio(segmento, slug_negocio):
     """, (hub["id"], slug_negocio), one=True)
     if not negocio:
         return "Negócio não encontrado", 404
+    negocio["exibir_geo"] = negocio["categoria_slug"] not in CATEGORIAS_SEM_GEOLOCALIZACAO
     query("UPDATE hub_negocios SET visualizacoes = visualizacoes + 1 WHERE id = %s",
           (negocio["id"],), commit=True)
     anuncio_topo = _get_anuncios(hub["id"], "topo",
@@ -2190,7 +2201,10 @@ def api_negocios():
     sql += " ORDER BY n.nome LIMIT %s OFFSET %s"
     params += [limit, offset]
     negocios = query(sql, params)
-    return jsonify([dict(n) for n in negocios])
+    negocios_json = [dict(n) for n in negocios]
+    for n in negocios_json:
+        n["exibir_geo"] = n["categoria_slug"] not in CATEGORIAS_SEM_GEOLOCALIZACAO
+    return jsonify(negocios_json)
 
 
 @app.route("/api/hub/categorias")
