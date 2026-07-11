@@ -654,7 +654,7 @@
     <div class="as-hero-grid container">
         <div class="as-hero-conteudo">
             <h1>Agências e criativos<br><em>perto de você</em></h1>
-            <p class="as-hero-sub">Encontre rapidamente agências de publicidade, estúdios de fotografia, produtoras de vídeo e estúdios de design gráfico perto de você, com portfólio, contato e localização — em qualquer cidade do Brasil.</p>
+            <p class="as-hero-sub">Encontre agências de publicidade, estúdios de fotografia, produtoras de vídeo, estúdios de design e freelancers pro seu projeto — com portfólio, contato e localização — além de uma curadoria das melhores ferramentas de IA para criativos.</p>
             <div class="as-hero-acoes">
                 <button class="btn-hero btn-loc-toggle" onclick="buscarProximos()">
                     <i class="fas fa-bullhorn"></i> Ver agências perto de mim
@@ -681,11 +681,11 @@
     </div>
 </section>
 
-<!-- FERRAMENTAS DE IA GRÁTIS (destaque) -->
+<!-- FERRAMENTAS DE IA (destaque) -->
 <section class="section ferramentas-ia-section" id="ferramentas-ia">
     <div class="container">
         <span class="badge-curadoria">✨ Curadoria AgênciaStart</span>
-        <h2 class="as-titulo-secao">Ferramentas de IA grátis para criativos</h2>
+        <h2 class="as-titulo-secao">As melhores ferramentas de IA para criativos</h2>
         <p class="section-subtitle">Recursos online pra agilizar seu trabalho</p>
         <div class="ferramentas-ia-filtros" id="ferramentas-ia-filtros" style="display:none;"></div>
         <div class="as-grid-profissionais as-grid-profissionais--ferramenta" id="ferramentas-ia-grid"></div>
@@ -739,6 +739,23 @@
                 <i class="fas fa-map-marker-alt"></i> Usar minha localização
             </button>
         </div>
+
+        <!-- Slicer de categoria (filtra o carrossel de Agências/Estúdios; se a
+             localização estiver ativa, o resultado filtrado já sai ordenado
+             por distância — ver renderNegocios) -->
+        <div class="categoria-slicer">
+            <button type="button" class="slicer-toggle" id="slicer-toggle" onclick="toggleCategoriaSlicer()" aria-expanded="false" aria-haspopup="listbox">
+                <span class="slicer-label"><i class="fas fa-filter"></i> <strong id="slicer-label-text">Todas as categorias</strong></span>
+                <i class="fas fa-chevron-down slicer-chevron"></i>
+            </button>
+            <div class="slicer-panel" id="filtros-categoria" role="listbox">
+                <button type="button" class="chip-cat active" onclick="filtrarCategoria(null, this)">Todas as categorias</button>
+                {% for cat in categorias if cat.id in cat_ids_hub and cat.slug in ['agencia-de-publicidade', 'estudio-de-fotografia', 'produtora-de-video', 'design-grafico'] %}
+                <button type="button" class="chip-cat" onclick="filtrarCategoria('{{ cat.slug }}', this)">{{ cat.nome }}</button>
+                {% endfor %}
+            </div>
+        </div>
+        <div class="slicer-backdrop" id="slicer-backdrop" onclick="closeCategoriaSlicer()"></div>
 
         <!-- Controles de visualização -->
         <div class="view-controls" id="view-controls" style="display:none;">
@@ -1281,9 +1298,10 @@ function filtrarCategoria(slug, btn){
     _lazyCategoriaAtiva = slug || null;
 
     if(!slug){
-        // Volta para "Tudo": usa o que já temos localmente + habilita lazy do restante
+        // Volta para "Tudo": usa o que já temos localmente (só Agências/Estúdios,
+        // este slicer é do carrossel de Agências) + habilita lazy do restante
         _apiFim = false; // pode ainda ter mais pra carregar
-        _aplicarFiltroCategoriaETag(todosNegocios.slice());
+        _aplicarFiltroCategoriaETag(todosNegocios.filter(_isAgencia));
         return;
     }
 
