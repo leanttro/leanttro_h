@@ -15,10 +15,20 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
+{# ══ Nome real da categoria (não o slug) + flag ferramenta-de-ia ══ #}
+{% set categoria_nome = (categorias | selectattr('slug','equalto', filtro_valor) | map(attribute='nome') | first) if filtro_tipo == 'categoria' else filtro_valor %}
+{% if not categoria_nome %}{% set categoria_nome = filtro_valor | replace('-', ' ') | capitalize %}{% endif %}
+{% set is_ferramenta_ia = (filtro_tipo == 'categoria' and filtro_valor == 'ferramenta-de-ia') %}
+
 {# ══ SEO dinâmico ══ #}
 {% if filtro_tipo == 'categoria' %}
-  {% set seo_title = (filtro_valor | capitalize) ~ " perto de você — " ~ (hub.nome or 'AgênciaStart') %}
-  {% set seo_desc  = "Encontre " ~ filtro_valor ~ " no " ~ (hub.nome or 'AgênciaStart') ~ ". Portfólio, contato e localização de agências, estúdios e freelancers." %}
+  {% if is_ferramenta_ia %}
+  {% set seo_title = categoria_nome ~ " — " ~ (hub.nome or 'AgênciaStart') %}
+  {% set seo_desc  = "Encontre " ~ categoria_nome ~ " no " ~ (hub.nome or 'AgênciaStart') ~ ". Portfólio e contato de agências, estúdios e freelancers." %}
+  {% else %}
+  {% set seo_title = categoria_nome ~ " perto de você — " ~ (hub.nome or 'AgênciaStart') %}
+  {% set seo_desc  = "Encontre " ~ categoria_nome ~ " no " ~ (hub.nome or 'AgênciaStart') ~ ". Portfólio, contato e localização de agências, estúdios e freelancers." %}
+  {% endif %}
 {% else %}
   {% set seo_title = "Agências e criativos no bairro " ~ (filtro_valor | capitalize) ~ " — " ~ (hub.nome or 'AgênciaStart') %}
   {% set seo_desc  = "Descubra agências, estúdios e freelancers no bairro " ~ filtro_valor ~ " em " ~ (hub.nome or 'AgênciaStart') ~ ". Contato e localização perto de você." %}
