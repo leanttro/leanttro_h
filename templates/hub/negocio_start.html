@@ -30,14 +30,14 @@
 <meta property="og:url" content="https://{{ request.host }}/{{ segmento }}/{{ negocio.slug }}/">
 <meta property="og:title" content="{{ negocio.nome }} — {{ hub.nome or 'AgênciaStart' }}">
 <meta property="og:description" content="{% if negocio.descricao %}{{ negocio.descricao | truncate(160) }}{% else %}Conheça {{ negocio.nome }}. Informações, contato e mais no AgênciaStart.{% endif %}">
-{% if negocio.foto_url and negocio.mostrar_foto %}<meta property="og:image" content="{{ negocio.foto_url }}">{% else %}<meta property="og:image" content="https://res.cloudinary.com/dhu1cqvrb/image/upload/v1783643721/Massas_Sabores_6_utat55.png">{% endif %}
+{% if negocio.foto_url %}<meta property="og:image" content="{{ negocio.foto_url }}">{% else %}<meta property="og:image" content="https://res.cloudinary.com/dhu1cqvrb/image/upload/v1783643721/Massas_Sabores_6_utat55.png">{% endif %}
 <meta property="og:locale" content="pt_BR">
 
 <!-- Twitter Card -->
 <meta name="twitter:card" content="summary_large_image">
 <meta name="twitter:title" content="{{ negocio.nome }} — {{ hub.nome or 'AgênciaStart' }}">
 <meta name="twitter:description" content="{% if negocio.descricao %}{{ negocio.descricao | truncate(160) }}{% else %}Conheça {{ negocio.nome }} no AgênciaStart.{% endif %}">
-{% if negocio.foto_url and negocio.mostrar_foto %}<meta name="twitter:image" content="{{ negocio.foto_url }}">{% endif %}
+{% if negocio.foto_url %}<meta name="twitter:image" content="{{ negocio.foto_url }}">{% endif %}
 
 <!-- JSON-LD -->
 <script type="application/ld+json">
@@ -56,7 +56,7 @@
   "name": "{{ negocio.nome }}",
   "url": "https://{{ request.host }}/{{ segmento }}/{{ negocio.slug }}/",
   {% if negocio.descricao %}"description": "{{ negocio.descricao }}",{% endif %}
-  {% if negocio.foto_url and negocio.mostrar_foto %}"image": ["{{ negocio.foto_url }}"],{% endif %}
+  {% if negocio.foto_url %}"image": ["{{ negocio.foto_url }}"],{% endif %}
   {% if negocio.endereco and negocio.mostrar_endereco %}
   "address": {
     "@type": "PostalAddress",
@@ -655,22 +655,10 @@ footer a:hover { text-decoration: underline; }
     <!-- Avatar -->
     <div class="perfil-avatar-wrap">
       <div class="perfil-avatar">
-        {% if negocio.foto_url and negocio.mostrar_foto %}
-        <img src="{{ negocio.foto_url }}" alt="{{ negocio.nome }}" loading="eager">
+        {% if negocio.categoria_slug == 'ferramenta-de-ia' %}
+        <img src="{{ negocio.foto_url or 'https://placehold.co/600x600/1a1a1a/FFC107?font=roboto&text=IA' }}" alt="{{ negocio.nome }}" loading="eager">
         {% else %}
-        <div class="perfil-avatar-placeholder">
-          {% if negocio.categoria_slug == 'ferramenta-de-ia' %}
-          <i class="fas fa-robot"></i>
-          {% elif negocio.categoria_slug in ['estudio-de-fotografia'] %}
-          <i class="fas fa-camera"></i>
-          {% elif negocio.categoria_slug in ['produtora-de-video'] %}
-          <i class="fas fa-video"></i>
-          {% elif negocio.categoria_slug in ['design-grafico'] %}
-          <i class="fas fa-pen-nib"></i>
-          {% else %}
-          <i class="fas fa-building"></i>
-          {% endif %}
-        </div>
+        <img src="{{ negocio.foto_url or 'https://res.cloudinary.com/dhu1cqvrb/image/upload/v1783799149/Massas_Sabores_7_nyobke.png' }}" alt="{{ negocio.nome }}" loading="eager">
         {% endif %}
       </div>
     </div>
@@ -688,7 +676,7 @@ footer a:hover { text-decoration: underline; }
         <span class="perfil-selo">🤖 Ferramenta de IA</span>
         <span class="badge-curadoria" style="margin:0;">✨ Curadoria AgênciaStart</span>
         {% else %}
-        {% if negocio.foto_url and negocio.mostrar_foto %}
+        {% if negocio.foto_url %}
         <span class="perfil-selo">🎨 Portfólio</span>
         {% endif %}
         {% if negocio.whatsapp and negocio.mostrar_whatsapp %}
@@ -1017,10 +1005,10 @@ footer a:hover { text-decoration: underline; }
             {% for rel in negocios_relacionados[:4] if rel.slug != negocio.slug %}
             <a href="/{{ segmento }}/{{ rel.slug }}/" class="mini-card">
               <div class="mini-card-avatar">
-                {% if rel.foto_url and rel.mostrar_foto %}
-                <img src="{{ rel.foto_url }}" alt="{{ rel.nome }}" loading="lazy">
+                {% if rel.categoria_slug == 'ferramenta-de-ia' %}
+                <img src="{{ rel.foto_url or 'https://placehold.co/600x600/1a1a1a/FFC107?font=roboto&text=IA' }}" alt="{{ rel.nome }}" loading="lazy">
                 {% else %}
-                <div class="mini-card-avatar-ph"><i class="fas fa-building"></i></div>
+                <img src="{{ rel.foto_url or 'https://res.cloudinary.com/dhu1cqvrb/image/upload/v1783799149/Massas_Sabores_7_nyobke.png' }}" alt="{{ rel.nome }}" loading="lazy">
                 {% endif %}
               </div>
               <div class="mini-card-info">
@@ -1084,16 +1072,10 @@ footer a:hover { text-decoration: underline; }
         <div class="rel-card">
           <div class="rel-card-topo">
             <div class="rel-card-avatar">
-              {% if rel.foto_url and rel.mostrar_foto %}
-              <img src="{{ rel.foto_url }}" alt="{{ rel.nome }}" loading="lazy">
+              {% if rel.categoria_slug == 'ferramenta-de-ia' %}
+              <img src="{{ rel.foto_url or 'https://placehold.co/600x600/1a1a1a/FFC107?font=roboto&text=IA' }}" alt="{{ rel.nome }}" loading="lazy">
               {% else %}
-              <div class="rel-card-avatar-ph">
-                {% if negocio.categoria_slug == 'ferramenta-de-ia' %}
-                <i class="fas fa-robot"></i>
-                {% else %}
-                <i class="fas fa-building"></i>
-                {% endif %}
-              </div>
+              <img src="{{ rel.foto_url or 'https://res.cloudinary.com/dhu1cqvrb/image/upload/v1783799149/Massas_Sabores_7_nyobke.png' }}" alt="{{ rel.nome }}" loading="lazy">
               {% endif %}
             </div>
             <div class="rel-card-headline">
