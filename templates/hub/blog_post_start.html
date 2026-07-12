@@ -108,6 +108,14 @@
     .mobile-nav-overlay nav ul { list-style: none; text-align: center; max-height: 80vh; overflow-y: auto; }
     .mobile-nav-overlay nav ul li { margin: 12px 0; }
     .mobile-nav-overlay nav ul li a { color: #fff; font-size: 1.5em; font-weight: 700; }
+    .mobile-nav-item { display: flex; flex-direction: column; align-items: center; }
+    .mobile-nav-row { display: flex; align-items: center; justify-content: center; gap: 10px; }
+    .mobile-nav-toggle { background: none; border: none; color: #fff; font-size: 1em; cursor: pointer; padding: 8px; line-height: 1; }
+    .mobile-nav-toggle i { display: block; transition: transform 0.25s ease; }
+    .mobile-nav-toggle.open i { transform: rotate(180deg); }
+    .mobile-nav-submenu { display: none; flex-direction: column; align-items: center; gap: 10px; margin-top: 10px; max-height: 35vh; overflow-y: auto; width: 100%; }
+    .mobile-nav-submenu.open { display: flex; }
+    .mobile-nav-submenu a { color: #ddd !important; font-size: 1em !important; font-weight: 400 !important; }
 
     /* ══ BREADCRUMB ══ */
     .breadcrumb {
@@ -269,10 +277,7 @@
             <li><a href="/">Início</a></li>
             <li>
                 <a href="/#categorias">Categorias ▾</a>
-                <div class="nav-dropdown">
-                    {% for cat in categorias %}
-                    <a href="/{{ cat.slug }}/">{{ cat.nome }}</a>
-                    {% endfor %}
+                <div class="nav-dropdown" id="nav-categorias-dropdown">
                 </div>
             </li>
             <li>
@@ -294,8 +299,22 @@
     <nav>
         <ul>
             <li><a href="/" onclick="closeMobileNav()">Início</a></li>
-            <li><a href="/#categorias" onclick="closeMobileNav()">Categorias</a></li>
-            <li><a href="/#cidades" onclick="closeMobileNav()">Cidades</a></li>
+            <li class="mobile-nav-item">
+                <div class="mobile-nav-row">
+                    <a href="/#categorias" onclick="closeMobileNav()">Categorias</a>
+                    <button type="button" class="mobile-nav-toggle" onclick="toggleMobileSubmenu(this)" aria-label="Expandir categorias" aria-expanded="false"><i class="fas fa-chevron-down"></i></button>
+                </div>
+                <div class="mobile-nav-submenu" id="mobile-nav-categorias-dropdown"></div>
+            </li>
+            <li class="mobile-nav-item">
+                <div class="mobile-nav-row">
+                    <a href="/#cidades" onclick="closeMobileNav()">Cidades</a>
+                    <button type="button" class="mobile-nav-toggle" onclick="toggleMobileSubmenu(this)" aria-label="Expandir cidades" aria-expanded="false"><i class="fas fa-chevron-down"></i></button>
+                </div>
+                <div class="mobile-nav-submenu" id="mobile-nav-dropdown-cidades">
+                    <a href="/#cidades" onclick="closeMobileNav()">Ver todas as cidades</a>
+                </div>
+            </li>
             <li><a href="/blog/" onclick="closeMobileNav()">Blog</a></li>
             <li><a href="https://wa.me/55{{ hub.whatsapp or '11913324827' }}?text=Olá,+quero+saber+mais" target="_blank" rel="noopener" onclick="closeMobileNav()">Contato</a></li>
         </ul>
@@ -468,6 +487,15 @@ document.getElementById('hamburger-btn').addEventListener('click', function(){
 function closeMobileNav(){
     document.getElementById('mobile-nav').classList.remove('active');
     document.body.style.overflow = '';
+    document.querySelectorAll('.mobile-nav-submenu.open').forEach(function(el){ el.classList.remove('open'); });
+    document.querySelectorAll('.mobile-nav-toggle.open').forEach(function(el){ el.classList.remove('open'); el.setAttribute('aria-expanded','false'); });
+}
+function toggleMobileSubmenu(btn){
+    var submenu = btn.closest('.mobile-nav-item').querySelector('.mobile-nav-submenu');
+    if(!submenu) return;
+    var isOpen = submenu.classList.toggle('open');
+    btn.classList.toggle('open', isOpen);
+    btn.setAttribute('aria-expanded', isOpen ? 'true' : 'false');
 }
 document.addEventListener('keydown', function(e){ if(e.key === 'Escape') closeMobileNav(); });
 </script>
@@ -488,14 +516,15 @@ function _slugCidade(nome) {
 }
 function renderCidadesDropdown(lista) {
     if(!lista || !lista.length) return;
+    var conteudo = lista.map(function(c){
+        var slug = _slugCidade(c.cidade || c.nome || '');
+        var nome = c.cidade || c.nome || '';
+        return '<a href="/cidade/'+slug+'/" onclick="closeMobileNav()">'+nome+'</a>';
+    }).join('');
     var dd = document.getElementById('nav-dropdown-cidades');
-    if(dd){
-        dd.innerHTML = lista.map(function(c){
-            var slug = _slugCidade(c.cidade || c.nome || '');
-            var nome = c.cidade || c.nome || '';
-            return '<a href="/cidade/'+slug+'/">'+nome+'</a>';
-        }).join('');
-    }
+    if(dd) dd.innerHTML = conteudo;
+    var ddMobile = document.getElementById('mobile-nav-dropdown-cidades');
+    if(ddMobile) ddMobile.innerHTML = conteudo;
 }
 fetch('/api/hub/cidades')
     .then(function(r){ return r.json(); })
@@ -663,6 +692,57 @@ document.addEventListener('click', function(e) {
         document.getElementById('translate-drawer').classList.remove('open');
     }
 });
+
+/* Menu "Categorias ▾" — descobre as categorias já usadas por negócios
+   DESTE hub via /api/hub/negocios (já filtrada pelo domínio sozinha),
+   pra não misturar categoria de outro site seu. */
+(function(){
+  function semAcentoBlog(str){
+    return (str||'').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'');
+  }
+  function rotuloSemPrefixoFreelancerBlog(texto){
+    return (texto || '').replace(/^\s*freelancers?\s*[-:–—]?\s*/i, '').trim() || texto;
+  }
+  async function popularMenuCategoriasBlog(){
+    var dropdown = document.getElementById('nav-categorias-dropdown');
+    var dropdownMobile = document.getElementById('mobile-nav-categorias-dropdown');
+    if(!dropdown && !dropdownMobile) return;
+    try{
+      var res = await fetch('/api/hub/negocios?limit=4000');
+      if(!res.ok) return;
+      var negocios = await res.json();
+      var vistos = {};
+      var cats = [];
+      negocios.forEach(function(n){
+        if(!n.categoria_slug || !n.categoria_nome || vistos[n.categoria_slug]) return;
+        vistos[n.categoria_slug] = true;
+        var ehFreelancer = semAcentoBlog(n.categoria_nome).indexOf('freelancer') !== -1;
+        cats.push({
+          nome: ehFreelancer ? rotuloSemPrefixoFreelancerBlog(n.categoria_nome) : n.categoria_nome,
+          slug: n.categoria_slug
+        });
+      });
+      cats.sort(function(a,b){ return a.nome.localeCompare(b.nome, 'pt-BR'); });
+      cats.forEach(function(c){
+        if(dropdown){
+          var a = document.createElement('a');
+          a.href = '/' + c.slug + '/';
+          a.textContent = c.nome;
+          dropdown.appendChild(a);
+        }
+        if(dropdownMobile){
+          var a2 = document.createElement('a');
+          a2.href = '/' + c.slug + '/';
+          a2.textContent = c.nome;
+          a2.setAttribute('onclick','closeMobileNav()');
+          dropdownMobile.appendChild(a2);
+        }
+      });
+    }catch(e){ /* API fora do ar: menu fica sem itens, sem quebrar a página */ }
+  }
+  document.addEventListener('DOMContentLoaded', popularMenuCategoriasBlog);
+  if(document.readyState === 'complete' || document.readyState === 'interactive') popularMenuCategoriasBlog();
+})();
 </script>
 </body>
 </html>
