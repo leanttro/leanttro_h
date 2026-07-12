@@ -786,6 +786,28 @@
         <div class="as-grid-profissionais as-grid-profissionais--freelancer" id="freelancers-grade" style="display:none;"></div>
         <p class="info-message" id="freelancers-vazio" style="display:none;">Nenhum freelancer encontrado ainda.</p>
         <div id="freelancers-lazy-sentinel" style="height:1px; margin-top:10px;"></div>
+
+        <!-- CTA de cadastro para freelancers -->
+        <div style="
+            margin-top: 32px; padding: 24px 28px; border-radius: 14px;
+            background: linear-gradient(135deg, var(--primary), #e0a800);
+            display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between;
+            gap: 16px;
+        ">
+            <div>
+                <p style="margin:0 0 4px; font-size: 1.15em; font-weight: 800; color: #1a1a1a;">É freelancer ou autônomo?</p>
+                <p style="margin:0; font-size: 0.95em; color: #3a2f00;">Cadastre-se gratuitamente e apareça aqui para quem está procurando profissionais como você.</p>
+            </div>
+            <button type="button" onclick="abrirModalCadastroFreelancer()" style="
+                background: #1a1a1a; color: var(--primary); border: none; border-radius: 50px;
+                padding: 13px 26px; font-size: 15px; font-weight: 800; cursor: pointer;
+                white-space: nowrap; font-family: 'Roboto', sans-serif;
+                transition: transform .15s;
+            "
+            onmouseover="this.style.transform='scale(1.05)'"
+            onmouseout="this.style.transform='scale(1)'"
+            >CADASTRE-SE</button>
+        </div>
     </div>
 </section>
 
@@ -2906,6 +2928,11 @@ function selecionarTipoCadastro(tipo){
   document.getElementById('tab-agencia').classList.toggle('cad-tab-active', tipo === 'agencia');
   document.getElementById('tab-freelancer').classList.toggle('cad-tab-active', tipo === 'freelancer');
   _popularSelectCategoria(tipo);
+}
+
+function abrirModalCadastroFreelancer(){
+  document.getElementById('modal-cadastro').classList.remove('modal-oculto');
+  selecionarTipoCadastro('freelancer');
 }
 
 document.addEventListener('DOMContentLoaded', _classificarCategorias);
