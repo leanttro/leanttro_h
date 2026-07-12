@@ -4,12 +4,12 @@
 <meta name="google-adsense-account" content="ca-pub-7617881885143728">
 <!-- Google tag (gtag.js) -->
 <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-7617881885143728" crossorigin="anonymous"></script>
-<script async src="https://www.googletagmanager.com/gtag/js?id={{ hub.ga4_id or 'G-KDP5FYQVHX' }}"></script>
+<script async src="https://www.googletagmanager.com/gtag/js?id={{ hub.ga4_id or 'G-7593QD268Z' }}"></script>
 <script>
   window.dataLayer = window.dataLayer || [];
   function gtag(){dataLayer.push(arguments);}
   gtag('js', new Date());
-  gtag('config', '{{ hub.ga4_id or "G-KDP5FYQVHX" }}');
+  gtag('config', '{{ hub.ga4_id or "G-7593QD268Z" }}');
 </script>
 
 <meta charset="UTF-8">
@@ -163,6 +163,14 @@
     .mobile-nav-overlay nav ul { list-style: none; text-align: center; max-height: 80vh; overflow-y: auto; }
     .mobile-nav-overlay nav ul li { margin: 12px 0; }
     .mobile-nav-overlay nav ul li a { color: #fff; font-size: 1.5em; font-weight: 700; }
+    .mobile-nav-item { display: flex; flex-direction: column; align-items: center; }
+    .mobile-nav-row { display: flex; align-items: center; justify-content: center; gap: 10px; }
+    .mobile-nav-toggle { background: none; border: none; color: #fff; font-size: 1em; cursor: pointer; padding: 8px; line-height: 1; }
+    .mobile-nav-toggle i { display: block; transition: transform 0.25s ease; }
+    .mobile-nav-toggle.open i { transform: rotate(180deg); }
+    .mobile-nav-submenu { display: none; flex-direction: column; align-items: center; gap: 10px; margin-top: 10px; max-height: 35vh; overflow-y: auto; width: 100%; }
+    .mobile-nav-submenu.open { display: flex; }
+    .mobile-nav-submenu a { color: #ddd !important; font-size: 1em !important; font-weight: 400 !important; }
 
     /* ══ BANNER TOPO ══ */
     .banner-topo { background: var(--white); border-bottom: 1px solid var(--medium-gray); padding: 10px 20px; text-align: center; }
@@ -354,7 +362,17 @@
     <nav>
         <ul>
             <li><a href="/" onclick="closeMobileNav()">Início</a></li>
-            <li><a href="/{{ segmento }}/" onclick="closeMobileNav()">Categorias</a></li>
+            <li class="mobile-nav-item">
+                <div class="mobile-nav-row">
+                    <a href="/{{ segmento }}/" onclick="closeMobileNav()">Categorias</a>
+                    <button type="button" class="mobile-nav-toggle" onclick="toggleMobileSubmenu(this)" aria-label="Expandir categorias" aria-expanded="false"><i class="fas fa-chevron-down"></i></button>
+                </div>
+                <div class="mobile-nav-submenu">
+                    {% for cat in categorias %}
+                    <a href="/{{ cat.slug }}/" onclick="closeMobileNav()">{{ cat.nome }}</a>
+                    {% endfor %}
+                </div>
+            </li>
             <li><a href="/#cidades" onclick="closeMobileNav()">Cidades</a></li>
             <li><a href="/blog/" onclick="closeMobileNav()">Blog</a></li>
             <li><a href="https://wa.me/55{{ hub.whatsapp or '11913324827' }}?text=Olá,+quero+saber+mais" target="_blank" rel="noopener" onclick="closeMobileNav()">Contato</a></li>
@@ -573,6 +591,15 @@ document.getElementById('hamburger-btn').addEventListener('click', function(){
 function closeMobileNav(){
     document.getElementById('mobile-nav').classList.remove('active');
     document.body.style.overflow = '';
+    document.querySelectorAll('.mobile-nav-submenu.open').forEach(function(el){ el.classList.remove('open'); });
+    document.querySelectorAll('.mobile-nav-toggle.open').forEach(function(el){ el.classList.remove('open'); el.setAttribute('aria-expanded','false'); });
+}
+function toggleMobileSubmenu(btn){
+    var submenu = btn.closest('.mobile-nav-item').querySelector('.mobile-nav-submenu');
+    if(!submenu) return;
+    var isOpen = submenu.classList.toggle('open');
+    btn.classList.toggle('open', isOpen);
+    btn.setAttribute('aria-expanded', isOpen ? 'true' : 'false');
 }
 document.addEventListener('keydown', function(e){ if(e.key === 'Escape') closeMobileNav(); });
 </script>
