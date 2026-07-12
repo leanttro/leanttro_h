@@ -155,7 +155,7 @@
         .hero-inner { padding: 48px 20px; }
         .hero-label { font-size: 0.9em; font-weight: 600; text-transform: uppercase; letter-spacing: 2px; color: var(--primary); margin-bottom: 10px; }
         .hero-section h1 { font-size: 3em; font-weight: 900; line-height: 1.2; text-shadow: 2px 2px 8px rgba(0,0,0,0.6); margin-bottom: 8px; }
-        .hero-section h1 em { color: var(--primary); font-style: normal; }
+        .hero-section h1 em { color: #ff6b6b; font-style: normal; }
         .hero-sub-filtro { font-size: 1em; margin-bottom: 24px; opacity: 0.85; }
         .hero-btns { display: flex; gap: 14px; justify-content: center; flex-wrap: wrap; }
         .btn-hero { display: inline-flex; align-items: center; gap: 8px; background: var(--primary); color: #fff; padding: 13px 28px; border-radius: 8px; font-size: 1.05em; font-weight: 700; border: none; cursor: pointer; transition: background 0.3s, transform 0.2s; }
@@ -336,7 +336,7 @@
             <li>
                 <a href="#categorias">Categorias ▾</a>
                 <div class="nav-dropdown">
-                    {% for cat in categorias %}
+                    {% for cat in categorias_disponiveis %}
                     <a href="/{{ cat.slug }}/">{{ cat.nome }}</a>
                     {% endfor %}
                 </div>
@@ -1355,7 +1355,7 @@ document.addEventListener('click', function(e) {
         <label style="font-size:13px; font-weight:600; color:#333; display:block; margin-bottom:5px;">Categoria</label>
         <select name="categoria_id" class="cad-input">
           <option value="">Selecione uma categoria</option>
-          {% for cat in categorias %}
+          {% for cat in categorias_disponiveis %}
           <option value="{{ cat.id }}">{{ cat.nome }}</option>
           {% endfor %}
         </select>
