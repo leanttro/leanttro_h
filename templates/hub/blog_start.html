@@ -192,10 +192,7 @@
             <li><a href="/">Início</a></li>
             <li>
                 <a href="/#categorias">Categorias ▾</a>
-                <div class="nav-dropdown">
-                    {% for cat in categorias %}
-                    <a href="/{{ cat.slug }}/">{{ cat.nome }}</a>
-                    {% endfor %}
+                <div class="nav-dropdown" id="nav-categorias-dropdown">
                 </div>
             </li>
             <li>
@@ -551,6 +548,47 @@ document.addEventListener('click', function(e) {
         document.getElementById('translate-drawer').classList.remove('open');
     }
 });
+
+/* Menu "Categorias ▾" — descobre as categorias já usadas por negócios
+   DESTE hub via /api/hub/negocios (já filtrada pelo domínio sozinha),
+   pra não misturar categoria de outro site seu. */
+(function(){
+  function semAcentoBlog(str){
+    return (str||'').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'');
+  }
+  function rotuloSemPrefixoFreelancerBlog(texto){
+    return (texto || '').replace(/^\s*freelancers?\s*[-:–—]?\s*/i, '').trim() || texto;
+  }
+  async function popularMenuCategoriasBlog(){
+    var dropdown = document.getElementById('nav-categorias-dropdown');
+    if(!dropdown) return;
+    try{
+      var res = await fetch('/api/hub/negocios?limit=4000');
+      if(!res.ok) return;
+      var negocios = await res.json();
+      var vistos = {};
+      var cats = [];
+      negocios.forEach(function(n){
+        if(!n.categoria_slug || !n.categoria_nome || vistos[n.categoria_slug]) return;
+        vistos[n.categoria_slug] = true;
+        var ehFreelancer = semAcentoBlog(n.categoria_nome).indexOf('freelancer') !== -1;
+        cats.push({
+          nome: ehFreelancer ? rotuloSemPrefixoFreelancerBlog(n.categoria_nome) : n.categoria_nome,
+          slug: n.categoria_slug
+        });
+      });
+      cats.sort(function(a,b){ return a.nome.localeCompare(b.nome, 'pt-BR'); });
+      cats.forEach(function(c){
+        var a = document.createElement('a');
+        a.href = '/' + c.slug + '/';
+        a.textContent = c.nome;
+        dropdown.appendChild(a);
+      });
+    }catch(e){ /* API fora do ar: menu fica sem itens, sem quebrar a página */ }
+  }
+  document.addEventListener('DOMContentLoaded', popularMenuCategoriasBlog);
+  if(document.readyState === 'complete' || document.readyState === 'interactive') popularMenuCategoriasBlog();
+})();
 </script>
 </body>
 </html>
