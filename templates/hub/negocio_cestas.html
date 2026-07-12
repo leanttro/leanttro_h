@@ -303,7 +303,7 @@ footer p { margin: 8px 0; }
         <a href="/#categorias">Categorias ▾</a>
         <div class="nav-dropdown">
           {% set cat_ids_hub = negocios_relacionados | map(attribute='categoria_id') | list | unique | list if negocios_relacionados else [] %}
-          {% for cat in categorias %}
+          {% for cat in categorias if cat.id in cat_ids_hub %}
           <a href="/{{ cat.slug }}/">{{ cat.nome }}</a>
           {% endfor %}
         </div>
@@ -610,7 +610,7 @@ footer p { margin: 8px 0; }
         <label style="font-size:13px; font-weight:600; color:#333; display:block; margin-bottom:5px;">Categoria</label>
         <select name="categoria_id" class="cad-input">
           <option value="">Selecione uma categoria</option>
-          {% for cat in categorias %}
+          {% for cat in categorias if cat.id in cat_ids_hub %}
           <option value="{{ cat.id }}">{{ cat.nome }}</option>
           {% endfor %}
         </select>
