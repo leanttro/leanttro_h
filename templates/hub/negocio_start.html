@@ -1208,6 +1208,9 @@ footer a:hover { text-decoration: underline; }
         <label style="font-size:13px; font-weight:600; color:#333; display:block; margin-bottom:5px;">Categoria</label>
         <select name="categoria_id" id="select-categoria" class="cad-input">
           <option value="">Selecione uma categoria</option>
+          {% for cat in categorias %}
+          <option value="{{ cat.id }}">{{ cat.nome }}</option>
+          {% endfor %}
         </select>
       </div>
 
@@ -1501,21 +1504,44 @@ function _rotuloSemPrefixoFreelancer(texto){
 async function _classificarCategorias(){
   var select = document.getElementById('select-categoria');
   if(!select) return;
-  _todasCategoriaOptions = [];
+  var options = Array.prototype.slice.call(select.querySelectorAll('option'));
+  var lista = options
+    .filter(function(opt){ return opt.value !== ''; })
+    .map(function(opt){
+      var ehFreelancer = _semAcento(opt.textContent).indexOf('freelancer') !== -1;
+      return {
+        value: opt.value,
+        texto: ehFreelancer ? _rotuloSemPrefixoFreelancer(opt.textContent) : opt.textContent,
+        grupo: ehFreelancer ? 'freelancer' : 'agencia'
+      };
+    });
+
+  var jaTem = {};
+  lista.forEach(function(c){ jaTem[c.value] = true; });
+
+  // Completa só as categorias de Freelancer que ainda não têm negócio
+  // cadastrado neste hub (por isso não vieram do servidor). Não mexe
+  // no grupo Agência/Estúdio, que já vem certo e sem vazar outros hubs.
   try{
     var res = await fetch('/api/hub/categorias');
     if(res.ok){
       var todas = await res.json();
-      _todasCategoriaOptions = todas.map(function(cat){
+      todas.forEach(function(cat){
+        var id = String(cat.id);
+        if(jaTem[id]) return;
         var ehFreelancer = _semAcento(cat.nome).indexOf('freelancer') !== -1;
-        return {
-          value: String(cat.id),
-          texto: ehFreelancer ? _rotuloSemPrefixoFreelancer(cat.nome) : cat.nome,
-          grupo: ehFreelancer ? 'freelancer' : 'agencia'
-        };
+        if(!ehFreelancer) return;
+        lista.push({
+          value: id,
+          texto: _rotuloSemPrefixoFreelancer(cat.nome),
+          grupo: 'freelancer'
+        });
+        jaTem[id] = true;
       });
     }
-  }catch(e){ /* API fora do ar: select fica só com o placeholder, sem quebrar o form */ }
+  }catch(e){ /* API fora do ar: mantém a lista que já tinha, sem quebrar o form */ }
+
+  _todasCategoriaOptions = lista;
   _popularSelectCategoria(_tipoCadastroAtivo);
 }
 function _popularSelectCategoria(tipo){
