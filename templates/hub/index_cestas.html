@@ -2023,7 +2023,8 @@ document.addEventListener('click', function(e) {
         <label style="font-size:13px; font-weight:600; color:#333; display:block; margin-bottom:5px;">Categoria</label>
         <select name="categoria_id" class="cad-input">
           <option value="">Selecione uma categoria</option>
-          {% for cat in categorias %}
+          {% set cat_ids_hub = negocios | map(attribute='categoria_id') | list | unique | list %}
+          {% for cat in categorias if cat.id in cat_ids_hub %}
           <option value="{{ cat.id }}">{{ cat.nome }}</option>
           {% endfor %}
         </select>
