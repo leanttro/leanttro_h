@@ -589,11 +589,7 @@ footer a:hover { text-decoration: underline; }
       <li><a href="/">Início</a></li>
       <li>
         <a href="/#categorias">Categorias ▾</a>
-        <div class="nav-dropdown">
-          {% set cat_ids_hub = negocios_relacionados | map(attribute='categoria_id') | list | unique | list if negocios_relacionados else [] %}
-          {% for cat in categorias %}
-          <a href="/{{ cat.slug }}/">{{ cat.nome }}</a>
-          {% endfor %}
+        <div class="nav-dropdown" id="nav-categorias-dropdown">
         </div>
       </li>
       <li><a href="/blog/">Blog</a></li>
@@ -1208,9 +1204,6 @@ footer a:hover { text-decoration: underline; }
         <label style="font-size:13px; font-weight:600; color:#333; display:block; margin-bottom:5px;">Categoria</label>
         <select name="categoria_id" id="select-categoria" class="cad-input">
           <option value="">Selecione uma categoria</option>
-          {% for cat in categorias %}
-          <option value="{{ cat.id }}">{{ cat.nome }}</option>
-          {% endfor %}
         </select>
       </div>
 
@@ -1498,30 +1491,61 @@ var _tipoCadastroAtivo = 'agencia';
 function _semAcento(str){
   return (str||'').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'');
 }
+function _popularMenuCategorias(navCats){
+  var dropdown = document.getElementById('nav-categorias-dropdown');
+  if(!dropdown) return;
+  navCats
+    .sort(function(a,b){ return a.nome.localeCompare(b.nome, 'pt-BR'); })
+    .forEach(function(c){
+      var a = document.createElement('a');
+      a.href = '/' + c.slug + '/';
+      a.textContent = c.nome;
+      dropdown.appendChild(a);
+    });
+}
 function _rotuloSemPrefixoFreelancer(texto){
   return (texto || '').replace(/^\s*freelancers?\s*[-:–—]?\s*/i, '').trim() || texto;
 }
 async function _classificarCategorias(){
   var select = document.getElementById('select-categoria');
-  if(!select) return;
-  var options = Array.prototype.slice.call(select.querySelectorAll('option'));
-  var lista = options
-    .filter(function(opt){ return opt.value !== ''; })
-    .map(function(opt){
-      var ehFreelancer = _semAcento(opt.textContent).indexOf('freelancer') !== -1;
-      return {
-        value: opt.value,
-        texto: ehFreelancer ? _rotuloSemPrefixoFreelancer(opt.textContent) : opt.textContent,
-        grupo: ehFreelancer ? 'freelancer' : 'agencia'
-      };
-    });
-
+  var lista = [];
   var jaTem = {};
-  lista.forEach(function(c){ jaTem[c.value] = true; });
+  var navCats = []; // {nome, slug} pra montar o menu "Categorias ▾" do cabeçalho
+  var navSlugs = {};
 
-  // Completa só as categorias de Freelancer que ainda não têm negócio
-  // cadastrado neste hub (por isso não vieram do servidor). Não mexe
-  // no grupo Agência/Estúdio, que já vem certo e sem vazar outros hubs.
+  // Agência/Estúdio: descobre as categorias já usadas por negócios DESTE hub
+  // através da API de negócios, que já é filtrada pelo domínio automaticamente
+  // — não precisa mexer no backend e não vaza categoria de outro site seu.
+  try{
+    var resNeg = await fetch('/api/hub/negocios?limit=4000');
+    if(resNeg.ok){
+      var negocios = await resNeg.json();
+      negocios.forEach(function(n){
+        if(!n.categoria_id || !n.categoria_nome) return;
+        var id = String(n.categoria_id);
+        var ehFreelancer = _semAcento(n.categoria_nome).indexOf('freelancer') !== -1;
+        if(!jaTem[id]){
+          lista.push({
+            value: id,
+            texto: ehFreelancer ? _rotuloSemPrefixoFreelancer(n.categoria_nome) : n.categoria_nome,
+            grupo: ehFreelancer ? 'freelancer' : 'agencia'
+          });
+          jaTem[id] = true;
+        }
+        if(n.categoria_slug && !navSlugs[n.categoria_slug]){
+          navCats.push({ nome: ehFreelancer ? _rotuloSemPrefixoFreelancer(n.categoria_nome) : n.categoria_nome, slug: n.categoria_slug });
+          navSlugs[n.categoria_slug] = true;
+        }
+      });
+    }
+  }catch(e){ /* segue sem a lista de agência se a API falhar */ }
+
+  _popularMenuCategorias(navCats);
+
+  if(!select) return;
+
+  // Freelancer: completa com categorias "FREELANCER - X" que ainda não têm
+  // negócio cadastrado (por isso não apareceram na lista acima).
   try{
     var res = await fetch('/api/hub/categorias');
     if(res.ok){
@@ -1551,6 +1575,7 @@ function _popularSelectCategoria(tipo){
   select.innerHTML = '<option value="">Selecione uma categoria</option>';
   _todasCategoriaOptions
     .filter(function(c){ return c.grupo === tipo; })
+    .sort(function(a,b){ return a.texto.localeCompare(b.texto, 'pt-BR'); })
     .forEach(function(c){
       var opt = document.createElement('option');
       opt.value = c.value; opt.textContent = c.texto;
