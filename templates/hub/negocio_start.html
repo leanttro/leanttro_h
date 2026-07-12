@@ -1208,9 +1208,6 @@ footer a:hover { text-decoration: underline; }
         <label style="font-size:13px; font-weight:600; color:#333; display:block; margin-bottom:5px;">Categoria</label>
         <select name="categoria_id" id="select-categoria" class="cad-input">
           <option value="">Selecione uma categoria</option>
-          {% for cat in categorias %}
-          <option value="{{ cat.id }}">{{ cat.nome }}</option>
-          {% endfor %}
         </select>
       </div>
 
@@ -1498,20 +1495,28 @@ var _tipoCadastroAtivo = 'agencia';
 function _semAcento(str){
   return (str||'').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'');
 }
-function _classificarCategorias(){
+function _rotuloSemPrefixoFreelancer(texto){
+  return (texto || '').replace(/^\s*freelancers?\s*[-:–—]?\s*/i, '').trim() || texto;
+}
+async function _classificarCategorias(){
   var select = document.getElementById('select-categoria');
   if(!select) return;
-  var options = Array.prototype.slice.call(select.querySelectorAll('option'));
-  _todasCategoriaOptions = options
-    .filter(function(opt){ return opt.value !== ''; })
-    .map(function(opt){
-      return {
-        value: opt.value,
-        texto: opt.textContent,
-        grupo: _semAcento(opt.textContent).indexOf('freelancer') !== -1 ? 'freelancer' : 'agencia'
-      };
-    });
-  _popularSelectCategoria('agencia');
+  _todasCategoriaOptions = [];
+  try{
+    var res = await fetch('/api/hub/categorias');
+    if(res.ok){
+      var todas = await res.json();
+      _todasCategoriaOptions = todas.map(function(cat){
+        var ehFreelancer = _semAcento(cat.nome).indexOf('freelancer') !== -1;
+        return {
+          value: String(cat.id),
+          texto: ehFreelancer ? _rotuloSemPrefixoFreelancer(cat.nome) : cat.nome,
+          grupo: ehFreelancer ? 'freelancer' : 'agencia'
+        };
+      });
+    }
+  }catch(e){ /* API fora do ar: select fica só com o placeholder, sem quebrar o form */ }
+  _popularSelectCategoria(_tipoCadastroAtivo);
 }
 function _popularSelectCategoria(tipo){
   var select = document.getElementById('select-categoria');
@@ -1538,7 +1543,7 @@ function selecionarTipoCadastro(tipo){
   if(tabF) tabF.style.cssText += tipo === 'freelancer' ? activeStyle : inactiveStyle;
   _popularSelectCategoria(tipo);
 }
-document.addEventListener('DOMContentLoaded', _classificarCategorias);
+document.addEventListener('DOMContentLoaded', function(){ _classificarCategorias(); });
 if(document.readyState === 'complete' || document.readyState === 'interactive') _classificarCategorias();
 
 async function enviarCadastroNegocio(e){
