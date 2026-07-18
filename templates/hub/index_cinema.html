@@ -178,14 +178,18 @@ nav.desktop-nav ul li a:hover { background: var(--primary); color: var(--on-prim
 .filmes-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 14px; }
 
 /* ══ CATEGORIAS ══ */
-.cat-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 14px; }
+.cat-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); gap: 16px; }
 .cat-card {
-    background: var(--bg-card); border: 1px solid var(--border); border-radius: 12px;
-    padding: 22px 14px; text-align: center; transition: transform .15s, border-color .15s;
+    position: relative; display: flex; align-items: flex-end; justify-content: center;
+    aspect-ratio: 4 / 3; background: var(--bg-card); border: 1px solid var(--border);
+    border-radius: 14px; overflow: hidden; text-align: center; transition: transform .15s, border-color .15s;
 }
 .cat-card:hover { transform: translateY(-3px); border-color: var(--primary); }
-.cat-card i { font-size: 1.7em; color: var(--gold); margin-bottom: 10px; display: block; }
-.cat-card span { font-weight: 600; font-size: .9em; }
+.cat-card-img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; transition: transform .3s; }
+.cat-card:hover .cat-card-img { transform: scale(1.05); }
+.cat-card-overlay { position: absolute; inset: 0; background: linear-gradient(to top, rgba(0,0,0,.88) 0%, rgba(0,0,0,.35) 45%, rgba(0,0,0,.05) 75%); }
+.cat-card i { position: relative; z-index: 1; font-size: 1.7em; color: var(--gold); margin-bottom: 10px; display: block; }
+.cat-card span { position: relative; z-index: 1; font-weight: 700; font-size: 1.1em; padding: 18px 14px; text-shadow: 0 2px 8px rgba(0,0,0,.7); }
 
 /* ══ BOTÃO DE LOCALIZAÇÃO ══ */
 .btn-loc { cursor: pointer; border: none; font-family: 'Montserrat', sans-serif; }
@@ -371,12 +375,9 @@ footer ul li a:hover { color: var(--gold); }
   <p class="secao-sub">Da grande rede à sala de bairro — cada tipo tem sua experiência.</p>
   <div class="cat-grid">
     {% for cat in categorias %}
-      <a class="cat-card" href="/{{ cat.slug }}/">
-        {% if cat.icone_url %}
-          <img src="{{ cat.icone_url }}" alt="" style="height:32px;width:auto;margin:0 auto 10px;">
-        {% else %}
-          <i class="fas fa-film"></i>
-        {% endif %}
+      <a class="cat-card" href="/{{ cat.slug }}/" data-cat-slug="{{ cat.slug }}">
+        <img class="cat-card-img" src="{{ cat.icone_url or 'https://placehold.co/400x300/17171b/f5c518?text=%F0%9F%8E%9E' }}" alt="{{ cat_label(cat) }}" loading="lazy">
+        <div class="cat-card-overlay"></div>
         <span>{{ cat_label(cat) }}</span>
       </a>
     {% endfor %}
@@ -390,6 +391,55 @@ footer ul li a:hover { color: var(--gold); }
   </a>
 </div>
 {% endif %}
+
+<section class="secao container" id="cinemas">
+  <h2>Cinemas cadastrados</h2>
+  <p class="secao-sub" id="cinemas-total">{{ negocios | length }} sala{{ 's' if negocios | length != 1 else '' }} no guia até agora.</p>
+
+  <div style="text-align:center;">
+    <button class="btn-geo btn-loc" id="btnLoc" onclick="toggleLocalizacao()">
+      <i class="fas fa-map-marker-alt"></i> Usar minha localização
+    </button>
+  </div>
+
+  {% if categorias %}
+  <div class="categoria-slicer" id="categoria-slicer">
+    <button type="button" class="slicer-toggle" id="slicer-toggle" onclick="toggleCategoriaSlicer()" aria-haspopup="listbox" aria-expanded="false" aria-controls="filtros-categoria">
+      <span class="slicer-label"><i class="fas fa-filter"></i> Tipo de cinema: <strong id="slicer-label-text">Todos</strong></span>
+      <i class="fas fa-chevron-down slicer-chevron" aria-hidden="true"></i>
+    </button>
+    <div class="slicer-panel" id="filtros-categoria" role="listbox" aria-label="Filtrar por tipo de cinema">
+      <button class="chip-cat active" onclick="filtrarCategoria(null, this)">Todos</button>
+      {% for cat in categorias %}
+        <button class="chip-cat" data-slug="{{ cat.slug }}" onclick="filtrarCategoria('{{ cat.slug }}', this)">{{ cat_label(cat) }}</button>
+      {% endfor %}
+    </div>
+    <div class="slicer-backdrop" id="slicer-backdrop" onclick="closeCategoriaSlicer()"></div>
+  </div>
+  {% endif %}
+
+  <div class="view-controls" id="view-controls" style="display:none;">
+    <span>Ver como:</span>
+    <button class="view-btn active" id="btn-carousel" title="Carrossel" onclick="setView('carousel')"><i class="fas fa-grip-lines"></i></button>
+    <button class="view-btn" id="btn-grade" title="Grade" onclick="setView('grade')"><i class="fas fa-th"></i></button>
+  </div>
+
+  <div id="negocios-carousel-wrapper" class="carousel-wrapper">
+    <div class="carousel-track-outer">
+      <div class="carousel-track" id="negocios-track"></div>
+    </div>
+    <div class="carousel-nav" id="negocios-carousel-nav">
+      <button class="carousel-arrow" id="negocios-prev" onclick="moveCarousel(-1)"><i class="fas fa-chevron-left"></i></button>
+      <div class="carousel-progress-bar"><div class="carousel-progress-fill" id="negocios-progress-fill"></div></div>
+      <button class="carousel-arrow" id="negocios-next" onclick="moveCarousel(1)"><i class="fas fa-chevron-right"></i></button>
+    </div>
+  </div>
+
+  <div class="negocios-grid" id="negocios-grade" style="display:none;"></div>
+  <p class="info-message" id="negocios-vazio" style="display:none;">Ainda não temos cinemas cadastrados por aqui — seja o primeiro a indicar um.</p>
+  <div id="lazy-sentinel" style="height:1px; margin-top:10px;"></div>
+  <p id="lazy-loading" style="display:none; text-align:center; color:var(--primary); padding:20px; font-size:.95em;"><i class="fas fa-spinner fa-spin"></i> Carregando mais cinemas...</p>
+</section>
 
 <section class="secao container" id="filmes-em-cartaz">
   <div class="secao-header-flex">
@@ -458,54 +508,6 @@ footer ul li a:hover { color: var(--gold); }
   <p class="info-message" id="streaming-vazio" style="display:none;">Não encontramos filmes desse streaming agora.</p>
 </section>
 
-<section class="secao container" id="cinemas">
-  <h2>Cinemas cadastrados</h2>
-  <p class="secao-sub" id="cinemas-total">{{ negocios | length }} sala{{ 's' if negocios | length != 1 else '' }} no guia até agora.</p>
-
-  <div style="text-align:center;">
-    <button class="btn-geo btn-loc" id="btnLoc" onclick="toggleLocalizacao()">
-      <i class="fas fa-map-marker-alt"></i> Usar minha localização
-    </button>
-  </div>
-
-  {% if categorias %}
-  <div class="categoria-slicer" id="categoria-slicer">
-    <button type="button" class="slicer-toggle" id="slicer-toggle" onclick="toggleCategoriaSlicer()" aria-haspopup="listbox" aria-expanded="false" aria-controls="filtros-categoria">
-      <span class="slicer-label"><i class="fas fa-filter"></i> Tipo de cinema: <strong id="slicer-label-text">Todos</strong></span>
-      <i class="fas fa-chevron-down slicer-chevron" aria-hidden="true"></i>
-    </button>
-    <div class="slicer-panel" id="filtros-categoria" role="listbox" aria-label="Filtrar por tipo de cinema">
-      <button class="chip-cat active" onclick="filtrarCategoria(null, this)">Todos</button>
-      {% for cat in categorias %}
-        <button class="chip-cat" data-slug="{{ cat.slug }}" onclick="filtrarCategoria('{{ cat.slug }}', this)">{{ cat_label(cat) }}</button>
-      {% endfor %}
-    </div>
-    <div class="slicer-backdrop" id="slicer-backdrop" onclick="closeCategoriaSlicer()"></div>
-  </div>
-  {% endif %}
-
-  <div class="view-controls" id="view-controls" style="display:none;">
-    <span>Ver como:</span>
-    <button class="view-btn active" id="btn-carousel" title="Carrossel" onclick="setView('carousel')"><i class="fas fa-grip-lines"></i></button>
-    <button class="view-btn" id="btn-grade" title="Grade" onclick="setView('grade')"><i class="fas fa-th"></i></button>
-  </div>
-
-  <div id="negocios-carousel-wrapper" class="carousel-wrapper">
-    <div class="carousel-track-outer">
-      <div class="carousel-track" id="negocios-track"></div>
-    </div>
-    <div class="carousel-nav" id="negocios-carousel-nav">
-      <button class="carousel-arrow" id="negocios-prev" onclick="moveCarousel(-1)"><i class="fas fa-chevron-left"></i></button>
-      <div class="carousel-progress-bar"><div class="carousel-progress-fill" id="negocios-progress-fill"></div></div>
-      <button class="carousel-arrow" id="negocios-next" onclick="moveCarousel(1)"><i class="fas fa-chevron-right"></i></button>
-    </div>
-  </div>
-
-  <div class="negocios-grid" id="negocios-grade" style="display:none;"></div>
-  <p class="info-message" id="negocios-vazio" style="display:none;">Ainda não temos cinemas cadastrados por aqui — seja o primeiro a indicar um.</p>
-  <div id="lazy-sentinel" style="height:1px; margin-top:10px;"></div>
-  <p id="lazy-loading" style="display:none; text-align:center; color:var(--primary); padding:20px; font-size:.95em;"><i class="fas fa-spinner fa-spin"></i> Carregando mais cinemas...</p>
-</section>
 
 <div class="faixa-cadastro">
   <h2>Conhece um cinema que não está aqui?</h2>
@@ -571,6 +573,29 @@ footer ul li a:hover { color: var(--gold); }
     </div>
   </div>
 </div>
+
+<script>
+// ══════════════════════════════════════════════════════════════════
+// FOTOS DOS CARDS DE "Tipos de cinema" — cada card busca 1 negócio
+// já cadastrado naquela categoria e usa a foto dele (mesma foto pra
+// todo mundo daquela categoria, ex.: todos os cards "Cinemark" usam
+// a mesma foto). Se a categoria ainda não tem negócio com foto,
+// mantém o placeholder que já vem do template.
+// ══════════════════════════════════════════════════════════════════
+document.querySelectorAll('.cat-card[data-cat-slug]').forEach(function(card){
+  var slug = card.dataset.catSlug;
+  fetch('/api/hub/negocios?limit=1&offset=0&categoria=' + encodeURIComponent(slug))
+    .then(function(r){ return r.json(); })
+    .then(function(lista){
+      var n = (lista || [])[0];
+      if(n && n.foto_url){
+        var img = card.querySelector('.cat-card-img');
+        if(img) img.src = n.foto_url;
+      }
+    })
+    .catch(function(){ /* mantém placeholder */ });
+});
+</script>
 
 <script>
 // ══════════════════════════════════════════════════════════════════
