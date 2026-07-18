@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Não quer sair de casa? — {{ hub.nome or 'Cinema Perto de Mim' }}</title>
+<meta name="description" content="Filmes em alta agora e onde assistir em streaming no Brasil.">
+<link rel="canonical" href="https://{{ request.host }}/nao-quer-sair-de-casa/">
+<style>
+  body { font-family: system-ui, sans-serif; margin: 0; background: #0d0d0f; color: #eee; }
+  header { padding: 1.25rem; }
+  h1 { font-size: 1.4rem; margin: 0 0 .25rem; }
+  header p { font-size: .85rem; opacity: .7; margin: 0; }
+  .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 1rem; padding: 0 1.25rem; }
+  .card { text-decoration: none; color: inherit; }
+  .card img.poster { width: 100%; border-radius: 8px; aspect-ratio: 2/3; object-fit: cover; }
+  .card p { font-size: .85rem; margin: .4rem 0 0; line-height: 1.3; }
+  .provider-icones { display: flex; gap: .3rem; margin-top: .3rem; }
+  .provider-icones img { width: 22px; height: 22px; border-radius: 5px; }
+  .paginacao { display: flex; justify-content: center; gap: 1rem; padding: 1.5rem; }
+  .paginacao a { color: #eee; text-decoration: none; border: 1px solid #444; padding: .4rem .9rem; border-radius: 6px; }
+  .creditos-tmdb, .creditos-justwatch { text-align: center; }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>Não quer sair de casa?</h1>
+  <p>Filmes em alta agora — veja onde assistir em streaming</p>
+</header>
+
+<div class="grid">
+  {% for f in filmes %}
+    <a class="card" href="/filme/{{ f.id }}/">
+      {% if f.poster_url %}
+        <img class="poster" src="{{ f.poster_url }}" alt="Pôster de {{ f.title }}" loading="lazy">
+      {% endif %}
+      <p>{{ f.title }}</p>
+      {% if f.providers.flatrate %}
+        <div class="provider-icones">
+          {% for p in f.providers.flatrate[:4] %}
+            <img src="{{ img_base if img_base else 'https://image.tmdb.org/t/p' }}/w45{{ p.logo_path }}" alt="{{ p.provider_name }}" title="{{ p.provider_name }}">
+          {% endfor %}
+        </div>
+      {% endif %}
+    </a>
+  {% endfor %}
+</div>
+
+<div class="paginacao">
+  {% if page > 1 %}
+    <a href="/nao-quer-sair-de-casa/?page={{ page - 1 }}">← Anterior</a>
+  {% endif %}
+  {% if page < total_pages %}
+    <a href="/nao-quer-sair-de-casa/?page={{ page + 1 }}">Próxima →</a>
+  {% endif %}
+</div>
+
+{% include "cinema/_creditos.html" %}
+{% include "cinema/_creditos_justwatch.html" %}
+
+</body>
+</html>

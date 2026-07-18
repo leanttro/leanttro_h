@@ -1,0 +1,400 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<!-- SEO -->
+<title>{{ hub.titulo or 'Cinema Perto de Mim — Cinemas, cineclubes e salas de arte perto de você' }}</title>
+<meta name="description" content="{{ hub.descricao or 'Encontre cinemas, cine de rua, cineclubes, salas de arte e drive-ins perto de você. Veja também o que está em cartaz no Brasil e onde assistir em streaming.' }}">
+<meta name="keywords" content="cinema perto de mim, cine de rua, cineclube, sala de arte, cinemateca, drive-in, filmes em cartaz, onde assistir">
+<meta name="robots" content="index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1">
+<meta name="theme-color" content="{{ hub.cor_primaria or '#e50914' }}">
+<meta name="author" content="{{ hub.nome or 'Cinema Perto de Mim' }}">
+<link rel="canonical" href="https://{{ request.host }}/">
+
+<link rel="icon" type="image/png" href="{{ hub.logo_url or 'https://placehold.co/64x64/0d0d0f/e50914?text=%F0%9F%8E%9E' }}">
+<link rel="apple-touch-icon" href="{{ hub.logo_url or 'https://placehold.co/180x180/0d0d0f/e50914?text=%F0%9F%8E%9E' }}">
+
+<!-- Open Graph -->
+<meta property="og:type"        content="website">
+<meta property="og:site_name"   content="{{ hub.nome or 'Cinema Perto de Mim' }}">
+<meta property="og:url"         content="https://{{ request.host }}/">
+<meta property="og:title"       content="{{ hub.titulo or 'Cinema Perto de Mim — cinemas e cultura de cinema perto de você' }}">
+<meta property="og:description" content="{{ hub.descricao or 'Cinemas, cine de rua, cineclubes e salas de arte perto de você — mais o que está em cartaz e onde assistir.' }}">
+{% if hub.banner_fundo_url %}<meta property="og:image" content="{{ hub.banner_fundo_url }}">{% endif %}
+<meta property="og:locale" content="pt_BR">
+
+<!-- Twitter -->
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="{{ hub.titulo or 'Cinema Perto de Mim' }}">
+<meta name="twitter:description" content="{{ hub.descricao or 'Cinemas perto de você, em cartaz e streaming.' }}">
+
+<!-- JSON-LD WebSite -->
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "WebSite",
+  "name": "{{ hub.nome or 'Cinema Perto de Mim' }}",
+  "url": "https://{{ request.host }}/",
+  "inLanguage": "pt-BR"
+}
+</script>
+
+<!-- JSON-LD ItemList de categorias -->
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "ItemList",
+  "name": "Tipos de cinema — {{ hub.nome or 'Cinema Perto de Mim' }}",
+  "itemListElement": [
+    {% for cat in categorias %}
+    { "@type": "ListItem", "position": {{ loop.index }},
+      "item": { "@type": "Thing", "name": "{{ cat.nome }} perto de mim", "url": "https://{{ request.host }}/{{ cat.slug }}/" } }{% if not loop.last %},{% endif %}
+    {% endfor %}
+  ]
+}
+</script>
+
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&family=Roboto:wght@300;400;500;700&display=swap" rel="stylesheet">
+<link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+
+<style>
+:root {
+    --primary:     {{ hub.cor_primaria or '#e50914' }};
+    --dark:        {{ hub.cor_secundaria or '#a4060d' }};
+    --gold:        #f5c518;
+    --bg:          #0d0d0f;
+    --bg-card:     #17171b;
+    --bg-card-alt: #1f1f24;
+    --border:      #2a2a30;
+    --text:        #eee;
+    --text-dim:    #a5a5ab;
+    --white:       #ffffff;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html { scroll-behavior: smooth; }
+body { font-family: 'Roboto', sans-serif; background: var(--bg); color: var(--text); line-height: 1.6; }
+h1, h2, h3, .logo-txt { font-family: 'Poppins', sans-serif; }
+a { text-decoration: none; color: inherit; }
+.container { max-width: 1200px; margin: 0 auto; padding: 0 20px; }
+img { max-width: 100%; display: block; }
+
+/* ══ HEADER ══ */
+body > header {
+    background: #000; border-bottom: 1px solid var(--border);
+    padding: 14px 24px; display: flex; align-items: center; justify-content: space-between;
+    position: sticky; top: 0; z-index: 100;
+}
+.logo { display: flex; align-items: center; gap: 10px; font-weight: 800; font-size: 1.25em; }
+.logo img { height: 34px; width: auto; border-radius: 6px; }
+.logo .marca-primary { color: var(--primary); }
+nav.desktop-nav ul { list-style: none; display: flex; align-items: center; gap: 4px; }
+nav.desktop-nav ul li a {
+    color: #fff; font-weight: 500; font-size: .92em; padding: 10px 16px; border-radius: 6px;
+    transition: background .2s, color .2s;
+}
+nav.desktop-nav ul li a:hover { background: var(--primary); }
+.hamburger-btn { display: none; background: none; border: none; color: #fff; font-size: 1.6em; cursor: pointer; }
+.mobile-nav-overlay {
+    display: none; position: fixed; inset: 0; background: rgba(0,0,0,.97); z-index: 1000;
+    flex-direction: column; justify-content: center; align-items: center; opacity: 0; transition: opacity .25s;
+}
+.mobile-nav-overlay.active { display: flex; opacity: 1; }
+.mobile-nav-close { position: absolute; top: 18px; left: 22px; background: none; border: none; color: #fff; font-size: 2em; cursor: pointer; }
+.mobile-nav-overlay nav ul { list-style: none; text-align: center; }
+.mobile-nav-overlay nav ul li { margin: 14px 0; }
+.mobile-nav-overlay nav ul li a { color: #fff; font-size: 1.4em; font-weight: 700; }
+
+/* ══ ANÚNCIOS ══ */
+.anuncio-slot { text-align: center; padding: 10px 20px; background: #000; border-bottom: 1px solid var(--border); }
+.anuncio-slot img { max-height: 90px; margin: 0 auto; border-radius: 6px; }
+
+/* ══ HERO ══ */
+.hero {
+    text-align: center; padding: 70px 20px; color: #fff;
+    background:
+        linear-gradient(180deg, rgba(0,0,0,.55), var(--bg) 92%),
+        url('{{ hub.banner_fundo_url or "https://images.unsplash.com/photo-1489599849927-2ee91cede3ba?w=1600&q=60" }}') center/cover no-repeat;
+}
+.hero h1 { font-size: 2.4em; font-weight: 800; margin-bottom: 14px; }
+.hero h1 em { color: var(--gold); font-style: normal; }
+.hero p { max-width: 620px; margin: 0 auto 28px; color: var(--text-dim); font-size: 1.05em; }
+.hero-btns { display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; }
+.btn-hero { display: inline-flex; align-items: center; gap: 8px; padding: 13px 26px; border-radius: 8px; font-weight: 700; font-size: .98em; }
+.btn-hero.primary { background: var(--primary); color: #fff; }
+.btn-hero.outline { border: 1.5px solid var(--gold); color: var(--gold); }
+.btn-hero:hover { filter: brightness(1.12); }
+
+/* ══ SEÇÃO ══ */
+.secao { padding: 44px 20px; }
+.secao h2 { font-size: 1.5em; margin-bottom: 6px; }
+.secao .secao-sub { color: var(--text-dim); font-size: .92em; margin-bottom: 22px; }
+
+/* ══ CATEGORIAS ══ */
+.cat-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 14px; }
+.cat-card {
+    background: var(--bg-card); border: 1px solid var(--border); border-radius: 12px;
+    padding: 22px 14px; text-align: center; transition: transform .15s, border-color .15s;
+}
+.cat-card:hover { transform: translateY(-3px); border-color: var(--primary); }
+.cat-card i { font-size: 1.7em; color: var(--gold); margin-bottom: 10px; display: block; }
+.cat-card span { font-weight: 600; font-size: .9em; }
+
+/* ══ CARDS DE NEGÓCIO ══ */
+.negocios-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); gap: 18px; }
+.negocio-card { background: var(--bg-card); border: 1px solid var(--border); border-radius: 12px; overflow: hidden; transition: transform .15s, border-color .15s; }
+.negocio-card:hover { transform: translateY(-3px); border-color: var(--primary); }
+.negocio-card img { width: 100%; height: 140px; object-fit: cover; }
+.negocio-card-body { padding: 14px; }
+.negocio-card-cat { font-size: .72em; color: var(--gold); font-weight: 700; text-transform: uppercase; letter-spacing: .04em; }
+.negocio-card-nome { font-size: 1.05em; font-weight: 700; margin: 4px 0 6px; }
+.negocio-card-local { font-size: .85em; color: var(--text-dim); display: flex; align-items: center; gap: 6px; }
+
+/* ══ BOTÃO CADASTRAR ══ */
+.faixa-cadastro { background: var(--bg-card-alt); border-top: 1px solid var(--border); border-bottom: 1px solid var(--border); padding: 40px 20px; text-align: center; }
+.faixa-cadastro h2 { font-size: 1.3em; margin-bottom: 10px; }
+.faixa-cadastro p { color: var(--text-dim); margin-bottom: 20px; }
+.btn-cta { display: inline-block; background: var(--primary); color: #fff; font-weight: 700; padding: 13px 30px; border-radius: 8px; border: none; cursor: pointer; font-size: 1em; }
+
+/* ══ FOOTER ══ */
+footer { background: #000; border-top: 1px solid var(--border); padding: 34px 20px 20px; color: var(--text-dim); font-size: .88em; }
+footer .footer-cols { display: flex; flex-wrap: wrap; gap: 28px; max-width: 1200px; margin: 0 auto 20px; }
+footer h4 { color: #fff; font-size: .95em; margin-bottom: 10px; }
+footer ul { list-style: none; }
+footer ul li { margin-bottom: 6px; }
+footer ul li a:hover { color: var(--gold); }
+.footer-bottom { text-align: center; border-top: 1px solid var(--border); padding-top: 16px; }
+
+@media (max-width: 860px) {
+    nav.desktop-nav { display: none; }
+    .hamburger-btn { display: block; }
+    .hero h1 { font-size: 1.7em; }
+}
+
+/* Modal de cadastro */
+.modal-oculto { display: none !important; }
+#modal-cadastro { position: fixed; inset: 0; background: rgba(0,0,0,.75); z-index: 2000; display: flex; align-items: center; justify-content: center; padding: 16px; }
+#modal-cadastro .modal-box { background: var(--bg-card); border: 1px solid var(--border); border-radius: 14px; max-width: 480px; width: 100%; max-height: 90vh; overflow-y: auto; padding: 26px; position: relative; }
+#modal-cadastro .modal-fechar { position: absolute; top: 14px; right: 16px; background: none; border: none; color: var(--text-dim); font-size: 1.4em; cursor: pointer; }
+#form-cadastro { display: flex; flex-direction: column; gap: 12px; margin-top: 10px; }
+.cad-input { width: 100%; padding: 11px 12px; border: 1.5px solid var(--border); border-radius: 8px; font-size: 14px; background: var(--bg); color: var(--text); font-family: 'Roboto', sans-serif; }
+.cad-input:focus { border-color: var(--primary); outline: none; }
+#btn-submit-cadastro { background: var(--primary); color: #fff; border: none; border-radius: 8px; padding: 13px; font-weight: 700; cursor: pointer; }
+#cadastro-sucesso { display: none; text-align: center; padding: 20px 0; }
+</style>
+</head>
+<body>
+
+<header>
+  <a class="logo" href="/">
+    {% if hub.logo_url %}<img src="{{ hub.logo_url }}" alt="{{ hub.nome }}">{% endif %}
+    <span><span class="marca-primary">Cinema</span> Perto de Mim</span>
+  </a>
+  <nav class="desktop-nav">
+    <ul>
+      <li><a href="/em-cartaz/">Em cartaz</a></li>
+      <li><a href="/nao-quer-sair-de-casa/">Streaming</a></li>
+      {% for cat in categorias[:4] %}
+        <li><a href="/{{ cat.slug }}/">{{ cat.nome }}</a></li>
+      {% endfor %}
+      <li><a href="#" onclick="abrirModalCadastro();return false;">Cadastrar cinema</a></li>
+    </ul>
+  </nav>
+  <button class="hamburger-btn" onclick="document.getElementById('mobile-nav').classList.add('active')"><i class="fas fa-bars"></i></button>
+</header>
+
+<div class="mobile-nav-overlay" id="mobile-nav">
+  <button class="mobile-nav-close" onclick="document.getElementById('mobile-nav').classList.remove('active')"><i class="fas fa-times"></i></button>
+  <nav>
+    <ul>
+      <li><a href="/em-cartaz/">Em cartaz</a></li>
+      <li><a href="/nao-quer-sair-de-casa/">Streaming</a></li>
+      {% for cat in categorias %}
+        <li><a href="/{{ cat.slug }}/">{{ cat.nome }}</a></li>
+      {% endfor %}
+      <li><a href="#" onclick="abrirModalCadastro();return false;">Cadastrar cinema</a></li>
+    </ul>
+  </nav>
+</div>
+
+{% if anuncio_topo %}
+<div class="anuncio-slot">
+  <a href="{{ anuncio_topo.link_url or '#' }}" target="_blank" rel="noopener">
+    <img src="{{ anuncio_topo.imagem_url }}" alt="{{ anuncio_topo.titulo or 'Anúncio' }}">
+  </a>
+</div>
+{% endif %}
+
+<section class="hero">
+  <h1>Cinema <em>perto de você</em></h1>
+  <p>Do multiplex ao cine de rua, do cineclube à cinemateca — descubra as salas da sua cidade, veja o que está em cartaz e onde assistir sem sair de casa.</p>
+  <div class="hero-btns">
+    <a class="btn-hero primary" href="/em-cartaz/"><i class="fas fa-film"></i> Em cartaz agora</a>
+    <a class="btn-hero outline" href="/nao-quer-sair-de-casa/"><i class="fas fa-tv"></i> Ver no streaming</a>
+  </div>
+</section>
+
+<section class="secao container">
+  <h2>Tipos de cinema</h2>
+  <p class="secao-sub">Da grande rede à sala de bairro — cada tipo tem sua experiência.</p>
+  <div class="cat-grid">
+    {% for cat in categorias %}
+      <a class="cat-card" href="/{{ cat.slug }}/">
+        {% if cat.icone_url %}
+          <img src="{{ cat.icone_url }}" alt="" style="height:32px;width:auto;margin:0 auto 10px;">
+        {% else %}
+          <i class="fas fa-film"></i>
+        {% endif %}
+        <span>{{ cat.nome }}</span>
+      </a>
+    {% endfor %}
+  </div>
+</section>
+
+{% if anuncio_meio %}
+<div class="anuncio-slot">
+  <a href="{{ anuncio_meio.link_url or '#' }}" target="_blank" rel="noopener">
+    <img src="{{ anuncio_meio.imagem_url }}" alt="{{ anuncio_meio.titulo or 'Anúncio' }}">
+  </a>
+</div>
+{% endif %}
+
+<section class="secao container">
+  <h2>Cinemas cadastrados</h2>
+  <p class="secao-sub">{{ negocios | length }} sala{{ 's' if negocios | length != 1 else '' }} no guia até agora.</p>
+  {% if negocios %}
+    <div class="negocios-grid">
+      {% for n in negocios %}
+        <a class="negocio-card" href="/{{ n.categoria_slug }}/{{ n.slug }}/">
+          <img src="{{ n.foto_url or 'https://placehold.co/400x260/17171b/f5c518?text=%F0%9F%8E%9E' }}" alt="{{ n.nome }}" loading="lazy">
+          <div class="negocio-card-body">
+            <div class="negocio-card-cat">{{ n.categoria_nome }}</div>
+            <div class="negocio-card-nome">{{ n.nome }}</div>
+            {% if n.cidade %}
+              <div class="negocio-card-local"><i class="fas fa-map-marker-alt"></i> {{ n.bairro ~ ', ' if n.bairro }}{{ n.cidade }}</div>
+            {% endif %}
+          </div>
+        </a>
+      {% endfor %}
+    </div>
+  {% else %}
+    <p style="color:var(--text-dim);">Ainda não temos cinemas cadastrados por aqui — seja o primeiro a indicar um.</p>
+  {% endif %}
+</section>
+
+<div class="faixa-cadastro">
+  <h2>Conhece um cinema que não está aqui?</h2>
+  <p>Cine de rua, cineclube, sala de arte — todo tipo de sala tem espaço no guia.</p>
+  <button class="btn-cta" onclick="abrirModalCadastro()">Cadastrar cinema</button>
+</div>
+
+<footer>
+  <div class="footer-cols">
+    <div>
+      <h4>{{ hub.nome or 'Cinema Perto de Mim' }}</h4>
+      <p>Descubra cinemas e cultura de cinema perto de você.</p>
+    </div>
+    <div>
+      <h4>Navegue</h4>
+      <ul>
+        <li><a href="/em-cartaz/">Em cartaz</a></li>
+        <li><a href="/nao-quer-sair-de-casa/">Streaming</a></li>
+        {% for cat in categorias %}
+          <li><a href="/{{ cat.slug }}/">{{ cat.nome }}</a></li>
+        {% endfor %}
+      </ul>
+    </div>
+  </div>
+  <div class="footer-bottom">
+    &copy; {{ hub.nome or 'Cinema Perto de Mim' }} — todos os direitos reservados.
+  </div>
+</footer>
+
+<!-- Modal de cadastro -->
+<div id="modal-cadastro" class="modal-oculto">
+  <div class="modal-box">
+    <button class="modal-fechar" onclick="fecharModalCadastro()"><i class="fas fa-times"></i></button>
+    <h2>Cadastrar cinema</h2>
+    <p style="color:var(--text-dim);font-size:.9em;">Seu cadastro passa por uma revisão rápida antes de ir ao ar.</p>
+
+    <form id="form-cadastro" onsubmit="enviarCadastroNegocio(event)">
+      <input class="cad-input" type="text" name="nome" placeholder="Nome do cinema *" required>
+      <select class="cad-input" name="categoria_id">
+        <option value="">Tipo de cinema</option>
+        {% for cat in categorias %}
+          <option value="{{ cat.id }}">{{ cat.nome }}</option>
+        {% endfor %}
+      </select>
+      <input class="cad-input" type="text" name="cidade" placeholder="Cidade">
+      <input class="cad-input" type="text" name="bairro" placeholder="Bairro">
+      <input class="cad-input" type="text" name="endereco" placeholder="Endereço">
+      <input class="cad-input" type="text" name="whatsapp" placeholder="WhatsApp">
+      <input class="cad-input" type="text" name="telefone" placeholder="Telefone">
+      <input class="cad-input" type="text" name="instagram" placeholder="Instagram">
+      <input class="cad-input" type="url" name="site_url" placeholder="Site (opcional)">
+      <input class="cad-input" type="url" name="foto_url" placeholder="URL de uma foto (opcional)">
+      <textarea class="cad-input" name="descricao" placeholder="Descrição curta" rows="3"></textarea>
+
+      <div id="cadastro-erro" style="display:none;color:#ff8080;font-size:13px;background:#2a1414;border:1px solid #5a2323;border-radius:8px;padding:10px 12px;"></div>
+
+      <button type="submit" id="btn-submit-cadastro">Enviar cadastro</button>
+    </form>
+
+    <div id="cadastro-sucesso">
+      <i class="fas fa-check-circle" style="font-size:2em;color:var(--gold);"></i>
+      <p style="margin-top:10px;">Recebemos seu cadastro! Ele vai passar por revisão antes de aparecer no site.</p>
+    </div>
+  </div>
+</div>
+
+<script>
+function abrirModalCadastro(){ document.getElementById('modal-cadastro').classList.remove('modal-oculto'); }
+function fecharModalCadastro(){
+  document.getElementById('modal-cadastro').classList.add('modal-oculto');
+  document.getElementById('form-cadastro').reset();
+  document.getElementById('form-cadastro').style.display = 'flex';
+  document.getElementById('cadastro-sucesso').style.display = 'none';
+  document.getElementById('cadastro-erro').style.display = 'none';
+}
+document.getElementById('modal-cadastro').addEventListener('click', function(e){ if (e.target === this) fecharModalCadastro(); });
+document.addEventListener('keydown', function(e){ if (e.key === 'Escape') fecharModalCadastro(); });
+
+async function enviarCadastroNegocio(e){
+  e.preventDefault();
+  const btn = document.getElementById('btn-submit-cadastro');
+  const erro = document.getElementById('cadastro-erro');
+  erro.style.display = 'none';
+  btn.disabled = true;
+  btn.textContent = 'Enviando...';
+  try {
+    const formData = new FormData(e.target);
+    const res = await fetch('/cadastrar-negocio', { method: 'POST', body: formData });
+    const data = await res.json();
+    if (res.ok && data.ok) {
+      document.getElementById('form-cadastro').style.display = 'none';
+      document.getElementById('cadastro-sucesso').style.display = 'block';
+    } else {
+      erro.textContent = data.erro || 'Erro ao enviar. Tente novamente.';
+      erro.style.display = 'block';
+    }
+  } catch (err) {
+    erro.textContent = 'Erro de conexão. Verifique sua internet e tente novamente.';
+    erro.style.display = 'block';
+  } finally {
+    btn.disabled = false;
+    btn.textContent = 'Enviar cadastro';
+  }
+}
+</script>
+
+{% if hub.ga4_id %}
+<script async src="https://www.googletagmanager.com/gtag/js?id={{ hub.ga4_id }}"></script>
+<script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag('js',new Date());gtag('config','{{ hub.ga4_id }}');</script>
+{% endif %}
+{% if hub.pixel_id %}
+<script>!function(f,b,e,v,n,t,s){if(f.fbq)return;n=f.fbq=function(){n.callMethod?n.callMethod.apply(n,arguments):n.queue.push(arguments)};if(!f._fbq)f._fbq=n;n.push=n;n.loaded=!0;n.version='2.0';n.queue=[];t=b.createElement(e);t.async=!0;t.src=v;s=b.getElementsByTagName(e)[0];s.parentNode.insertBefore(t,s)}(window,document,'script','https://connect.facebook.net/en_US/fbevents.js');fbq('init','{{ hub.pixel_id }}');fbq('track','PageView');</script>
+{% endif %}
+
+</body>
+</html>

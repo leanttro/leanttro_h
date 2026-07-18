@@ -1,0 +1,12 @@
+{# ══════════════════════════════════════════════════════════
+   Atribuição obrigatória da TMDB — ver termos de uso.
+   Regra: texto abaixo tem que ficar visível (seção "Sobre"/rodapé),
+   logo TMDB sempre MENOS proeminente que o logo do seu site.
+   Baixe o logo oficial em https://www.themoviedb.org/about/logos-attribution
+   e salve como /static/img/tmdb-logo.svg (não usar link direto pro
+   domínio da TMDB pro logo — hospedar localmente).
+   ══════════════════════════════════════════════════════════ #}
+<p class="creditos-tmdb">
+  <img src="{{ url_for('static', filename='img/tmdb-logo.svg') }}" alt="TMDB" height="16">
+  Este produto usa a API TMDB, mas não é endossado ou certificado pela TMDB.
+</p>
