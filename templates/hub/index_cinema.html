@@ -9,7 +9,7 @@
 <meta name="description" content="{{ hub.descricao or 'Encontre cinemas, cine de rua, cineclubes, salas de arte e drive-ins perto de você. Veja também o que está em cartaz no Brasil e onde assistir em streaming.' }}">
 <meta name="keywords" content="cinema perto de mim, cine de rua, cineclube, sala de arte, cinemateca, drive-in, filmes em cartaz, onde assistir">
 <meta name="robots" content="index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1">
-<meta name="theme-color" content="{{ hub.cor_primaria or '#e50914' }}">
+<meta name="theme-color" content="#d4af37">
 <meta name="author" content="{{ hub.nome or 'Cinema Perto de Mim' }}">
 <link rel="canonical" href="https://{{ request.host }}/">
 
@@ -61,8 +61,12 @@
 
 <style>
 :root {
-    --primary:     {{ hub.cor_primaria or '#e50914' }};
-    --dark:        {{ hub.cor_secundaria or '#a4060d' }};
+    /* Cor fixa em dourado — de propósito ignora hub.cor_primaria/cor_secundaria
+       do banco (que estavam trazendo um azul de outro hub) sem precisar
+       alterar nada no banco de dados. */
+    --primary:     #d4af37;
+    --dark:        #a8841f;
+    --on-primary:  #1a0509; /* texto escuro sobre fundo dourado, pra manter contraste/legibilidade */
     --gold:        #ff2d2d;
     --bg:          #1a0509;
     --bg-card:     #2b0d13;
@@ -122,7 +126,7 @@ nav.desktop-nav ul li a {
     .header-lights .spot { width: 90px; height: 130px; top: -16px; }
     .header-lights .spot::before { width: 12px; height: 9px; }
 }
-nav.desktop-nav ul li a:hover { background: var(--primary); color: #fff; }
+nav.desktop-nav ul li a:hover { background: var(--primary); color: var(--on-primary); }
 /* ══ ANÚNCIOS ══ */
 .anuncio-slot { text-align: center; padding: 10px 20px; background: var(--bg-card-alt); border-bottom: 1px solid var(--border); }
 .anuncio-slot img { max-height: 90px; margin: 0 auto; border-radius: 6px; }
@@ -139,7 +143,7 @@ nav.desktop-nav ul li a:hover { background: var(--primary); color: #fff; }
 .hero p { max-width: 620px; margin: 0 auto 28px; color: var(--text-dim); font-size: 1.05em; }
 .hero-btns { display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; }
 .btn-hero { display: inline-flex; align-items: center; gap: 8px; padding: 13px 26px; border-radius: 8px; font-weight: 700; font-size: .98em; }
-.btn-hero.primary { background: var(--primary); color: #fff; }
+.btn-hero.primary { background: var(--primary); color: var(--on-primary); }
 .btn-hero.outline { border: 1.5px solid var(--gold); color: var(--gold); }
 .btn-hero:hover { filter: brightness(1.12); }
 
@@ -161,7 +165,7 @@ nav.desktop-nav ul li a:hover { background: var(--primary); color: #fff; }
 /* ══ BOTÃO DE LOCALIZAÇÃO ══ */
 .btn-loc { cursor: pointer; border: none; font-family: 'Montserrat', sans-serif; }
 .btn-geo {
-    background: var(--primary); color: #fff; border: none; padding: 13px 28px; border-radius: 8px;
+    background: var(--primary); color: var(--on-primary); border: none; padding: 13px 28px; border-radius: 8px;
     font-size: 1em; font-weight: 700; cursor: pointer; display: inline-flex; align-items: center; gap: 8px;
     transition: background .2s; margin: 0 auto 26px; font-family: 'Montserrat', sans-serif;
 }
@@ -210,7 +214,7 @@ nav.desktop-nav ul li a:hover { background: var(--primary); color: #fff; }
     color: var(--text-dim); font-size: 1em;
 }
 .view-btn:hover { border-color: var(--primary); color: #fff; }
-.view-btn.active { background: var(--primary); border-color: var(--primary); color: #fff; }
+.view-btn.active { background: var(--primary); border-color: var(--primary); color: var(--on-primary); }
 
 /* ══ CARDS DE NEGÓCIO ══ */
 .negocios-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); gap: 18px; }
@@ -220,13 +224,13 @@ nav.desktop-nav ul li a:hover { background: var(--primary); color: #fff; }
 .card-foto img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; transition: transform .4s; }
 .negocio-card:hover .card-foto img { transform: scale(1.06); }
 .negocio-card img { width: 100%; height: 140px; object-fit: cover; }
-.badge-cat { position: absolute; top: 10px; left: 10px; background: var(--primary); color: #fff; font-size: .72em; font-weight: 700; padding: 3px 10px; border-radius: 20px; }
+.badge-cat { position: absolute; top: 10px; left: 10px; background: var(--primary); color: var(--on-primary); font-size: .72em; font-weight: 700; padding: 3px 10px; border-radius: 20px; }
 .negocio-card-body, .card-body { padding: 14px; flex: 1; display: flex; flex-direction: column; gap: 4px; }
 .negocio-card-cat { font-size: .72em; color: var(--gold); font-weight: 700; text-transform: uppercase; letter-spacing: .04em; }
 .negocio-card-nome, .card-body h3 { font-size: 1.05em; font-weight: 700; margin: 4px 0 6px; color: #fff; }
 .negocio-card-local, .card-bairro { font-size: .85em; color: var(--text-dim); display: flex; align-items: center; gap: 6px; }
 .card-dist { font-size: .82em; color: var(--gold); font-weight: 700; margin-top: 4px; display: flex; align-items: center; gap: 5px; }
-.btn-ver { margin-top: auto; padding-top: 12px; display: inline-block; background: var(--primary); color: #fff; padding: 9px 18px; border-radius: 6px; font-size: .88em; font-weight: 700; text-align: center; transition: background .2s; }
+.btn-ver { margin-top: auto; padding-top: 12px; display: inline-block; background: var(--primary); color: var(--on-primary); padding: 9px 18px; border-radius: 6px; font-size: .88em; font-weight: 700; text-align: center; transition: background .2s; }
 .negocio-card:hover .btn-ver { background: var(--dark); }
 .info-message { text-align: center; color: var(--text-dim); padding: 50px 0; font-size: 1.02em; }
 
@@ -251,7 +255,7 @@ nav.desktop-nav ul li a:hover { background: var(--primary); color: #fff; }
     display: flex; align-items: center; justify-content: center; cursor: pointer; font-size: 1em; color: var(--text);
     transition: all .2s; flex-shrink: 0;
 }
-.carousel-arrow:hover:not(:disabled) { background: var(--primary); border-color: var(--primary); color: #fff; }
+.carousel-arrow:hover:not(:disabled) { background: var(--primary); border-color: var(--primary); color: var(--on-primary); }
 .carousel-arrow:disabled { opacity: .3; cursor: not-allowed; }
 .carousel-progress-bar { flex: 1; max-width: 200px; height: 4px; background: var(--border); border-radius: 4px; overflow: hidden; }
 .carousel-progress-fill { height: 100%; background: var(--primary); border-radius: 4px; transition: width .35s cubic-bezier(.4,0,.2,1); }
@@ -260,7 +264,7 @@ nav.desktop-nav ul li a:hover { background: var(--primary); color: #fff; }
 .faixa-cadastro { background: var(--bg-card-alt); border-top: 1px solid var(--border); border-bottom: 1px solid var(--border); padding: 40px 20px; text-align: center; }
 .faixa-cadastro h2 { font-size: 1.3em; margin-bottom: 10px; }
 .faixa-cadastro p { color: var(--text-dim); margin-bottom: 20px; }
-.btn-cta { display: inline-block; background: var(--primary); color: #fff; font-weight: 700; padding: 13px 30px; border-radius: 8px; border: none; cursor: pointer; font-size: 1em; }
+.btn-cta { display: inline-block; background: var(--primary); color: var(--on-primary); font-weight: 700; padding: 13px 30px; border-radius: 8px; border: none; cursor: pointer; font-size: 1em; }
 
 /* ══ FOOTER ══ */
 footer { background: var(--bg-card-alt); border-top: 1px solid var(--border); padding: 34px 20px 20px; color: var(--text-dim); font-size: .88em; }
@@ -284,7 +288,7 @@ footer ul li a:hover { color: var(--gold); }
 #form-cadastro { display: flex; flex-direction: column; gap: 12px; margin-top: 10px; }
 .cad-input { width: 100%; padding: 11px 12px; border: 1.5px solid var(--border); border-radius: 8px; font-size: 14px; background: var(--bg); color: var(--text); font-family: 'Montserrat', sans-serif; }
 .cad-input:focus { border-color: var(--primary); outline: none; }
-#btn-submit-cadastro { background: var(--primary); color: #fff; border: none; border-radius: 8px; padding: 13px; font-weight: 700; cursor: pointer; }
+#btn-submit-cadastro { background: var(--primary); color: var(--on-primary); border: none; border-radius: 8px; padding: 13px; font-weight: 700; cursor: pointer; }
 #cadastro-sucesso { display: none; text-align: center; padding: 20px 0; }
 </style>
 </head>
