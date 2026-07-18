@@ -37,7 +37,7 @@
 }
 </script>
 
-<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&family=Roboto:wght@300;400;500;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
 <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
 
 <style>
@@ -45,29 +45,34 @@
     --primary: {{ hub.cor_primaria or '#e50914' }};
     --dark:    {{ hub.cor_secundaria or '#a4060d' }};
     --gold:    #f5c518;
-    --bg:      #0d0d0f;
-    --bg-card: #17171b;
-    --border:  #2a2a30;
+    --bg:      #1a0509;
+    --bg-card: #2b0d13;
+    --bg-card-alt: #34121a;
+    --border:  #4a1b24;
     --text:    #eee;
     --text-dim:#a5a5ab;
 }
 * { box-sizing: border-box; margin: 0; padding: 0; }
-body { font-family: 'Roboto', sans-serif; background: var(--bg); color: var(--text); line-height: 1.6; }
-h1, h2, .logo-txt { font-family: 'Poppins', sans-serif; }
+body { font-family: 'Montserrat', sans-serif; background: var(--bg); color: var(--text); line-height: 1.6; }
+h1, h2, .logo-txt { font-family: 'Montserrat', sans-serif; }
 a { text-decoration: none; color: inherit; }
 .container { max-width: 1200px; margin: 0 auto; padding: 0 20px; }
 img { max-width: 100%; display: block; }
 
-body > header { background: #000; border-bottom: 1px solid var(--border); padding: 14px 24px; display: flex; align-items: center; justify-content: space-between; position: sticky; top: 0; z-index: 100; }
-.logo { display: flex; align-items: center; gap: 10px; font-weight: 800; font-size: 1.2em; }
+body > header {
+    background: var(--bg-card-alt); border-bottom: 1px solid var(--border);
+    padding: 18px 24px 12px; display: flex; flex-direction: column;
+    align-items: center; justify-content: center; gap: 8px;
+    position: sticky; top: 0; z-index: 100;
+}
+.logo { display: block; text-align: center; }
+.logo img { height: 80px !important; width: auto; margin: 0 auto; }
 .logo .marca-primary { color: var(--primary); }
-nav.desktop-nav ul { list-style: none; display: flex; gap: 4px; }
+nav.desktop-nav ul { list-style: none; display: flex; align-items: center; justify-content: center; flex-wrap: wrap; gap: 4px; }
 nav.desktop-nav ul li a { color: #fff; font-weight: 500; font-size: .9em; padding: 10px 14px; border-radius: 6px; }
 nav.desktop-nav ul li a:hover { background: var(--primary); }
-.hamburger-btn { display: none; background: none; border: none; color: #fff; font-size: 1.6em; }
-@media (max-width: 860px) { nav.desktop-nav { display: none; } .hamburger-btn { display: block; } }
 
-.anuncio-slot { text-align: center; padding: 10px 20px; background: #000; border-bottom: 1px solid var(--border); }
+.anuncio-slot { text-align: center; padding: 10px 20px; background: var(--bg-card-alt); border-bottom: 1px solid var(--border); }
 .anuncio-slot img { max-height: 90px; margin: 0 auto; border-radius: 6px; }
 
 .pagina-header { padding: 34px 20px 10px; }
@@ -91,15 +96,14 @@ nav.desktop-nav ul li a:hover { background: var(--primary); }
 .negocio-card-local { font-size: .85em; color: var(--text-dim); display: flex; gap: 6px; align-items: center; }
 .vazio { color: var(--text-dim); padding: 30px 0; text-align: center; }
 
-footer { background: #000; border-top: 1px solid var(--border); padding: 24px 20px; color: var(--text-dim); font-size: .85em; text-align: center; }
+footer { background: var(--bg-card-alt); border-top: 1px solid var(--border); padding: 24px 20px; color: var(--text-dim); font-size: .85em; text-align: center; }
 </style>
 </head>
 <body>
 
 <header>
   <a class="logo" href="/">
-    {% if hub.logo_url %}<img src="{{ hub.logo_url }}" alt="{{ hub.nome }}" style="height:32px;border-radius:6px;">{% endif %}
-    <span><span class="marca-primary">Cinema</span> Perto de Mim</span>
+    <img src="{{ hub.logo_url or 'https://res.cloudinary.com/dec2b0u1/image/upload/v1784394139/cinema_ymuflx.png' }}" alt="{{ hub.nome or 'Cinema Perto de Mim' }}">
   </a>
   <nav class="desktop-nav">
     <ul>
@@ -110,7 +114,6 @@ footer { background: #000; border-top: 1px solid var(--border); padding: 24px 20
       {% endfor %}
     </ul>
   </nav>
-  <button class="hamburger-btn"><i class="fas fa-bars"></i></button>
 </header>
 
 {% if anuncio_topo %}
@@ -176,12 +179,6 @@ footer { background: #000; border-top: 1px solid var(--border); padding: 24px 20
 </section>
 
 <footer>&copy; {{ hub.nome or 'Cinema Perto de Mim' }} — todos os direitos reservados.</footer>
-
-<script>
-document.querySelector('.hamburger-btn').addEventListener('click', function(){
-  window.location.href = '/'; // sem overlay próprio nessa página — volta pra home, que tem o menu completo
-});
-</script>
 
 {% if hub.ga4_id %}
 <script async src="https://www.googletagmanager.com/gtag/js?id={{ hub.ga4_id }}"></script>
