@@ -88,15 +88,39 @@ body > header {
     background: var(--header-bg); border-bottom: 1px solid var(--header-border);
     padding: 20px 24px 14px; display: flex; flex-direction: column;
     align-items: center; justify-content: center; gap: 10px;
-    position: sticky; top: 0; z-index: 100;
+    position: sticky; top: 0; z-index: 100; overflow: hidden;
 }
-.logo { display: block; text-align: center; }
+.logo { display: block; text-align: center; position: relative; z-index: 1; }
 .logo img { height: 110px; width: auto; margin: 0 auto; display: block; }
 .logo .marca-primary { color: var(--primary); }
+nav.desktop-nav { position: relative; z-index: 1; }
 nav.desktop-nav ul { list-style: none; display: flex; align-items: center; justify-content: center; flex-wrap: wrap; gap: 4px; }
 nav.desktop-nav ul li a {
     color: var(--header-text); font-weight: 500; font-size: .92em; padding: 10px 16px; border-radius: 6px;
     transition: background .2s, color .2s;
+}
+
+/* ══ HOLOFOTES DE CINEMA (decorativo, apontando pra baixo no topo do header) ══ */
+.header-lights { position: absolute; inset: 0; pointer-events: none; z-index: 0; }
+.header-lights .spot {
+    position: absolute; top: -22px; width: 130px; height: 175px;
+    background: linear-gradient(180deg, rgba(229,9,20,.5), rgba(255,45,45,.16) 55%, rgba(255,45,45,0) 82%);
+    clip-path: polygon(50% 0%, 14% 100%, 86% 100%);
+    mix-blend-mode: multiply;
+}
+.header-lights .spot::before {
+    content: ''; position: absolute; top: -4px; left: 50%; transform: translateX(-50%);
+    width: 16px; height: 12px; background: #2c2c2c; border-radius: 3px 3px 9px 9px;
+    box-shadow: 0 0 6px rgba(0,0,0,.4);
+}
+.header-lights .spot-1 { left: 2%; }
+.header-lights .spot-2 { left: 22%; }
+.header-lights .spot-3 { left: 50%; transform: translateX(-50%); }
+.header-lights .spot-4 { left: 78%; }
+.header-lights .spot-5 { left: 98%; transform: translateX(-100%); }
+@media (max-width: 860px) {
+    .header-lights .spot { width: 90px; height: 130px; top: -16px; }
+    .header-lights .spot::before { width: 12px; height: 9px; }
 }
 nav.desktop-nav ul li a:hover { background: var(--primary); color: #fff; }
 /* ══ ANÚNCIOS ══ */
@@ -275,6 +299,13 @@ footer ul li a:hover { color: var(--gold); }
 {%- endmacro %}
 
 <header>
+  <div class="header-lights" aria-hidden="true">
+    <span class="spot spot-1"></span>
+    <span class="spot spot-2"></span>
+    <span class="spot spot-3"></span>
+    <span class="spot spot-4"></span>
+    <span class="spot spot-5"></span>
+  </div>
   <a class="logo" href="/">
     <img src="{{ hub.logo_url or 'https://res.cloudinary.com/dec2b0u1/image/upload/v1784394139/cinema_ymuflx.png' }}" alt="{{ hub.nome or 'Cinema Perto de Mim' }}">
   </a>
