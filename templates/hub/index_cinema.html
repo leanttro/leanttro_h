@@ -98,7 +98,6 @@ body > header, header {
     width: 100% !important;
     overflow: hidden; margin: 0 !important;
 }
-}
 .logo { display: block; text-align: center; position: relative; z-index: 1; }
 .logo img { height: 110px; width: auto; margin: 0 auto; display: block; }
 .logo .marca-primary { color: var(--primary); }
@@ -157,6 +156,26 @@ nav.desktop-nav ul li a:hover { background: var(--primary); color: var(--on-prim
 .secao { padding: 44px 20px; }
 .secao h2 { font-size: 1.5em; margin-bottom: 6px; }
 .secao .secao-sub { color: var(--text-dim); font-size: .92em; margin-bottom: 22px; }
+.secao-header-flex { display: flex; align-items: flex-end; justify-content: space-between; gap: 16px; flex-wrap: wrap; margin-bottom: 4px; }
+.secao-header-flex .secao-sub { margin-bottom: 0; }
+.btn-ver-todos {
+    flex-shrink: 0; display: inline-flex; align-items: center; gap: 8px; white-space: nowrap;
+    border: 1.5px solid var(--gold); color: var(--gold); padding: 10px 20px; border-radius: 8px;
+    font-weight: 700; font-size: .9em; transition: background .2s, color .2s;
+}
+.btn-ver-todos:hover { background: var(--gold); color: #fff; }
+
+/* ══ CARDS DE FILME (pôster) ══ */
+.filme-card { background: var(--bg-card); border: 1px solid var(--border); border-radius: 12px; overflow: hidden; transition: transform .15s, border-color .15s; display: block; }
+.filme-card:hover { transform: translateY(-3px); border-color: var(--primary); }
+.filme-card .filme-poster { width: 100%; aspect-ratio: 2/3; object-fit: cover; background: var(--bg-card-alt); display: block; }
+.filme-card .filme-titulo { padding: 10px 12px; font-size: .92em; font-weight: 600; color: #fff; line-height: 1.3; }
+.carousel-track .filme-card { flex: 0 0 calc(16.666% - 15px); min-width: 0; }
+@media (max-width: 1100px) { .carousel-track .filme-card { flex: 0 0 calc(25% - 14px); } }
+@media (max-width: 900px) { .carousel-track .filme-card { flex: 0 0 calc(33.333% - 12px); } }
+@media (max-width: 768px) { .carousel-track .filme-card { scroll-snap-align: start; flex: 0 0 42%; } }
+@media (max-width: 480px) { .carousel-track .filme-card { flex: 0 0 55%; } }
+.filmes-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 14px; }
 
 /* ══ CATEGORIAS ══ */
 .cat-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 14px; }
@@ -372,6 +391,73 @@ footer ul li a:hover { color: var(--gold); }
 </div>
 {% endif %}
 
+<section class="secao container" id="filmes-em-cartaz">
+  <div class="secao-header-flex">
+    <div>
+      <h2>Em cartaz</h2>
+      <p class="secao-sub">O que está passando no cinema agora.</p>
+    </div>
+    <a class="btn-ver-todos" href="/em-cartaz/">Ver todos <i class="fas fa-arrow-right"></i></a>
+  </div>
+
+  <div class="view-controls" id="view-controls-emcartaz" style="display:none;">
+    <span>Ver como:</span>
+    <button class="view-btn active" id="btn-carousel-emcartaz" onclick="setViewFilme('emcartaz','carousel')"><i class="fas fa-grip-lines"></i></button>
+    <button class="view-btn" id="btn-grade-emcartaz" onclick="setViewFilme('emcartaz','grade')"><i class="fas fa-th"></i></button>
+  </div>
+
+  <div id="emcartaz-carousel-wrapper" class="carousel-wrapper">
+    <div class="carousel-track-outer">
+      <div class="carousel-track" id="emcartaz-track"></div>
+    </div>
+    <div class="carousel-nav" id="emcartaz-carousel-nav">
+      <button class="carousel-arrow" onclick="moveCarouselFilme('emcartaz',-1)"><i class="fas fa-chevron-left"></i></button>
+      <div class="carousel-progress-bar"><div class="carousel-progress-fill" id="emcartaz-progress-fill"></div></div>
+      <button class="carousel-arrow" onclick="moveCarouselFilme('emcartaz',1)"><i class="fas fa-chevron-right"></i></button>
+    </div>
+  </div>
+  <div class="filmes-grid" id="emcartaz-grade" style="display:none;"></div>
+  <p class="info-message" id="emcartaz-vazio" style="display:none;">Não encontramos filmes em cartaz agora.</p>
+</section>
+
+<section class="secao container" id="filmes-streaming">
+  <div class="secao-header-flex">
+    <div>
+      <h2>Streaming</h2>
+      <p class="secao-sub">Escolha um streaming pra ver o catálogo dele.</p>
+    </div>
+    <a class="btn-ver-todos" id="streaming-link-provedor" href="/nao-quer-sair-de-casa/">Ver catálogo completo <i class="fas fa-arrow-right"></i></a>
+  </div>
+
+  <div class="categoria-slicer" id="streaming-slicer">
+    <button type="button" class="slicer-toggle" id="streaming-slicer-toggle" onclick="toggleStreamingSlicer()" aria-haspopup="listbox" aria-expanded="false">
+      <span class="slicer-label"><i class="fas fa-filter"></i> Streaming: <strong id="streaming-slicer-label">Carregando…</strong></span>
+      <i class="fas fa-chevron-down slicer-chevron" aria-hidden="true"></i>
+    </button>
+    <div class="slicer-panel" id="streaming-filtros" role="listbox" aria-label="Filtrar por streaming"></div>
+    <div class="slicer-backdrop" id="streaming-backdrop" onclick="closeStreamingSlicer()"></div>
+  </div>
+
+  <div class="view-controls" id="view-controls-streaming" style="display:none;">
+    <span>Ver como:</span>
+    <button class="view-btn active" id="btn-carousel-streaming" onclick="setViewFilme('streaming','carousel')"><i class="fas fa-grip-lines"></i></button>
+    <button class="view-btn" id="btn-grade-streaming" onclick="setViewFilme('streaming','grade')"><i class="fas fa-th"></i></button>
+  </div>
+
+  <div id="streaming-carousel-wrapper" class="carousel-wrapper">
+    <div class="carousel-track-outer">
+      <div class="carousel-track" id="streaming-track"></div>
+    </div>
+    <div class="carousel-nav" id="streaming-carousel-nav">
+      <button class="carousel-arrow" onclick="moveCarouselFilme('streaming',-1)"><i class="fas fa-chevron-left"></i></button>
+      <div class="carousel-progress-bar"><div class="carousel-progress-fill" id="streaming-progress-fill"></div></div>
+      <button class="carousel-arrow" onclick="moveCarouselFilme('streaming',1)"><i class="fas fa-chevron-right"></i></button>
+    </div>
+  </div>
+  <div class="filmes-grid" id="streaming-grade" style="display:none;"></div>
+  <p class="info-message" id="streaming-vazio" style="display:none;">Não encontramos filmes desse streaming agora.</p>
+</section>
+
 <section class="secao container" id="cinemas">
   <h2>Cinemas cadastrados</h2>
   <p class="secao-sub" id="cinemas-total">{{ negocios | length }} sala{{ 's' if negocios | length != 1 else '' }} no guia até agora.</p>
@@ -485,6 +571,177 @@ footer ul li a:hover { color: var(--gold); }
     </div>
   </div>
 </div>
+
+<script>
+// ══════════════════════════════════════════════════════════════════
+// CARROSSÉIS DE FILME — "Em cartaz" (sem filtro, espelha /em-cartaz/)
+// e "Streaming" (filtrado por provedor, espelha /nao-quer-sair-de-casa/<slug>/).
+// Mesmo padrão visual/UX do carrossel de cinemas (carrossel <-> grade),
+// mas em dados/estado próprios, buscados via /api/cinema/*.
+// ══════════════════════════════════════════════════════════════════
+
+var _filmeState = {
+  emcartaz: { filmes: [], pos: 0, view: 'carousel' },
+  streaming: { filmes: [], pos: 0, view: 'carousel' }
+};
+var _provedoresStreaming = [];
+var _provedorAtivo = null;
+
+function cardHTMLFilme(f){
+  var poster = f.poster_url || 'https://placehold.co/300x450/17171b/f5c518?text=%F0%9F%8E%9E';
+  return '<a href="/filme/' + f.id + '/" class="filme-card">' +
+    '<img class="filme-poster" src="' + poster + '" alt="Pôster de ' + (f.title || '') + '" loading="lazy">' +
+    '<div class="filme-titulo">' + (f.title || '') + '</div>' +
+  '</a>';
+}
+
+function getCardWidthFilme(key){
+  var track = document.getElementById(key + '-track');
+  var card = track.querySelector('.filme-card');
+  if(!card) return 200;
+  return card.offsetWidth + 18;
+}
+
+function isMobileFilme(){ return window.innerWidth <= 768; }
+
+function clampAndUpdateFilme(key){
+  if(isMobileFilme()) return;
+  var track = document.getElementById(key + '-track');
+  var cards = track.querySelectorAll('.filme-card');
+  if(!cards.length) return;
+  var state = _filmeState[key];
+  var maxPos = Math.max(0, cards.length * getCardWidthFilme(key) - track.parentElement.offsetWidth);
+  state.pos = Math.max(0, Math.min(state.pos, maxPos));
+  track.style.transform = 'translateX(-' + state.pos + 'px)';
+  var fill = document.getElementById(key + '-progress-fill');
+  if(fill) fill.style.width = maxPos > 0 ? Math.min(100, (state.pos / maxPos) * 100) + '%' : '0%';
+}
+
+function moveCarouselFilme(key, dir){
+  var outer = document.getElementById(key + '-track').parentElement;
+  var visivel = Math.max(1, Math.floor(outer.offsetWidth / getCardWidthFilme(key)));
+  _filmeState[key].pos += dir * visivel * getCardWidthFilme(key);
+  clampAndUpdateFilme(key);
+}
+
+function setViewFilme(key, mode){
+  _filmeState[key].view = mode;
+  var cw = document.getElementById(key + '-carousel-wrapper');
+  var gd = document.getElementById(key + '-grade');
+  var btnC = document.getElementById('btn-carousel-' + key);
+  var btnG = document.getElementById('btn-grade-' + key);
+  if(btnC) btnC.classList.toggle('active', mode === 'carousel');
+  if(btnG) btnG.classList.toggle('active', mode === 'grade');
+  if(cw) cw.style.display = mode === 'carousel' ? '' : 'none';
+  if(gd) gd.style.display = mode === 'grade' ? 'grid' : 'none';
+}
+
+function renderFilmes(key, filmes){
+  _filmeState[key].filmes = filmes;
+  _filmeState[key].pos = 0;
+  var vc = document.getElementById('view-controls-' + key);
+  var vazio = document.getElementById(key + '-vazio');
+  var cw = document.getElementById(key + '-carousel-wrapper');
+  var gd = document.getElementById(key + '-grade');
+
+  if(!filmes.length){
+    if(vc) vc.style.display = 'none';
+    if(cw) cw.style.display = 'none';
+    if(gd) gd.style.display = 'none';
+    if(vazio) vazio.style.display = '';
+    return;
+  }
+  if(vazio) vazio.style.display = 'none';
+  if(vc) vc.style.display = 'flex';
+
+  var cardsHTML = filmes.map(cardHTMLFilme).join('');
+  var track = document.getElementById(key + '-track');
+  track.innerHTML = cardsHTML;
+  track.style.transform = 'translateX(0)';
+  if(gd) gd.innerHTML = cardsHTML;
+
+  setViewFilme(key, _filmeState[key].view);
+
+  var isDragging = false, startX = 0, startPos = 0;
+  var newTrack = track.cloneNode(true);
+  track.parentNode.replaceChild(newTrack, track);
+  track = document.getElementById(key + '-track');
+  function onStart(x){ isDragging = true; startX = x; startPos = _filmeState[key].pos; track.classList.add('dragging'); }
+  function onMove(x){ if(!isDragging) return; _filmeState[key].pos = startPos - (x - startX); clampAndUpdateFilme(key); }
+  function onEnd(){
+    isDragging = false; track.classList.remove('dragging');
+    var w = getCardWidthFilme(key); if(!w) return;
+    _filmeState[key].pos = Math.round(_filmeState[key].pos / w) * w;
+    clampAndUpdateFilme(key);
+  }
+  if(!isMobileFilme()){
+    track.addEventListener('mousedown', function(e){ onStart(e.clientX); e.preventDefault(); });
+    window.addEventListener('mousemove', function(e){ if(isDragging) onMove(e.clientX); });
+    window.addEventListener('mouseup', function(){ if(isDragging) onEnd(); });
+  }
+  clampAndUpdateFilme(key);
+}
+
+// ── "Em cartaz" — sem filtro nenhum, mesmos filmes de /em-cartaz/ ──
+fetch('/api/cinema/em-cartaz')
+  .then(function(r){ return r.json(); })
+  .then(function(data){ renderFilmes('emcartaz', data.filmes || []); })
+  .catch(function(){ renderFilmes('emcartaz', []); });
+
+// ── "Streaming" — filtro por provedor ──
+function toggleStreamingSlicer(){
+  document.getElementById('streaming-slicer-toggle').classList.toggle('open');
+  document.getElementById('streaming-filtros').classList.toggle('open');
+  document.getElementById('streaming-backdrop').classList.toggle('open');
+}
+function closeStreamingSlicer(){
+  document.getElementById('streaming-slicer-toggle').classList.remove('open');
+  document.getElementById('streaming-filtros').classList.remove('open');
+  document.getElementById('streaming-backdrop').classList.remove('open');
+}
+function selecionarProvedor(slug, nome){
+  _provedorAtivo = slug;
+  document.getElementById('streaming-slicer-label').textContent = nome;
+  document.getElementById('streaming-link-provedor').href = '/nao-quer-sair-de-casa/' + slug + '/';
+  document.querySelectorAll('#streaming-filtros .chip-cat').forEach(function(el){
+    el.classList.toggle('active', el.dataset.slug === slug);
+  });
+  closeStreamingSlicer();
+  var vc = document.getElementById('view-controls-streaming');
+  if(vc) vc.style.display = 'none';
+  document.getElementById('streaming-vazio').style.display = 'none';
+  fetch('/api/cinema/streaming/' + slug)
+    .then(function(r){ return r.json(); })
+    .then(function(data){ renderFilmes('streaming', data.filmes || []); })
+    .catch(function(){ renderFilmes('streaming', []); });
+}
+
+fetch('/api/cinema/streaming/provedores')
+  .then(function(r){ return r.json(); })
+  .then(function(data){
+    _provedoresStreaming = data.provedores || [];
+    var painel = document.getElementById('streaming-filtros');
+    painel.innerHTML = _provedoresStreaming.map(function(p){
+      return '<button class="chip-cat" data-slug="' + p.slug + '" onclick="selecionarProvedor(\'' + p.slug + '\',\'' + p.nome.replace(/'/g,"\\'") + '\')">' + p.nome + '</button>';
+    }).join('');
+    if(_provedoresStreaming.length){
+      var primeiro = _provedoresStreaming[0];
+      selecionarProvedor(primeiro.slug, primeiro.nome);
+    } else {
+      document.getElementById('streaming-slicer-label').textContent = 'Indisponível';
+      document.getElementById('streaming-vazio').style.display = '';
+    }
+  })
+  .catch(function(){
+    document.getElementById('streaming-slicer-label').textContent = 'Indisponível';
+    document.getElementById('streaming-vazio').style.display = '';
+  });
+
+window.addEventListener('resize', function(){
+  clampAndUpdateFilme('emcartaz');
+  clampAndUpdateFilme('streaming');
+});
+</script>
 
 <script>
 function abrirModalCadastro(){ document.getElementById('modal-cadastro').classList.remove('modal-oculto'); }
