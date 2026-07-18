@@ -63,7 +63,7 @@
 :root {
     --primary:     {{ hub.cor_primaria or '#e50914' }};
     --dark:        {{ hub.cor_secundaria or '#a4060d' }};
-    --gold:        #f5c518;
+    --gold:        #ff2d2d;
     --bg:          #1a0509;
     --bg-card:     #2b0d13;
     --bg-card-alt: #34121a;
@@ -71,6 +71,9 @@
     --text:        #eee;
     --text-dim:    #a5a5ab;
     --white:       #ffffff;
+    --header-bg:   #f0f0f0;
+    --header-text: #1a1a1a;
+    --header-border: #dcdcdc;
 }
 * { box-sizing: border-box; margin: 0; padding: 0; }
 html { scroll-behavior: smooth; }
@@ -82,7 +85,7 @@ img { max-width: 100%; display: block; }
 
 /* ══ HEADER ══ */
 body > header {
-    background: var(--bg-card-alt); border-bottom: 1px solid var(--border);
+    background: var(--header-bg); border-bottom: 1px solid var(--header-border);
     padding: 20px 24px 14px; display: flex; flex-direction: column;
     align-items: center; justify-content: center; gap: 10px;
     position: sticky; top: 0; z-index: 100;
@@ -92,10 +95,10 @@ body > header {
 .logo .marca-primary { color: var(--primary); }
 nav.desktop-nav ul { list-style: none; display: flex; align-items: center; justify-content: center; flex-wrap: wrap; gap: 4px; }
 nav.desktop-nav ul li a {
-    color: #fff; font-weight: 500; font-size: .92em; padding: 10px 16px; border-radius: 6px;
+    color: var(--header-text); font-weight: 500; font-size: .92em; padding: 10px 16px; border-radius: 6px;
     transition: background .2s, color .2s;
 }
-nav.desktop-nav ul li a:hover { background: var(--primary); }
+nav.desktop-nav ul li a:hover { background: var(--primary); color: #fff; }
 /* ══ ANÚNCIOS ══ */
 .anuncio-slot { text-align: center; padding: 10px 20px; background: var(--bg-card-alt); border-bottom: 1px solid var(--border); }
 .anuncio-slot img { max-height: 90px; margin: 0 auto; border-radius: 6px; }
@@ -104,7 +107,7 @@ nav.desktop-nav ul li a:hover { background: var(--primary); }
 .hero {
     text-align: center; padding: 70px 20px; color: #fff;
     background:
-        linear-gradient(180deg, rgba(0,0,0,.65), var(--bg) 92%),
+        linear-gradient(180deg, rgba(0,0,0,.85), rgba(0,0,0,.55) 45%, var(--bg) 92%),
         url('{{ hub.banner_fundo_url or "https://res.cloudinary.com/dec2b0u1/image/upload/v1784394242/image-Picsart-AiImageEnhancer_72_cxkjvq.png" }}') center/cover no-repeat;
 }
 .hero h1 { font-size: 2.4em; font-weight: 800; margin-bottom: 14px; }
@@ -131,15 +134,103 @@ nav.desktop-nav ul li a:hover { background: var(--primary); }
 .cat-card i { font-size: 1.7em; color: var(--gold); margin-bottom: 10px; display: block; }
 .cat-card span { font-weight: 600; font-size: .9em; }
 
+/* ══ BOTÃO DE LOCALIZAÇÃO ══ */
+.btn-loc { cursor: pointer; border: none; font-family: 'Montserrat', sans-serif; }
+.btn-geo {
+    background: var(--primary); color: #fff; border: none; padding: 13px 28px; border-radius: 8px;
+    font-size: 1em; font-weight: 700; cursor: pointer; display: inline-flex; align-items: center; gap: 8px;
+    transition: background .2s; margin: 0 auto 26px; font-family: 'Montserrat', sans-serif;
+}
+.btn-geo:hover { background: var(--dark); }
+.btn-geo.ativo { background: var(--dark); }
+
+/* ══ SLICER DE CATEGORIA (filtro por tipo de cinema) ══ */
+.categoria-slicer { position: relative; max-width: 480px; margin: 0 auto 26px; z-index: 20; }
+.slicer-toggle {
+    width: 100%; display: flex; align-items: center; justify-content: space-between; gap: 12px;
+    background: var(--bg-card); border: 1.5px solid var(--border); border-radius: 10px;
+    padding: 13px 18px; font-family: 'Montserrat', sans-serif; font-size: .96em; font-weight: 600;
+    color: var(--text); cursor: pointer; transition: all .2s;
+}
+.slicer-toggle:hover, .slicer-toggle.open { border-color: var(--primary); }
+.slicer-label { display: flex; align-items: center; gap: 9px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.slicer-label i.fa-filter { color: var(--gold); flex-shrink: 0; }
+.slicer-label strong { color: #fff; font-weight: 700; }
+.slicer-toggle.open .slicer-label strong { color: var(--gold); }
+.slicer-chevron { transition: transform .25s; color: var(--text-dim); flex-shrink: 0; }
+.slicer-toggle.open .slicer-chevron { transform: rotate(180deg); color: var(--gold); }
+.slicer-panel {
+    display: none; flex-direction: column; gap: 3px;
+    position: absolute; top: calc(100% + 8px); left: 0; right: 0;
+    background: var(--bg-card); border: 1px solid var(--border); border-radius: 12px;
+    box-shadow: 0 14px 38px rgba(0,0,0,.5); max-height: 340px; overflow-y: auto; z-index: 21; padding: 8px;
+}
+.slicer-panel.open { display: flex; }
+.slicer-panel .chip-cat {
+    width: 100%; text-align: left; border: none; border-radius: 8px; padding: 11px 14px;
+    background: transparent; color: var(--text); display: flex; align-items: center; gap: 10px; flex-shrink: 0;
+    font-family: 'Montserrat', sans-serif; font-size: .92em; cursor: pointer;
+}
+.slicer-panel .chip-cat:hover, .slicer-panel .chip-cat.active { background: var(--bg-card-alt); color: var(--gold); }
+.slicer-panel .chip-cat.active::after { content: '\f00c'; font-family: 'Font Awesome 6 Free'; font-weight: 900; margin-left: auto; }
+.slicer-backdrop { display: none; position: fixed; inset: 0; background: transparent; z-index: 15; }
+.slicer-backdrop.open { display: block; }
+@media (max-width: 600px) { .categoria-slicer { max-width: 100%; } }
+
+/* ══ CONTROLES DE VISUALIZAÇÃO ══ */
+.view-controls { display: flex; align-items: center; justify-content: flex-end; margin-bottom: 16px; gap: 8px; }
+.view-controls span { font-size: .85em; color: var(--text-dim); margin-right: 4px; }
+.view-btn {
+    background: var(--bg-card); border: 1.5px solid var(--border); border-radius: 8px; width: 36px; height: 36px;
+    display: flex; align-items: center; justify-content: center; cursor: pointer; transition: all .2s;
+    color: var(--text-dim); font-size: 1em;
+}
+.view-btn:hover { border-color: var(--primary); color: #fff; }
+.view-btn.active { background: var(--primary); border-color: var(--primary); color: #fff; }
+
 /* ══ CARDS DE NEGÓCIO ══ */
 .negocios-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); gap: 18px; }
-.negocio-card { background: var(--bg-card); border: 1px solid var(--border); border-radius: 12px; overflow: hidden; transition: transform .15s, border-color .15s; }
+.negocio-card { background: var(--bg-card); border: 1px solid var(--border); border-radius: 12px; overflow: hidden; transition: transform .15s, border-color .15s; display: flex; flex-direction: column; }
 .negocio-card:hover { transform: translateY(-3px); border-color: var(--primary); }
+.card-foto { width: 100%; height: 0; padding-bottom: 62%; overflow: hidden; position: relative; background: var(--bg-card-alt); }
+.card-foto img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; transition: transform .4s; }
+.negocio-card:hover .card-foto img { transform: scale(1.06); }
 .negocio-card img { width: 100%; height: 140px; object-fit: cover; }
-.negocio-card-body { padding: 14px; }
+.badge-cat { position: absolute; top: 10px; left: 10px; background: var(--primary); color: #fff; font-size: .72em; font-weight: 700; padding: 3px 10px; border-radius: 20px; }
+.negocio-card-body, .card-body { padding: 14px; flex: 1; display: flex; flex-direction: column; gap: 4px; }
 .negocio-card-cat { font-size: .72em; color: var(--gold); font-weight: 700; text-transform: uppercase; letter-spacing: .04em; }
-.negocio-card-nome { font-size: 1.05em; font-weight: 700; margin: 4px 0 6px; }
-.negocio-card-local { font-size: .85em; color: var(--text-dim); display: flex; align-items: center; gap: 6px; }
+.negocio-card-nome, .card-body h3 { font-size: 1.05em; font-weight: 700; margin: 4px 0 6px; color: #fff; }
+.negocio-card-local, .card-bairro { font-size: .85em; color: var(--text-dim); display: flex; align-items: center; gap: 6px; }
+.card-dist { font-size: .82em; color: var(--gold); font-weight: 700; margin-top: 4px; display: flex; align-items: center; gap: 5px; }
+.btn-ver { margin-top: auto; padding-top: 12px; display: inline-block; background: var(--primary); color: #fff; padding: 9px 18px; border-radius: 6px; font-size: .88em; font-weight: 700; text-align: center; transition: background .2s; }
+.negocio-card:hover .btn-ver { background: var(--dark); }
+.info-message { text-align: center; color: var(--text-dim); padding: 50px 0; font-size: 1.02em; }
+
+/* ══ CARROSSEL ══ */
+.carousel-wrapper { position: relative; }
+.carousel-track-outer { overflow: hidden; border-radius: 12px; }
+.carousel-track { display: flex; gap: 18px; transition: transform .4s ease; will-change: transform; cursor: grab; user-select: none; }
+.carousel-track.dragging { transition: none; cursor: grabbing; }
+.carousel-track .negocio-card { flex: 0 0 calc(25% - 14px); min-width: 0; }
+@media (max-width: 900px) { .carousel-track .negocio-card { flex: 0 0 calc(50% - 9px); } }
+@media (max-width: 768px) {
+    .carousel-track-outer { overflow-x: scroll; overflow-y: hidden; -webkit-overflow-scrolling: touch; scroll-snap-type: x mandatory; scrollbar-width: none; }
+    .carousel-track-outer::-webkit-scrollbar { display: none; }
+    .carousel-track { transform: none !important; transition: none !important; cursor: default; gap: 14px; padding: 4px 0; }
+    .carousel-track .negocio-card { scroll-snap-align: start; flex: 0 0 78%; min-width: 0; }
+    .carousel-nav { display: none; }
+}
+@media (max-width: 480px) { .carousel-track .negocio-card { flex: 0 0 calc(85%); } }
+.carousel-nav { display: flex; align-items: center; justify-content: center; gap: 12px; margin-top: 20px; }
+.carousel-arrow {
+    background: var(--bg-card); border: 1.5px solid var(--border); border-radius: 50%; width: 42px; height: 42px;
+    display: flex; align-items: center; justify-content: center; cursor: pointer; font-size: 1em; color: var(--text);
+    transition: all .2s; flex-shrink: 0;
+}
+.carousel-arrow:hover:not(:disabled) { background: var(--primary); border-color: var(--primary); color: #fff; }
+.carousel-arrow:disabled { opacity: .3; cursor: not-allowed; }
+.carousel-progress-bar { flex: 1; max-width: 200px; height: 4px; background: var(--border); border-radius: 4px; overflow: hidden; }
+.carousel-progress-fill { height: 100%; background: var(--primary); border-radius: 4px; transition: width .35s cubic-bezier(.4,0,.2,1); }
 
 /* ══ BOTÃO CADASTRAR ══ */
 .faixa-cadastro { background: var(--bg-card-alt); border-top: 1px solid var(--border); border-bottom: 1px solid var(--border); padding: 40px 20px; text-align: center; }
@@ -175,6 +266,14 @@ footer ul li a:hover { color: var(--gold); }
 </head>
 <body>
 
+{# Remove o prefixo "cinema_" (usado só internamente no slug) e formata o nome
+   pra exibição. Usa cat.nome quando já vem limpo; cai pro slug como reserva. #}
+{% macro cat_label(cat) -%}
+{%- set n = (cat.nome or cat.slug or '') -%}
+{%- if n.startswith('cinema_') -%}{%- set n = n[7:] -%}{%- endif -%}
+{{- n.replace('-', ' ').replace('_', ' ') | title -}}
+{%- endmacro %}
+
 <header>
   <a class="logo" href="/">
     <img src="{{ hub.logo_url or 'https://res.cloudinary.com/dec2b0u1/image/upload/v1784394139/cinema_ymuflx.png' }}" alt="{{ hub.nome or 'Cinema Perto de Mim' }}">
@@ -184,7 +283,7 @@ footer ul li a:hover { color: var(--gold); }
       <li><a href="/em-cartaz/">Em cartaz</a></li>
       <li><a href="/nao-quer-sair-de-casa/">Streaming</a></li>
       {% for cat in categorias %}
-        <li><a href="/{{ cat.slug }}/">{{ cat.nome }}</a></li>
+        <li><a href="/{{ cat.slug }}/">{{ cat_label(cat) }}</a></li>
       {% endfor %}
       <li><a href="#" onclick="abrirModalCadastro();return false;">Cadastrar cinema</a></li>
     </ul>
@@ -219,7 +318,7 @@ footer ul li a:hover { color: var(--gold); }
         {% else %}
           <i class="fas fa-film"></i>
         {% endif %}
-        <span>{{ cat.nome }}</span>
+        <span>{{ cat_label(cat) }}</span>
       </a>
     {% endfor %}
   </div>
@@ -233,27 +332,53 @@ footer ul li a:hover { color: var(--gold); }
 </div>
 {% endif %}
 
-<section class="secao container">
+<section class="secao container" id="cinemas">
   <h2>Cinemas cadastrados</h2>
-  <p class="secao-sub">{{ negocios | length }} sala{{ 's' if negocios | length != 1 else '' }} no guia até agora.</p>
-  {% if negocios %}
-    <div class="negocios-grid">
-      {% for n in negocios %}
-        <a class="negocio-card" href="/{{ n.categoria_slug }}/{{ n.slug }}/">
-          <img src="{{ n.foto_url or 'https://placehold.co/400x260/17171b/f5c518?text=%F0%9F%8E%9E' }}" alt="{{ n.nome }}" loading="lazy">
-          <div class="negocio-card-body">
-            <div class="negocio-card-cat">{{ n.categoria_nome }}</div>
-            <div class="negocio-card-nome">{{ n.nome }}</div>
-            {% if n.cidade %}
-              <div class="negocio-card-local"><i class="fas fa-map-marker-alt"></i> {{ n.bairro ~ ', ' if n.bairro }}{{ n.cidade }}</div>
-            {% endif %}
-          </div>
-        </a>
+  <p class="secao-sub" id="cinemas-total">{{ negocios | length }} sala{{ 's' if negocios | length != 1 else '' }} no guia até agora.</p>
+
+  <div style="text-align:center;">
+    <button class="btn-geo btn-loc" id="btnLoc" onclick="toggleLocalizacao()">
+      <i class="fas fa-map-marker-alt"></i> Usar minha localização
+    </button>
+  </div>
+
+  {% if categorias %}
+  <div class="categoria-slicer" id="categoria-slicer">
+    <button type="button" class="slicer-toggle" id="slicer-toggle" onclick="toggleCategoriaSlicer()" aria-haspopup="listbox" aria-expanded="false" aria-controls="filtros-categoria">
+      <span class="slicer-label"><i class="fas fa-filter"></i> Tipo de cinema: <strong id="slicer-label-text">Todos</strong></span>
+      <i class="fas fa-chevron-down slicer-chevron" aria-hidden="true"></i>
+    </button>
+    <div class="slicer-panel" id="filtros-categoria" role="listbox" aria-label="Filtrar por tipo de cinema">
+      <button class="chip-cat active" onclick="filtrarCategoria(null, this)">Todos</button>
+      {% for cat in categorias %}
+        <button class="chip-cat" data-slug="{{ cat.slug }}" onclick="filtrarCategoria('{{ cat.slug }}', this)">{{ cat_label(cat) }}</button>
       {% endfor %}
     </div>
-  {% else %}
-    <p style="color:var(--text-dim);">Ainda não temos cinemas cadastrados por aqui — seja o primeiro a indicar um.</p>
+    <div class="slicer-backdrop" id="slicer-backdrop" onclick="closeCategoriaSlicer()"></div>
+  </div>
   {% endif %}
+
+  <div class="view-controls" id="view-controls" style="display:none;">
+    <span>Ver como:</span>
+    <button class="view-btn active" id="btn-carousel" title="Carrossel" onclick="setView('carousel')"><i class="fas fa-grip-lines"></i></button>
+    <button class="view-btn" id="btn-grade" title="Grade" onclick="setView('grade')"><i class="fas fa-th"></i></button>
+  </div>
+
+  <div id="negocios-carousel-wrapper" class="carousel-wrapper">
+    <div class="carousel-track-outer">
+      <div class="carousel-track" id="negocios-track"></div>
+    </div>
+    <div class="carousel-nav" id="negocios-carousel-nav">
+      <button class="carousel-arrow" id="negocios-prev" onclick="moveCarousel(-1)"><i class="fas fa-chevron-left"></i></button>
+      <div class="carousel-progress-bar"><div class="carousel-progress-fill" id="negocios-progress-fill"></div></div>
+      <button class="carousel-arrow" id="negocios-next" onclick="moveCarousel(1)"><i class="fas fa-chevron-right"></i></button>
+    </div>
+  </div>
+
+  <div class="negocios-grid" id="negocios-grade" style="display:none;"></div>
+  <p class="info-message" id="negocios-vazio" style="display:none;">Ainda não temos cinemas cadastrados por aqui — seja o primeiro a indicar um.</p>
+  <div id="lazy-sentinel" style="height:1px; margin-top:10px;"></div>
+  <p id="lazy-loading" style="display:none; text-align:center; color:var(--primary); padding:20px; font-size:.95em;"><i class="fas fa-spinner fa-spin"></i> Carregando mais cinemas...</p>
 </section>
 
 <div class="faixa-cadastro">
@@ -274,7 +399,7 @@ footer ul li a:hover { color: var(--gold); }
         <li><a href="/em-cartaz/">Em cartaz</a></li>
         <li><a href="/nao-quer-sair-de-casa/">Streaming</a></li>
         {% for cat in categorias %}
-          <li><a href="/{{ cat.slug }}/">{{ cat.nome }}</a></li>
+          <li><a href="/{{ cat.slug }}/">{{ cat_label(cat) }}</a></li>
         {% endfor %}
       </ul>
     </div>
@@ -296,7 +421,7 @@ footer ul li a:hover { color: var(--gold); }
       <select class="cad-input" name="categoria_id">
         <option value="">Tipo de cinema</option>
         {% for cat in categorias %}
-          <option value="{{ cat.id }}">{{ cat.nome }}</option>
+          <option value="{{ cat.id }}">{{ cat_label(cat) }}</option>
         {% endfor %}
       </select>
       <input class="cad-input" type="text" name="cidade" placeholder="Cidade">
@@ -359,6 +484,346 @@ async function enviarCadastroNegocio(e){
     btn.textContent = 'Enviar cadastro';
   }
 }
+</script>
+
+<script>
+// ══════════════════════════════════════════════════════════════════
+// CARROSSEL DE CINEMAS — mesmo padrão usado nos outros hubs (cestas etc.)
+// Renderiza os negócios recebidos no HTML e busca mais em lotes via
+// /api/hub/negocios (paginação por offset), com filtro por tipo de
+// cinema e ordenação por geolocalização — tudo client-side.
+// ══════════════════════════════════════════════════════════════════
+
+// Remove o prefixo "cinema_" de um slug/nome pra exibir ao usuário
+// (mesma regra do macro cat_label do lado do servidor).
+function _cinemaLabel(txt){
+  if(!txt) return '';
+  var n = txt.indexOf('cinema_') === 0 ? txt.slice(7) : txt;
+  n = n.replace(/[-_]/g, ' ');
+  return n.replace(/\w\S*/g, function(t){ return t.charAt(0).toUpperCase() + t.substr(1).toLowerCase(); });
+}
+
+var todosCinemas = {{ negocios | tojson }};
+var _apiOffsetCinema = {{ negocios | length }};
+var _apiFimCinema = false;
+var _apiCarregandoCinema = false;
+var _loteSizeCinema = 96;
+var cinemasFiltrados = todosCinemas.slice();
+var _categoriaAtivaCinema = null;
+var userLatCinema = null, userLngCinema = null, geoAtivoCinema = false;
+var carouselPosCinema = 0, carouselViewCinema = 'carousel';
+var _apiCallbacksCinema = [];
+
+function _carregarLoteCinemas(callback){
+  if(_apiFimCinema){ if(callback) callback(); return; }
+  if(callback) _apiCallbacksCinema.push(callback);
+  if(_apiCarregandoCinema) return;
+  _apiCarregandoCinema = true;
+  var loading = document.getElementById('lazy-loading');
+  if(loading) loading.style.display = 'block';
+  var url = '/api/hub/negocios?limit=' + _loteSizeCinema + '&offset=' + _apiOffsetCinema;
+  if(_categoriaAtivaCinema) url += '&categoria=' + encodeURIComponent(_categoriaAtivaCinema);
+  fetch(url)
+    .then(function(r){ return r.json(); })
+    .then(function(data){
+      _apiCarregandoCinema = false;
+      if(Array.isArray(data) && data.length > 0){
+        _apiOffsetCinema += data.length;
+        todosCinemas = todosCinemas.concat(data);
+        if(geoAtivoCinema && userLatCinema !== null) _aplicarDistanciasCinema();
+        cinemasFiltrados = _categoriaAtivaCinema
+          ? todosCinemas.filter(function(n){ return n.categoria_slug === _categoriaAtivaCinema; })
+          : todosCinemas.slice();
+      } else {
+        _apiFimCinema = true;
+      }
+      if(loading) loading.style.display = 'none';
+      var cbs = _apiCallbacksCinema.slice(); _apiCallbacksCinema = [];
+      cbs.forEach(function(cb){ cb(); });
+    })
+    .catch(function(){
+      _apiCarregandoCinema = false;
+      _apiFimCinema = true;
+      if(loading) loading.style.display = 'none';
+      var cbs = _apiCallbacksCinema.slice(); _apiCallbacksCinema = [];
+      cbs.forEach(function(cb){ cb(); });
+    });
+}
+
+function _renderizarProximoLoteCinema(){
+  var lista = cinemasFiltrados;
+  var trackCards = document.getElementById('negocios-track') ? document.getElementById('negocios-track').querySelectorAll('.negocio-card').length : 0;
+  if(trackCards < lista.length){
+    var proximo = lista.slice(trackCards, trackCards + _loteSizeCinema);
+    if(!proximo.length) return;
+    var novosCards = proximo.map(cardHTMLCinema);
+    var track = document.getElementById('negocios-track');
+    if(track){
+      var tmp = document.createElement('div');
+      tmp.innerHTML = novosCards.join('');
+      while(tmp.firstChild) track.appendChild(tmp.firstChild);
+      clampAndUpdateCinema();
+    }
+    var gd = document.getElementById('negocios-grade');
+    if(gd && gd.style.display !== 'none') gd.innerHTML += novosCards.join('');
+    return;
+  }
+  if(!_apiFimCinema){
+    _carregarLoteCinemas(function(){ _renderizarProximoLoteCinema(); });
+  }
+}
+
+function haversineKmCinema(lat1, lng1, lat2, lng2){
+  var R = 6371;
+  var dLat = (lat2 - lat1) * Math.PI / 180;
+  var dLng = (lng2 - lng1) * Math.PI / 180;
+  var a = Math.sin(dLat/2)*Math.sin(dLat/2) +
+          Math.cos(lat1*Math.PI/180)*Math.cos(lat2*Math.PI/180)*
+          Math.sin(dLng/2)*Math.sin(dLng/2);
+  return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+}
+
+function _aplicarDistanciasCinema(){
+  todosCinemas.forEach(function(n){
+    var lat = parseFloat(n.lat);
+    var lng = parseFloat(n.lng);
+    if(userLatCinema !== null && !isNaN(lat) && !isNaN(lng) && lat !== 0 && lng !== 0){
+      n._dist = haversineKmCinema(userLatCinema, userLngCinema, lat, lng);
+    } else {
+      n._dist = 99999;
+    }
+  });
+  todosCinemas.sort(function(a, b){ return (a._dist || 99999) - (b._dist || 99999); });
+}
+
+function toggleLocalizacao(){
+  var btn = document.getElementById('btnLoc');
+  if(geoAtivoCinema){
+    geoAtivoCinema = false;
+    userLatCinema = null; userLngCinema = null;
+    btn.classList.remove('ativo');
+    btn.innerHTML = '<i class="fas fa-map-marker-alt"></i> Usar minha localização';
+    todosCinemas.forEach(function(n){ delete n._dist; });
+    cinemasFiltrados = _categoriaAtivaCinema
+      ? todosCinemas.filter(function(n){ return n.categoria_slug === _categoriaAtivaCinema; })
+      : todosCinemas.slice();
+    renderCinemas(cinemasFiltrados);
+    return;
+  }
+  if(!navigator.geolocation){
+    alert('Geolocalização não suportada pelo seu navegador.');
+    return;
+  }
+  btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Localizando...';
+  btn.disabled = true;
+  navigator.geolocation.getCurrentPosition(
+    function(pos){
+      userLatCinema = pos.coords.latitude;
+      userLngCinema = pos.coords.longitude;
+      geoAtivoCinema = true;
+      btn.classList.add('ativo');
+      btn.innerHTML = '<i class="fas fa-map-marker-alt"></i> Perto de você ✓';
+      btn.disabled = false;
+      _aplicarDistanciasCinema();
+      cinemasFiltrados = _categoriaAtivaCinema
+        ? todosCinemas.filter(function(n){ return n.categoria_slug === _categoriaAtivaCinema; })
+        : todosCinemas.slice();
+      renderCinemas(cinemasFiltrados);
+    },
+    function(){
+      btn.innerHTML = '<i class="fas fa-map-marker-alt"></i> Usar minha localização';
+      btn.disabled = false;
+      alert('Não foi possível obter sua localização. Verifique as permissões.');
+    },
+    { timeout: 10000, maximumAge: 60000 }
+  );
+}
+
+function toggleCategoriaSlicer(){
+  var panel = document.getElementById('filtros-categoria');
+  if(panel.classList.contains('open')) closeCategoriaSlicer(); else openCategoriaSlicer();
+}
+function openCategoriaSlicer(){
+  document.getElementById('filtros-categoria').classList.add('open');
+  document.getElementById('slicer-backdrop').classList.add('open');
+  document.getElementById('slicer-toggle').classList.add('open');
+  document.getElementById('slicer-toggle').setAttribute('aria-expanded','true');
+}
+function closeCategoriaSlicer(){
+  document.getElementById('filtros-categoria').classList.remove('open');
+  document.getElementById('slicer-backdrop').classList.remove('open');
+  document.getElementById('slicer-toggle').classList.remove('open');
+  document.getElementById('slicer-toggle').setAttribute('aria-expanded','false');
+}
+document.addEventListener('keydown', function(e){ if(e.key === 'Escape') closeCategoriaSlicer(); });
+
+function filtrarCategoria(slug, btn){
+  document.querySelectorAll('#filtros-categoria .chip-cat').forEach(function(c){ c.classList.remove('active'); });
+  btn.classList.add('active');
+  var lbl = document.getElementById('slicer-label-text');
+  if(lbl) lbl.textContent = btn.textContent;
+  closeCategoriaSlicer();
+  _categoriaAtivaCinema = slug || null;
+
+  if(!slug){
+    _apiFimCinema = false;
+    cinemasFiltrados = todosCinemas.slice();
+    renderCinemas(cinemasFiltrados);
+    return;
+  }
+
+  var cinemasCategoria = todosCinemas.filter(function(n){ return n.categoria_slug === slug; });
+  cinemasFiltrados = cinemasCategoria;
+  renderCinemas(cinemasFiltrados);
+
+  if(!_apiFimCinema && cinemasCategoria.length < 8){
+    var loading = document.getElementById('lazy-loading');
+    if(loading) loading.style.display = 'block';
+    fetch('/api/hub/negocios?limit=20000&offset=0&categoria=' + encodeURIComponent(slug))
+      .then(function(r){ return r.json(); })
+      .then(function(data){
+        if(loading) loading.style.display = 'none';
+        if(Array.isArray(data) && data.length > 0 && _categoriaAtivaCinema === slug){
+          cinemasFiltrados = data;
+          renderCinemas(cinemasFiltrados);
+        }
+      })
+      .catch(function(){ if(loading) loading.style.display = 'none'; });
+  }
+}
+
+function cardHTMLCinema(n){
+  var dist = (n._dist && n._dist < 9999) ? '<span class="card-dist"><i class="fas fa-map-marker-alt"></i> ' + n._dist.toFixed(1) + ' km de você</span>' : '';
+  var foto = n.foto_url || 'https://placehold.co/400x260/17171b/f5c518?text=%F0%9F%8E%9E';
+  var local = [n.bairro, n.cidade].filter(Boolean).join(', ');
+  var catNome = _cinemaLabel(n.categoria_nome || '');
+  return '<a href="/' + n.categoria_slug + '/' + n.slug + '/" class="negocio-card">' +
+    '<div class="card-foto">' +
+      '<img src="' + foto + '" alt="' + n.nome + '" loading="lazy" width="400" height="248">' +
+      '<span class="badge-cat">' + catNome + '</span>' +
+    '</div>' +
+    '<div class="card-body">' +
+      '<h3>' + n.nome + '</h3>' +
+      (local ? '<p class="card-bairro"><i class="fas fa-map-marker-alt" style="color:var(--gold)"></i> ' + local + '</p>' : '') +
+      dist +
+      '<span class="btn-ver">Ver detalhes →</span>' +
+    '</div>' +
+  '</a>';
+}
+
+function getCardWidthCinema(){
+  var track = document.getElementById('negocios-track');
+  var card = track.querySelector('.negocio-card');
+  if(!card) return 280;
+  return card.offsetWidth + 18;
+}
+
+function isMobileCinema(){ return window.innerWidth <= 768; }
+
+function clampAndUpdateCinema(){
+  if(isMobileCinema()) return;
+  var track = document.getElementById('negocios-track');
+  var cards = track.querySelectorAll('.negocio-card');
+  if(!cards.length) return;
+  var maxPos = Math.max(0, cards.length * getCardWidthCinema() - track.parentElement.offsetWidth);
+  carouselPosCinema = Math.max(0, Math.min(carouselPosCinema, maxPos));
+  track.style.transform = 'translateX(-' + carouselPosCinema + 'px)';
+  var fill = document.getElementById('negocios-progress-fill');
+  var prev = document.getElementById('negocios-prev');
+  var next = document.getElementById('negocios-next');
+  if(fill) fill.style.width = maxPos > 0 ? Math.min(100, (carouselPosCinema / maxPos) * 100) + '%' : '0%';
+  if(prev) prev.disabled = carouselPosCinema <= 0;
+  if(next) next.disabled = maxPos <= 0 || carouselPosCinema >= maxPos;
+}
+
+function snapCarouselCinema(){
+  var w = getCardWidthCinema(); if(!w) return;
+  carouselPosCinema = Math.round(carouselPosCinema / w) * w;
+  clampAndUpdateCinema();
+}
+
+function buildCarouselCinema(cards){
+  var track = document.getElementById('negocios-track');
+  track.innerHTML = cards.join('');
+  carouselPosCinema = 0;
+  track.style.transform = 'translateX(0)';
+  clampAndUpdateCinema();
+  var isDragging = false, startX = 0, startPos = 0;
+  var newTrack = track.cloneNode(true);
+  track.parentNode.replaceChild(newTrack, track);
+  track = document.getElementById('negocios-track');
+  function onStart(x){ isDragging = true; startX = x; startPos = carouselPosCinema; track.classList.add('dragging'); }
+  function onMove(x){ if(!isDragging) return; carouselPosCinema = startPos - (x - startX); clampAndUpdateCinema(); }
+  function onEnd(){ isDragging = false; track.classList.remove('dragging'); snapCarouselCinema(); }
+  if(!isMobileCinema()){
+    track.addEventListener('mousedown', function(e){ onStart(e.clientX); e.preventDefault(); });
+    window.addEventListener('mousemove', function(e){ if(isDragging) onMove(e.clientX); });
+    window.addEventListener('mouseup', function(){ if(isDragging) onEnd(); });
+    var _ty = 0, _horiz = false, _det = false;
+    track.addEventListener('touchstart', function(e){ _ty = e.touches[0].clientY; _horiz = false; _det = false; onStart(e.touches[0].clientX); }, { passive: true });
+    track.addEventListener('touchmove', function(e){
+      if(!isDragging) return;
+      if(!_det){ var dx = Math.abs(e.touches[0].clientX - startX), dy = Math.abs(e.touches[0].clientY - _ty); if(dx > 5 || dy > 5){ _horiz = dx >= dy; _det = true; } }
+      if(!_det || !_horiz) return; e.preventDefault(); onMove(e.touches[0].clientX);
+    }, { passive: false });
+    track.addEventListener('touchend', function(){ if(_horiz) onEnd(); else isDragging = false; });
+  }
+}
+
+function moveCarousel(dir){
+  var outer = document.getElementById('negocios-track').parentElement;
+  var visivel = Math.max(1, Math.floor(outer.offsetWidth / getCardWidthCinema()));
+  carouselPosCinema += dir * visivel * getCardWidthCinema();
+  clampAndUpdateCinema();
+}
+
+function setView(mode){
+  carouselViewCinema = mode;
+  var cw = document.getElementById('negocios-carousel-wrapper');
+  var gd = document.getElementById('negocios-grade');
+  document.getElementById('btn-carousel').classList.toggle('active', mode === 'carousel');
+  document.getElementById('btn-grade').classList.toggle('active', mode === 'grade');
+  if(cw) cw.style.display = mode === 'carousel' ? '' : 'none';
+  if(gd) gd.style.display = mode === 'grade' ? 'grid' : 'none';
+}
+
+function renderCinemas(lista){
+  cinemasFiltrados = lista;
+  var vc = document.getElementById('view-controls');
+  var vazio = document.getElementById('negocios-vazio');
+  var total = document.getElementById('cinemas-total');
+  if(total) total.textContent = lista.length + (lista.length !== 1 ? ' salas encontradas' : ' sala encontrada');
+
+  if(!lista.length){
+    if(vc) vc.style.display = 'none';
+    var cw = document.getElementById('negocios-carousel-wrapper');
+    var gd = document.getElementById('negocios-grade');
+    if(cw) cw.style.display = 'none';
+    if(gd) gd.style.display = 'none';
+    if(vazio) vazio.style.display = '';
+    return;
+  }
+  if(vazio) vazio.style.display = 'none';
+  if(vc) vc.style.display = 'flex';
+  var cards = lista.slice(0, 48).map(cardHTMLCinema);
+  buildCarouselCinema(cards);
+  var gd = document.getElementById('negocios-grade');
+  if(gd) gd.innerHTML = cards.join('');
+  setView(carouselViewCinema);
+}
+
+(function mostrarTodosCinemasInicial(){
+  renderCinemas(cinemasFiltrados);
+})();
+
+(function(){
+  var sentinel = document.getElementById('lazy-sentinel');
+  if(!sentinel || !('IntersectionObserver' in window)) return;
+  new IntersectionObserver(function(entries){
+    if(!entries[0].isIntersecting) return;
+    _renderizarProximoLoteCinema();
+  }, { rootMargin: '400px' }).observe(sentinel);
+})();
 </script>
 
 {% if hub.ga4_id %}
