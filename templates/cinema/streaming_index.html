@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Não quer sair de casa? — {{ hub.nome or 'Cinema Perto de Mim' }}</title>
+<meta name="description" content="Escolha um streaming e veja o catálogo de filmes disponível.">
+<link rel="canonical" href="https://{{ request.host }}/nao-quer-sair-de-casa/">
+
+<link rel="icon" type="image/png" href="{{ hub.logo_url or 'https://placehold.co/64x64/0d0d0f/e50914?text=%F0%9F%8E%9E' }}">
+<link rel="apple-touch-icon" href="{{ hub.logo_url or 'https://placehold.co/180x180/0d0d0f/e50914?text=%F0%9F%8E%9E' }}">
+<link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+
+<style>
+:root {
+    --primary:     #d4af37;
+    --dark:        #a8841f;
+    --on-primary:  #1a0509;
+    --gold:        #ff2d2d;
+    --bg:          #1a0509;
+    --bg-card:     #2b0d13;
+    --border:      #4a1b24;
+    --text:        #eee;
+    --text-dim:    #a5a5ab;
+    --header-bg:   #f0f0f0;
+    --header-text: #1a1a1a;
+    --header-border: #dcdcdc;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html { scroll-behavior: smooth; overflow-x: hidden; }
+body { font-family: 'Montserrat', sans-serif; margin: 0; background: var(--bg); color: var(--text); line-height: 1.6; }
+a { text-decoration: none; color: inherit; }
+img { max-width: 100%; display: block; }
+
+/* ══ HEADER (igual à home, sem fixed/sticky — rola normal com a página) ══ */
+body > header, header.site-header {
+    background: var(--header-bg) !important; border-bottom: 1px solid var(--header-border);
+    padding: 20px 24px 14px; display: flex; flex-direction: column;
+    align-items: center; justify-content: center; gap: 10px;
+    width: 100% !important; overflow: hidden; margin: 0 !important;
+}
+.logo { display: block; text-align: center; position: relative; z-index: 1; }
+.logo img { height: 110px; width: auto; margin: 0 auto; display: block; }
+nav.desktop-nav { position: relative; z-index: 1; }
+nav.desktop-nav ul { list-style: none; display: flex; align-items: center; justify-content: center; flex-wrap: wrap; gap: 4px; }
+nav.desktop-nav ul li a {
+    color: var(--header-text); font-weight: 500; font-size: .92em; padding: 10px 16px; border-radius: 6px;
+    transition: background .2s, color .2s;
+}
+nav.desktop-nav ul li a:hover { background: var(--primary); color: var(--on-primary); }
+
+/* ══ HOLOFOTES DE CINEMA (mesmos da home) ══ */
+.header-lights { position: absolute; inset: 0; pointer-events: none; z-index: 0; }
+.header-lights .spot {
+    position: absolute; top: -22px; width: 130px; height: 175px;
+    background: linear-gradient(180deg, rgba(229,9,20,.5), rgba(255,45,45,.16) 55%, rgba(255,45,45,0) 82%);
+    clip-path: polygon(50% 0%, 14% 100%, 86% 100%);
+    mix-blend-mode: multiply;
+}
+.header-lights .spot::before {
+    content: ''; position: absolute; top: -4px; left: 50%; transform: translateX(-50%);
+    width: 16px; height: 12px; background: #2c2c2c; border-radius: 3px 3px 9px 9px;
+    box-shadow: 0 0 6px rgba(0,0,0,.4);
+}
+.header-lights .spot-1 { left: 2%; }
+.header-lights .spot-2 { left: 22%; }
+.header-lights .spot-4 { left: 78%; }
+.header-lights .spot-5 { left: 98%; transform: translateX(-100%); }
+@media (max-width: 860px) {
+    .header-lights .spot { width: 90px; height: 130px; top: -16px; }
+    .header-lights .spot::before { width: 12px; height: 9px; }
+    .header-lights .spot-2 { left: 12%; }
+    .header-lights .spot-4 { left: 68%; }
+}
+
+/* ══ ÍNDICE DE PROVEDORES ══ */
+.streaming-titulo { padding: 1.25rem 1.25rem .5rem; text-align: center; }
+.streaming-titulo h1 { font-size: 1.5rem; margin: 0 0 .3rem; }
+.streaming-titulo p { font-size: .9rem; color: var(--text-dim); margin: 0; }
+.provedores-grid {
+    display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+    gap: 1rem; padding: 1.5rem 1.25rem 3rem; max-width: 900px; margin: 0 auto;
+}
+.provedor-card {
+    background: var(--bg-card); border: 1px solid var(--border); border-radius: 14px;
+    padding: 1.5rem 1rem; display: flex; flex-direction: column; align-items: center; gap: .7rem;
+    text-align: center; transition: transform .15s, border-color .15s;
+}
+.provedor-card:hover { transform: translateY(-3px); border-color: var(--primary); }
+.provedor-card img { width: 56px; height: 56px; border-radius: 12px; }
+.provedor-card span { font-weight: 600; font-size: .95em; }
+.provedores-vazio { text-align: center; padding: 2rem; color: var(--text-dim); }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="header-lights" aria-hidden="true">
+    <span class="spot spot-1"></span>
+    <span class="spot spot-2"></span>
+    <span class="spot spot-4"></span>
+    <span class="spot spot-5"></span>
+  </div>
+  <a class="logo" href="/">
+    <img src="{{ hub.logo_url or 'https://res.cloudinary.com/dec2b0u1/image/upload/v1784394139/cinema_ymuflx.png' }}" alt="{{ hub.nome or 'Cinema Perto de Mim' }}">
+  </a>
+  <nav class="desktop-nav">
+    <ul>
+      <li><a href="/em-cartaz/">Em cartaz</a></li>
+      <li><a href="/nao-quer-sair-de-casa/">Streaming</a></li>
+      {% for cat in categorias %}
+        <li><a href="/{{ cat.slug }}/">{{ cat.nome }}</a></li>
+      {% endfor %}
+      <li><a href="#" onclick="abrirModalCadastro();return false;">Cadastrar cinema</a></li>
+    </ul>
+  </nav>
+</header>
+
+<div class="streaming-titulo">
+  <h1>Não quer sair de casa?</h1>
+  <p>Escolha um streaming e veja o catálogo de filmes disponível nele agora</p>
+</div>
+
+{% if provedores %}
+<div class="provedores-grid">
+  {% for p in provedores %}
+    <a class="provedor-card" href="/nao-quer-sair-de-casa/{{ p.slug }}/">
+      {% if p.logo_url %}<img src="{{ p.logo_url }}" alt="{{ p.nome }}">{% endif %}
+      <span>{{ p.nome }}</span>
+    </a>
+  {% endfor %}
+</div>
+{% else %}
+<p class="provedores-vazio">Nenhum streaming disponível no momento.</p>
+{% endif %}
+
+</body>
+</html>
