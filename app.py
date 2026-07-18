@@ -104,16 +104,32 @@ def _cache_invalidar():
 # hub_id) — por padrão, TODO hub enxerga a lista inteira de categorias
 # ativas (comportamento de sempre, preservado pra quem não configurar nada).
 #
-# Hubs de nicho (ex.: Cinema Perto de Mim) preenchem
-# hub_clientes.categorias_prefixo_slug (ex.: 'cinema_') pra enxergar SÓ as
-# categorias cujo slug comece com esse prefixo — assim dá pra ter uma
+# Hubs de nicho (ex.: Cinema Perto de Mim) só enxergam as categorias cujo
+# slug comece com um prefixo fixo (ex.: 'cinema_') — assim dá pra ter uma
 # curadoria editorial de categorias (cinema, cinema de rua, cineclube...)
 # sem precisar de nenhum negócio cadastrado ainda pra elas aparecerem.
+#
+# NADA disso depende de coluna nova no banco: o prefixo é resolvido aqui
+# mesmo, olhando pro identificador do hub (hub_leanttro ou dominio_proprio).
+# Pra adicionar outro hub de nicho no futuro, só acrescenta uma linha no
+# dicionário abaixo — zero migração de banco.
+_PREFIXO_CATEGORIA_POR_HUB = {
+    # hub_leanttro (subdomínio .leanttro.com) -> prefixo de slug
+    "cinema": "cinema_",
+}
+_PREFIXO_CATEGORIA_POR_DOMINIO = {
+    # dominio_proprio -> prefixo de slug (quando o domínio próprio entrar no ar)
+    "cinemapertodemim.com.br": "cinema_",
+}
+
 def _categorias_do_hub(hub):
-    prefixo = hub.get("categorias_prefixo_slug")
+    prefixo = (
+        _PREFIXO_CATEGORIA_POR_HUB.get(hub.get("hub_leanttro"))
+        or _PREFIXO_CATEGORIA_POR_DOMINIO.get(hub.get("dominio_proprio"))
+    )
     if not prefixo:
         return query("SELECT * FROM hub_categorias WHERE ativo = true ORDER BY nome")
-    # escapa os coringas do LIKE (_ e %) que possam existir no prefixo cadastrado,
+    # escapa os coringas do LIKE (_ e %) que possam existir no prefixo,
     # pra não virarem wildcard sem querer (ex.: o "_" de "cinema_" é literal aqui).
     padrao = (
         prefixo.replace("\\", "\\\\").replace("_", "\\_").replace("%", "\\%")
