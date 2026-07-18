@@ -1127,7 +1127,7 @@ function renderCinemas(lista){
   }
   if(vazio) vazio.style.display = 'none';
   if(vc) vc.style.display = 'flex';
-  var cards = lista.slice(0, 48).map(cardHTMLCinema);
+  var cards = lista.map(cardHTMLCinema);
   buildCarouselCinema(cards);
   var gd = document.getElementById('negocios-grade');
   if(gd) gd.innerHTML = cards.join('');
