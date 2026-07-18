@@ -19,6 +19,7 @@ from flask import Blueprint, render_template, request
 import os
 import time
 import requests
+from datetime import date, timedelta
 
 cinema_bp = Blueprint("cinema", __name__)
 
@@ -107,7 +108,25 @@ def em_cartaz():
     except (TypeError, ValueError):
         page = 1
 
-    dados, erro = _tmdb_get("/movie/now_playing", {"region": "BR", "page": page})
+    # /movie/now_playing é impreciso pro Brasil: mistura relançamentos e
+    # títulos de catálogo que a TMDB marcou como "now playing" em algum
+    # momento, mesmo sem estarem mais em cartaz de verdade (ex.: sagas
+    # antigas voltando pra reprise pontual). A própria TMDB recomenda, como
+    # alternativa mais confiável, usar /discover/movie filtrando por tipo de
+    # lançamento teatral (2=limitado, 3=amplo) dentro de uma janela de data
+    # recente — assim só entra o que de fato estreou/está em exibição
+    # nos últimos ~45 dias, e não o catálogo inteiro já lançado algum dia.
+    hoje = date.today()
+    params = {
+        "region": "BR",
+        "with_release_type": "2|3",
+        "primary_release_date.gte": (hoje - timedelta(days=45)).isoformat(),
+        "primary_release_date.lte": hoje.isoformat(),
+        "sort_by": "popularity.desc",
+        "include_adult": "false",
+        "page": page,
+    }
+    dados, erro = _tmdb_get("/discover/movie", params)
     if erro or not dados:
         return render_template("cinema/erro.html", hub=hub,
                                mensagem="Não foi possível carregar os filmes em cartaz agora. Tenta de novo em alguns minutos."), 502
