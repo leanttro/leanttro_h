@@ -15,7 +15,7 @@
 #  não o Bearer token v4 — é a mais simples de usar em query string).
 # ════════════════════════════════════════════════════════════
 
-from flask import Blueprint, render_template, request
+from flask import Blueprint, render_template, request, jsonify
 import os
 import re
 import time
@@ -281,3 +281,68 @@ def nao_quer_sair_de_casa_provedor(slug):
         total_pages=min(dados.get("total_pages", 1), 500),
         img_base=TMDB_IMG_BASE,
     )
+
+
+# ════════════════════════════════════════════════════════════
+#  API JSON — usadas pelos carrosséis da home (index_cinema).
+#  O index NÃO renderiza filme via Jinja: ele busca essas rotas
+#  via fetch() e monta os cards em JS (ver <script> no fim do
+#  index_cinema__*.html). Sem essas rotas os carrosséis ficam
+#  vazios pra sempre (cai direto no .catch() do fetch).
+# ════════════════════════════════════════════════════════════
+
+@cinema_bp.route("/api/cinema/em-cartaz")
+def api_em_cartaz():
+    """Mesmos filmes de /em-cartaz/, só que em JSON e sem paginação
+    (a home mostra só a 1ª leva, o botão 'Ver todos' leva pra página
+    completa com paginação de verdade)."""
+    hoje = date.today()
+    params = {
+        "region": "BR",
+        "with_release_type": "2|3",
+        "primary_release_date.gte": (hoje - timedelta(days=45)).isoformat(),
+        "primary_release_date.lte": hoje.isoformat(),
+        "sort_by": "popularity.desc",
+        "include_adult": "false",
+        "page": 1,
+    }
+    dados, erro = _tmdb_get("/discover/movie", params)
+    if erro or not dados:
+        return jsonify(filmes=[]), 200
+
+    filmes = [_enriquecer_filme(f) for f in dados.get("results", [])]
+    return jsonify(filmes=filmes)
+
+
+@cinema_bp.route("/api/cinema/streaming/provedores")
+def api_streaming_provedores():
+    """Lista dos provedores curados (mesma lista de /nao-quer-sair-de-casa),
+    em JSON, pro filtro/slicer da home montar os chips dinamicamente."""
+    todos = _providers_disponiveis_br()
+    por_slug = {p["slug"]: p for p in todos}
+    provedores = [por_slug[s] for s in SLUGS_PROVEDORES_PRINCIPAIS if s in por_slug]
+    return jsonify(provedores=provedores)
+
+
+@cinema_bp.route("/api/cinema/streaming/<slug>")
+def api_streaming_provedor(slug):
+    """Mesmos filmes de /nao-quer-sair-de-casa/<slug>/, em JSON, sem
+    paginação (a home mostra só a 1ª leva; 'Ver catálogo completo' leva
+    pra página do provedor com paginação de verdade)."""
+    provedor = _provider_por_slug(slug)
+    if not provedor:
+        return jsonify(filmes=[]), 404
+
+    params = {
+        "watch_region": "BR",
+        "with_watch_providers": provedor["id"],
+        "sort_by": "popularity.desc",
+        "include_adult": "false",
+        "page": 1,
+    }
+    dados, erro = _tmdb_get("/discover/movie", params)
+    if erro or not dados:
+        return jsonify(filmes=[]), 200
+
+    filmes = [_enriquecer_filme(f) for f in dados.get("results", [])]
+    return jsonify(filmes=filmes)
