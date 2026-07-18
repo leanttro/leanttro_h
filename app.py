@@ -2263,6 +2263,17 @@ def api_blog():
 
 
 # ════════════════════════════════════════════════════════════
+#  Blueprint — Cinema Perto de Mim (em-cartaz / streaming via TMDB)
+#  Import tardio de propósito: cinema.py importa get_hub_by_host de volta
+#  deste módulo dentro das próprias rotas, não no topo do arquivo — então
+#  não existe ciclo de import real, só essa ordem de registro no fim.
+# ════════════════════════════════════════════════════════════
+
+from cinema import cinema_bp
+app.register_blueprint(cinema_bp)
+
+
+# ════════════════════════════════════════════════════════════
 
 if __name__ == "__main__":
     app.run(debug=True, port=5000)
