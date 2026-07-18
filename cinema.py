@@ -17,6 +17,7 @@
 
 from flask import Blueprint, render_template, request
 import os
+import re
 import time
 import requests
 from datetime import date, timedelta
@@ -90,6 +91,58 @@ def _enriquecer_filme(filme):
     filme["poster_url"] = _poster_url(filme.get("poster_path"))
     filme["backdrop_url"] = _backdrop_url(filme.get("backdrop_path"))
     return filme
+
+
+# ── Provedores de streaming (Brasil) ────────────────────────────
+# A vitrine antiga usava /trending/movie/week e só ESCONDIA o ícone de
+# provider quando o filme não tinha nenhum — mas o filme continuava
+# aparecendo no grid mesmo sendo só "em cartaz" no cinema, sem streaming
+# nenhum. A correção: cada provedor (Netflix, Prime...) vira sua própria
+# página, usando /discover/movie com with_watch_providers — a própria TMDB
+# já filtra só o que está catalogado ali, então nada de filme sem
+# streaming entra na lista, e também não precisa mais de 1 chamada extra
+# de "watch/providers" por filme (a página carrega bem mais rápido).
+
+def _slugify_provider(nome):
+    nome = nome.lower().replace("+", "-plus").replace("&", "e")
+    nome = re.sub(r"[^a-z0-9]+", "-", nome).strip("-")
+    return nome
+
+
+def _providers_disponiveis_br():
+    """Lista completa de provedores de streaming pra filme no Brasil,
+    conforme a própria TMDB (cacheada — essa lista quase não muda)."""
+    dados, erro = _tmdb_get("/watch/providers/movie", {"watch_region": "BR"})
+    if erro or not dados:
+        return []
+    provedores = []
+    for p in dados.get("results", []):
+        provedores.append({
+            "id": p["provider_id"],
+            "nome": p["provider_name"],
+            "logo_url": _poster_url(p.get("logo_path"), "w92"),
+            "slug": _slugify_provider(p["provider_name"]),
+        })
+    return provedores
+
+
+# Curadoria dos provedores de ASSINATURA mais relevantes pro público daqui —
+# evita misturar com serviço de aluguel avulso (Google Play Movies, Apple
+# TV — compra avulsa, etc.) que a TMDB também lista junto. Pra adicionar um
+# provedor novo, só incluir o slug dele aqui (o slug é gerado a partir do
+# nome oficial que a TMDB devolve; se não aparecer, o nome na TMDB pode ser
+# ligeiramente diferente do esperado).
+SLUGS_PROVEDORES_PRINCIPAIS = [
+    "netflix", "amazon-prime-video", "disney-plus", "max",
+    "apple-tv-plus", "paramount-plus", "globoplay", "mubi",
+]
+
+
+def _provider_por_slug(slug):
+    for p in _providers_disponiveis_br():
+        if p["slug"] == slug:
+            return p
+    return None
 
 
 # ════════════════════════════════════════════════════════════
@@ -169,43 +222,62 @@ def filme_detalhe(tmdb_id):
 
 
 # ════════════════════════════════════════════════════════════
-#  /nao-quer-sair-de-casa — vitrine de streaming
-#  (nome provisório — ver sugestões de alternativa na resposta)
+#  /nao-quer-sair-de-casa — índice dos serviços de streaming
 # ════════════════════════════════════════════════════════════
 
 @cinema_bp.route("/nao-quer-sair-de-casa")
-def vitrine_streaming():
+def nao_quer_sair_de_casa_index():
+    from app import get_hub_by_host  # import tardio: evita ciclo de import com app.py
+    hub = get_hub_by_host()
+    if not hub:
+        return "Hub não encontrado", 404
+
+    todos = _providers_disponiveis_br()
+    por_slug = {p["slug"]: p for p in todos}
+    provedores = [por_slug[s] for s in SLUGS_PROVEDORES_PRINCIPAIS if s in por_slug]
+
+    return render_template("cinema/streaming_index.html", hub=hub, provedores=provedores)
+
+
+# ════════════════════════════════════════════════════════════
+#  /nao-quer-sair-de-casa/<slug> — vitrine de UM streaming só
+#  (só filme que está catalogado ali de verdade, direto da TMDB)
+# ════════════════════════════════════════════════════════════
+
+@cinema_bp.route("/nao-quer-sair-de-casa/<slug>")
+def nao_quer_sair_de_casa_provedor(slug):
     from app import get_hub_by_host
     hub = get_hub_by_host()
     if not hub:
         return "Hub não encontrado", 404
+
+    provedor = _provider_por_slug(slug)
+    if not provedor:
+        return render_template("cinema/erro.html", hub=hub,
+                               mensagem="Esse serviço de streaming não foi encontrado."), 404
 
     try:
         page = max(int(request.args.get("page", 1)), 1)
     except (TypeError, ValueError):
         page = 1
 
-    # /trending traz filmes em alta (não necessariamente lançamento novo),
-    # que é o ângulo certo pra "o que assistir hoje" — diferente de
-    # /movie/popular, que tende a ficar preso nos mesmos blockbusters.
-    dados, erro = _tmdb_get("/trending/movie/week", {"page": page})
+    params = {
+        "watch_region": "BR",
+        "with_watch_providers": provedor["id"],
+        "sort_by": "popularity.desc",
+        "include_adult": "false",
+        "page": page,
+    }
+    dados, erro = _tmdb_get("/discover/movie", params)
     if erro or not dados:
         return render_template("cinema/erro.html", hub=hub,
-                               mensagem="Não foi possível carregar as sugestões agora."), 502
+                               mensagem=f"Não foi possível carregar o catálogo de {provedor['nome']} agora."), 502
 
     filmes = [_enriquecer_filme(f) for f in dados.get("results", [])]
 
-    # Busca os providers de cada filme da vitrine em paralelo seria o ideal,
-    # mas pra manter o cinema.py simples (sem threadpool) e dentro do cache
-    # de 30min, uma chamada sequencial por filme já é aceitável pro volume
-    # de uma página (20 filmes). Se a vitrine crescer muito, revisitar isso.
-    for f in filmes:
-        prov_dados, _ = _tmdb_get(f"/movie/{f['id']}/watch/providers")
-        f["providers"] = (prov_dados or {}).get("results", {}).get("BR", {})
-
     return render_template(
         "cinema/vitrine_streaming.html",
-        hub=hub, filmes=filmes, page=page,
+        hub=hub, filmes=filmes, provedor=provedor, page=page,
         total_pages=min(dados.get("total_pages", 1), 500),
         img_base=TMDB_IMG_BASE,
     )
