@@ -4,51 +4,54 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-<title>{{ negocio.nome }} — {{ hub.nome or 'Cinema Perto de Mim' }}</title>
-<meta name="description" content="{% if negocio.descricao %}{{ negocio.descricao | truncate(160) }}{% else %}{{ negocio.nome }} — {{ negocio.categoria_nome }}. Endereço, contato e informações completas.{% endif %}">
-<meta name="keywords" content="{{ negocio.nome }}, {{ negocio.categoria_nome }}, {% if negocio.cidade %}{{ negocio.cidade }}, {% endif %}cinema perto de mim">
+<!-- SEO -->
+<title>{{ hub.titulo or 'Cinema Perto de Mim — Cinemas, cineclubes e salas de arte perto de você' }}</title>
+<meta name="description" content="{{ hub.descricao or 'Encontre cinemas, cine de rua, cineclubes, salas de arte e drive-ins perto de você. Veja também o que está em cartaz no Brasil e onde assistir em streaming.' }}">
+<meta name="keywords" content="cinema perto de mim, cine de rua, cineclube, sala de arte, cinemateca, drive-in, filmes em cartaz, onde assistir">
 <meta name="robots" content="index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1">
-<meta name="theme-color" content="{{ hub.cor_primaria or '#e50914' }}">
-<link rel="canonical" href="https://{{ request.host }}/{{ segmento }}/{{ negocio.slug }}/">
+<meta name="theme-color" content="#d4af37">
+<meta name="author" content="{{ hub.nome or 'Cinema Perto de Mim' }}">
+<link rel="canonical" href="https://{{ request.host }}/">
 
 <link rel="icon" type="image/png" href="{{ hub.logo_url or 'https://placehold.co/64x64/0d0d0f/e50914?text=%F0%9F%8E%9E' }}">
+<link rel="apple-touch-icon" href="{{ hub.logo_url or 'https://placehold.co/180x180/0d0d0f/e50914?text=%F0%9F%8E%9E' }}">
 
-<meta property="og:type" content="business.business">
-<meta property="og:url" content="https://{{ request.host }}/{{ segmento }}/{{ negocio.slug }}/">
-<meta property="og:title" content="{{ negocio.nome }} — {{ hub.nome or 'Cinema Perto de Mim' }}">
-<meta property="og:description" content="{% if negocio.descricao %}{{ negocio.descricao | truncate(160) }}{% else %}Conheça {{ negocio.nome }}.{% endif %}">
-{% if negocio.foto_url %}<meta property="og:image" content="{{ negocio.foto_url }}">{% endif %}
+<!-- Open Graph -->
+<meta property="og:type"        content="website">
+<meta property="og:site_name"   content="{{ hub.nome or 'Cinema Perto de Mim' }}">
+<meta property="og:url"         content="https://{{ request.host }}/">
+<meta property="og:title"       content="{{ hub.titulo or 'Cinema Perto de Mim — cinemas e cultura de cinema perto de você' }}">
+<meta property="og:description" content="{{ hub.descricao or 'Cinemas, cine de rua, cineclubes e salas de arte perto de você — mais o que está em cartaz e onde assistir.' }}">
+{% if hub.banner_fundo_url %}<meta property="og:image" content="{{ hub.banner_fundo_url }}">{% endif %}
+<meta property="og:locale" content="pt_BR">
 
+<!-- Twitter -->
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="{{ hub.titulo or 'Cinema Perto de Mim' }}">
+<meta name="twitter:description" content="{{ hub.descricao or 'Cinemas perto de você, em cartaz e streaming.' }}">
+
+<!-- JSON-LD WebSite -->
 <script type="application/ld+json">
 {
   "@context": "https://schema.org",
-  "@type": "MovieTheater",
-  "@id": "https://{{ request.host }}/{{ segmento }}/{{ negocio.slug }}/",
-  "name": "{{ negocio.nome }}",
-  "url": "https://{{ request.host }}/{{ segmento }}/{{ negocio.slug }}/",
-  {% if negocio.descricao %}"description": "{{ negocio.descricao }}",{% endif %}
-  {% if negocio.foto_url %}"image": ["{{ negocio.foto_url }}"],{% endif %}
-  {% if negocio.endereco and negocio.mostrar_endereco %}
-  "address": {
-    "@type": "PostalAddress",
-    "streetAddress": "{{ negocio.endereco }}",
-    "addressLocality": "{{ negocio.cidade or '' }}",
-    "addressCountry": "BR"
-  },
-  {% endif %}
-  {% if negocio.telefone and negocio.mostrar_telefone %}"telephone": "{{ negocio.telefone }}",{% endif %}
-  "areaServed": "{{ negocio.cidade or 'Brasil' }}"
+  "@type": "WebSite",
+  "name": "{{ hub.nome or 'Cinema Perto de Mim' }}",
+  "url": "https://{{ request.host }}/",
+  "inLanguage": "pt-BR"
 }
 </script>
 
+<!-- JSON-LD ItemList de categorias -->
 <script type="application/ld+json">
 {
   "@context": "https://schema.org",
-  "@type": "BreadcrumbList",
+  "@type": "ItemList",
+  "name": "Tipos de cinema — {{ hub.nome or 'Cinema Perto de Mim' }}",
   "itemListElement": [
-    {"@type":"ListItem","position":1,"name":"Início","item":"https://{{ request.host }}/"},
-    {"@type":"ListItem","position":2,"name":"{{ negocio.categoria_nome }}","item":"https://{{ request.host }}/{{ segmento }}/"},
-    {"@type":"ListItem","position":3,"name":"{{ negocio.nome }}","item":"https://{{ request.host }}/{{ segmento }}/{{ negocio.slug }}/"}
+    {% for cat in categorias %}
+    { "@type": "ListItem", "position": {{ loop.index }},
+      "item": { "@type": "Thing", "name": "{{ cat.nome }} perto de mim", "url": "https://{{ request.host }}/{{ cat.slug }}/" } }{% if not loop.last %},{% endif %}
+    {% endfor %}
   ]
 }
 </script>
@@ -58,71 +61,279 @@
 
 <style>
 :root {
-    --primary: {{ hub.cor_primaria or '#e50914' }};
-    --dark:    {{ hub.cor_secundaria or '#a4060d' }};
-    --gold:    #f5c518;
-    --bg:      #1a0509;
-    --bg-card: #2b0d13;
+    /* Cor fixa em dourado — de propósito ignora hub.cor_primaria/cor_secundaria
+       do banco (que estavam trazendo um azul de outro hub) sem precisar
+       alterar nada no banco de dados. */
+    --primary:     #d4af37;
+    --dark:        #a8841f;
+    --on-primary:  #1a0509; /* texto escuro sobre fundo dourado, pra manter contraste/legibilidade */
+    --gold:        #ff2d2d;
+    --bg:          #1a0509;
+    --bg-card:     #2b0d13;
     --bg-card-alt: #34121a;
-    --border:  #4a1b24;
-    --text:    #eee;
-    --text-dim:#a5a5ab;
+    --border:      #4a1b24;
+    --text:        #eee;
+    --text-dim:    #a5a5ab;
+    --white:       #ffffff;
+    --header-bg:   #f0f0f0;
+    --header-text: #1a1a1a;
+    --header-border: #dcdcdc;
 }
 * { box-sizing: border-box; margin: 0; padding: 0; }
+html { scroll-behavior: smooth; }
 body { font-family: 'Montserrat', sans-serif; background: var(--bg); color: var(--text); line-height: 1.6; }
-h1, h2 { font-family: 'Montserrat', sans-serif; }
+h1, h2, h3, .logo-txt { font-family: 'Montserrat', sans-serif; }
 a { text-decoration: none; color: inherit; }
-.container { max-width: 900px; margin: 0 auto; padding: 0 20px; }
+.container { max-width: 1200px; margin: 0 auto; padding: 0 20px; }
 img { max-width: 100%; display: block; }
 
-body > header {
-    background: var(--bg-card-alt); border-bottom: 1px solid var(--border);
-    padding: 18px 24px 12px; display: flex; flex-direction: column;
-    align-items: center; justify-content: center; gap: 8px;
-    position: sticky; top: 0; z-index: 100;
+/* ══ HEADER ══ */
+/* Header no fluxo normal da página — rola junto com o conteúdo e some de
+   vista quando o usuário desce. Nada de fixed/sticky aqui. */
+html { overflow-x: hidden; }
+body > header, header {
+    background: var(--header-bg) !important; border-bottom: 1px solid var(--header-border);
+    padding: 20px 24px 14px; display: flex; flex-direction: column;
+    align-items: center; justify-content: center; gap: 10px;
+    width: 100% !important;
+    overflow: hidden; margin: 0 !important;
 }
-.logo { display: block; text-align: center; }
-.logo img { height: 80px !important; width: auto; margin: 0 auto; }
+.logo { display: block; text-align: center; position: relative; z-index: 1; }
+.logo img { height: 110px; width: auto; margin: 0 auto; display: block; }
 .logo .marca-primary { color: var(--primary); }
+nav.desktop-nav { position: relative; z-index: 1; }
 nav.desktop-nav ul { list-style: none; display: flex; align-items: center; justify-content: center; flex-wrap: wrap; gap: 4px; }
-nav.desktop-nav ul li a { color: #fff; font-weight: 500; font-size: .9em; padding: 10px 14px; border-radius: 6px; }
-nav.desktop-nav ul li a:hover { background: var(--primary); }
+nav.desktop-nav ul li a {
+    color: var(--header-text); font-weight: 500; font-size: .92em; padding: 10px 16px; border-radius: 6px;
+    transition: background .2s, color .2s;
+}
 
+/* ══ HOLOFOTES DE CINEMA (decorativo, apontando pra baixo no topo do header) ══ */
+.header-lights { position: absolute; inset: 0; pointer-events: none; z-index: 0; }
+.header-lights .spot {
+    position: absolute; top: -22px; width: 130px; height: 175px;
+    background: linear-gradient(180deg, rgba(229,9,20,.5), rgba(255,45,45,.16) 55%, rgba(255,45,45,0) 82%);
+    clip-path: polygon(50% 0%, 14% 100%, 86% 100%);
+    mix-blend-mode: multiply;
+}
+.header-lights .spot::before {
+    content: ''; position: absolute; top: -4px; left: 50%; transform: translateX(-50%);
+    width: 16px; height: 12px; background: #2c2c2c; border-radius: 3px 3px 9px 9px;
+    box-shadow: 0 0 6px rgba(0,0,0,.4);
+}
+.header-lights .spot-1 { left: 2%; }
+.header-lights .spot-2 { left: 22%; }
+.header-lights .spot-4 { left: 78%; }
+.header-lights .spot-5 { left: 98%; transform: translateX(-100%); }
+@media (max-width: 860px) {
+    .header-lights .spot { width: 90px; height: 130px; top: -16px; }
+    .header-lights .spot::before { width: 12px; height: 9px; }
+    .header-lights .spot-2 { left: 12%; }
+    .header-lights .spot-4 { left: 68%; }
+}
+nav.desktop-nav ul li a:hover { background: var(--primary); color: var(--on-primary); }
+/* ══ ANÚNCIOS ══ */
 .anuncio-slot { text-align: center; padding: 10px 20px; background: var(--bg-card-alt); border-bottom: 1px solid var(--border); }
 .anuncio-slot img { max-height: 90px; margin: 0 auto; border-radius: 6px; }
 
-.breadcrumb { font-size: .82em; color: var(--text-dim); padding: 18px 20px 0; max-width: 900px; margin: 0 auto; }
-.breadcrumb a:hover { color: var(--gold); }
-.breadcrumb .bc-atual { color: var(--text); }
+/* ══ HERO ══ */
+.hero {
+    text-align: center; padding: 70px 20px; color: #fff;
+    background:
+        linear-gradient(180deg, rgba(0,0,0,.85), rgba(0,0,0,.55) 45%, var(--bg) 92%),
+        url('{{ hub.banner_fundo_url or "https://res.cloudinary.com/dec2b0u1/image/upload/v1784394242/image-Picsart-AiImageEnhancer_72_cxkjvq.png" }}') center/cover no-repeat;
+}
+.hero h1 { font-size: 2.4em; font-weight: 800; margin-bottom: 14px; }
+.hero h1 em { color: var(--gold); font-style: normal; }
+.hero p { max-width: 620px; margin: 0 auto 28px; color: var(--text-dim); font-size: 1.05em; }
+.hero-btns { display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; }
+.btn-hero { display: inline-flex; align-items: center; gap: 8px; padding: 13px 26px; border-radius: 8px; font-weight: 700; font-size: .98em; }
+.btn-hero.primary { background: var(--primary); color: var(--on-primary); }
+.btn-hero.outline { border: 1.5px solid var(--gold); color: var(--gold); }
+.btn-hero:hover { filter: brightness(1.12); }
 
-.perfil-hero { padding: 20px; max-width: 900px; margin: 0 auto; }
-.perfil-foto { width: 100%; max-height: 340px; object-fit: cover; border-radius: 14px; border: 1px solid var(--border); }
-.perfil-cat { color: var(--gold); font-weight: 700; font-size: .8em; text-transform: uppercase; margin-top: 16px; }
-.perfil-nome { font-size: 1.7em; margin: 4px 0 12px; }
-.perfil-selos { display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 14px; }
-.perfil-selo { font-size: .85em; color: var(--text-dim); display: flex; align-items: center; gap: 6px; border: 1px solid var(--border); padding: 5px 12px; border-radius: 20px; }
-.perfil-descricao { color: var(--text-dim); margin-bottom: 20px; }
+/* ══ SEÇÃO ══ */
+.secao { padding: 44px 20px; }
+.secao h2 { font-size: 1.5em; margin-bottom: 6px; }
+.secao .secao-sub { color: var(--text-dim); font-size: .92em; margin-bottom: 22px; }
+.secao-header-flex { display: flex; align-items: flex-end; justify-content: space-between; gap: 16px; flex-wrap: wrap; margin-bottom: 4px; }
+.secao-header-flex .secao-sub { margin-bottom: 0; }
+.btn-ver-todos {
+    flex-shrink: 0; display: inline-flex; align-items: center; gap: 8px; white-space: nowrap;
+    border: 1.5px solid var(--gold); color: var(--gold); padding: 10px 20px; border-radius: 8px;
+    font-weight: 700; font-size: .9em; transition: background .2s, color .2s;
+}
+.btn-ver-todos:hover { background: var(--gold); color: #fff; }
 
-.acoes { display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 26px; }
-.btn-pf { display: inline-flex; align-items: center; gap: 8px; padding: 12px 20px; border-radius: 8px; font-weight: 700; font-size: .92em; }
-.btn-pf-whats { background: #25d366; color: #06210f; }
-.btn-pf-outline { border: 1.5px solid var(--border); color: var(--text); }
-.btn-pf-outline:hover { border-color: var(--gold); color: var(--gold); }
-.btn-pf-cta { background: var(--primary); color: #fff; }
+/* ══ CARDS DE FILME (pôster) ══ */
+.filme-card { background: var(--bg-card); border: 1px solid var(--border); border-radius: 12px; overflow: hidden; transition: transform .15s, border-color .15s; display: block; }
+.filme-card:hover { transform: translateY(-3px); border-color: var(--primary); }
+.filme-card .filme-poster { width: 100%; aspect-ratio: 2/3; object-fit: cover; background: var(--bg-card-alt); display: block; }
+.filme-card .filme-titulo { padding: 10px 12px; font-size: .92em; font-weight: 600; color: #fff; line-height: 1.3; }
+.carousel-track .filme-card { flex: 0 0 calc(16.666% - 15px); min-width: 0; }
+@media (max-width: 1100px) { .carousel-track .filme-card { flex: 0 0 calc(25% - 14px); } }
+@media (max-width: 900px) { .carousel-track .filme-card { flex: 0 0 calc(33.333% - 12px); } }
+@media (max-width: 768px) { .carousel-track .filme-card { scroll-snap-align: start; flex: 0 0 42%; } }
+@media (max-width: 480px) { .carousel-track .filme-card { flex: 0 0 55%; } }
+.filmes-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 14px; }
 
-.info-box { background: var(--bg-card); border: 1px solid var(--border); border-radius: 12px; padding: 20px; margin-bottom: 20px; }
-.info-box h3 { font-size: 1em; margin-bottom: 10px; }
-.info-box p { color: var(--text-dim); font-size: .92em; }
+/* ══ CATEGORIAS ══ */
+.cat-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 14px; }
+.cat-card {
+    background: var(--bg-card); border: 1px solid var(--border); border-radius: 12px;
+    padding: 22px 14px; text-align: center; transition: transform .15s, border-color .15s;
+}
+.cat-card:hover { transform: translateY(-3px); border-color: var(--primary); }
+.cat-card i { font-size: 1.7em; color: var(--gold); margin-bottom: 10px; display: block; }
+.cat-card span { font-weight: 600; font-size: .9em; }
 
-.cross-link { display: block; text-align: center; background: var(--bg-card); border: 1px dashed var(--border); border-radius: 12px; padding: 18px; margin: 30px 0; color: var(--gold); font-weight: 600; }
-.cross-link:hover { border-color: var(--gold); }
+/* ══ BOTÃO DE LOCALIZAÇÃO ══ */
+.btn-loc { cursor: pointer; border: none; font-family: 'Montserrat', sans-serif; }
+.btn-geo {
+    background: var(--primary); color: var(--on-primary); border: none; padding: 13px 28px; border-radius: 8px;
+    font-size: 1em; font-weight: 700; cursor: pointer; display: inline-flex; align-items: center; gap: 8px;
+    transition: background .2s; margin: 0 auto 26px; font-family: 'Montserrat', sans-serif;
+}
+.btn-geo:hover { background: var(--dark); }
+.btn-geo.ativo { background: var(--dark); }
 
-footer { background: var(--bg-card-alt); border-top: 1px solid var(--border); padding: 24px 20px; color: var(--text-dim); font-size: .85em; text-align: center; }
+/* ══ SLICER DE CATEGORIA (filtro por tipo de cinema) ══ */
+.categoria-slicer { position: relative; max-width: 480px; margin: 0 auto 26px; z-index: 20; }
+.slicer-toggle {
+    width: 100%; display: flex; align-items: center; justify-content: space-between; gap: 12px;
+    background: var(--bg-card); border: 1.5px solid var(--border); border-radius: 10px;
+    padding: 13px 18px; font-family: 'Montserrat', sans-serif; font-size: .96em; font-weight: 600;
+    color: var(--text); cursor: pointer; transition: all .2s;
+}
+.slicer-toggle:hover, .slicer-toggle.open { border-color: var(--primary); }
+.slicer-label { display: flex; align-items: center; gap: 9px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.slicer-label i.fa-filter { color: var(--gold); flex-shrink: 0; }
+.slicer-label strong { color: #fff; font-weight: 700; }
+.slicer-toggle.open .slicer-label strong { color: var(--gold); }
+.slicer-chevron { transition: transform .25s; color: var(--text-dim); flex-shrink: 0; }
+.slicer-toggle.open .slicer-chevron { transform: rotate(180deg); color: var(--gold); }
+.slicer-panel {
+    display: none; flex-direction: column; gap: 3px;
+    position: absolute; top: calc(100% + 8px); left: 0; right: 0;
+    background: var(--bg-card); border: 1px solid var(--border); border-radius: 12px;
+    box-shadow: 0 14px 38px rgba(0,0,0,.5); max-height: 340px; overflow-y: auto; z-index: 21; padding: 8px;
+}
+.slicer-panel.open { display: flex; }
+.slicer-panel .chip-cat {
+    width: 100%; text-align: left; border: none; border-radius: 8px; padding: 11px 14px;
+    background: transparent; color: var(--text); display: flex; align-items: center; gap: 10px; flex-shrink: 0;
+    font-family: 'Montserrat', sans-serif; font-size: .92em; cursor: pointer;
+}
+.slicer-panel .chip-cat:hover, .slicer-panel .chip-cat.active { background: var(--bg-card-alt); color: var(--gold); }
+.slicer-panel .chip-cat.active::after { content: '\f00c'; font-family: 'Font Awesome 6 Free'; font-weight: 900; margin-left: auto; }
+.slicer-backdrop { display: none; position: fixed; inset: 0; background: transparent; z-index: 15; }
+.slicer-backdrop.open { display: block; }
+@media (max-width: 600px) { .categoria-slicer { max-width: 100%; } }
+
+/* ══ CONTROLES DE VISUALIZAÇÃO ══ */
+.view-controls { display: flex; align-items: center; justify-content: flex-end; margin-bottom: 16px; gap: 8px; }
+.view-controls span { font-size: .85em; color: var(--text-dim); margin-right: 4px; }
+.view-btn {
+    background: var(--bg-card); border: 1.5px solid var(--border); border-radius: 8px; width: 36px; height: 36px;
+    display: flex; align-items: center; justify-content: center; cursor: pointer; transition: all .2s;
+    color: var(--text-dim); font-size: 1em;
+}
+.view-btn:hover { border-color: var(--primary); color: #fff; }
+.view-btn.active { background: var(--primary); border-color: var(--primary); color: var(--on-primary); }
+
+/* ══ CARDS DE NEGÓCIO ══ */
+.negocios-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); gap: 18px; }
+.negocio-card { background: var(--bg-card); border: 1px solid var(--border); border-radius: 12px; overflow: hidden; transition: transform .15s, border-color .15s; display: flex; flex-direction: column; }
+.negocio-card:hover { transform: translateY(-3px); border-color: var(--primary); }
+.card-foto { width: 100%; height: 0; padding-bottom: 62%; overflow: hidden; position: relative; background: var(--bg-card-alt); }
+.card-foto img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; transition: transform .4s; }
+.negocio-card:hover .card-foto img { transform: scale(1.06); }
+.negocio-card img { width: 100%; height: 140px; object-fit: cover; }
+.badge-cat { position: absolute; top: 10px; left: 10px; background: var(--primary); color: var(--on-primary); font-size: .72em; font-weight: 700; padding: 3px 10px; border-radius: 20px; }
+.negocio-card-body, .card-body { padding: 14px; flex: 1; display: flex; flex-direction: column; gap: 4px; }
+.negocio-card-cat { font-size: .72em; color: var(--gold); font-weight: 700; text-transform: uppercase; letter-spacing: .04em; }
+.negocio-card-nome, .card-body h3 { font-size: 1.05em; font-weight: 700; margin: 4px 0 6px; color: #fff; }
+.negocio-card-local, .card-bairro { font-size: .85em; color: var(--text-dim); display: flex; align-items: center; gap: 6px; }
+.card-dist { font-size: .82em; color: var(--gold); font-weight: 700; margin-top: 4px; display: flex; align-items: center; gap: 5px; }
+.btn-ver { margin-top: auto; padding-top: 12px; display: inline-block; background: var(--primary); color: var(--on-primary); padding: 9px 18px; border-radius: 6px; font-size: .88em; font-weight: 700; text-align: center; transition: background .2s; }
+.negocio-card:hover .btn-ver { background: var(--dark); }
+.info-message { text-align: center; color: var(--text-dim); padding: 50px 0; font-size: 1.02em; }
+
+/* ══ CARROSSEL ══ */
+.carousel-wrapper { position: relative; }
+.carousel-track-outer { overflow: hidden; border-radius: 12px; }
+.carousel-track { display: flex; gap: 18px; transition: transform .4s ease; will-change: transform; cursor: grab; user-select: none; }
+.carousel-track.dragging { transition: none; cursor: grabbing; }
+.carousel-track .negocio-card { flex: 0 0 calc(25% - 14px); min-width: 0; }
+@media (max-width: 900px) { .carousel-track .negocio-card { flex: 0 0 calc(50% - 9px); } }
+@media (max-width: 768px) {
+    .carousel-track-outer { overflow-x: scroll; overflow-y: hidden; -webkit-overflow-scrolling: touch; scroll-snap-type: x mandatory; scrollbar-width: none; }
+    .carousel-track-outer::-webkit-scrollbar { display: none; }
+    .carousel-track { transform: none !important; transition: none !important; cursor: default; gap: 14px; padding: 4px 0; }
+    .carousel-track .negocio-card { scroll-snap-align: start; flex: 0 0 78%; min-width: 0; }
+    .carousel-nav { display: none; }
+}
+@media (max-width: 480px) { .carousel-track .negocio-card { flex: 0 0 calc(85%); } }
+.carousel-nav { display: flex; align-items: center; justify-content: center; gap: 12px; margin-top: 20px; }
+.carousel-arrow {
+    background: var(--bg-card); border: 1.5px solid var(--border); border-radius: 50%; width: 42px; height: 42px;
+    display: flex; align-items: center; justify-content: center; cursor: pointer; font-size: 1em; color: var(--text);
+    transition: all .2s; flex-shrink: 0;
+}
+.carousel-arrow:hover:not(:disabled) { background: var(--primary); border-color: var(--primary); color: var(--on-primary); }
+.carousel-arrow:disabled { opacity: .3; cursor: not-allowed; }
+.carousel-progress-bar { flex: 1; max-width: 200px; height: 4px; background: var(--border); border-radius: 4px; overflow: hidden; }
+.carousel-progress-fill { height: 100%; background: var(--primary); border-radius: 4px; transition: width .35s cubic-bezier(.4,0,.2,1); }
+
+/* ══ BOTÃO CADASTRAR ══ */
+.faixa-cadastro { background: var(--bg-card-alt); border-top: 1px solid var(--border); border-bottom: 1px solid var(--border); padding: 40px 20px; text-align: center; }
+.faixa-cadastro h2 { font-size: 1.3em; margin-bottom: 10px; }
+.faixa-cadastro p { color: var(--text-dim); margin-bottom: 20px; }
+.btn-cta { display: inline-block; background: var(--primary); color: var(--on-primary); font-weight: 700; padding: 13px 30px; border-radius: 8px; border: none; cursor: pointer; font-size: 1em; }
+
+/* ══ FOOTER ══ */
+footer { background: var(--bg-card-alt); border-top: 1px solid var(--border); padding: 34px 20px 20px; color: var(--text-dim); font-size: .88em; }
+footer .footer-cols { display: flex; flex-wrap: wrap; gap: 28px; max-width: 1200px; margin: 0 auto 20px; }
+footer h4 { color: #fff; font-size: .95em; margin-bottom: 10px; }
+footer ul { list-style: none; }
+footer ul li { margin-bottom: 6px; }
+footer ul li a:hover { color: var(--gold); }
+.footer-bottom { text-align: center; border-top: 1px solid var(--border); padding-top: 16px; }
+
+@media (max-width: 860px) {
+    .logo img { height: 80px; }
+    .hero h1 { font-size: 1.7em; }
+}
+
+/* Modal de cadastro */
+.modal-oculto { display: none !important; }
+#modal-cadastro { position: fixed; inset: 0; background: rgba(0,0,0,.75); z-index: 2000; display: flex; align-items: center; justify-content: center; padding: 16px; }
+#modal-cadastro .modal-box { background: var(--bg-card); border: 1px solid var(--border); border-radius: 14px; max-width: 480px; width: 100%; max-height: 90vh; overflow-y: auto; padding: 26px; position: relative; }
+#modal-cadastro .modal-fechar { position: absolute; top: 14px; right: 16px; background: none; border: none; color: var(--text-dim); font-size: 1.4em; cursor: pointer; }
+#form-cadastro { display: flex; flex-direction: column; gap: 12px; margin-top: 10px; }
+.cad-input { width: 100%; padding: 11px 12px; border: 1.5px solid var(--border); border-radius: 8px; font-size: 14px; background: var(--bg); color: var(--text); font-family: 'Montserrat', sans-serif; }
+.cad-input:focus { border-color: var(--primary); outline: none; }
+#btn-submit-cadastro { background: var(--primary); color: var(--on-primary); border: none; border-radius: 8px; padding: 13px; font-weight: 700; cursor: pointer; }
+#cadastro-sucesso { display: none; text-align: center; padding: 20px 0; }
 </style>
 </head>
 <body>
 
+{# Remove o prefixo "cinema_" (usado só internamente no slug) e formata o nome
+   pra exibição. Usa cat.nome quando já vem limpo; cai pro slug como reserva. #}
+{% macro cat_label(cat) -%}
+{%- set n = (cat.nome or cat.slug or '') -%}
+{%- if n.startswith('cinema_') -%}{%- set n = n[7:] -%}{%- endif -%}
+{{- n.replace('-', ' ').replace('_', ' ') | title -}}
+{%- endmacro %}
+
 <header>
+  <div class="header-lights" aria-hidden="true">
+    <span class="spot spot-1"></span>
+    <span class="spot spot-2"></span>
+    <span class="spot spot-4"></span>
+    <span class="spot spot-5"></span>
+  </div>
   <a class="logo" href="/">
     <img src="{{ hub.logo_url or 'https://res.cloudinary.com/dec2b0u1/image/upload/v1784394139/cinema_ymuflx.png' }}" alt="{{ hub.nome or 'Cinema Perto de Mim' }}">
   </a>
@@ -130,6 +341,10 @@ footer { background: var(--bg-card-alt); border-top: 1px solid var(--border); pa
     <ul>
       <li><a href="/em-cartaz/">Em cartaz</a></li>
       <li><a href="/nao-quer-sair-de-casa/">Streaming</a></li>
+      {% for cat in categorias %}
+        <li><a href="/{{ cat.slug }}/">{{ cat_label(cat) }}</a></li>
+      {% endfor %}
+      <li><a href="#" onclick="abrirModalCadastro();return false;">Cadastrar cinema</a></li>
     </ul>
   </nav>
 </header>
@@ -142,99 +357,778 @@ footer { background: var(--bg-card-alt); border-top: 1px solid var(--border); pa
 </div>
 {% endif %}
 
-<div class="breadcrumb">
-  <a href="/">Início</a> /
-  <a href="/{{ segmento }}/">{{ negocio.categoria_nome }}</a> /
-  <span class="bc-atual">{{ negocio.nome }}</span>
-</div>
-
-<div class="perfil-hero">
-  <img class="perfil-foto" src="{{ negocio.foto_url or 'https://placehold.co/900x400/17171b/f5c518?text=%F0%9F%8E%9E' }}" alt="{{ negocio.nome }}" loading="eager">
-
-  <div class="perfil-cat"><i class="fas fa-tag"></i> {{ negocio.categoria_nome }}</div>
-  <h1 class="perfil-nome">{{ negocio.nome }}</h1>
-
-  <div class="perfil-selos">
-    {% if negocio.cidade %}
-      <span class="perfil-selo"><i class="fas fa-map-marker-alt"></i> {{ negocio.bairro ~ ', ' if negocio.bairro }}{{ negocio.cidade }}</span>
-    {% endif %}
+<section class="hero">
+  <h1>Cinema <em>perto de você</em></h1>
+  <p>Do multiplex ao cine de rua, do cineclube à cinemateca — descubra as salas da sua cidade, veja o que está em cartaz e onde assistir sem sair de casa.</p>
+  <div class="hero-btns">
+    <a class="btn-hero primary" href="/em-cartaz/"><i class="fas fa-film"></i> Em cartaz agora</a>
+    <a class="btn-hero outline" href="/nao-quer-sair-de-casa/"><i class="fas fa-tv"></i> Ver no streaming</a>
   </div>
+</section>
 
-  {% if negocio.descricao and negocio.mostrar_descricao %}
-    <p class="perfil-descricao">{{ negocio.descricao }}</p>
-  {% endif %}
-
-  <div class="acoes">
-    {% if negocio.whatsapp and negocio.mostrar_whatsapp %}
-      <a class="btn-pf btn-pf-whats" href="https://wa.me/55{{ negocio.whatsapp | replace(' ','') | replace('-','') | replace('(','') | replace(')','') }}?text=Ol%C3%A1%2C+vi+o+{{ negocio.nome | urlencode }}+no+Cinema+Perto+de+Mim" target="_blank" rel="noopener">
-        <i class="fab fa-whatsapp"></i> WhatsApp
+<section class="secao container">
+  <h2>Tipos de cinema</h2>
+  <p class="secao-sub">Da grande rede à sala de bairro — cada tipo tem sua experiência.</p>
+  <div class="cat-grid">
+    {% for cat in categorias %}
+      <a class="cat-card" href="/{{ cat.slug }}/">
+        {% if cat.icone_url %}
+          <img src="{{ cat.icone_url }}" alt="" style="height:32px;width:auto;margin:0 auto 10px;">
+        {% else %}
+          <i class="fas fa-film"></i>
+        {% endif %}
+        <span>{{ cat_label(cat) }}</span>
       </a>
-    {% elif hub.whatsapp %}
-      <a class="btn-pf btn-pf-whats" href="https://wa.me/55{{ hub.whatsapp | replace(' ','') | replace('-','') | replace('(','') | replace(')','') }}" target="_blank" rel="noopener">
-        <i class="fab fa-whatsapp"></i> WhatsApp
-      </a>
-    {% endif %}
-
-    {% if negocio.telefone and negocio.mostrar_telefone %}
-      <a class="btn-pf btn-pf-outline" href="tel:{{ negocio.telefone }}"><i class="fas fa-phone"></i> Ligar</a>
-    {% endif %}
-
-    {% if negocio.instagram and negocio.mostrar_instagram %}
-      <a class="btn-pf btn-pf-outline" href="https://instagram.com/{{ negocio.instagram | replace('@','') }}" target="_blank" rel="noopener">
-        <i class="fab fa-instagram"></i> Instagram
-      </a>
-    {% endif %}
-
-    {% if negocio.site_url and negocio.mostrar_site %}
-      <a class="btn-pf btn-pf-outline" href="{{ negocio.site_url }}" target="_blank" rel="noopener"><i class="fas fa-globe"></i> Site</a>
-    {% endif %}
-
-    {% if negocio.exibir_geo and negocio.endereco and negocio.mostrar_endereco %}
-      <button class="btn-pf btn-pf-outline" onclick="comoChegar()"><i class="fas fa-route"></i> Como chegar</button>
-    {% endif %}
+    {% endfor %}
   </div>
+</section>
 
-  {% if negocio.exibir_geo and negocio.endereco and negocio.mostrar_endereco %}
-    <div class="info-box">
-      <h3><i class="fas fa-map-marker-alt"></i> Endereço</h3>
-      <p>{{ negocio.endereco }}{{ ', ' ~ negocio.bairro if negocio.bairro }}{{ ', ' ~ negocio.cidade if negocio.cidade }}</p>
-    </div>
-  {% endif %}
-
-  <a class="cross-link" href="/em-cartaz/">
-    <i class="fas fa-film"></i> Veja o que está em cartaz agora →
+{% if anuncio_meio %}
+<div class="anuncio-slot">
+  <a href="{{ anuncio_meio.link_url or '#' }}" target="_blank" rel="noopener">
+    <img src="{{ anuncio_meio.imagem_url }}" alt="{{ anuncio_meio.titulo or 'Anúncio' }}">
   </a>
 </div>
+{% endif %}
 
-<footer>&copy; {{ hub.nome or 'Cinema Perto de Mim' }} — todos os direitos reservados.</footer>
+<section class="secao container" id="filmes-em-cartaz">
+  <div class="secao-header-flex">
+    <div>
+      <h2>Em cartaz</h2>
+      <p class="secao-sub">O que está passando no cinema agora.</p>
+    </div>
+    <a class="btn-ver-todos" href="/em-cartaz/">Ver todos <i class="fas fa-arrow-right"></i></a>
+  </div>
+
+  <div class="view-controls" id="view-controls-emcartaz" style="display:none;">
+    <span>Ver como:</span>
+    <button class="view-btn active" id="btn-carousel-emcartaz" onclick="setViewFilme('emcartaz','carousel')"><i class="fas fa-grip-lines"></i></button>
+    <button class="view-btn" id="btn-grade-emcartaz" onclick="setViewFilme('emcartaz','grade')"><i class="fas fa-th"></i></button>
+  </div>
+
+  <div id="emcartaz-carousel-wrapper" class="carousel-wrapper">
+    <div class="carousel-track-outer">
+      <div class="carousel-track" id="emcartaz-track"></div>
+    </div>
+    <div class="carousel-nav" id="emcartaz-carousel-nav">
+      <button class="carousel-arrow" onclick="moveCarouselFilme('emcartaz',-1)"><i class="fas fa-chevron-left"></i></button>
+      <div class="carousel-progress-bar"><div class="carousel-progress-fill" id="emcartaz-progress-fill"></div></div>
+      <button class="carousel-arrow" onclick="moveCarouselFilme('emcartaz',1)"><i class="fas fa-chevron-right"></i></button>
+    </div>
+  </div>
+  <div class="filmes-grid" id="emcartaz-grade" style="display:none;"></div>
+  <p class="info-message" id="emcartaz-vazio" style="display:none;">Não encontramos filmes em cartaz agora.</p>
+</section>
+
+<section class="secao container" id="filmes-streaming">
+  <div class="secao-header-flex">
+    <div>
+      <h2>Streaming</h2>
+      <p class="secao-sub">Escolha um streaming pra ver o catálogo dele.</p>
+    </div>
+    <a class="btn-ver-todos" id="streaming-link-provedor" href="/nao-quer-sair-de-casa/">Ver catálogo completo <i class="fas fa-arrow-right"></i></a>
+  </div>
+
+  <div class="categoria-slicer" id="streaming-slicer">
+    <button type="button" class="slicer-toggle" id="streaming-slicer-toggle" onclick="toggleStreamingSlicer()" aria-haspopup="listbox" aria-expanded="false">
+      <span class="slicer-label"><i class="fas fa-filter"></i> Streaming: <strong id="streaming-slicer-label">Carregando…</strong></span>
+      <i class="fas fa-chevron-down slicer-chevron" aria-hidden="true"></i>
+    </button>
+    <div class="slicer-panel" id="streaming-filtros" role="listbox" aria-label="Filtrar por streaming"></div>
+    <div class="slicer-backdrop" id="streaming-backdrop" onclick="closeStreamingSlicer()"></div>
+  </div>
+
+  <div class="view-controls" id="view-controls-streaming" style="display:none;">
+    <span>Ver como:</span>
+    <button class="view-btn active" id="btn-carousel-streaming" onclick="setViewFilme('streaming','carousel')"><i class="fas fa-grip-lines"></i></button>
+    <button class="view-btn" id="btn-grade-streaming" onclick="setViewFilme('streaming','grade')"><i class="fas fa-th"></i></button>
+  </div>
+
+  <div id="streaming-carousel-wrapper" class="carousel-wrapper">
+    <div class="carousel-track-outer">
+      <div class="carousel-track" id="streaming-track"></div>
+    </div>
+    <div class="carousel-nav" id="streaming-carousel-nav">
+      <button class="carousel-arrow" onclick="moveCarouselFilme('streaming',-1)"><i class="fas fa-chevron-left"></i></button>
+      <div class="carousel-progress-bar"><div class="carousel-progress-fill" id="streaming-progress-fill"></div></div>
+      <button class="carousel-arrow" onclick="moveCarouselFilme('streaming',1)"><i class="fas fa-chevron-right"></i></button>
+    </div>
+  </div>
+  <div class="filmes-grid" id="streaming-grade" style="display:none;"></div>
+  <p class="info-message" id="streaming-vazio" style="display:none;">Não encontramos filmes desse streaming agora.</p>
+</section>
+
+<section class="secao container" id="cinemas">
+  <h2>Cinemas cadastrados</h2>
+  <p class="secao-sub" id="cinemas-total">{{ negocios | length }} sala{{ 's' if negocios | length != 1 else '' }} no guia até agora.</p>
+
+  <div style="text-align:center;">
+    <button class="btn-geo btn-loc" id="btnLoc" onclick="toggleLocalizacao()">
+      <i class="fas fa-map-marker-alt"></i> Usar minha localização
+    </button>
+  </div>
+
+  {% if categorias %}
+  <div class="categoria-slicer" id="categoria-slicer">
+    <button type="button" class="slicer-toggle" id="slicer-toggle" onclick="toggleCategoriaSlicer()" aria-haspopup="listbox" aria-expanded="false" aria-controls="filtros-categoria">
+      <span class="slicer-label"><i class="fas fa-filter"></i> Tipo de cinema: <strong id="slicer-label-text">Todos</strong></span>
+      <i class="fas fa-chevron-down slicer-chevron" aria-hidden="true"></i>
+    </button>
+    <div class="slicer-panel" id="filtros-categoria" role="listbox" aria-label="Filtrar por tipo de cinema">
+      <button class="chip-cat active" onclick="filtrarCategoria(null, this)">Todos</button>
+      {% for cat in categorias %}
+        <button class="chip-cat" data-slug="{{ cat.slug }}" onclick="filtrarCategoria('{{ cat.slug }}', this)">{{ cat_label(cat) }}</button>
+      {% endfor %}
+    </div>
+    <div class="slicer-backdrop" id="slicer-backdrop" onclick="closeCategoriaSlicer()"></div>
+  </div>
+  {% endif %}
+
+  <div class="view-controls" id="view-controls" style="display:none;">
+    <span>Ver como:</span>
+    <button class="view-btn active" id="btn-carousel" title="Carrossel" onclick="setView('carousel')"><i class="fas fa-grip-lines"></i></button>
+    <button class="view-btn" id="btn-grade" title="Grade" onclick="setView('grade')"><i class="fas fa-th"></i></button>
+  </div>
+
+  <div id="negocios-carousel-wrapper" class="carousel-wrapper">
+    <div class="carousel-track-outer">
+      <div class="carousel-track" id="negocios-track"></div>
+    </div>
+    <div class="carousel-nav" id="negocios-carousel-nav">
+      <button class="carousel-arrow" id="negocios-prev" onclick="moveCarousel(-1)"><i class="fas fa-chevron-left"></i></button>
+      <div class="carousel-progress-bar"><div class="carousel-progress-fill" id="negocios-progress-fill"></div></div>
+      <button class="carousel-arrow" id="negocios-next" onclick="moveCarousel(1)"><i class="fas fa-chevron-right"></i></button>
+    </div>
+  </div>
+
+  <div class="negocios-grid" id="negocios-grade" style="display:none;"></div>
+  <p class="info-message" id="negocios-vazio" style="display:none;">Ainda não temos cinemas cadastrados por aqui — seja o primeiro a indicar um.</p>
+  <div id="lazy-sentinel" style="height:1px; margin-top:10px;"></div>
+  <p id="lazy-loading" style="display:none; text-align:center; color:var(--primary); padding:20px; font-size:.95em;"><i class="fas fa-spinner fa-spin"></i> Carregando mais cinemas...</p>
+</section>
+
+<div class="faixa-cadastro">
+  <h2>Conhece um cinema que não está aqui?</h2>
+  <p>Cine de rua, cineclube, sala de arte — todo tipo de sala tem espaço no guia.</p>
+  <button class="btn-cta" onclick="abrirModalCadastro()">Cadastrar cinema</button>
+</div>
+
+<footer>
+  <div class="footer-cols">
+    <div>
+      <h4>{{ hub.nome or 'Cinema Perto de Mim' }}</h4>
+      <p>Descubra cinemas e cultura de cinema perto de você.</p>
+    </div>
+    <div>
+      <h4>Navegue</h4>
+      <ul>
+        <li><a href="/em-cartaz/">Em cartaz</a></li>
+        <li><a href="/nao-quer-sair-de-casa/">Streaming</a></li>
+        {% for cat in categorias %}
+          <li><a href="/{{ cat.slug }}/">{{ cat_label(cat) }}</a></li>
+        {% endfor %}
+      </ul>
+    </div>
+  </div>
+  <div class="footer-bottom">
+    &copy; {{ hub.nome or 'Cinema Perto de Mim' }} — todos os direitos reservados.
+  </div>
+</footer>
+
+<!-- Modal de cadastro -->
+<div id="modal-cadastro" class="modal-oculto">
+  <div class="modal-box">
+    <button class="modal-fechar" onclick="fecharModalCadastro()"><i class="fas fa-times"></i></button>
+    <h2>Cadastrar cinema</h2>
+    <p style="color:var(--text-dim);font-size:.9em;">Seu cadastro passa por uma revisão rápida antes de ir ao ar.</p>
+
+    <form id="form-cadastro" onsubmit="enviarCadastroNegocio(event)">
+      <input class="cad-input" type="text" name="nome" placeholder="Nome do cinema *" required>
+      <select class="cad-input" name="categoria_id">
+        <option value="">Tipo de cinema</option>
+        {% for cat in categorias %}
+          <option value="{{ cat.id }}">{{ cat_label(cat) }}</option>
+        {% endfor %}
+      </select>
+      <input class="cad-input" type="text" name="cidade" placeholder="Cidade">
+      <input class="cad-input" type="text" name="bairro" placeholder="Bairro">
+      <input class="cad-input" type="text" name="endereco" placeholder="Endereço">
+      <input class="cad-input" type="text" name="whatsapp" placeholder="WhatsApp">
+      <input class="cad-input" type="text" name="telefone" placeholder="Telefone">
+      <input class="cad-input" type="text" name="instagram" placeholder="Instagram">
+      <input class="cad-input" type="url" name="site_url" placeholder="Site (opcional)">
+      <input class="cad-input" type="url" name="foto_url" placeholder="URL de uma foto (opcional)">
+      <textarea class="cad-input" name="descricao" placeholder="Descrição curta" rows="3"></textarea>
+
+      <div id="cadastro-erro" style="display:none;color:#ff8080;font-size:13px;background:#2a1414;border:1px solid #5a2323;border-radius:8px;padding:10px 12px;"></div>
+
+      <button type="submit" id="btn-submit-cadastro">Enviar cadastro</button>
+    </form>
+
+    <div id="cadastro-sucesso">
+      <i class="fas fa-check-circle" style="font-size:2em;color:var(--gold);"></i>
+      <p style="margin-top:10px;">Recebemos seu cadastro! Ele vai passar por revisão antes de aparecer no site.</p>
+    </div>
+  </div>
+</div>
 
 <script>
-var DEST_LAT = {{ negocio.lat or 'null' }};
-var DEST_LNG = {{ negocio.lng or 'null' }};
-var DEST_ENDERECO = {{ (negocio.endereco ~ ', ' ~ (negocio.cidade or '')) | tojson }};
+// ══════════════════════════════════════════════════════════════════
+// CARROSSÉIS DE FILME — "Em cartaz" (sem filtro, espelha /em-cartaz/)
+// e "Streaming" (filtrado por provedor, espelha /nao-quer-sair-de-casa/<slug>/).
+// Mesmo padrão visual/UX do carrossel de cinemas (carrossel <-> grade),
+// mas em dados/estado próprios, buscados via /api/cinema/*.
+// ══════════════════════════════════════════════════════════════════
 
-function comoChegar() {
-  var destino = (DEST_LAT !== null && DEST_LNG !== null) ? (DEST_LAT + ',' + DEST_LNG) : encodeURIComponent(DEST_ENDERECO);
-  if (!navigator.geolocation) {
-    window.open('https://www.google.com/maps/search/?api=1&query=' + destino, '_blank');
+var _filmeState = {
+  emcartaz: { filmes: [], pos: 0, view: 'carousel' },
+  streaming: { filmes: [], pos: 0, view: 'carousel' }
+};
+var _provedoresStreaming = [];
+var _provedorAtivo = null;
+
+function cardHTMLFilme(f){
+  var poster = f.poster_url || 'https://placehold.co/300x450/17171b/f5c518?text=%F0%9F%8E%9E';
+  return '<a href="/filme/' + f.id + '/" class="filme-card">' +
+    '<img class="filme-poster" src="' + poster + '" alt="Pôster de ' + (f.title || '') + '" loading="lazy">' +
+    '<div class="filme-titulo">' + (f.title || '') + '</div>' +
+  '</a>';
+}
+
+function getCardWidthFilme(key){
+  var track = document.getElementById(key + '-track');
+  var card = track.querySelector('.filme-card');
+  if(!card) return 200;
+  return card.offsetWidth + 18;
+}
+
+function isMobileFilme(){ return window.innerWidth <= 768; }
+
+function clampAndUpdateFilme(key){
+  if(isMobileFilme()) return;
+  var track = document.getElementById(key + '-track');
+  var cards = track.querySelectorAll('.filme-card');
+  if(!cards.length) return;
+  var state = _filmeState[key];
+  var maxPos = Math.max(0, cards.length * getCardWidthFilme(key) - track.parentElement.offsetWidth);
+  state.pos = Math.max(0, Math.min(state.pos, maxPos));
+  track.style.transform = 'translateX(-' + state.pos + 'px)';
+  var fill = document.getElementById(key + '-progress-fill');
+  if(fill) fill.style.width = maxPos > 0 ? Math.min(100, (state.pos / maxPos) * 100) + '%' : '0%';
+}
+
+function moveCarouselFilme(key, dir){
+  var outer = document.getElementById(key + '-track').parentElement;
+  var visivel = Math.max(1, Math.floor(outer.offsetWidth / getCardWidthFilme(key)));
+  _filmeState[key].pos += dir * visivel * getCardWidthFilme(key);
+  clampAndUpdateFilme(key);
+}
+
+function setViewFilme(key, mode){
+  _filmeState[key].view = mode;
+  var cw = document.getElementById(key + '-carousel-wrapper');
+  var gd = document.getElementById(key + '-grade');
+  var btnC = document.getElementById('btn-carousel-' + key);
+  var btnG = document.getElementById('btn-grade-' + key);
+  if(btnC) btnC.classList.toggle('active', mode === 'carousel');
+  if(btnG) btnG.classList.toggle('active', mode === 'grade');
+  if(cw) cw.style.display = mode === 'carousel' ? '' : 'none';
+  if(gd) gd.style.display = mode === 'grade' ? 'grid' : 'none';
+}
+
+function renderFilmes(key, filmes){
+  _filmeState[key].filmes = filmes;
+  _filmeState[key].pos = 0;
+  var vc = document.getElementById('view-controls-' + key);
+  var vazio = document.getElementById(key + '-vazio');
+  var cw = document.getElementById(key + '-carousel-wrapper');
+  var gd = document.getElementById(key + '-grade');
+
+  if(!filmes.length){
+    if(vc) vc.style.display = 'none';
+    if(cw) cw.style.display = 'none';
+    if(gd) gd.style.display = 'none';
+    if(vazio) vazio.style.display = '';
     return;
   }
+  if(vazio) vazio.style.display = 'none';
+  if(vc) vc.style.display = 'flex';
+
+  var cardsHTML = filmes.map(cardHTMLFilme).join('');
+  var track = document.getElementById(key + '-track');
+  track.innerHTML = cardsHTML;
+  track.style.transform = 'translateX(0)';
+  if(gd) gd.innerHTML = cardsHTML;
+
+  setViewFilme(key, _filmeState[key].view);
+
+  var isDragging = false, startX = 0, startPos = 0;
+  var newTrack = track.cloneNode(true);
+  track.parentNode.replaceChild(newTrack, track);
+  track = document.getElementById(key + '-track');
+  function onStart(x){ isDragging = true; startX = x; startPos = _filmeState[key].pos; track.classList.add('dragging'); }
+  function onMove(x){ if(!isDragging) return; _filmeState[key].pos = startPos - (x - startX); clampAndUpdateFilme(key); }
+  function onEnd(){
+    isDragging = false; track.classList.remove('dragging');
+    var w = getCardWidthFilme(key); if(!w) return;
+    _filmeState[key].pos = Math.round(_filmeState[key].pos / w) * w;
+    clampAndUpdateFilme(key);
+  }
+  if(!isMobileFilme()){
+    track.addEventListener('mousedown', function(e){ onStart(e.clientX); e.preventDefault(); });
+    window.addEventListener('mousemove', function(e){ if(isDragging) onMove(e.clientX); });
+    window.addEventListener('mouseup', function(){ if(isDragging) onEnd(); });
+  }
+  clampAndUpdateFilme(key);
+}
+
+// ── "Em cartaz" — sem filtro nenhum, mesmos filmes de /em-cartaz/ ──
+fetch('/api/cinema/em-cartaz')
+  .then(function(r){ return r.json(); })
+  .then(function(data){ renderFilmes('emcartaz', data.filmes || []); })
+  .catch(function(){ renderFilmes('emcartaz', []); });
+
+// ── "Streaming" — filtro por provedor ──
+function toggleStreamingSlicer(){
+  document.getElementById('streaming-slicer-toggle').classList.toggle('open');
+  document.getElementById('streaming-filtros').classList.toggle('open');
+  document.getElementById('streaming-backdrop').classList.toggle('open');
+}
+function closeStreamingSlicer(){
+  document.getElementById('streaming-slicer-toggle').classList.remove('open');
+  document.getElementById('streaming-filtros').classList.remove('open');
+  document.getElementById('streaming-backdrop').classList.remove('open');
+}
+function selecionarProvedor(slug, nome){
+  _provedorAtivo = slug;
+  document.getElementById('streaming-slicer-label').textContent = nome;
+  document.getElementById('streaming-link-provedor').href = '/nao-quer-sair-de-casa/' + slug + '/';
+  document.querySelectorAll('#streaming-filtros .chip-cat').forEach(function(el){
+    el.classList.toggle('active', el.dataset.slug === slug);
+  });
+  closeStreamingSlicer();
+  var vc = document.getElementById('view-controls-streaming');
+  if(vc) vc.style.display = 'none';
+  document.getElementById('streaming-vazio').style.display = 'none';
+  fetch('/api/cinema/streaming/' + slug)
+    .then(function(r){ return r.json(); })
+    .then(function(data){ renderFilmes('streaming', data.filmes || []); })
+    .catch(function(){ renderFilmes('streaming', []); });
+}
+
+fetch('/api/cinema/streaming/provedores')
+  .then(function(r){ return r.json(); })
+  .then(function(data){
+    _provedoresStreaming = data.provedores || [];
+    var painel = document.getElementById('streaming-filtros');
+    painel.innerHTML = _provedoresStreaming.map(function(p){
+      return '<button class="chip-cat" data-slug="' + p.slug + '" onclick="selecionarProvedor(\'' + p.slug + '\',\'' + p.nome.replace(/'/g,"\\'") + '\')">' + p.nome + '</button>';
+    }).join('');
+    if(_provedoresStreaming.length){
+      var primeiro = _provedoresStreaming[0];
+      selecionarProvedor(primeiro.slug, primeiro.nome);
+    } else {
+      document.getElementById('streaming-slicer-label').textContent = 'Indisponível';
+      document.getElementById('streaming-vazio').style.display = '';
+    }
+  })
+  .catch(function(){
+    document.getElementById('streaming-slicer-label').textContent = 'Indisponível';
+    document.getElementById('streaming-vazio').style.display = '';
+  });
+
+window.addEventListener('resize', function(){
+  clampAndUpdateFilme('emcartaz');
+  clampAndUpdateFilme('streaming');
+});
+</script>
+
+<script>
+function abrirModalCadastro(){ document.getElementById('modal-cadastro').classList.remove('modal-oculto'); }
+function fecharModalCadastro(){
+  document.getElementById('modal-cadastro').classList.add('modal-oculto');
+  document.getElementById('form-cadastro').reset();
+  document.getElementById('form-cadastro').style.display = 'flex';
+  document.getElementById('cadastro-sucesso').style.display = 'none';
+  document.getElementById('cadastro-erro').style.display = 'none';
+}
+document.getElementById('modal-cadastro').addEventListener('click', function(e){ if (e.target === this) fecharModalCadastro(); });
+document.addEventListener('keydown', function(e){ if (e.key === 'Escape') fecharModalCadastro(); });
+
+async function enviarCadastroNegocio(e){
+  e.preventDefault();
+  const btn = document.getElementById('btn-submit-cadastro');
+  const erro = document.getElementById('cadastro-erro');
+  erro.style.display = 'none';
+  btn.disabled = true;
+  btn.textContent = 'Enviando...';
+  try {
+    const formData = new FormData(e.target);
+    const res = await fetch('/cadastrar-negocio', { method: 'POST', body: formData });
+    const data = await res.json();
+    if (res.ok && data.ok) {
+      document.getElementById('form-cadastro').style.display = 'none';
+      document.getElementById('cadastro-sucesso').style.display = 'block';
+    } else {
+      erro.textContent = data.erro || 'Erro ao enviar. Tente novamente.';
+      erro.style.display = 'block';
+    }
+  } catch (err) {
+    erro.textContent = 'Erro de conexão. Verifique sua internet e tente novamente.';
+    erro.style.display = 'block';
+  } finally {
+    btn.disabled = false;
+    btn.textContent = 'Enviar cadastro';
+  }
+}
+</script>
+
+<script>
+// ══════════════════════════════════════════════════════════════════
+// CARROSSEL DE CINEMAS — mesmo padrão usado nos outros hubs (cestas etc.)
+// Renderiza os negócios recebidos no HTML e busca mais em lotes via
+// /api/hub/negocios (paginação por offset), com filtro por tipo de
+// cinema e ordenação por geolocalização — tudo client-side.
+// ══════════════════════════════════════════════════════════════════
+
+// Remove o prefixo "cinema_" de um slug/nome pra exibir ao usuário
+// (mesma regra do macro cat_label do lado do servidor).
+function _cinemaLabel(txt){
+  if(!txt) return '';
+  var n = txt.indexOf('cinema_') === 0 ? txt.slice(7) : txt;
+  n = n.replace(/[-_]/g, ' ');
+  return n.replace(/\w\S*/g, function(t){ return t.charAt(0).toUpperCase() + t.substr(1).toLowerCase(); });
+}
+
+var todosCinemas = {{ negocios | tojson }};
+var _apiOffsetCinema = {{ negocios | length }};
+var _apiFimCinema = false;
+var _apiCarregandoCinema = false;
+var _loteSizeCinema = 96;
+var cinemasFiltrados = todosCinemas.slice();
+var _categoriaAtivaCinema = null;
+var userLatCinema = null, userLngCinema = null, geoAtivoCinema = false;
+var carouselPosCinema = 0, carouselViewCinema = 'carousel';
+var _apiCallbacksCinema = [];
+
+function _carregarLoteCinemas(callback){
+  if(_apiFimCinema){ if(callback) callback(); return; }
+  if(callback) _apiCallbacksCinema.push(callback);
+  if(_apiCarregandoCinema) return;
+  _apiCarregandoCinema = true;
+  var loading = document.getElementById('lazy-loading');
+  if(loading) loading.style.display = 'block';
+  var url = '/api/hub/negocios?limit=' + _loteSizeCinema + '&offset=' + _apiOffsetCinema;
+  if(_categoriaAtivaCinema) url += '&categoria=' + encodeURIComponent(_categoriaAtivaCinema);
+  fetch(url)
+    .then(function(r){ return r.json(); })
+    .then(function(data){
+      _apiCarregandoCinema = false;
+      if(Array.isArray(data) && data.length > 0){
+        _apiOffsetCinema += data.length;
+        todosCinemas = todosCinemas.concat(data);
+        if(geoAtivoCinema && userLatCinema !== null) _aplicarDistanciasCinema();
+        cinemasFiltrados = _categoriaAtivaCinema
+          ? todosCinemas.filter(function(n){ return n.categoria_slug === _categoriaAtivaCinema; })
+          : todosCinemas.slice();
+      } else {
+        _apiFimCinema = true;
+      }
+      if(loading) loading.style.display = 'none';
+      var cbs = _apiCallbacksCinema.slice(); _apiCallbacksCinema = [];
+      cbs.forEach(function(cb){ cb(); });
+    })
+    .catch(function(){
+      _apiCarregandoCinema = false;
+      _apiFimCinema = true;
+      if(loading) loading.style.display = 'none';
+      var cbs = _apiCallbacksCinema.slice(); _apiCallbacksCinema = [];
+      cbs.forEach(function(cb){ cb(); });
+    });
+}
+
+function _renderizarProximoLoteCinema(){
+  var lista = cinemasFiltrados;
+  var trackCards = document.getElementById('negocios-track') ? document.getElementById('negocios-track').querySelectorAll('.negocio-card').length : 0;
+  if(trackCards < lista.length){
+    var proximo = lista.slice(trackCards, trackCards + _loteSizeCinema);
+    if(!proximo.length) return;
+    var novosCards = proximo.map(cardHTMLCinema);
+    var track = document.getElementById('negocios-track');
+    if(track){
+      var tmp = document.createElement('div');
+      tmp.innerHTML = novosCards.join('');
+      while(tmp.firstChild) track.appendChild(tmp.firstChild);
+      clampAndUpdateCinema();
+    }
+    var gd = document.getElementById('negocios-grade');
+    if(gd && gd.style.display !== 'none') gd.innerHTML += novosCards.join('');
+    return;
+  }
+  if(!_apiFimCinema){
+    _carregarLoteCinemas(function(){ _renderizarProximoLoteCinema(); });
+  }
+}
+
+function haversineKmCinema(lat1, lng1, lat2, lng2){
+  var R = 6371;
+  var dLat = (lat2 - lat1) * Math.PI / 180;
+  var dLng = (lng2 - lng1) * Math.PI / 180;
+  var a = Math.sin(dLat/2)*Math.sin(dLat/2) +
+          Math.cos(lat1*Math.PI/180)*Math.cos(lat2*Math.PI/180)*
+          Math.sin(dLng/2)*Math.sin(dLng/2);
+  return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+}
+
+function _aplicarDistanciasCinema(){
+  todosCinemas.forEach(function(n){
+    var lat = parseFloat(n.lat);
+    var lng = parseFloat(n.lng);
+    if(userLatCinema !== null && !isNaN(lat) && !isNaN(lng) && lat !== 0 && lng !== 0){
+      n._dist = haversineKmCinema(userLatCinema, userLngCinema, lat, lng);
+    } else {
+      n._dist = 99999;
+    }
+  });
+  todosCinemas.sort(function(a, b){ return (a._dist || 99999) - (b._dist || 99999); });
+}
+
+function toggleLocalizacao(){
+  var btn = document.getElementById('btnLoc');
+  if(geoAtivoCinema){
+    geoAtivoCinema = false;
+    userLatCinema = null; userLngCinema = null;
+    btn.classList.remove('ativo');
+    btn.innerHTML = '<i class="fas fa-map-marker-alt"></i> Usar minha localização';
+    todosCinemas.forEach(function(n){ delete n._dist; });
+    cinemasFiltrados = _categoriaAtivaCinema
+      ? todosCinemas.filter(function(n){ return n.categoria_slug === _categoriaAtivaCinema; })
+      : todosCinemas.slice();
+    renderCinemas(cinemasFiltrados);
+    return;
+  }
+  if(!navigator.geolocation){
+    alert('Geolocalização não suportada pelo seu navegador.');
+    return;
+  }
+  btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Localizando...';
+  btn.disabled = true;
   navigator.geolocation.getCurrentPosition(
-    function(pos) {
-      var origem = pos.coords.latitude + ',' + pos.coords.longitude;
-      window.open('https://www.google.com/maps/dir/?api=1&origin=' + origem + '&destination=' + destino + '&travelmode=driving', '_blank');
+    function(pos){
+      userLatCinema = pos.coords.latitude;
+      userLngCinema = pos.coords.longitude;
+      geoAtivoCinema = true;
+      btn.classList.add('ativo');
+      btn.innerHTML = '<i class="fas fa-map-marker-alt"></i> Perto de você ✓';
+      btn.disabled = false;
+      _aplicarDistanciasCinema();
+      cinemasFiltrados = _categoriaAtivaCinema
+        ? todosCinemas.filter(function(n){ return n.categoria_slug === _categoriaAtivaCinema; })
+        : todosCinemas.slice();
+      renderCinemas(cinemasFiltrados);
     },
-    function() {
-      window.open('https://www.google.com/maps/search/?api=1&query=' + destino, '_blank');
+    function(){
+      btn.innerHTML = '<i class="fas fa-map-marker-alt"></i> Usar minha localização';
+      btn.disabled = false;
+      alert('Não foi possível obter sua localização. Verifique as permissões.');
     },
-    { timeout: 8000, maximumAge: 60000 }
+    { timeout: 10000, maximumAge: 60000 }
   );
 }
+
+function toggleCategoriaSlicer(){
+  var panel = document.getElementById('filtros-categoria');
+  if(panel.classList.contains('open')) closeCategoriaSlicer(); else openCategoriaSlicer();
+}
+function openCategoriaSlicer(){
+  document.getElementById('filtros-categoria').classList.add('open');
+  document.getElementById('slicer-backdrop').classList.add('open');
+  document.getElementById('slicer-toggle').classList.add('open');
+  document.getElementById('slicer-toggle').setAttribute('aria-expanded','true');
+}
+function closeCategoriaSlicer(){
+  document.getElementById('filtros-categoria').classList.remove('open');
+  document.getElementById('slicer-backdrop').classList.remove('open');
+  document.getElementById('slicer-toggle').classList.remove('open');
+  document.getElementById('slicer-toggle').setAttribute('aria-expanded','false');
+}
+document.addEventListener('keydown', function(e){ if(e.key === 'Escape') closeCategoriaSlicer(); });
+
+function filtrarCategoria(slug, btn){
+  document.querySelectorAll('#filtros-categoria .chip-cat').forEach(function(c){ c.classList.remove('active'); });
+  btn.classList.add('active');
+  var lbl = document.getElementById('slicer-label-text');
+  if(lbl) lbl.textContent = btn.textContent;
+  closeCategoriaSlicer();
+  _categoriaAtivaCinema = slug || null;
+
+  if(!slug){
+    _apiFimCinema = false;
+    cinemasFiltrados = todosCinemas.slice();
+    renderCinemas(cinemasFiltrados);
+    return;
+  }
+
+  var cinemasCategoria = todosCinemas.filter(function(n){ return n.categoria_slug === slug; });
+  cinemasFiltrados = cinemasCategoria;
+  renderCinemas(cinemasFiltrados);
+
+  if(!_apiFimCinema && cinemasCategoria.length < 8){
+    var loading = document.getElementById('lazy-loading');
+    if(loading) loading.style.display = 'block';
+    fetch('/api/hub/negocios?limit=20000&offset=0&categoria=' + encodeURIComponent(slug))
+      .then(function(r){ return r.json(); })
+      .then(function(data){
+        if(loading) loading.style.display = 'none';
+        if(Array.isArray(data) && data.length > 0 && _categoriaAtivaCinema === slug){
+          cinemasFiltrados = data;
+          renderCinemas(cinemasFiltrados);
+        }
+      })
+      .catch(function(){ if(loading) loading.style.display = 'none'; });
+  }
+}
+
+function cardHTMLCinema(n){
+  var dist = (n._dist && n._dist < 9999) ? '<span class="card-dist"><i class="fas fa-map-marker-alt"></i> ' + n._dist.toFixed(1) + ' km de você</span>' : '';
+  var foto = n.foto_url || 'https://placehold.co/400x260/17171b/f5c518?text=%F0%9F%8E%9E';
+  var local = [n.bairro, n.cidade].filter(Boolean).join(', ');
+  var catNome = _cinemaLabel(n.categoria_nome || '');
+  return '<a href="/' + n.categoria_slug + '/' + n.slug + '/" class="negocio-card">' +
+    '<div class="card-foto">' +
+      '<img src="' + foto + '" alt="' + n.nome + '" loading="lazy" width="400" height="248">' +
+      '<span class="badge-cat">' + catNome + '</span>' +
+    '</div>' +
+    '<div class="card-body">' +
+      '<h3>' + n.nome + '</h3>' +
+      (local ? '<p class="card-bairro"><i class="fas fa-map-marker-alt" style="color:var(--gold)"></i> ' + local + '</p>' : '') +
+      dist +
+      '<span class="btn-ver">Ver detalhes →</span>' +
+    '</div>' +
+  '</a>';
+}
+
+function getCardWidthCinema(){
+  var track = document.getElementById('negocios-track');
+  var card = track.querySelector('.negocio-card');
+  if(!card) return 280;
+  return card.offsetWidth + 18;
+}
+
+function isMobileCinema(){ return window.innerWidth <= 768; }
+
+function clampAndUpdateCinema(){
+  if(isMobileCinema()) return;
+  var track = document.getElementById('negocios-track');
+  var cards = track.querySelectorAll('.negocio-card');
+  if(!cards.length) return;
+  var maxPos = Math.max(0, cards.length * getCardWidthCinema() - track.parentElement.offsetWidth);
+  carouselPosCinema = Math.max(0, Math.min(carouselPosCinema, maxPos));
+  track.style.transform = 'translateX(-' + carouselPosCinema + 'px)';
+  var fill = document.getElementById('negocios-progress-fill');
+  var prev = document.getElementById('negocios-prev');
+  var next = document.getElementById('negocios-next');
+  if(fill) fill.style.width = maxPos > 0 ? Math.min(100, (carouselPosCinema / maxPos) * 100) + '%' : '0%';
+  if(prev) prev.disabled = carouselPosCinema <= 0;
+  if(next) next.disabled = maxPos <= 0 || carouselPosCinema >= maxPos;
+}
+
+function snapCarouselCinema(){
+  var w = getCardWidthCinema(); if(!w) return;
+  carouselPosCinema = Math.round(carouselPosCinema / w) * w;
+  clampAndUpdateCinema();
+}
+
+function buildCarouselCinema(cards){
+  var track = document.getElementById('negocios-track');
+  track.innerHTML = cards.join('');
+  carouselPosCinema = 0;
+  track.style.transform = 'translateX(0)';
+  clampAndUpdateCinema();
+  var isDragging = false, startX = 0, startPos = 0;
+  var newTrack = track.cloneNode(true);
+  track.parentNode.replaceChild(newTrack, track);
+  track = document.getElementById('negocios-track');
+  function onStart(x){ isDragging = true; startX = x; startPos = carouselPosCinema; track.classList.add('dragging'); }
+  function onMove(x){ if(!isDragging) return; carouselPosCinema = startPos - (x - startX); clampAndUpdateCinema(); }
+  function onEnd(){ isDragging = false; track.classList.remove('dragging'); snapCarouselCinema(); }
+  if(!isMobileCinema()){
+    track.addEventListener('mousedown', function(e){ onStart(e.clientX); e.preventDefault(); });
+    window.addEventListener('mousemove', function(e){ if(isDragging) onMove(e.clientX); });
+    window.addEventListener('mouseup', function(){ if(isDragging) onEnd(); });
+    var _ty = 0, _horiz = false, _det = false;
+    track.addEventListener('touchstart', function(e){ _ty = e.touches[0].clientY; _horiz = false; _det = false; onStart(e.touches[0].clientX); }, { passive: true });
+    track.addEventListener('touchmove', function(e){
+      if(!isDragging) return;
+      if(!_det){ var dx = Math.abs(e.touches[0].clientX - startX), dy = Math.abs(e.touches[0].clientY - _ty); if(dx > 5 || dy > 5){ _horiz = dx >= dy; _det = true; } }
+      if(!_det || !_horiz) return; e.preventDefault(); onMove(e.touches[0].clientX);
+    }, { passive: false });
+    track.addEventListener('touchend', function(){ if(_horiz) onEnd(); else isDragging = false; });
+  }
+}
+
+function moveCarousel(dir){
+  var outer = document.getElementById('negocios-track').parentElement;
+  var visivel = Math.max(1, Math.floor(outer.offsetWidth / getCardWidthCinema()));
+  carouselPosCinema += dir * visivel * getCardWidthCinema();
+  clampAndUpdateCinema();
+}
+
+function setView(mode){
+  carouselViewCinema = mode;
+  var cw = document.getElementById('negocios-carousel-wrapper');
+  var gd = document.getElementById('negocios-grade');
+  document.getElementById('btn-carousel').classList.toggle('active', mode === 'carousel');
+  document.getElementById('btn-grade').classList.toggle('active', mode === 'grade');
+  if(cw) cw.style.display = mode === 'carousel' ? '' : 'none';
+  if(gd) gd.style.display = mode === 'grade' ? 'grid' : 'none';
+}
+
+function renderCinemas(lista){
+  cinemasFiltrados = lista;
+  var vc = document.getElementById('view-controls');
+  var vazio = document.getElementById('negocios-vazio');
+  var total = document.getElementById('cinemas-total');
+  if(total) total.textContent = lista.length + (lista.length !== 1 ? ' salas encontradas' : ' sala encontrada');
+
+  if(!lista.length){
+    if(vc) vc.style.display = 'none';
+    var cw = document.getElementById('negocios-carousel-wrapper');
+    var gd = document.getElementById('negocios-grade');
+    if(cw) cw.style.display = 'none';
+    if(gd) gd.style.display = 'none';
+    if(vazio) vazio.style.display = '';
+    return;
+  }
+  if(vazio) vazio.style.display = 'none';
+  if(vc) vc.style.display = 'flex';
+  var cards = lista.slice(0, 48).map(cardHTMLCinema);
+  buildCarouselCinema(cards);
+  var gd = document.getElementById('negocios-grade');
+  if(gd) gd.innerHTML = cards.join('');
+  setView(carouselViewCinema);
+}
+
+(function mostrarTodosCinemasInicial(){
+  renderCinemas(cinemasFiltrados);
+})();
+
+(function(){
+  var sentinel = document.getElementById('lazy-sentinel');
+  if(!sentinel || !('IntersectionObserver' in window)) return;
+  new IntersectionObserver(function(entries){
+    if(!entries[0].isIntersecting) return;
+    _renderizarProximoLoteCinema();
+  }, { rootMargin: '400px' }).observe(sentinel);
+})();
 </script>
 
 {% if hub.ga4_id %}
 <script async src="https://www.googletagmanager.com/gtag/js?id={{ hub.ga4_id }}"></script>
 <script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag('js',new Date());gtag('config','{{ hub.ga4_id }}');</script>
+{% endif %}
+{% if hub.pixel_id %}
+<script>!function(f,b,e,v,n,t,s){if(f.fbq)return;n=f.fbq=function(){n.callMethod?n.callMethod.apply(n,arguments):n.queue.push(arguments)};if(!f._fbq)f._fbq=n;n.push=n;n.loaded=!0;n.version='2.0';n.queue=[];t=b.createElement(e);t.async=!0;t.src=v;s=b.getElementsByTagName(e)[0];s.parentNode.insertBefore(t,s)}(window,document,'script','https://connect.facebook.net/en_US/fbevents.js');fbq('init','{{ hub.pixel_id }}');fbq('track','PageView');</script>
 {% endif %}
 
 </body>
