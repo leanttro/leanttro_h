@@ -92,7 +92,8 @@ body > header {
     background: var(--header-bg); border-bottom: 1px solid var(--header-border);
     padding: 20px 24px 14px; display: flex; flex-direction: column;
     align-items: center; justify-content: center; gap: 10px;
-    position: sticky; top: 0; z-index: 100; overflow: hidden;
+    position: fixed; top: 0; left: 0; right: 0; width: 100%;
+    z-index: 100; overflow: hidden;
 }
 .logo { display: block; text-align: center; position: relative; z-index: 1; }
 .logo img { height: 110px; width: auto; margin: 0 auto; display: block; }
@@ -119,7 +120,6 @@ nav.desktop-nav ul li a {
 }
 .header-lights .spot-1 { left: 2%; }
 .header-lights .spot-2 { left: 22%; }
-.header-lights .spot-3 { left: 50%; transform: translateX(-50%); }
 .header-lights .spot-4 { left: 78%; }
 .header-lights .spot-5 { left: 98%; transform: translateX(-100%); }
 @media (max-width: 860px) {
@@ -306,7 +306,6 @@ footer ul li a:hover { color: var(--gold); }
   <div class="header-lights" aria-hidden="true">
     <span class="spot spot-1"></span>
     <span class="spot spot-2"></span>
-    <span class="spot spot-3"></span>
     <span class="spot spot-4"></span>
     <span class="spot spot-5"></span>
   </div>
@@ -324,6 +323,24 @@ footer ul li a:hover { color: var(--gold); }
     </ul>
   </nav>
 </header>
+
+<script>
+// Header agora é "position: fixed" (não sticky) — sai do fluxo normal da
+// página, então compensamos com padding-top no body pra nada ficar
+// escondido atrás dele. Recalcula em load/resize/troca de fonte porque
+// a altura do header muda entre mobile/desktop (menu quebra linha) e
+// pode variar 1-2px quando a Montserrat termina de carregar.
+(function(){
+  function ajustarPaddingHeader(){
+    var header = document.querySelector('body > header');
+    if(header) document.body.style.paddingTop = header.offsetHeight + 'px';
+  }
+  ajustarPaddingHeader();
+  window.addEventListener('load', ajustarPaddingHeader);
+  window.addEventListener('resize', ajustarPaddingHeader);
+  if(document.fonts && document.fonts.ready) document.fonts.ready.then(ajustarPaddingHeader);
+})();
+</script>
 
 {% if anuncio_topo %}
 <div class="anuncio-slot">
