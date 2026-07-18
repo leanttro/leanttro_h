@@ -99,6 +99,31 @@ def _cache_invalidar():
     """Chame depois de QUALQUER escrita em hub_negocios (criar/editar/apagar/aprovar/bulk)."""
     _CACHE.clear()
 
+# ── Categorias visíveis por hub ────────────────────────────────
+# hub_categorias é uma tabela ÚNICA compartilhada por todos os hubs (sem
+# hub_id) — por padrão, TODO hub enxerga a lista inteira de categorias
+# ativas (comportamento de sempre, preservado pra quem não configurar nada).
+#
+# Hubs de nicho (ex.: Cinema Perto de Mim) preenchem
+# hub_clientes.categorias_prefixo_slug (ex.: 'cinema_') pra enxergar SÓ as
+# categorias cujo slug comece com esse prefixo — assim dá pra ter uma
+# curadoria editorial de categorias (cinema, cinema de rua, cineclube...)
+# sem precisar de nenhum negócio cadastrado ainda pra elas aparecerem.
+def _categorias_do_hub(hub):
+    prefixo = hub.get("categorias_prefixo_slug")
+    if not prefixo:
+        return query("SELECT * FROM hub_categorias WHERE ativo = true ORDER BY nome")
+    # escapa os coringas do LIKE (_ e %) que possam existir no prefixo cadastrado,
+    # pra não virarem wildcard sem querer (ex.: o "_" de "cinema_" é literal aqui).
+    padrao = (
+        prefixo.replace("\\", "\\\\").replace("_", "\\_").replace("%", "\\%")
+        + "%"
+    )
+    return query(
+        "SELECT * FROM hub_categorias WHERE ativo = true AND slug LIKE %s ESCAPE '\\' ORDER BY nome",
+        (padrao,),
+    )
+
 # ── Auth ──────────────────────────────────────────────────────
 
 def login_required(f):
@@ -201,7 +226,7 @@ def index():
     hub = get_hub_by_host()
     if not hub:
         return "Hub não encontrado", 404
-    categorias = query("SELECT * FROM hub_categorias WHERE ativo = true ORDER BY nome")
+    categorias = _categorias_do_hub(hub)
     template = hub.get("template_index") or "index_padrao"
 
     # Templates preparados p/ infinite-scroll (JS busca o resto via
@@ -801,7 +826,7 @@ def pagina_cidade(cidade_slug):
         return "Cidade não encontrada", 404
     negocios   = _negocios_cidade(hub["id"], cidade_variantes=cidade_var)
     total      = _contar_negocios_cidade(hub["id"], cidade_variantes=cidade_var)
-    categorias = query("SELECT * FROM hub_categorias WHERE ativo = true ORDER BY nome")
+    categorias = _categorias_do_hub(hub)
     bairros    = _bairros_cidade(hub["id"], cidade_var)
     cats_disp  = _categorias_cidade(hub["id"], cidade_var)
     return _render_cidade(hub, negocios, categorias, cidade_nome,
@@ -822,7 +847,7 @@ def pagina_cidade_segundo(cidade_slug, segundo_slug):
         "SELECT * FROM hub_categorias WHERE slug = %s AND ativo = true",
         (segundo_slug,), one=True
     )
-    categorias = query("SELECT * FROM hub_categorias WHERE ativo = true ORDER BY nome")
+    categorias = _categorias_do_hub(hub)
     bairros    = _bairros_cidade(hub["id"], cidade_var)
     cats_disp  = _categorias_cidade(hub["id"], cidade_var)
     if categoria:
@@ -859,7 +884,7 @@ def pagina_cidade_bairro_cat(cidade_slug, bairro_slug, cat_slug):
         "SELECT * FROM hub_categorias WHERE slug = %s AND ativo = true",
         (cat_slug,), one=True
     )
-    categorias  = query("SELECT * FROM hub_categorias WHERE ativo = true ORDER BY nome")
+    categorias  = _categorias_do_hub(hub)
     bairros     = _bairros_cidade(hub["id"], cidade_var)
     cats_disp   = _categorias_cidade(hub["id"], cidade_var)
     bairro_nome, bairro_var = _resolve_bairro(hub["id"], bairro_slug, cidade_var)
@@ -896,7 +921,7 @@ def pagina_cat_cidade(cat_slug, cidade_slug):
         return "Cidade não encontrada", 404
     negocios   = _negocios_cidade(hub["id"], cidade_variantes=cidade_var, cat_slug=cat_slug)
     total      = _contar_negocios_cidade(hub["id"], cidade_variantes=cidade_var, cat_slug=cat_slug)
-    categorias = query("SELECT * FROM hub_categorias WHERE ativo = true ORDER BY nome")
+    categorias = _categorias_do_hub(hub)
     bairros    = _bairros_cidade(hub["id"], cidade_var)
     cats_disp  = _categorias_cidade(hub["id"], cidade_var)
     return _render_cidade(hub, negocios, categorias, cidade_nome,
@@ -930,7 +955,7 @@ def pagina_cat_cidade_bairro(cat_slug, cidade_slug, bairro_slug):
                                     cat_slug=cat_slug, bairro_variantes=bairro_var)
     total       = _contar_negocios_cidade(hub["id"], cidade_variantes=cidade_var,
                                           cat_slug=cat_slug, bairro_variantes=bairro_var)
-    categorias  = query("SELECT * FROM hub_categorias WHERE ativo = true ORDER BY nome")
+    categorias  = _categorias_do_hub(hub)
     bairros     = _bairros_cidade(hub["id"], cidade_var)
     cats_disp   = _categorias_cidade(hub["id"], cidade_var)
     return _render_cidade(hub, negocios, categorias, cidade_nome,
@@ -994,7 +1019,7 @@ def blog_index():
         ORDER BY t.nome
     """, (hub["id"],))
 
-    categorias = query("SELECT * FROM hub_categorias WHERE ativo = true ORDER BY nome")
+    categorias = _categorias_do_hub(hub)
     template = hub.get("template_blog") or "blog_otp"
     return render_template(
         f"hub/{template}.html",
@@ -1040,7 +1065,7 @@ def blog_post(slug):
         LIMIT 3
     """, (hub["id"], post["id"], post["id"]))
 
-    categorias = query("SELECT * FROM hub_categorias WHERE ativo = true ORDER BY nome")
+    categorias = _categorias_do_hub(hub)
     anuncio_topo = _get_anuncios(hub["id"], "topo")
     anuncio_meio = _get_anuncios(hub["id"], "meio")
     template_post = hub.get("template_blog_post") or "blog_post_otp"
@@ -2209,7 +2234,10 @@ def api_negocios():
 
 @app.route("/api/hub/categorias")
 def api_categorias():
-    categorias = query("SELECT * FROM hub_categorias WHERE ativo = true ORDER BY nome")
+    hub = get_hub_by_host()
+    if not hub:
+        return jsonify({"erro": "Hub não encontrado"}), 404
+    categorias = _categorias_do_hub(hub)
     return jsonify([dict(c) for c in categorias])
 
 
