@@ -13,10 +13,26 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
+{# Remove o prefixo "cinema_" (usado só internamente no slug) e formata o nome
+   pra exibição — precisa vir antes do SEO dinâmico logo abaixo, que já usa ela
+   pra montar o título/descrição da página em vez do slug cru. #}
+{% macro cat_label(cat) -%}
+{%- set n = (cat.nome or cat.slug or '') -%}
+{%- if n.startswith('cinema_') -%}{%- set n = n[7:] -%}{%- endif -%}
+{{- n.replace('-', ' ').replace('_', ' ') | title -}}
+{%- endmacro %}
+
+{# Nome de exibição da categoria atual (não o slug) — usado no título, na
+   descrição e no breadcrumb quando filtro_tipo == 'categoria'. Cai pro slug
+   capitalizado só se a categoria não for encontrada em `categorias` por
+   algum motivo (nunca deveria acontecer, mas evita título vazio). #}
+{% set categoria_atual = (categorias | selectattr('slug', 'equalto', filtro_valor) | first) if (filtro_tipo == 'categoria' and categorias) else none %}
+{% set categoria_label = cat_label(categoria_atual) if categoria_atual else (filtro_valor | capitalize) %}
+
 {# ══ SEO dinâmico ══ #}
 {% if filtro_tipo == 'categoria' %}
-  {% set seo_title = (filtro_valor | capitalize) ~ " em " ~ (hub.nome or 'Cinema Perto de Mim') %}
-  {% set seo_desc  = "Encontre " ~ filtro_valor ~ " perto de mim em " ~ (hub.nome or 'Cinema Perto de Mim') ~ ". Endereços, contato e localização." %}
+  {% set seo_title = categoria_label ~ " em " ~ (hub.nome or 'Cinema Perto de Mim') %}
+  {% set seo_desc  = "Encontre " ~ categoria_label ~ " perto de mim em " ~ (hub.nome or 'Cinema Perto de Mim') ~ ". Endereços, contato e localização." %}
 {% else %}
   {% set seo_title = "Cinemas no bairro " ~ (filtro_valor | capitalize) ~ " — " ~ (hub.nome or 'Cinema Perto de Mim') %}
   {% set seo_desc  = "Cinemas e salas de cultura no bairro " ~ filtro_valor ~ ". Endereços e contatos perto de mim." %}
@@ -44,7 +60,7 @@
   "@type": "BreadcrumbList",
   "itemListElement": [
     {"@type":"ListItem","position":1,"name":"Início","item":"https://{{ request.host }}/"},
-    {"@type":"ListItem","position":2,"name":"{{ filtro_valor | capitalize }}","item":"https://{{ request.host }}/{{ segmento }}/"}
+    {"@type":"ListItem","position":2,"name":"{{ categoria_label if filtro_tipo == 'categoria' else (filtro_valor | capitalize) }}","item":"https://{{ request.host }}/{{ segmento }}/"}
   ]
 }
 </script>
@@ -257,14 +273,6 @@ footer ul li a:hover { color: var(--gold); }
 </head>
 <body>
 
-{# Remove o prefixo "cinema_" (usado só internamente no slug) e formata o nome
-   pra exibição — mesma lógica do index. #}
-{% macro cat_label(cat) -%}
-{%- set n = (cat.nome or cat.slug or '') -%}
-{%- if n.startswith('cinema_') -%}{%- set n = n[7:] -%}{%- endif -%}
-{{- n.replace('-', ' ').replace('_', ' ') | title -}}
-{%- endmacro %}
-
 <header>
   <a class="logo" href="/">
     <img src="{{ hub.logo_url or 'https://res.cloudinary.com/dec2b0u1/image/upload/v1784394139/cinema_ymuflx.png' }}" alt="{{ hub.nome or 'Cinema Perto de Mim' }}">
@@ -348,20 +356,26 @@ window.addEventListener('scroll', function(){ closeNavCinemas(); }, { passive: t
 {% endif %}
 
 <div class="pagina-header container">
-  <div class="breadcrumb"><a href="/">Início</a> / {{ filtro_valor | capitalize }}</div>
+  <div class="breadcrumb"><a href="/">Início</a> / {{ categoria_label if filtro_tipo == 'categoria' else (filtro_valor | capitalize) }}</div>
   <h1>
-    {% if filtro_tipo == 'categoria' %}{{ filtro_valor | capitalize }} perto de mim
+    {% if filtro_tipo == 'categoria' %}{{ categoria_label }} perto de mim
     {% else %}Cinemas no bairro {{ filtro_valor | capitalize }}{% endif %}
   </h1>
   <div class="total">{{ total_negocios }} resultado{{ 's' if total_negocios != 1 else '' }}</div>
 </div>
 
 {% if filtro_tipo == 'categoria' and bairros_disponiveis %}
-<div class="chips-row">
-  <div class="chips-label">Filtrar por bairro</div>
-  {% for b in bairros_disponiveis %}
-    <a class="chip" href="/{{ b | slugify }}/">{{ b }}</a>
-  {% endfor %}
+<div class="categoria-slicer" id="bairro-slicer">
+  <button type="button" class="slicer-toggle" id="bairro-slicer-toggle" onclick="toggleBairroSlicer()" aria-haspopup="listbox" aria-expanded="false" aria-controls="filtros-bairro">
+    <span class="slicer-label"><i class="fas fa-map-marker-alt"></i> Filtrar por bairro: <strong id="bairro-slicer-label-text">Todos</strong></span>
+    <i class="fas fa-chevron-down slicer-chevron" aria-hidden="true"></i>
+  </button>
+  <div class="slicer-panel" id="filtros-bairro" role="listbox" aria-label="Filtrar por bairro">
+    {% for b in bairros_disponiveis %}
+      <a class="chip-cat" href="/{{ b | slugify }}/">{{ b }}</a>
+    {% endfor %}
+  </div>
+  <div class="slicer-backdrop" id="bairro-slicer-backdrop" onclick="closeBairroSlicer()"></div>
 </div>
 {% endif %}
 
@@ -501,6 +515,37 @@ function closeCategoriaSlicer(){
   if(toggle) toggle.setAttribute('aria-expanded', 'false');
 }
 document.addEventListener('keydown', function(e){ if(e.key === 'Escape') closeCategoriaSlicer(); });
+</script>
+{% endif %}
+
+{% if filtro_tipo == 'categoria' and bairros_disponiveis %}
+<script>
+// ══════════════════════════════════════════════════════════════════
+// Dropdown "Filtrar por bairro" — mesmo padrão do slicer de "Tipo de
+// cinema" acima. Cada opção já é um link pra outra página de filtro,
+// então só cuida de abrir/fechar o painel.
+// ══════════════════════════════════════════════════════════════════
+function toggleBairroSlicer(){
+  var toggle = document.getElementById('bairro-slicer-toggle');
+  var panel = document.getElementById('filtros-bairro');
+  var backdrop = document.getElementById('bairro-slicer-backdrop');
+  if(!toggle || !panel) return;
+  var abrir = !panel.classList.contains('open');
+  toggle.classList.toggle('open', abrir);
+  panel.classList.toggle('open', abrir);
+  if(backdrop) backdrop.classList.toggle('open', abrir);
+  toggle.setAttribute('aria-expanded', abrir ? 'true' : 'false');
+}
+function closeBairroSlicer(){
+  var toggle = document.getElementById('bairro-slicer-toggle');
+  var panel = document.getElementById('filtros-bairro');
+  var backdrop = document.getElementById('bairro-slicer-backdrop');
+  if(toggle) toggle.classList.remove('open');
+  if(panel) panel.classList.remove('open');
+  if(backdrop) backdrop.classList.remove('open');
+  if(toggle) toggle.setAttribute('aria-expanded', 'false');
+}
+document.addEventListener('keydown', function(e){ if(e.key === 'Escape') closeBairroSlicer(); });
 </script>
 {% endif %}
 
