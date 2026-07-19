@@ -127,16 +127,53 @@ def _providers_disponiveis_br():
     return provedores
 
 
-# Curadoria dos provedores de ASSINATURA mais relevantes pro público daqui —
-# evita misturar com serviço de aluguel avulso (Google Play Movies, Apple
-# TV — compra avulsa, etc.) que a TMDB também lista junto. Pra adicionar um
-# provedor novo, só incluir o slug dele aqui (o slug é gerado a partir do
-# nome oficial que a TMDB devolve; se não aparecer, o nome na TMDB pode ser
-# ligeiramente diferente do esperado).
-SLUGS_PROVEDORES_PRINCIPAIS = [
-    "netflix", "amazon-prime-video", "disney-plus", "max",
-    "apple-tv-plus", "paramount-plus", "globoplay", "mubi",
+# Curadoria dos provedores mais relevantes pro público daqui — evita
+# misturar com serviço de aluguel avulso (Google Play Movies, compra
+# avulsa etc.) que a TMDB também lista junto.
+#
+# Antes isso casava por SLUG EXATO (ex.: "apple-tv-plus"), gerado a partir
+# do nome que a TMDB devolve — mas a TMDB pode grafar o nome de um jeito
+# ligeiramente diferente do esperado (acento, "+", espaço extra...), e aí
+# o slug batia errado e o provedor sumia da lista mesmo estando disponível
+# de verdade (foi o que aconteceu com o Apple TV+). Agora casa por
+# "o nome do provedor CONTÉM esse termo" (sem acento/maiúscula, com borda
+# de palavra pra não confundir "Max" com "IMAX") — bem mais tolerante a
+# variação de grafia. A ORDEM da lista abaixo é a ordem de exibição no site;
+# pra adicionar um provedor novo, só incluir um termo que apareça no nome
+# dele.
+ALIASES_PROVEDORES_PRINCIPAIS = [
+    ["netflix"],
+    ["prime video"],
+    ["disney plus", "disney+", "disney"],
+    ["max", "hbo max"],
+    ["apple tv"],
+    ["paramount"],
+    ["globoplay"],
+    ["mubi"],
+    ["tela brasil"],
 ]
+
+
+def _provedores_curados():
+    """Escolhe, na lista completa que a TMDB devolve, o 1º provedor cujo
+    nome bate com cada termo de ALIASES_PROVEDORES_PRINCIPAIS, respeitando
+    a ordem definida ali. Provedor que a TMDB não tem catalogado pra filme
+    no Brasil simplesmente não aparece — isso é limitação de dado da
+    própria TMDB, não tem como forçar no nosso código."""
+    todos = _providers_disponiveis_br()
+    escolhidos = []
+    usados = set()
+    for aliases in ALIASES_PROVEDORES_PRINCIPAIS:
+        termos = [_normalizar_busca(a) for a in aliases]
+        for p in todos:
+            if p["slug"] in usados:
+                continue
+            nome_norm = _normalizar_busca(p["nome"])
+            if any(re.search(r"\b" + re.escape(t) + r"\b", nome_norm) for t in termos):
+                escolhidos.append(p)
+                usados.add(p["slug"])
+                break
+    return escolhidos
 
 
 def _provider_por_slug(slug):
