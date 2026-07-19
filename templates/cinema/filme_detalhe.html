@@ -277,18 +277,22 @@ window.addEventListener('scroll', function(){ closeNavCinemas(); }, { passive: t
     <p class="sinopse">{{ filme.overview }}</p>
   {% endif %}
 
-  <div class="providers">
-    <h2>Onde assistir</h2>
+  {# Em cartaz e streaming são categorias mutuamente exclusivas aqui (ver
+     esta_em_streaming calculado no cinema.py): filme que já está em
+     streaming por assinatura não mostra o "veja cinemas perto de você",
+     e filme que ainda só está no cinema não mostra o bloco de streaming.
+     Nunca os dois juntos. #}
+  {% if esta_em_streaming %}
+    <div class="providers">
+      <h2>Onde assistir</h2>
 
-    {% if providers.flatrate or providers.rent or providers.buy %}
-      {% if providers.flatrate %}
-        <p>Streaming (assinatura):</p>
-        <div class="providers-lista">
-          {% for p in providers.flatrate %}
-            <img src="{{ img_base }}/w92{{ p.logo_path }}" alt="{{ p.provider_name }}" title="{{ p.provider_name }}">
-          {% endfor %}
-        </div>
-      {% endif %}
+      <p>Streaming (assinatura):</p>
+      <div class="providers-lista">
+        {% for p in providers.flatrate %}
+          <img src="{{ img_base }}/w92{{ p.logo_path }}" alt="{{ p.provider_name }}" title="{{ p.provider_name }}">
+        {% endfor %}
+      </div>
+
       {% if providers.rent %}
         <p>Aluguel:</p>
         <div class="providers-lista">
@@ -313,17 +317,15 @@ window.addEventListener('scroll', function(){ closeNavCinemas(); }, { passive: t
       {% endif %}
 
       {% include "cinema/_creditos_justwatch.html" %}
-    {% else %}
-      <p>Não encontramos esse filme em nenhum streaming no Brasil no momento.</p>
-    {% endif %}
-  </div>
-
-  {# Sem detecção de cidade ainda (nem geolocalização por IP nem cookie de
-     cidade escolhida) — por enquanto manda pra home, que já lista as
-     cidades disponíveis. Se quiser resolver a cidade certa aqui, dá pra
-     usar cookie de "última cidade visitada" (setar nas páginas /cidade/
-     do app.py) ou geolocalização por IP; nenhum dos dois existe hoje. #}
-  <a class="link-diretorio" href="/">Veja cinemas perto de você →</a>
+    </div>
+  {% else %}
+    {# Sem detecção de cidade ainda (nem geolocalização por IP nem cookie de
+       cidade escolhida) — por enquanto manda pra home, que já lista as
+       cidades disponíveis. Se quiser resolver a cidade certa aqui, dá pra
+       usar cookie de "última cidade visitada" (setar nas páginas /cidade/
+       do app.py) ou geolocalização por IP; nenhum dos dois existe hoje. #}
+    <a class="link-diretorio" href="/">Veja cinemas perto de você →</a>
+  {% endif %}
 
   {% include "cinema/_creditos.html" %}
 </main>
