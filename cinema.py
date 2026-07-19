@@ -91,7 +91,60 @@ def _enriquecer_filme(filme):
     string de URL de imagem dentro do Jinja."""
     filme["poster_url"] = _poster_url(filme.get("poster_path"))
     filme["backdrop_url"] = _backdrop_url(filme.get("backdrop_path"))
+    filme["slug"] = _registrar_slug(filme)
     return filme
+
+
+# Índice slug -> tmdb_id, em memória. Alimentado toda vez que um filme
+# passa por qualquer listagem (em cartaz, streaming, busca...), então na
+# hora de abrir /filme/<slug> a gente já sabe o id sem precisar dele na
+# URL. Não é persistente (reinicia com o processo), mas não precisa ser:
+# se der cache miss, _resolver_slug cai pro fallback de busca na TMDB.
+_SLUG_INDEX = {}
+
+
+def _registrar_slug(filme):
+    """Calcula o slug do filme e registra no índice. Em caso de dois
+    filmes com o mesmo título (remake, franquia repetida...), o segundo
+    que aparecer ganha o ano junto pra não pisar na URL do primeiro."""
+    base = _slugify(filme.get("title") or filme.get("original_title") or "")
+    tmdb_id = filme.get("id")
+    existente = _SLUG_INDEX.get(base)
+    if existente is not None and existente != tmdb_id:
+        ano = (filme.get("release_date") or "")[:4]
+        slug = f"{base}-{ano}" if ano else base
+    else:
+        slug = base
+    _SLUG_INDEX[slug] = tmdb_id
+    return slug
+
+
+def _resolver_slug(slug):
+    """Slug -> tmdb_id. Primeiro tenta o índice em memória (caso comum:
+    filme veio de alguma listagem antes). Se não achar (link direto pra
+    um filme que ainda não passou por nenhuma listagem nesse processo),
+    busca na TMDB pelo título e confirma pelo slug batendo certinho."""
+    tmdb_id = _SLUG_INDEX.get(slug)
+    if tmdb_id is not None:
+        return tmdb_id
+
+    m = re.match(r"^(.*)-(\d{4})$", slug)
+    base, ano = (m.group(1), m.group(2)) if m else (slug, None)
+    termo_busca = base.replace("-", " ")
+
+    params = {"query": termo_busca}
+    if ano:
+        params["year"] = ano
+    dados, erro = _tmdb_get("/search/movie", params)
+    if erro or not dados:
+        return None
+
+    for candidato in dados.get("results", []):
+        candidato_slug = _slugify(candidato.get("title") or candidato.get("original_title") or "")
+        if candidato_slug == base:
+            _SLUG_INDEX[slug] = candidato["id"]
+            return candidato["id"]
+    return None
 
 
 # ── Provedores de streaming (Brasil) ────────────────────────────
@@ -183,6 +236,15 @@ def _provider_por_slug(slug):
     return None
 
 
+def _ids_providers_flatrate_br():
+    """IDs de TODOS os provedores de streaming por assinatura catalogados
+    no Brasil pela TMDB (não só os curados no menu) — usado só pra tirar
+    de /em-cartaz um filme que já está disponível em algum streaming (ver
+    _params_em_cartaz abaixo). Filme com "aluguel"/"compra" avulsos não
+    entra nessa conta, só assinatura (flatrate) mesmo."""
+    return [p["id"] for p in _providers_disponiveis_br()]
+
+
 def _normalizar_busca(txt):
     """minúsculo + sem acento, pra 'sao paulo' bater com 'São Paulo' etc."""
     txt = (txt or "").strip().lower()
@@ -195,6 +257,35 @@ def _slugify(texto):
     texto = _normalizar_busca(texto)
     texto = re.sub(r"[^a-z0-9]+", "-", texto).strip("-")
     return texto or "filme"
+
+
+def _params_em_cartaz(pagina):
+    """Parâmetros do /discover/movie pra 'em cartaz': lançamento teatral/
+    limitado (2|3) nos últimos 45 dias no Brasil, EXCLUINDO quem já está
+    disponível em algum streaming por assinatura — regra de negócio: em
+    cartaz e streaming são categorias mutuamente exclusivas aqui no site,
+    então filme que já foi pro streaming sai daqui e só aparece na vitrine
+    de streaming (/nao-quer-sair-de-casa/<provedor>)."""
+    hoje = date.today()
+    params = {
+        "region": "BR",
+        "with_release_type": "2|3",
+        "primary_release_date.gte": (hoje - timedelta(days=45)).isoformat(),
+        "primary_release_date.lte": hoje.isoformat(),
+        "sort_by": "popularity.desc",
+        "include_adult": "false",
+        "page": pagina,
+    }
+    ids_flatrate = _ids_providers_flatrate_br()
+    if ids_flatrate:
+        params["watch_region"] = "BR"
+        params["with_watch_monetization_types"] = "flatrate"
+        params["without_watch_providers"] = "|".join(str(i) for i in ids_flatrate)
+    # Se a lista de provedores não carregou (TMDB fora do ar etc.), segue
+    # sem o filtro de exclusão em vez de quebrar a página inteira — pior
+    # caso é a lista de em-cartaz vir com algum filme repetido do streaming
+    # até a próxima chamada bem-sucedida (cache de 30min).
+    return params
 
 
 # ════════════════════════════════════════════════════════════
@@ -224,20 +315,10 @@ def em_cartaz():
     # lançamento teatral (2=limitado, 3=amplo) dentro de uma janela de data
     # recente — assim só entra o que de fato estreou/está em exibição
     # nos últimos ~45 dias, e não o catálogo inteiro já lançado algum dia.
-    hoje = date.today()
     filmes = []
     total_paginas_tmdb = 1
     for pagina in range(1, PAGINAS_INICIAIS + 1):
-        params = {
-            "region": "BR",
-            "with_release_type": "2|3",
-            "primary_release_date.gte": (hoje - timedelta(days=45)).isoformat(),
-            "primary_release_date.lte": hoje.isoformat(),
-            "sort_by": "popularity.desc",
-            "include_adult": "false",
-            "page": pagina,
-        }
-        dados, erro = _tmdb_get("/discover/movie", params)
+        dados, erro = _tmdb_get("/discover/movie", _params_em_cartaz(pagina))
         if erro or not dados:
             break
         total_paginas_tmdb = min(dados.get("total_pages", 1), 500)
@@ -261,26 +342,21 @@ def em_cartaz():
 #  /filme/<tmdb_id> — detalhe + onde assistir
 # ════════════════════════════════════════════════════════════
 
-@cinema_bp.route("/filme/<int:tmdb_id>")
-@cinema_bp.route("/filme/<int:tmdb_id>/<slug>")
-def filme_detalhe(tmdb_id, slug=None):
+@cinema_bp.route("/filme/<slug>")
+def filme_detalhe(slug):
     from app import get_hub_by_host
-    from flask import redirect, url_for
     hub = get_hub_by_host()
     if not hub:
         return "Hub não encontrado", 404
+
+    tmdb_id = _resolver_slug(slug)
+    if tmdb_id is None:
+        return "Filme não encontrado", 404
 
     filme, erro = _tmdb_get(f"/movie/{tmdb_id}")
     if erro or not filme or filme.get("success") is False:
         return "Filme não encontrado", 404
     _enriquecer_filme(filme)
-
-    # slug é só cosmético/SEO — quem manda é o tmdb_id. Se vier faltando
-    # ou desatualizado (filme com título mudado, link antigo etc.),
-    # redireciona pra URL canônica em vez de servir a página duas vezes.
-    slug_correto = _slugify(filme.get("title") or filme.get("original_title") or "")
-    if slug != slug_correto:
-        return redirect(url_for("cinema.filme_detalhe", tmdb_id=tmdb_id, slug=slug_correto), code=301)
 
     providers_dados, _ = _tmdb_get(f"/movie/{tmdb_id}/watch/providers")
     # A chave "link" é uma URL da própria TMDB (não da JustWatch) que já
@@ -288,11 +364,33 @@ def filme_detalhe(tmdb_id, slug=None):
     # que a API não fornece. Ver nota no topo do arquivo.
     providers_br = (providers_dados or {}).get("results", {}).get("BR", {})
 
+    # Mesma regra de negócio da listagem (_params_em_cartaz): em cartaz e
+    # streaming são categorias mutuamente exclusivas aqui — se tem
+    # streaming por assinatura no Brasil, a página trata como "filme de
+    # streaming" (mostra "Onde assistir", esconde "veja cinemas perto de
+    # você"); senão, trata como "filme em cartaz" (o inverso).
+    esta_em_streaming = bool(providers_br.get("flatrate"))
+
     return render_template(
         "cinema/filme_detalhe.html",
         hub=hub, filme=filme, providers=providers_br,
+        esta_em_streaming=esta_em_streaming,
         img_base=TMDB_IMG_BASE,
     )
+
+
+# URLs antigas (/filme/<id> e /filme/<id>/<slug>) continuam existindo só
+# pra redirecionar — link já compartilhado ou indexado no Google não
+# pode virar 404 do nada.
+@cinema_bp.route("/filme/<int:tmdb_id_antigo>")
+@cinema_bp.route("/filme/<int:tmdb_id_antigo>/<slug_antigo>")
+def filme_detalhe_id_antigo(tmdb_id_antigo, slug_antigo=None):
+    from flask import redirect, url_for
+    filme, erro = _tmdb_get(f"/movie/{tmdb_id_antigo}")
+    if erro or not filme or filme.get("success") is False:
+        return "Filme não encontrado", 404
+    _enriquecer_filme(filme)
+    return redirect(url_for("cinema.filme_detalhe", slug=filme["slug"]), code=301)
 
 
 # ════════════════════════════════════════════════════════════
@@ -385,17 +483,7 @@ def api_em_cartaz():
     except (TypeError, ValueError):
         pagina = 1
 
-    hoje = date.today()
-    params = {
-        "region": "BR",
-        "with_release_type": "2|3",
-        "primary_release_date.gte": (hoje - timedelta(days=45)).isoformat(),
-        "primary_release_date.lte": hoje.isoformat(),
-        "sort_by": "popularity.desc",
-        "include_adult": "false",
-        "page": pagina,
-    }
-    dados, erro = _tmdb_get("/discover/movie", params)
+    dados, erro = _tmdb_get("/discover/movie", _params_em_cartaz(pagina))
     if erro or not dados:
         return jsonify(filmes=[], tem_mais=False), 200
 
@@ -414,21 +502,11 @@ def api_em_cartaz_buscar():
     if not termo:
         return jsonify(filmes=[], truncado=False)
 
-    hoje = date.today()
     encontrados = []
     pagina = 1
     total_paginas_tmdb = 1
     while pagina <= _BUSCA_LIMITE_PAGINAS and pagina <= total_paginas_tmdb and len(encontrados) < _BUSCA_LIMITE_RESULTADOS:
-        params = {
-            "region": "BR",
-            "with_release_type": "2|3",
-            "primary_release_date.gte": (hoje - timedelta(days=45)).isoformat(),
-            "primary_release_date.lte": hoje.isoformat(),
-            "sort_by": "popularity.desc",
-            "include_adult": "false",
-            "page": pagina,
-        }
-        dados, erro = _tmdb_get("/discover/movie", params)
+        dados, erro = _tmdb_get("/discover/movie", _params_em_cartaz(pagina))
         if erro or not dados:
             break
         total_paginas_tmdb = min(dados.get("total_pages", 1), 500)
