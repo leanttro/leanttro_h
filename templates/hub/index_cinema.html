@@ -279,14 +279,6 @@ nav.desktop-nav ul li a:hover { background: var(--primary); color: var(--on-prim
 .carousel-track.dragging { transition: none; cursor: grabbing; }
 .carousel-track .negocio-card { flex: 0 0 calc(25% - 14px); min-width: 0; }
 @media (max-width: 900px) { .carousel-track .negocio-card { flex: 0 0 calc(50% - 9px); } }
-@media (max-width: 768px) {
-    .carousel-track-outer { overflow-x: scroll; overflow-y: hidden; -webkit-overflow-scrolling: touch; scroll-snap-type: x mandatory; scrollbar-width: none; }
-    .carousel-track-outer::-webkit-scrollbar { display: none; }
-    .carousel-track { transform: none !important; transition: none !important; cursor: default; gap: 14px; padding: 4px 0; }
-    .carousel-track .negocio-card { scroll-snap-align: start; flex: 0 0 78%; min-width: 0; }
-    .carousel-nav { display: none; }
-}
-@media (max-width: 480px) { .carousel-track .negocio-card { flex: 0 0 calc(85%); } }
 .carousel-nav { display: flex; align-items: center; justify-content: center; gap: 12px; margin-top: 20px; }
 .carousel-arrow {
     background: var(--bg-card); border: 1.5px solid var(--border); border-radius: 50%; width: 42px; height: 42px;
@@ -297,6 +289,14 @@ nav.desktop-nav ul li a:hover { background: var(--primary); color: var(--on-prim
 .carousel-arrow:disabled { opacity: .3; cursor: not-allowed; }
 .carousel-progress-bar { flex: 1; max-width: 200px; height: 4px; background: var(--border); border-radius: 4px; overflow: hidden; }
 .carousel-progress-fill { height: 100%; background: var(--primary); border-radius: 4px; transition: width .35s cubic-bezier(.4,0,.2,1); }
+@media (max-width: 768px) {
+    .carousel-track-outer { overflow-x: scroll; overflow-y: hidden; -webkit-overflow-scrolling: touch; scroll-snap-type: x mandatory; scrollbar-width: none; }
+    .carousel-track-outer::-webkit-scrollbar { display: none; }
+    .carousel-track { transform: none !important; transition: none !important; cursor: default; gap: 14px; padding: 4px 0; }
+    .carousel-track .negocio-card { scroll-snap-align: start; flex: 0 0 78%; min-width: 0; }
+    .carousel-nav { display: none; }
+}
+@media (max-width: 480px) { .carousel-track .negocio-card { flex: 0 0 calc(85%); } }
 
 /* ══ BOTÃO CADASTRAR ══ */
 .faixa-cadastro { background: var(--bg-card-alt); border-top: 1px solid var(--border); border-bottom: 1px solid var(--border); padding: 40px 20px; text-align: center; }
