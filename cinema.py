@@ -201,10 +201,13 @@ def em_cartaz():
     if not hub:
         return "Hub não encontrado", 404
 
-    try:
-        page = max(int(request.args.get("page", 1)), 1)
-    except (TypeError, ValueError):
-        page = 1
+    # Antes: 1 página da TMDB (20 filmes) + link "Próxima" (?page=N). Trocado
+    # por scroll infinito, igual à vitrine de streaming — carrega já de cara
+    # PAGINAS_INICIAIS páginas (cada uma cacheada por 30min) e o resto do
+    # catálogo dos últimos 45 dias entra sozinho conforme a pessoa rola a
+    # tela, via /api/cinema/em-cartaz?page=N chamado pelo JS no fim do
+    # template.
+    PAGINAS_INICIAIS = 5
 
     # /movie/now_playing é impreciso pro Brasil: mistura relançamentos e
     # títulos de catálogo que a TMDB marcou como "now playing" em algum
@@ -215,25 +218,35 @@ def em_cartaz():
     # recente — assim só entra o que de fato estreou/está em exibição
     # nos últimos ~45 dias, e não o catálogo inteiro já lançado algum dia.
     hoje = date.today()
-    params = {
-        "region": "BR",
-        "with_release_type": "2|3",
-        "primary_release_date.gte": (hoje - timedelta(days=45)).isoformat(),
-        "primary_release_date.lte": hoje.isoformat(),
-        "sort_by": "popularity.desc",
-        "include_adult": "false",
-        "page": page,
-    }
-    dados, erro = _tmdb_get("/discover/movie", params)
-    if erro or not dados:
+    filmes = []
+    total_paginas_tmdb = 1
+    for pagina in range(1, PAGINAS_INICIAIS + 1):
+        params = {
+            "region": "BR",
+            "with_release_type": "2|3",
+            "primary_release_date.gte": (hoje - timedelta(days=45)).isoformat(),
+            "primary_release_date.lte": hoje.isoformat(),
+            "sort_by": "popularity.desc",
+            "include_adult": "false",
+            "page": pagina,
+        }
+        dados, erro = _tmdb_get("/discover/movie", params)
+        if erro or not dados:
+            break
+        total_paginas_tmdb = min(dados.get("total_pages", 1), 500)
+        filmes.extend(_enriquecer_filme(f) for f in dados.get("results", []))
+        if pagina >= total_paginas_tmdb:
+            break
+
+    if not filmes and total_paginas_tmdb <= 1:
         return render_template("cinema/erro.html", hub=hub,
                                mensagem="Não foi possível carregar os filmes em cartaz agora. Tenta de novo em alguns minutos."), 502
 
-    filmes = [_enriquecer_filme(f) for f in dados.get("results", [])]
     return render_template(
         "cinema/em_cartaz.html",
         hub=hub, filmes=filmes,
-        page=page, total_pages=min(dados.get("total_pages", 1), 500),  # a própria TMDB limita paginação a 500
+        proxima_pagina_tmdb=PAGINAS_INICIAIS + 1,
+        tem_mais=(PAGINAS_INICIAIS < total_paginas_tmdb),
     )
 
 
@@ -346,9 +359,16 @@ def nao_quer_sair_de_casa_provedor(slug):
 
 @cinema_bp.route("/api/cinema/em-cartaz")
 def api_em_cartaz():
-    """Mesmos filmes de /em-cartaz/, só que em JSON e sem paginação
-    (a home mostra só a 1ª leva, o botão 'Ver todos' leva pra página
-    completa com paginação de verdade)."""
+    """Filmes em cartaz (últimos ~45 dias), em JSON.
+    Sem ?page= -> devolve a 1ª página (usado pelo carrossel da home).
+    Com ?page=N -> usado pelo scroll infinito de /em-cartaz/, que vai
+    chamando página a página (a partir da 6, já que a página carrega
+    1-5 de cara)."""
+    try:
+        pagina = max(int(request.args.get("page", 1)), 1)
+    except (TypeError, ValueError):
+        pagina = 1
+
     hoje = date.today()
     params = {
         "region": "BR",
@@ -357,14 +377,54 @@ def api_em_cartaz():
         "primary_release_date.lte": hoje.isoformat(),
         "sort_by": "popularity.desc",
         "include_adult": "false",
-        "page": 1,
+        "page": pagina,
     }
     dados, erro = _tmdb_get("/discover/movie", params)
     if erro or not dados:
-        return jsonify(filmes=[]), 200
+        return jsonify(filmes=[], tem_mais=False), 200
 
+    total_paginas_tmdb = min(dados.get("total_pages", 1), 500)
     filmes = [_enriquecer_filme(f) for f in dados.get("results", [])]
-    return jsonify(filmes=filmes)
+    return jsonify(filmes=filmes, tem_mais=(pagina < total_paginas_tmdb))
+
+
+@cinema_bp.route("/api/cinema/em-cartaz/buscar")
+def api_em_cartaz_buscar():
+    """Busca por título dentro de TODO o catálogo em cartaz (últimos ~45
+    dias), não só o que já foi carregado na tela — mesmo padrão de
+    /api/cinema/streaming/<slug>/buscar (ver comentário dos limites lá em
+    baixo, que valem igual aqui)."""
+    termo = _normalizar_busca(request.args.get("q", ""))
+    if not termo:
+        return jsonify(filmes=[], truncado=False)
+
+    hoje = date.today()
+    encontrados = []
+    pagina = 1
+    total_paginas_tmdb = 1
+    while pagina <= _BUSCA_LIMITE_PAGINAS and pagina <= total_paginas_tmdb and len(encontrados) < _BUSCA_LIMITE_RESULTADOS:
+        params = {
+            "region": "BR",
+            "with_release_type": "2|3",
+            "primary_release_date.gte": (hoje - timedelta(days=45)).isoformat(),
+            "primary_release_date.lte": hoje.isoformat(),
+            "sort_by": "popularity.desc",
+            "include_adult": "false",
+            "page": pagina,
+        }
+        dados, erro = _tmdb_get("/discover/movie", params)
+        if erro or not dados:
+            break
+        total_paginas_tmdb = min(dados.get("total_pages", 1), 500)
+        for f in dados.get("results", []):
+            if termo in _normalizar_busca(f.get("title", "")):
+                encontrados.append(_enriquecer_filme(f))
+                if len(encontrados) >= _BUSCA_LIMITE_RESULTADOS:
+                    break
+        pagina += 1
+
+    truncado = pagina <= total_paginas_tmdb
+    return jsonify(filmes=encontrados, truncado=truncado)
 
 
 @cinema_bp.route("/api/cinema/streaming/provedores")
