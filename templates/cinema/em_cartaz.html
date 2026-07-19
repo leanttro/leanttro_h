@@ -211,27 +211,32 @@ nav.desktop-nav ul li a:hover { background: var(--primary); color: var(--on-prim
   <p class="info-message" id="filmes-vazio" style="display:none;">Não encontramos filmes em cartaz agora.</p>
 </section>
 
-<div class="paginacao">
-  {% if page > 1 %}
-    <a href="/em-cartaz/?page={{ page - 1 }}">← Anterior</a>
-  {% endif %}
-  {% if page < total_pages %}
-    <a href="/em-cartaz/?page={{ page + 1 }}">Próxima →</a>
-  {% endif %}
-</div>
+<div id="lazy-sentinel" style="height:1px; margin-top:10px;"></div>
+<p id="lazy-loading" style="display:none; text-align:center; color:var(--primary); padding:20px; font-size:.95em;"><i class="fas fa-spinner fa-spin"></i> Carregando mais filmes...</p>
+<p class="info-message" id="busca-truncada" style="display:none;">Mostrando os resultados mais populares — refine a busca se não achou o que queria.</p>
 
 {% include "cinema/_creditos.html" %}
 
 <script>
 // ══════════════════════════════════════════════════════════════════
 // CARROSSEL DE FILME (Em cartaz) — mesmo padrão visual/UX do carrossel
-// da home, mas usando direto os filmes já renderizados pelo Jinja
-// nesta página (respeitando a paginação real do backend). A busca
-// filtra só dentro dos filmes já carregados nesta página.
+// da home. Os filmes já vêm renderizados pelo Jinja (1ª leva, ~5
+// páginas da TMDB) e o restante do catálogo dos últimos 45 dias entra
+// sozinho por scroll infinito, igual à vitrine de streaming.
+//
+// BUSCA — roda no servidor (/api/cinema/em-cartaz/buscar), que varre
+// todo o catálogo em cartaz (não só o que já foi carregado aqui na
+// tela) e filtra pelo título. Enquanto a busca está ativa, o scroll
+// infinito fica pausado; ao limpar o campo, volta pra lista original
+// sem precisar recarregar a página.
 // ══════════════════════════════════════════════════════════════════
 
 var _todosFilmesCartaz = {{ filmes | tojson }};
-var _filmesFiltrados = _todosFilmesCartaz.slice();
+var _proximaPaginaTmdb = {{ proxima_pagina_tmdb }};
+var _temMaisFilmes = {{ 'true' if tem_mais else 'false' }};
+var _carregandoMais = false;
+var _buscaAtiva = false;
+var _buscaTimeout = null;
 var _filmePos = 0;
 var _filmeView = 'carousel';
 
@@ -328,15 +333,67 @@ function renderFilmesCartaz(lista){
   clampAndUpdateFilme();
 }
 
-function filtrarBuscaFilmes(termo){
-  var t = (termo || '').trim().toLowerCase();
-  _filmesFiltrados = !t ? _todosFilmesCartaz.slice() : _todosFilmesCartaz.filter(function(f){
-    return (f.title || '').toLowerCase().indexOf(t) !== -1;
-  });
-  renderFilmesCartaz(_filmesFiltrados);
+renderFilmesCartaz(_todosFilmesCartaz);
+
+// ── Scroll infinito — carrega o resto do catálogo (45 dias) aos poucos ──
+function carregarMaisFilmesCartaz(){
+  if(_carregandoMais || !_temMaisFilmes || _buscaAtiva) return;
+  _carregandoMais = true;
+  document.getElementById('lazy-loading').style.display = '';
+  fetch('/api/cinema/em-cartaz?page=' + _proximaPaginaTmdb)
+    .then(function(r){ return r.json(); })
+    .then(function(data){
+      var novos = data.filmes || [];
+      _todosFilmesCartaz = _todosFilmesCartaz.concat(novos);
+      renderFilmesCartaz(_todosFilmesCartaz);
+      _temMaisFilmes = !!data.tem_mais;
+      _proximaPaginaTmdb++;
+    })
+    .catch(function(){ _temMaisFilmes = false; })
+    .finally(function(){
+      _carregandoMais = false;
+      document.getElementById('lazy-loading').style.display = 'none';
+    });
 }
 
-renderFilmesCartaz(_filmesFiltrados);
+var _sentinelCartaz = document.getElementById('lazy-sentinel');
+if(_sentinelCartaz && 'IntersectionObserver' in window){
+  new IntersectionObserver(function(entries){
+    if(entries[0].isIntersecting) carregarMaisFilmesCartaz();
+  }, { rootMargin: '600px' }).observe(_sentinelCartaz);
+}
+
+// ── Busca — roda no servidor, varre TODO o catálogo em cartaz ──
+function filtrarBuscaFilmes(termo){
+  clearTimeout(_buscaTimeout);
+  var t = (termo || '').trim();
+  if(!t){
+    _buscaAtiva = false;
+    document.getElementById('busca-truncada').style.display = 'none';
+    if(_sentinelCartaz) _sentinelCartaz.style.display = '';
+    renderFilmesCartaz(_todosFilmesCartaz);
+    return;
+  }
+  _buscaTimeout = setTimeout(function(){ _executarBuscaCartaz(t); }, 350);
+}
+
+function _executarBuscaCartaz(termo){
+  _buscaAtiva = true;
+  if(_sentinelCartaz) _sentinelCartaz.style.display = 'none';
+  document.getElementById('busca-truncada').style.display = 'none';
+  document.getElementById('lazy-loading').style.display = '';
+  fetch('/api/cinema/em-cartaz/buscar?q=' + encodeURIComponent(termo))
+    .then(function(r){ return r.json(); })
+    .then(function(data){
+      var lista = data.filmes || [];
+      renderFilmesCartaz(lista);
+      document.getElementById('busca-truncada').style.display = (lista.length && data.truncado) ? '' : 'none';
+    })
+    .catch(function(){ renderFilmesCartaz([]); })
+    .finally(function(){
+      document.getElementById('lazy-loading').style.display = 'none';
+    });
+}
 
 window.addEventListener('resize', function(){ clampAndUpdateFilme(); });
 </script>
