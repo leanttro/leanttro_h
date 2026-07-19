@@ -190,6 +190,13 @@ def _normalizar_busca(txt):
     return "".join(c for c in txt if not unicodedata.combining(c))
 
 
+def _slugify(texto):
+    """Vira 'Duna: Parte Dois' em 'duna-parte-dois', pra usar na URL do filme."""
+    texto = _normalizar_busca(texto)
+    texto = re.sub(r"[^a-z0-9]+", "-", texto).strip("-")
+    return texto or "filme"
+
+
 # ════════════════════════════════════════════════════════════
 #  /em-cartaz — filmes em exibição no Brasil agora
 # ════════════════════════════════════════════════════════════
@@ -255,8 +262,10 @@ def em_cartaz():
 # ════════════════════════════════════════════════════════════
 
 @cinema_bp.route("/filme/<int:tmdb_id>")
-def filme_detalhe(tmdb_id):
+@cinema_bp.route("/filme/<int:tmdb_id>/<slug>")
+def filme_detalhe(tmdb_id, slug=None):
     from app import get_hub_by_host
+    from flask import redirect, url_for
     hub = get_hub_by_host()
     if not hub:
         return "Hub não encontrado", 404
@@ -265,6 +274,13 @@ def filme_detalhe(tmdb_id):
     if erro or not filme or filme.get("success") is False:
         return "Filme não encontrado", 404
     _enriquecer_filme(filme)
+
+    # slug é só cosmético/SEO — quem manda é o tmdb_id. Se vier faltando
+    # ou desatualizado (filme com título mudado, link antigo etc.),
+    # redireciona pra URL canônica em vez de servir a página duas vezes.
+    slug_correto = _slugify(filme.get("title") or filme.get("original_title") or "")
+    if slug != slug_correto:
+        return redirect(url_for("cinema.filme_detalhe", tmdb_id=tmdb_id, slug=slug_correto), code=301)
 
     providers_dados, _ = _tmdb_get(f"/movie/{tmdb_id}/watch/providers")
     # A chave "link" é uma URL da própria TMDB (não da JustWatch) que já
