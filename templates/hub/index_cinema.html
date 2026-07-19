@@ -850,36 +850,74 @@ window.addEventListener('scroll', function(){ closeNavCinemas(); }, { passive: t
 
 <script>
 // ══════════════════════════════════════════════════════════════════
-// FOTOS DOS CARDS DE "Tipos de cinema" — cada card busca 1 negócio
-// já cadastrado naquela categoria e usa a foto dele (mesma foto pra
-// todo mundo daquela categoria, ex.: todos os cards "Cinemark" usam
-// a mesma foto). Se a categoria ainda não tem negócio com foto,
-// mantém o placeholder que já vem do template.
+// FOTOS + CONTAGEM REAL dos cards de "Tipos de cinema" — pra cada
+// categoria, busca TODOS os negócios cadastrados nela (mesmo endpoint
+// e parâmetros já usados no filtro da seção de cinemas, só que com um
+// limite alto em vez de 1) pra pegar uma foto de exemplo E o total de
+// itens de verdade. Só depois de ter a contagem real de TODAS as
+// categorias é que a lista é reordenada — por isso o card errado não
+// fica só no primeiro, o resto sai do alfabético e vai pra ordem
+// certa (mais negócios primeiro).
 // ══════════════════════════════════════════════════════════════════
-document.querySelectorAll('.cat-card[data-cat-slug]').forEach(function(card){
-  var slug = card.dataset.catSlug;
-  fetch('/api/hub/negocios?limit=1&offset=0&categoria=' + encodeURIComponent(slug))
-    .then(function(r){ return r.json(); })
-    .then(function(lista){
-      var n = (lista || [])[0];
-      if(n && n.foto_url){
-        var img = card.querySelector('.cat-card-img');
-        if(img) img.src = n.foto_url;
-      }
-    })
-    .catch(function(){ /* mantém placeholder */ });
-});
+(function(){
+  var cardsPorSlug = {};
+  document.querySelectorAll('.cat-card[data-cat-slug]').forEach(function(card){
+    var slug = card.dataset.catSlug;
+    (cardsPorSlug[slug] = cardsPorSlug[slug] || []).push(card);
+  });
+  var slugs = Object.keys(cardsPorSlug);
+  var contagem = {};
+
+  Promise.all(slugs.map(function(slug){
+    return fetch('/api/hub/negocios?limit=20000&offset=0&categoria=' + encodeURIComponent(slug))
+      .then(function(r){ return r.json(); })
+      .then(function(lista){
+        lista = Array.isArray(lista) ? lista : [];
+        contagem[slug] = lista.length;
+        var primeiro = lista[0];
+        if(primeiro && primeiro.foto_url){
+          cardsPorSlug[slug].forEach(function(card){
+            var img = card.querySelector('.cat-card-img');
+            if(img) img.src = primeiro.foto_url;
+          });
+        }
+      })
+      .catch(function(){ contagem[slug] = contagem[slug] || 0; });
+  })).then(function(){
+    if(typeof ordenarTiposPorQuantidade === 'function') ordenarTiposPorQuantidade(contagem);
+  });
+})();
 </script>
 
 <script>
 // ══════════════════════════════════════════════════════════════════
 // CARROSSEL DE "Tipos de cinema" — mesmo padrão visual/UX dos demais
 // carrosséis do hub (arrasta no desktop, scroll nativo no mobile,
-// setas + barra de progresso, alterna pra grade). A ordenação por
-// quantidade de cinemas cadastrados por categoria é aplicada mais
-// abaixo, assim que os dados de "todosCinemas" estiverem disponíveis.
+// setas + barra de progresso, alterna pra grade). A reordenação por
+// quantidade de negócios (mais pro que tem menos) é feita pela função
+// ordenarTiposPorQuantidade, chamada assim que a contagem real de
+// cada categoria terminar de ser buscada.
 // ══════════════════════════════════════════════════════════════════
 var _tiposState = { pos: 0, view: 'carousel' };
+
+function ordenarTiposPorQuantidade(contagem){
+  contagem = contagem || {};
+  ['tipos-track', 'tipos-grade'].forEach(function(id){
+    var container = document.getElementById(id);
+    if(!container) return;
+    var cards = Array.prototype.slice.call(container.querySelectorAll('.cat-card[data-cat-slug]'));
+    cards.sort(function(a, b){
+      var qa = contagem[a.dataset.catSlug] || 0;
+      var qb = contagem[b.dataset.catSlug] || 0;
+      return qb - qa;
+    });
+    cards.forEach(function(card){ container.appendChild(card); });
+  });
+  if(typeof clampAndUpdateTipos === 'function'){
+    _tiposState.pos = 0;
+    clampAndUpdateTipos();
+  }
+}
 
 function getCardWidthTipos(){
   var track = document.getElementById('tipos-track');
@@ -1579,45 +1617,6 @@ function renderCinemas(lista){
     if(!entries[0].isIntersecting) return;
     _renderizarProximoLoteCinema();
   }, { rootMargin: '400px' }).observe(sentinel);
-})();
-
-// ══════════════════════════════════════════════════════════════════
-// Reordena os cards de "Tipos de cinema" (carrossel e grade) pela
-// quantidade de cinemas já cadastrados em cada categoria — do que
-// tem mais pro que tem menos, na lista inteira (não só o 1º). Busca
-// a lista completa de negócios pra contar direito, já que a lista
-// inicial da página pode vir só com um lote parcial.
-// ══════════════════════════════════════════════════════════════════
-(function ordenarTiposPorQuantidade(){
-  function contarPorCategoria(lista){
-    var contagem = {};
-    (lista || []).forEach(function(n){
-      if(!n.categoria_slug) return;
-      contagem[n.categoria_slug] = (contagem[n.categoria_slug] || 0) + 1;
-    });
-    return contagem;
-  }
-  function aplicarOrdenacao(contagem){
-    ['tipos-track', 'tipos-grade'].forEach(function(id){
-      var container = document.getElementById(id);
-      if(!container) return;
-      var cards = Array.prototype.slice.call(container.querySelectorAll('.cat-card[data-cat-slug]'));
-      cards.sort(function(a, b){
-        var qa = contagem[a.dataset.catSlug] || 0;
-        var qb = contagem[b.dataset.catSlug] || 0;
-        return qb - qa;
-      });
-      cards.forEach(function(card){ container.appendChild(card); });
-    });
-    if(typeof clampAndUpdateTipos === 'function'){
-      _tiposState.pos = 0;
-      clampAndUpdateTipos();
-    }
-  }
-  fetch('/api/hub/negocios?limit=20000&offset=0')
-    .then(function(r){ return r.json(); })
-    .then(function(lista){ aplicarOrdenacao(contarPorCategoria(lista)); })
-    .catch(function(){ aplicarOrdenacao(contarPorCategoria(todosCinemas)); });
 })();
 </script>
 
