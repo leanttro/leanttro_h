@@ -298,6 +298,119 @@ nav.desktop-nav ul li a:hover { background: var(--primary); color: var(--on-prim
 }
 @media (max-width: 480px) { .carousel-track .negocio-card { flex: 0 0 calc(85%); } }
 
+/* ══ CINE HERO — "tela de cinema" 3D em CSS puro (sem Three.js/lib) ══
+   Mostra 1 filme em cartaz por vez, em destaque, numa sala estilizada
+   com perspectiva/cortinas via CSS transform. Leve, roda liso no mobile,
+   sem canvas/WebGL nem loop de render. */
+.cine-hero {
+    position: relative; width: 100%; overflow: hidden;
+    background: radial-gradient(ellipse at 50% 0%, #2a0f14 0%, #150408 60%, #0a0203 100%);
+    padding: 56px 20px 44px;
+}
+.cine-hero-inner {
+    max-width: 1100px; margin: 0 auto; position: relative;
+    perspective: 1400px;
+}
+.cine-hero-stage {
+    position: relative; display: flex; align-items: center; justify-content: center;
+    gap: 0; transform-style: preserve-3d;
+}
+/* Cortinas laterais, viradas pra "dentro" — puro CSS 3D transform */
+.cine-hero-curtain {
+    display: none; /* só aparece em telas largas o suficiente pra caber sem espremer a tela */
+    flex: 0 0 90px; align-self: stretch; border-radius: 6px;
+    background: linear-gradient(180deg, #4a0f14 0%, #2a0810 55%, #180509 100%);
+    box-shadow: inset 0 0 40px rgba(0,0,0,.6);
+    position: relative; z-index: 1;
+}
+.cine-hero-curtain::before {
+    content: ''; position: absolute; inset: 0;
+    background: repeating-linear-gradient(90deg, rgba(255,255,255,.06) 0 6px, transparent 6px 16px);
+}
+.cine-hero-curtain.left  { transform: rotateY(28deg) translateX(14px); transform-origin: right center; }
+.cine-hero-curtain.right { transform: rotateY(-28deg) translateX(-14px); transform-origin: left center; }
+@media (min-width: 860px) { .cine-hero-curtain { display: block; } }
+
+.cine-hero-screen-wrap {
+    position: relative; z-index: 2; flex: 1 1 auto; max-width: 760px;
+    transform: rotateX(3deg); transform-origin: bottom center;
+    transition: transform .3s ease;
+}
+.cine-hero-screen {
+    position: relative; border-radius: 8px; padding: 10px;
+    background: linear-gradient(155deg, #1c1c1c 0%, #050505 100%);
+    box-shadow: 0 30px 70px rgba(0,0,0,.65), 0 0 0 1px rgba(255,255,255,.04);
+}
+.cine-hero-screen-inner {
+    position: relative; width: 100%; aspect-ratio: 16/8.5; border-radius: 3px; overflow: hidden;
+    background: #000;
+}
+.cine-hero-poster-bg {
+    position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover;
+    filter: blur(2px) brightness(.85); transform: scale(1.06);
+    opacity: 0; transition: opacity .5s ease;
+}
+.cine-hero-poster-bg.loaded { opacity: 1; }
+.cine-hero-screen-inner::after {
+    content: ''; position: absolute; inset: 0;
+    background: linear-gradient(to top, rgba(0,0,0,.85) 0%, rgba(0,0,0,.15) 55%, rgba(0,0,0,.35) 100%);
+}
+.cine-hero-glow {
+    position: absolute; left: 8%; right: 8%; bottom: -26px; height: 40px; z-index: 0;
+    background: radial-gradient(ellipse at center, rgba(212,175,55,.35) 0%, transparent 75%);
+    filter: blur(6px); pointer-events: none;
+}
+/* Poltronas — só uma faixa decorativa embaixo, silhueta via gradiente repetido */
+.cine-hero-seats {
+    height: 30px; margin-top: 18px; border-radius: 4px;
+    background: repeating-linear-gradient(90deg, #2a0f13 0 16px, #1a080b 16px 20px);
+    -webkit-mask-image: linear-gradient(to top, #000 0%, transparent 100%);
+            mask-image: linear-gradient(to top, #000 0%, transparent 100%);
+    opacity: .7;
+}
+
+/* UI sobreposta na tela */
+.cine-hero-ui {
+    position: absolute; inset: 10px; z-index: 3; display: flex; flex-direction: column;
+    justify-content: space-between; padding: 16px 18px; pointer-events: none;
+}
+.cine-hero-top { display: flex; justify-content: space-between; align-items: flex-start; }
+.cine-hero-brand {
+    display: flex; align-items: center; gap: 8px; background: rgba(0,0,0,.5);
+    border-left: 2px solid var(--primary); padding: 6px 12px; backdrop-filter: blur(3px);
+}
+.cine-hero-brand i { color: var(--primary); font-size: 1.1em; }
+.cine-hero-brand span { font-size: .72em; letter-spacing: .12em; text-transform: uppercase; color: #fff; font-weight: 700; }
+.cine-hero-counter { color: #fff; font-weight: 800; font-size: 1.4em; opacity: .3; }
+.cine-hero-bottom { pointer-events: auto; }
+.cine-hero-title {
+    color: #fff; font-size: 1.5em; font-weight: 800; text-transform: uppercase;
+    margin-bottom: 6px; line-height: 1.1; text-shadow: 0 2px 10px rgba(0,0,0,.6);
+}
+.cine-hero-desc {
+    color: rgba(255,255,255,.78); font-size: .85em; line-height: 1.45; max-width: 90%;
+    margin-bottom: 12px; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
+}
+.cine-hero-nav { display: flex; gap: 10px; }
+.cine-hero-nav button {
+    width: 38px; height: 38px; border-radius: 50%; border: 1px solid rgba(255,255,255,.25);
+    background: rgba(0,0,0,.4); color: #fff; cursor: pointer; display: flex; align-items: center;
+    justify-content: center; transition: all .2s; backdrop-filter: blur(3px);
+}
+.cine-hero-nav button:hover { background: var(--primary); border-color: var(--primary); color: var(--on-primary); }
+
+/* Placeholder enquanto carrega / se não tiver filme */
+.cine-hero[data-empty="1"] { display: none; }
+
+@media (max-width: 640px) {
+    .cine-hero { padding: 36px 14px 30px; }
+    .cine-hero-screen-inner { aspect-ratio: 16/11; }
+    .cine-hero-title { font-size: 1.15em; }
+    .cine-hero-desc { -webkit-line-clamp: 2; font-size: .8em; max-width: 100%; }
+    .cine-hero-ui { inset: 6px; padding: 12px; }
+    .cine-hero-nav button { width: 34px; height: 34px; }
+}
+
 /* ══ BOTÃO CADASTRAR ══ */
 .faixa-cadastro { background: var(--bg-card-alt); border-top: 1px solid var(--border); border-bottom: 1px solid var(--border); padding: 40px 20px; text-align: center; }
 .faixa-cadastro h2 { font-size: 1.3em; margin-bottom: 10px; }
@@ -448,6 +561,38 @@ footer ul li a:hover { color: var(--gold); }
   <p class="info-message" id="negocios-vazio" style="display:none;">Ainda não temos cinemas cadastrados por aqui — seja o primeiro a indicar um.</p>
   <div id="lazy-sentinel" style="height:1px; margin-top:10px;"></div>
   <p id="lazy-loading" style="display:none; text-align:center; color:var(--primary); padding:20px; font-size:.95em;"><i class="fas fa-spinner fa-spin"></i> Carregando mais cinemas...</p>
+</section>
+
+<section class="cine-hero" id="cine-hero" data-empty="1">
+  <div class="cine-hero-inner">
+    <div class="cine-hero-stage">
+      <div class="cine-hero-curtain left"></div>
+      <div class="cine-hero-screen-wrap">
+        <div class="cine-hero-screen">
+          <div class="cine-hero-screen-inner">
+            <img class="cine-hero-poster-bg" id="cine-hero-img" alt="">
+            <div class="cine-hero-ui">
+              <div class="cine-hero-top">
+                <div class="cine-hero-brand"><i class="fas fa-film"></i><span>Em cartaz</span></div>
+                <span class="cine-hero-counter" id="cine-hero-counter">01</span>
+              </div>
+              <div class="cine-hero-bottom">
+                <h3 class="cine-hero-title" id="cine-hero-title">Carregando...</h3>
+                <p class="cine-hero-desc" id="cine-hero-desc"></p>
+                <div class="cine-hero-nav">
+                  <button type="button" onclick="cineHeroMove(-1)" aria-label="Filme anterior"><i class="fas fa-chevron-left"></i></button>
+                  <button type="button" onclick="cineHeroMove(1)" aria-label="Próximo filme"><i class="fas fa-chevron-right"></i></button>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="cine-hero-glow"></div>
+        </div>
+        <div class="cine-hero-seats"></div>
+      </div>
+      <div class="cine-hero-curtain right"></div>
+    </div>
+  </div>
 </section>
 
 <section class="secao container" id="filmes-em-cartaz">
@@ -719,8 +864,76 @@ function renderFilmes(key, filmes){
 // ── "Em cartaz" — sem filtro nenhum, mesmos filmes de /em-cartaz/ ──
 fetch('/api/cinema/em-cartaz')
   .then(function(r){ return r.json(); })
-  .then(function(data){ renderFilmes('emcartaz', data.filmes || []); })
-  .catch(function(){ renderFilmes('emcartaz', []); });
+  .then(function(data){
+    renderFilmes('emcartaz', data.filmes || []);
+    cineHeroInit(data.filmes || []);
+  })
+  .catch(function(){ renderFilmes('emcartaz', []); cineHeroInit([]); });
+
+// ══════════════════════════════════════════════════════════════════
+// CINE HERO — "tela de cinema" 3D em CSS puro, com o 1º filme(s) em
+// cartaz em destaque. Sem canvas/WebGL, sem loop de render: só troca
+// de slide por índice + transform leve no hover/mousemove.
+// ══════════════════════════════════════════════════════════════════
+var _cineHero = { filmes: [], idx: 0, timer: null };
+
+function cineHeroRender(){
+  var f = _cineHero.filmes[_cineHero.idx];
+  if(!f) return;
+  var img = document.getElementById('cine-hero-img');
+  var poster = f.backdrop_url || f.poster_url || 'https://placehold.co/1280x720/17171b/f5c518?text=%F0%9F%8E%9E';
+  img.classList.remove('loaded');
+  img.onload = function(){ img.classList.add('loaded'); };
+  img.src = poster;
+  img.alt = 'Cartaz de ' + (f.title || '');
+  document.getElementById('cine-hero-title').textContent = f.title || '';
+  document.getElementById('cine-hero-desc').textContent = f.overview || f.sinopse || '';
+  document.getElementById('cine-hero-counter').textContent = String(_cineHero.idx + 1).padStart(2, '0');
+}
+
+function cineHeroMove(dir){
+  if(!_cineHero.filmes.length) return;
+  _cineHero.idx = (_cineHero.idx + dir + _cineHero.filmes.length) % _cineHero.filmes.length;
+  cineHeroRender();
+  cineHeroRestartAutoplay();
+}
+
+function cineHeroRestartAutoplay(){
+  clearInterval(_cineHero.timer);
+  _cineHero.timer = setInterval(function(){ cineHeroMove(1); }, 7000);
+}
+
+function cineHeroInit(filmes){
+  var section = document.getElementById('cine-hero');
+  // usa só os primeiros (destaque), o resto continua no carrossel/grade normal
+  _cineHero.filmes = (filmes || []).slice(0, 8);
+  _cineHero.idx = 0;
+  if(!_cineHero.filmes.length){
+    section.setAttribute('data-empty', '1');
+    return;
+  }
+  section.setAttribute('data-empty', '0');
+  cineHeroRender();
+  cineHeroRestartAutoplay();
+}
+
+// Leve inclinação da "tela" seguindo o mouse — só desktop, só CSS transform
+// (sem WebGL, sem requestAnimationFrame; é só um transform por movimento).
+(function(){
+  if(window.innerWidth <= 768) return;
+  var stage = document.querySelector('.cine-hero-screen-wrap');
+  var inner = document.querySelector('.cine-hero-inner');
+  if(!stage || !inner) return;
+  inner.addEventListener('mousemove', function(e){
+    var rect = inner.getBoundingClientRect();
+    var px = (e.clientX - rect.left) / rect.width - 0.5;
+    var py = (e.clientY - rect.top) / rect.height - 0.5;
+    stage.style.transform = 'rotateX(' + (3 - py * 4) + 'deg) rotateY(' + (px * 4) + 'deg)';
+  });
+  inner.addEventListener('mouseleave', function(){
+    stage.style.transform = 'rotateX(3deg) rotateY(0deg)';
+  });
+})();
 
 // ── "Streaming" — filtro por provedor ──
 function toggleStreamingSlicer(){
