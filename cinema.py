@@ -19,6 +19,7 @@ from flask import Blueprint, render_template, request, jsonify
 import os
 import re
 import time
+import unicodedata
 import requests
 from datetime import date, timedelta
 
@@ -145,6 +146,13 @@ def _provider_por_slug(slug):
     return None
 
 
+def _normalizar_busca(txt):
+    """minúsculo + sem acento, pra 'sao paulo' bater com 'São Paulo' etc."""
+    txt = (txt or "").strip().lower()
+    txt = unicodedata.normalize("NFKD", txt)
+    return "".join(c for c in txt if not unicodedata.combining(c))
+
+
 # ════════════════════════════════════════════════════════════
 #  /em-cartaz — filmes em exibição no Brasil agora
 # ════════════════════════════════════════════════════════════
@@ -256,29 +264,39 @@ def nao_quer_sair_de_casa_provedor(slug):
         return render_template("cinema/erro.html", hub=hub,
                                mensagem="Esse serviço de streaming não foi encontrado."), 404
 
-    try:
-        page = max(int(request.args.get("page", 1)), 1)
-    except (TypeError, ValueError):
-        page = 1
+    # Antes: 1 página da TMDB (20 filmes) + link "Próxima" (?page=N). Trocado
+    # por scroll infinito — carrega já de cara 5 páginas da TMDB (~100 filmes,
+    # não pesa: cada página é uma chamada cacheada por 30min) e o resto do
+    # catálogo entra sozinho conforme a pessoa rola a tela, via
+    # /api/cinema/streaming/<slug>?page=N chamado pelo JS no fim do template.
+    PAGINAS_INICIAIS = 5
+    filmes = []
+    total_paginas_tmdb = 1
+    for pagina in range(1, PAGINAS_INICIAIS + 1):
+        params = {
+            "watch_region": "BR",
+            "with_watch_providers": provedor["id"],
+            "sort_by": "popularity.desc",
+            "include_adult": "false",
+            "page": pagina,
+        }
+        dados, erro = _tmdb_get("/discover/movie", params)
+        if erro or not dados:
+            break
+        total_paginas_tmdb = min(dados.get("total_pages", 1), 500)
+        filmes.extend(_enriquecer_filme(f) for f in dados.get("results", []))
+        if pagina >= total_paginas_tmdb:
+            break
 
-    params = {
-        "watch_region": "BR",
-        "with_watch_providers": provedor["id"],
-        "sort_by": "popularity.desc",
-        "include_adult": "false",
-        "page": page,
-    }
-    dados, erro = _tmdb_get("/discover/movie", params)
-    if erro or not dados:
+    if not filmes and total_paginas_tmdb <= 1:
         return render_template("cinema/erro.html", hub=hub,
                                mensagem=f"Não foi possível carregar o catálogo de {provedor['nome']} agora."), 502
 
-    filmes = [_enriquecer_filme(f) for f in dados.get("results", [])]
-
     return render_template(
         "cinema/vitrine_streaming.html",
-        hub=hub, filmes=filmes, provedor=provedor, page=page,
-        total_pages=min(dados.get("total_pages", 1), 500),
+        hub=hub, filmes=filmes, provedor=provedor,
+        proxima_pagina_tmdb=PAGINAS_INICIAIS + 1,
+        tem_mais=(PAGINAS_INICIAIS < total_paginas_tmdb),
         img_base=TMDB_IMG_BASE,
     )
 
@@ -326,23 +344,82 @@ def api_streaming_provedores():
 
 @cinema_bp.route("/api/cinema/streaming/<slug>")
 def api_streaming_provedor(slug):
-    """Mesmos filmes de /nao-quer-sair-de-casa/<slug>/, em JSON, sem
-    paginação (a home mostra só a 1ª leva; 'Ver catálogo completo' leva
-    pra página do provedor com paginação de verdade)."""
+    """Mesmos filmes de /nao-quer-sair-de-casa/<slug>/, em JSON.
+    Sem ?page= -> devolve a 1ª página (usado pelo carrossel da home).
+    Com ?page=N -> usado pelo scroll infinito da vitrine, que vai chamando
+    página a página (a partir da 6, já que a vitrine carrega 1-5 de cara)."""
     provedor = _provider_por_slug(slug)
     if not provedor:
-        return jsonify(filmes=[]), 404
+        return jsonify(filmes=[], tem_mais=False), 404
+
+    try:
+        pagina = max(int(request.args.get("page", 1)), 1)
+    except (TypeError, ValueError):
+        pagina = 1
 
     params = {
         "watch_region": "BR",
         "with_watch_providers": provedor["id"],
         "sort_by": "popularity.desc",
         "include_adult": "false",
-        "page": 1,
+        "page": pagina,
     }
     dados, erro = _tmdb_get("/discover/movie", params)
     if erro or not dados:
-        return jsonify(filmes=[]), 200
+        return jsonify(filmes=[], tem_mais=False), 200
 
+    total_paginas_tmdb = min(dados.get("total_pages", 1), 500)
     filmes = [_enriquecer_filme(f) for f in dados.get("results", [])]
-    return jsonify(filmes=filmes)
+    return jsonify(filmes=filmes, tem_mais=(pagina < total_paginas_tmdb))
+
+
+# Limites da busca: a TMDB não tem um endpoint que combine "busca por texto"
+# + "filtro por provedor" ao mesmo tempo (o /search/movie não aceita
+# with_watch_providers). Então a busca varre o catálogo do provedor
+# página por página (20 filmes cada, na ordem de popularidade) e filtra
+# pelo título no servidor. Cada página já fica cacheada por 30min (mesmo
+# cache do resto do site), então buscas repetidas do mesmo provedor ficam
+# rápidas depois da primeira. O limite de páginas é só um teto de
+# segurança pra não ficar varrendo um catálogo gigante numa busca só —
+# na prática cobre bem mais filme do que qualquer usuário rolaria a mão.
+_BUSCA_LIMITE_PAGINAS = 25   # até ~500 filmes do catálogo do provedor
+_BUSCA_LIMITE_RESULTADOS = 60
+
+
+@cinema_bp.route("/api/cinema/streaming/<slug>/buscar")
+def api_streaming_buscar(slug):
+    provedor = _provider_por_slug(slug)
+    if not provedor:
+        return jsonify(filmes=[], truncado=False), 404
+
+    termo = _normalizar_busca(request.args.get("q", ""))
+    if not termo:
+        return jsonify(filmes=[], truncado=False)
+
+    encontrados = []
+    pagina = 1
+    total_paginas_tmdb = 1
+    while pagina <= _BUSCA_LIMITE_PAGINAS and pagina <= total_paginas_tmdb and len(encontrados) < _BUSCA_LIMITE_RESULTADOS:
+        params = {
+            "watch_region": "BR",
+            "with_watch_providers": provedor["id"],
+            "sort_by": "popularity.desc",
+            "include_adult": "false",
+            "page": pagina,
+        }
+        dados, erro = _tmdb_get("/discover/movie", params)
+        if erro or not dados:
+            break
+        total_paginas_tmdb = min(dados.get("total_pages", 1), 500)
+        for f in dados.get("results", []):
+            if termo in _normalizar_busca(f.get("title", "")):
+                encontrados.append(_enriquecer_filme(f))
+                if len(encontrados) >= _BUSCA_LIMITE_RESULTADOS:
+                    break
+        pagina += 1
+
+    # "truncado" = ainda tinha catálogo pra escanear quando a busca parou
+    # (bateu no teto de páginas ou de resultados) — o front pode avisar o
+    # usuário que são os resultados mais populares, não literalmente 100%.
+    truncado = pagina <= total_paginas_tmdb
+    return jsonify(filmes=encontrados, truncado=truncado)
