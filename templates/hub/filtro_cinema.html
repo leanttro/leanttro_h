@@ -142,6 +142,50 @@ nav.desktop-nav ul li a:hover { background: var(--primary); color: var(--on-prim
 }
 .chip.ativo, .chip:hover { border-color: var(--primary); color: var(--on-primary); background: var(--primary); }
 
+/* ══ BOTÃO DE LOCALIZAÇÃO ══ */
+.localizacao-wrap { text-align: center; padding: 4px 20px 0; }
+.btn-loc { cursor: pointer; border: none; font-family: 'Montserrat', sans-serif; }
+.btn-geo {
+    background: var(--primary); color: var(--on-primary); border: none; padding: 13px 28px; border-radius: 8px;
+    font-size: 1em; font-weight: 700; cursor: pointer; display: inline-flex; align-items: center; gap: 8px;
+    transition: background .2s; margin: 0 auto 6px; font-family: 'Montserrat', sans-serif;
+}
+.btn-geo:hover { background: var(--dark); }
+.btn-geo.ativo { background: var(--dark); }
+
+/* ══ SLICER DE CATEGORIA (dropdown "Tipo de cinema") ══ */
+.categoria-slicer { position: relative; max-width: 480px; margin: 18px auto 0; z-index: 20; padding: 0 20px; }
+.slicer-toggle {
+    width: 100%; display: flex; align-items: center; justify-content: space-between; gap: 12px;
+    background: var(--bg-card); border: 1.5px solid var(--border); border-radius: 10px;
+    padding: 13px 18px; font-family: 'Montserrat', sans-serif; font-size: .96em; font-weight: 600;
+    color: var(--text); cursor: pointer; transition: all .2s;
+}
+.slicer-toggle:hover, .slicer-toggle.open { border-color: var(--primary); }
+.slicer-label { display: flex; align-items: center; gap: 9px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.slicer-label i.fa-filter { color: var(--gold); flex-shrink: 0; }
+.slicer-label strong { color: #fff; font-weight: 700; }
+.slicer-toggle.open .slicer-label strong { color: var(--gold); }
+.slicer-chevron { transition: transform .25s; color: var(--text-dim); flex-shrink: 0; }
+.slicer-toggle.open .slicer-chevron { transform: rotate(180deg); color: var(--gold); }
+.slicer-panel {
+    display: none; flex-direction: column; gap: 3px;
+    position: absolute; top: calc(100% + 8px); left: 20px; right: 20px;
+    background: var(--bg-card); border: 1px solid var(--border); border-radius: 12px;
+    box-shadow: 0 14px 38px rgba(0,0,0,.5); max-height: 340px; overflow-y: auto; z-index: 21; padding: 8px;
+}
+.slicer-panel.open { display: flex; }
+.slicer-panel .chip-cat {
+    width: 100%; text-align: left; border: none; border-radius: 8px; padding: 11px 14px;
+    background: transparent; color: var(--text); display: flex; align-items: center; gap: 10px; flex-shrink: 0;
+    font-family: 'Montserrat', sans-serif; font-size: .92em; cursor: pointer;
+}
+.slicer-panel .chip-cat:hover, .slicer-panel .chip-cat.active { background: var(--bg-card-alt); color: var(--gold); }
+.slicer-panel .chip-cat.active::after { content: '\f00c'; font-family: 'Font Awesome 6 Free'; font-weight: 900; margin-left: auto; }
+.slicer-backdrop { display: none; position: fixed; inset: 0; background: transparent; z-index: 15; }
+.slicer-backdrop.open { display: block; }
+@media (max-width: 600px) { .categoria-slicer { max-width: 100%; } }
+
 /* ══ CONTROLES DE VISUALIZAÇÃO ══ */
 .view-controls { display: flex; align-items: center; justify-content: flex-end; margin-bottom: 16px; gap: 8px; }
 .view-controls span { font-size: .85em; color: var(--text-dim); margin-right: 4px; }
@@ -165,6 +209,7 @@ nav.desktop-nav ul li a:hover { background: var(--primary); color: var(--on-prim
 .card-body { padding: 14px; flex: 1; display: flex; flex-direction: column; gap: 4px; }
 .card-body h3 { font-size: 1.05em; font-weight: 700; margin: 4px 0 6px; color: #fff; }
 .card-bairro { font-size: .85em; color: var(--text-dim); display: flex; align-items: center; gap: 6px; }
+.card-dist { font-size: .82em; color: var(--gold); font-weight: 700; margin-top: 4px; display: flex; align-items: center; gap: 5px; }
 .btn-ver { margin-top: auto; padding-top: 12px; display: inline-block; background: var(--primary); color: var(--on-primary); padding: 9px 18px; border-radius: 6px; font-size: .88em; font-weight: 700; text-align: center; transition: background .2s; }
 .negocio-card:hover .btn-ver { background: var(--dark); }
 .vazio, .info-message { color: var(--text-dim); padding: 50px 0; text-align: center; font-size: 1.02em; }
@@ -320,12 +365,24 @@ window.addEventListener('scroll', function(){ closeNavCinemas(); }, { passive: t
 </div>
 {% endif %}
 
+<div class="localizacao-wrap">
+  <button class="btn-geo btn-loc" id="btnLoc" onclick="toggleLocalizacao()">
+    <i class="fas fa-map-marker-alt"></i> Usar minha localização
+  </button>
+</div>
+
 {% if filtro_tipo == 'categoria' and categorias | length > 1 %}
-<div class="chips-row">
-  <div class="chips-label">Tipo de cinema</div>
-  {% for cat in categorias %}
-    <a class="chip {{ 'ativo' if filtro_valor == cat.slug }}" href="/{{ cat.slug }}/">{{ cat_label(cat) }}</a>
-  {% endfor %}
+<div class="categoria-slicer" id="categoria-slicer">
+  <button type="button" class="slicer-toggle" id="slicer-toggle" onclick="toggleCategoriaSlicer()" aria-haspopup="listbox" aria-expanded="false" aria-controls="filtros-categoria">
+    <span class="slicer-label"><i class="fas fa-filter"></i> Tipo de cinema: <strong id="slicer-label-text">{{ cat_label(categorias | selectattr('slug', 'equalto', filtro_valor) | first) if (categorias | selectattr('slug', 'equalto', filtro_valor) | list) else 'Todos' }}</strong></span>
+    <i class="fas fa-chevron-down slicer-chevron" aria-hidden="true"></i>
+  </button>
+  <div class="slicer-panel" id="filtros-categoria" role="listbox" aria-label="Filtrar por tipo de cinema">
+    {% for cat in categorias %}
+      <a class="chip-cat {{ 'active' if filtro_valor == cat.slug }}" href="/{{ cat.slug }}/">{{ cat_label(cat) }}</a>
+    {% endfor %}
+  </div>
+  <div class="slicer-backdrop" id="slicer-backdrop" onclick="closeCategoriaSlicer()"></div>
 </div>
 {% endif %}
 
@@ -349,7 +406,7 @@ window.addEventListener('scroll', function(){ closeNavCinemas(); }, { passive: t
       <div class="carousel-track-outer">
         <div class="carousel-track" id="negocios-track">
           {% for n in negocios %}
-            <a class="negocio-card" href="/{{ n.categoria_slug }}/{{ n.slug }}/">
+            <a class="negocio-card" href="/{{ n.categoria_slug }}/{{ n.slug }}/" {% if n.latitude and n.longitude %}data-lat="{{ n.latitude }}" data-lng="{{ n.longitude }}"{% endif %}>
               <div class="card-foto">
                 <img src="{{ n.foto_url or 'https://placehold.co/400x260/17171b/f5c518?text=%F0%9F%8E%9E' }}" alt="{{ n.nome }}" loading="lazy">
                 <span class="badge-cat">{{ n.categoria_nome }}</span>
@@ -359,6 +416,7 @@ window.addEventListener('scroll', function(){ closeNavCinemas(); }, { passive: t
                 {% if n.cidade %}
                   <p class="card-bairro"><i class="fas fa-map-marker-alt" style="color:var(--gold)"></i> {{ n.bairro ~ ', ' if n.bairro }}{{ n.cidade }}</p>
                 {% endif %}
+                <span class="card-dist" style="display:none;"></span>
                 <span class="btn-ver">Ver detalhes →</span>
               </div>
             </a>
@@ -374,7 +432,7 @@ window.addEventListener('scroll', function(){ closeNavCinemas(); }, { passive: t
 
     <div class="negocios-grid" id="negocios-grade" style="display:none;">
       {% for n in negocios %}
-        <a class="negocio-card" href="/{{ n.categoria_slug }}/{{ n.slug }}/">
+        <a class="negocio-card" href="/{{ n.categoria_slug }}/{{ n.slug }}/" {% if n.latitude and n.longitude %}data-lat="{{ n.latitude }}" data-lng="{{ n.longitude }}"{% endif %}>
           <div class="card-foto">
             <img src="{{ n.foto_url or 'https://placehold.co/400x260/17171b/f5c518?text=%F0%9F%8E%9E' }}" alt="{{ n.nome }}" loading="lazy">
             <span class="badge-cat">{{ n.categoria_nome }}</span>
@@ -384,6 +442,7 @@ window.addEventListener('scroll', function(){ closeNavCinemas(); }, { passive: t
             {% if n.cidade %}
               <p class="card-bairro"><i class="fas fa-map-marker-alt" style="color:var(--gold)"></i> {{ n.bairro ~ ', ' if n.bairro }}{{ n.cidade }}</p>
             {% endif %}
+            <span class="card-dist" style="display:none;"></span>
             <span class="btn-ver">Ver detalhes →</span>
           </div>
         </a>
@@ -413,6 +472,116 @@ window.addEventListener('scroll', function(){ closeNavCinemas(); }, { passive: t
     &copy; {{ hub.nome or 'Cinema Perto de Mim' }} — todos os direitos reservados.
   </div>
 </footer>
+
+{% if filtro_tipo == 'categoria' and categorias | length > 1 %}
+<script>
+// ══════════════════════════════════════════════════════════════════
+// Dropdown "Tipo de cinema" — mesmo padrão do slicer usado no index.
+// Como aqui cada opção já é um link pra outra página de filtro (não
+// um filtro em memória), só cuida de abrir/fechar o painel.
+// ══════════════════════════════════════════════════════════════════
+function toggleCategoriaSlicer(){
+  var toggle = document.getElementById('slicer-toggle');
+  var panel = document.getElementById('filtros-categoria');
+  var backdrop = document.getElementById('slicer-backdrop');
+  if(!toggle || !panel) return;
+  var abrir = !panel.classList.contains('open');
+  toggle.classList.toggle('open', abrir);
+  panel.classList.toggle('open', abrir);
+  if(backdrop) backdrop.classList.toggle('open', abrir);
+  toggle.setAttribute('aria-expanded', abrir ? 'true' : 'false');
+}
+function closeCategoriaSlicer(){
+  var toggle = document.getElementById('slicer-toggle');
+  var panel = document.getElementById('filtros-categoria');
+  var backdrop = document.getElementById('slicer-backdrop');
+  if(toggle) toggle.classList.remove('open');
+  if(panel) panel.classList.remove('open');
+  if(backdrop) backdrop.classList.remove('open');
+  if(toggle) toggle.setAttribute('aria-expanded', 'false');
+}
+document.addEventListener('keydown', function(e){ if(e.key === 'Escape') closeCategoriaSlicer(); });
+</script>
+{% endif %}
+
+<script>
+// ══════════════════════════════════════════════════════════════════
+// GEOLOCALIZAÇÃO — pede a localização do usuário, calcula a distância
+// até cada cinema (que tenha lat/lng) e reordena os cards do mais
+// perto pro mais longe, mostrando o selo de distância em cada um.
+// ══════════════════════════════════════════════════════════════════
+function distanciaKm(lat1, lng1, lat2, lng2){
+  var R = 6371;
+  var dLat = (lat2 - lat1) * Math.PI / 180;
+  var dLng = (lng2 - lng1) * Math.PI / 180;
+  var a = Math.sin(dLat/2) * Math.sin(dLat/2) +
+          Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+          Math.sin(dLng/2) * Math.sin(dLng/2);
+  var c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+  return R * c;
+}
+
+function toggleLocalizacao(){
+  var btn = document.getElementById('btnLoc');
+  if(!btn) return;
+
+  if(btn.classList.contains('ativo')){
+    // Desliga: remove distâncias e volta à ordem original
+    btn.classList.remove('ativo');
+    btn.innerHTML = '<i class="fas fa-map-marker-alt"></i> Usar minha localização';
+    document.querySelectorAll('.negocio-card').forEach(function(card){
+      var dist = card.querySelector('.card-dist');
+      if(dist){ dist.style.display = 'none'; dist.textContent = ''; }
+    });
+    return;
+  }
+
+  if(!navigator.geolocation){
+    alert('Seu navegador não suporta geolocalização.');
+    return;
+  }
+
+  btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Localizando...';
+
+  navigator.geolocation.getCurrentPosition(function(pos){
+    var userLat = pos.coords.latitude;
+    var userLng = pos.coords.longitude;
+    btn.classList.add('ativo');
+    btn.innerHTML = '<i class="fas fa-check"></i> Localização ativada';
+
+    ['negocios-track', 'negocios-grade'].forEach(function(containerId){
+      var container = document.getElementById(containerId);
+      if(!container) return;
+      var cards = Array.prototype.slice.call(container.querySelectorAll('.negocio-card'));
+      cards.forEach(function(card){
+        var lat = parseFloat(card.dataset.lat);
+        var lng = parseFloat(card.dataset.lng);
+        var distSpan = card.querySelector('.card-dist');
+        if(!isNaN(lat) && !isNaN(lng)){
+          var d = distanciaKm(userLat, userLng, lat, lng);
+          card._dist = d;
+          if(distSpan){
+            distSpan.style.display = 'flex';
+            distSpan.innerHTML = '<i class="fas fa-map-marker-alt"></i> ' + d.toFixed(1) + ' km de você';
+          }
+        } else {
+          card._dist = 9999;
+        }
+      });
+      cards.sort(function(a, b){ return (a._dist || 9999) - (b._dist || 9999); });
+      cards.forEach(function(card){ container.appendChild(card); });
+    });
+
+    if(typeof clampAndUpdateNegocios === 'function'){
+      _carouselPos = 0;
+      clampAndUpdateNegocios();
+    }
+  }, function(){
+    btn.innerHTML = '<i class="fas fa-map-marker-alt"></i> Usar minha localização';
+    alert('Não foi possível obter sua localização. Verifique a permissão do navegador.');
+  });
+}
+</script>
 
 {% if negocios %}
 <script>
