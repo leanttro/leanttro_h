@@ -153,7 +153,7 @@ nav.desktop-nav ul li a:hover { background: var(--primary); color: var(--on-prim
 .nav-dropdown-chevron { font-size: .78em; transition: transform .25s; }
 .nav-dropdown-toggle.open .nav-dropdown-chevron { transform: rotate(180deg); }
 .nav-dropdown-panel {
-    display: none; position: absolute; top: calc(100% + 8px); left: 50%; transform: translateX(-50%);
+    display: none; position: fixed; top: 0; left: 0;
     background: var(--bg-card); border: 1px solid var(--border); border-radius: 12px;
     box-shadow: 0 14px 38px rgba(0,0,0,.4); padding: 10px; z-index: 60;
     width: max-content; max-width: min(560px, 90vw); max-height: 60vh; overflow-y: auto;
@@ -526,6 +526,19 @@ footer ul li a:hover { color: var(--gold); }
 </header>
 
 <script>
+function positionNavCinemasPanel(){
+  var toggle = document.getElementById('nav-cinemas-toggle');
+  var panel = document.getElementById('nav-cinemas-panel');
+  if(!toggle || !panel) return;
+  var rect = toggle.getBoundingClientRect();
+  var margin = 10;
+  var panelWidth = panel.offsetWidth || 300;
+  var left = rect.left + rect.width / 2 - panelWidth / 2;
+  if(left < margin) left = margin;
+  if(left + panelWidth > window.innerWidth - margin) left = window.innerWidth - margin - panelWidth;
+  panel.style.left = left + 'px';
+  panel.style.top = (rect.bottom + 8) + 'px';
+}
 function toggleNavCinemas(){
   var toggle = document.getElementById('nav-cinemas-toggle');
   var panel = document.getElementById('nav-cinemas-panel');
@@ -536,6 +549,7 @@ function toggleNavCinemas(){
   panel.classList.toggle('open', abrir);
   if(backdrop) backdrop.classList.toggle('open', abrir);
   toggle.setAttribute('aria-expanded', abrir ? 'true' : 'false');
+  if(abrir) positionNavCinemasPanel();
 }
 function closeNavCinemas(){
   var toggle = document.getElementById('nav-cinemas-toggle');
@@ -547,6 +561,11 @@ function closeNavCinemas(){
   if(toggle) toggle.setAttribute('aria-expanded', 'false');
 }
 document.addEventListener('keydown', function(e){ if(e.key === 'Escape') closeNavCinemas(); });
+window.addEventListener('resize', function(){
+  var panel = document.getElementById('nav-cinemas-panel');
+  if(panel && panel.classList.contains('open')) positionNavCinemasPanel();
+});
+window.addEventListener('scroll', function(){ closeNavCinemas(); }, { passive: true });
 </script>
 
 {% if anuncio_topo %}
@@ -782,9 +801,8 @@ document.addEventListener('keydown', function(e){ if(e.key === 'Escape') closeNa
       <ul>
         <li><a href="/em-cartaz/">Em cartaz</a></li>
         <li><a href="/nao-quer-sair-de-casa/">Streaming</a></li>
-        {% for cat in categorias %}
-          <li><a href="/{{ cat.slug }}/">{{ cat_label(cat) }}</a></li>
-        {% endfor %}
+        {% if categorias %}<li><a href="/#tipos-cinema">Tipos de cinema</a></li>{% endif %}
+        <li><a href="#" onclick="abrirModalCadastro();return false;">Cadastrar cinema</a></li>
       </ul>
     </div>
   </div>
@@ -1565,30 +1583,41 @@ function renderCinemas(lista){
 
 // ══════════════════════════════════════════════════════════════════
 // Reordena os cards de "Tipos de cinema" (carrossel e grade) pela
-// quantidade de cinemas já cadastrados em cada categoria — quem tem
-// mais itens aparece primeiro.
+// quantidade de cinemas já cadastrados em cada categoria — do que
+// tem mais pro que tem menos, na lista inteira (não só o 1º). Busca
+// a lista completa de negócios pra contar direito, já que a lista
+// inicial da página pode vir só com um lote parcial.
 // ══════════════════════════════════════════════════════════════════
 (function ordenarTiposPorQuantidade(){
-  var contagem = {};
-  todosCinemas.forEach(function(n){
-    if(!n.categoria_slug) return;
-    contagem[n.categoria_slug] = (contagem[n.categoria_slug] || 0) + 1;
-  });
-  ['tipos-track', 'tipos-grade'].forEach(function(id){
-    var container = document.getElementById(id);
-    if(!container) return;
-    var cards = Array.prototype.slice.call(container.querySelectorAll('.cat-card[data-cat-slug]'));
-    cards.sort(function(a, b){
-      var qa = contagem[a.dataset.catSlug] || 0;
-      var qb = contagem[b.dataset.catSlug] || 0;
-      return qb - qa;
+  function contarPorCategoria(lista){
+    var contagem = {};
+    (lista || []).forEach(function(n){
+      if(!n.categoria_slug) return;
+      contagem[n.categoria_slug] = (contagem[n.categoria_slug] || 0) + 1;
     });
-    cards.forEach(function(card){ container.appendChild(card); });
-  });
-  if(typeof clampAndUpdateTipos === 'function'){
-    _tiposState.pos = 0;
-    clampAndUpdateTipos();
+    return contagem;
   }
+  function aplicarOrdenacao(contagem){
+    ['tipos-track', 'tipos-grade'].forEach(function(id){
+      var container = document.getElementById(id);
+      if(!container) return;
+      var cards = Array.prototype.slice.call(container.querySelectorAll('.cat-card[data-cat-slug]'));
+      cards.sort(function(a, b){
+        var qa = contagem[a.dataset.catSlug] || 0;
+        var qb = contagem[b.dataset.catSlug] || 0;
+        return qb - qa;
+      });
+      cards.forEach(function(card){ container.appendChild(card); });
+    });
+    if(typeof clampAndUpdateTipos === 'function'){
+      _tiposState.pos = 0;
+      clampAndUpdateTipos();
+    }
+  }
+  fetch('/api/hub/negocios?limit=20000&offset=0')
+    .then(function(r){ return r.json(); })
+    .then(function(lista){ aplicarOrdenacao(contarPorCategoria(lista)); })
+    .catch(function(){ aplicarOrdenacao(contarPorCategoria(todosCinemas)); });
 })();
 </script>
 
