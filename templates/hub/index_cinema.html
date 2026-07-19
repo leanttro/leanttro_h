@@ -154,18 +154,18 @@ nav.desktop-nav ul li a:hover { background: var(--primary); color: var(--on-prim
 .nav-dropdown-toggle.open .nav-dropdown-chevron { transform: rotate(180deg); }
 .nav-dropdown-panel {
     display: none; position: fixed; top: 0; left: 0;
-    background: var(--bg-card); border: 1.5px solid var(--primary); border-radius: 12px;
-    box-shadow: 0 18px 46px rgba(0,0,0,.6); padding: 10px; z-index: 60;
+    background-color: #1a0509; border: 1.5px solid #d4af37; border-radius: 12px;
+    box-shadow: 0 18px 46px rgba(0,0,0,.7); padding: 10px; z-index: 99999; opacity: 1;
     width: max-content; max-width: min(560px, 90vw); max-height: 60vh; overflow-y: auto;
     grid-template-columns: repeat(2, minmax(150px, 1fr)); gap: 2px;
 }
 .nav-dropdown-panel.open { display: grid; }
 .nav-dropdown-panel a {
-    padding: 9px 12px; border-radius: 7px; font-size: .9em; font-weight: 500; color: #fff;
+    padding: 9px 12px; border-radius: 7px; font-size: .9em; font-weight: 500; color: #ffffff;
     white-space: nowrap; overflow: hidden; text-overflow: ellipsis; transition: background .15s, color .15s;
 }
-.nav-dropdown-panel a:hover { background: var(--primary); color: var(--on-primary); }
-.nav-dropdown-backdrop { display: none; position: fixed; inset: 0; z-index: 50; background: rgba(0,0,0,.55); }
+.nav-dropdown-panel a:hover { background: #d4af37; color: #1a0509; }
+.nav-dropdown-backdrop { display: none; position: fixed; inset: 0; z-index: 99998; background: rgba(0,0,0,.6); }
 .nav-dropdown-backdrop.open { display: block; }
 @media (max-width: 600px) { .nav-dropdown-panel { grid-template-columns: 1fr 1fr; max-width: 92vw; } }
 
@@ -526,6 +526,15 @@ footer ul li a:hover { color: var(--gold); }
 </header>
 
 <script>
+(function(){
+  // Move o painel e o backdrop pra fora do <header> (viram filhos diretos
+  // do <body>) — assim nenhuma propriedade do cabeçalho (overflow, stacking
+  // context etc.) pode interferir na exibição do menu.
+  var panel = document.getElementById('nav-cinemas-panel');
+  var backdrop = document.getElementById('nav-cinemas-backdrop');
+  if(panel) document.body.appendChild(panel);
+  if(backdrop) document.body.appendChild(backdrop);
+})();
 function positionNavCinemasPanel(){
   var toggle = document.getElementById('nav-cinemas-toggle');
   var panel = document.getElementById('nav-cinemas-panel');
