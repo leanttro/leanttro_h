@@ -1,0 +1,734 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<!-- Google tag (gtag.js) -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-0G6MW6PBFR"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+  gtag('config', 'G-0G6MW6PBFR');
+</script>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+{% set tag_obj = (tags | selectattr('slug','equalto', tag_ativa) | first) if tag_ativa else None %}
+{% set seo_title = ("Blog — " ~ tag_obj.nome ~ " — " ~ (hub.nome or "Cinema Perto de Mim")) if tag_obj else ("Blog — " ~ (hub.nome or "Cinema Perto de Mim")) %}
+{% set seo_desc  = ("Posts sobre " ~ tag_obj.nome ~ " em " ~ (hub.nome or "Cinema Perto de Mim") ~ ". Dicas, guias e novidades de cinema perto de você.") if tag_obj else ("Dicas, guias e novidades sobre cinema, filmes e streaming — " ~ (hub.nome or "Cinema Perto de Mim") ~ ".") %}
+{% set seo_image = (posts[0].capa_url if posts and posts[0].capa_url else (hub.logo_url or "https://placehold.co/1200x630/1a0509/d4af37?text=%F0%9F%8E%9E")) %}
+
+<!-- SEO -->
+<title>{{ seo_title }}</title>
+<meta name="description" content="{{ seo_desc }}">
+<meta name="robots" content="index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1">
+<meta name="theme-color" content="#d4af37">
+<link rel="canonical" href="https://{{ request.host }}/blog/">
+
+<link rel="icon" type="image/png" href="{{ hub.logo_url or 'https://placehold.co/64x64/0d0d0f/e50914?text=%F0%9F%8E%9E' }}">
+<link rel="apple-touch-icon" href="{{ hub.logo_url or 'https://placehold.co/180x180/0d0d0f/e50914?text=%F0%9F%8E%9E' }}">
+
+<!-- Open Graph -->
+<meta property="og:type"         content="website">
+<meta property="og:site_name"    content="{{ hub.nome or 'Cinema Perto de Mim' }}">
+<meta property="og:url"          content="https://{{ request.host }}/blog/">
+<meta property="og:title"        content="{{ seo_title }}">
+<meta property="og:description"  content="{{ seo_desc }}">
+<meta property="og:image"        content="{{ seo_image }}">
+<meta property="og:image:width"  content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:locale"       content="pt_BR">
+<meta name="twitter:card"        content="summary_large_image">
+<meta name="twitter:title"       content="{{ seo_title }}">
+<meta name="twitter:description" content="{{ seo_desc }}">
+<meta name="twitter:image"       content="{{ seo_image }}">
+
+<!-- JSON-LD Blog -->
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "Blog",
+  "name": {{ seo_title | tojson }},
+  "url": "https://{{ request.host }}/blog/",
+  "description": {{ seo_desc | tojson }},
+  "inLanguage": "pt-BR",
+  "blogPost": [
+    {% for p in posts %}
+    {
+      "@type": "BlogPosting",
+      "headline": {{ p.titulo | tojson }},
+      "url": "https://{{ request.host }}/blog/{{ p.slug }}/",
+      "datePublished": {{ (p.publicado_em | string) | tojson }},
+      "image": {{ (p.capa_url or "") | tojson }}
+    }{% if not loop.last %},{% endif %}
+    {% endfor %}
+  ]
+}
+</script>
+
+<link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+<link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+
+<style>
+:root {
+    --primary:     #d4af37;
+    --dark:        #a8841f;
+    --on-primary:  #1a0509;
+    --gold:        #ff2d2d;
+    --bg:          #1a0509;
+    --bg-card:     #2b0d13;
+    --bg-card-alt: #34121a;
+    --border:      #4a1b24;
+    --text:        #eee;
+    --text-dim:    #a5a5ab;
+    --white:       #ffffff;
+    --header-bg:   #f0f0f0;
+    --header-text: #1a1a1a;
+    --header-border: #dcdcdc;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html { scroll-behavior: smooth; overflow-x: hidden; }
+body { font-family: 'Montserrat', sans-serif; background: var(--bg); color: var(--text); line-height: 1.6; }
+h1, h2, h3 { font-family: 'Montserrat', sans-serif; }
+a { text-decoration: none; color: inherit; }
+.container { max-width: 1200px; margin: 0 auto; padding: 0 20px; }
+img { max-width: 100%; display: block; }
+
+/* ══ HEADER (idêntico ao da home) ══ */
+body > header, header {
+    background: var(--header-bg) !important; border-bottom: 1px solid var(--header-border);
+    padding: 20px 24px 14px; display: flex; flex-direction: column;
+    align-items: center; justify-content: center; gap: 10px;
+    width: 100% !important; overflow: hidden; margin: 0 !important;
+}
+.logo { display: block; text-align: center; position: relative; z-index: 1; }
+.logo img { height: 110px; width: auto; margin: 0 auto; display: block; }
+nav.desktop-nav { position: relative; z-index: 1; }
+nav.desktop-nav ul { list-style: none; display: flex; align-items: center; justify-content: center; flex-wrap: wrap; gap: 4px; }
+nav.desktop-nav ul li a {
+    color: var(--header-text); font-weight: 500; font-size: .92em; padding: 10px 16px; border-radius: 6px;
+    transition: background .2s, color .2s;
+}
+nav.desktop-nav ul li a:hover, nav.desktop-nav ul li a.active-link { background: var(--primary); color: var(--on-primary); }
+
+.header-lights { position: absolute; inset: 0; pointer-events: none; z-index: 0; }
+.header-lights .spot {
+    position: absolute; top: -22px; width: 130px; height: 175px;
+    background: linear-gradient(180deg, rgba(229,9,20,.5), rgba(255,45,45,.16) 55%, rgba(255,45,45,0) 82%);
+    clip-path: polygon(50% 0%, 14% 100%, 86% 100%);
+    mix-blend-mode: multiply;
+}
+.header-lights .spot::before {
+    content: ''; position: absolute; top: -4px; left: 50%; transform: translateX(-50%);
+    width: 16px; height: 12px; background: #2c2c2c; border-radius: 3px 3px 9px 9px;
+    box-shadow: 0 0 6px rgba(0,0,0,.4);
+}
+.header-lights .spot-1 { left: 2%; }
+.header-lights .spot-2 { left: 22%; }
+.header-lights .spot-4 { left: 78%; }
+.header-lights .spot-5 { left: 98%; transform: translateX(-100%); }
+@media (max-width: 860px) {
+    .header-lights .spot { width: 90px; height: 130px; top: -16px; }
+    .header-lights .spot::before { width: 12px; height: 9px; }
+    .header-lights .spot-2 { left: 12%; }
+    .header-lights .spot-4 { left: 68%; }
+}
+
+/* ══ DROPDOWN "CINEMAS" NO CABEÇALHO ══ */
+.nav-dropdown { position: relative; }
+.nav-dropdown-toggle {
+    background: none; border: none; cursor: pointer; font-family: 'Montserrat', sans-serif;
+    color: var(--header-text); font-weight: 500; font-size: .92em; padding: 10px 16px; border-radius: 6px;
+    display: inline-flex; align-items: center; gap: 7px; transition: background .2s, color .2s;
+}
+.nav-dropdown-toggle:hover, .nav-dropdown-toggle.open { background: var(--primary); color: var(--on-primary); }
+.nav-dropdown-chevron { font-size: .78em; transition: transform .25s; }
+.nav-dropdown-toggle.open .nav-dropdown-chevron { transform: rotate(180deg); }
+.nav-dropdown-panel {
+    display: none; position: fixed; top: 0; left: 0;
+    background-color: #1a0509; border: 1.5px solid #d4af37; border-radius: 12px;
+    box-shadow: 0 18px 46px rgba(0,0,0,.7); padding: 10px; z-index: 99999; opacity: 1;
+    width: max-content; max-width: min(560px, 90vw); max-height: 60vh; overflow-y: auto;
+    grid-template-columns: repeat(2, minmax(150px, 1fr)); gap: 2px;
+}
+.nav-dropdown-panel.open { display: grid; }
+.nav-dropdown-panel a {
+    padding: 9px 12px; border-radius: 7px; font-size: .9em; font-weight: 500; color: #ffffff;
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis; transition: background .15s, color .15s;
+}
+.nav-dropdown-panel a:hover { background: #d4af37; color: #1a0509; }
+.nav-dropdown-backdrop { display: none; position: fixed; inset: 0; z-index: 99998; background: rgba(0,0,0,.6); }
+.nav-dropdown-backdrop.open { display: block; }
+@media (max-width: 600px) { .nav-dropdown-panel { grid-template-columns: 1fr 1fr; max-width: 92vw; } }
+
+/* ══ ANÚNCIOS ══ */
+.anuncio-slot { text-align: center; padding: 10px 20px; background: var(--bg-card-alt); border-bottom: 1px solid var(--border); }
+.anuncio-slot img { max-height: 90px; margin: 0 auto; border-radius: 6px; }
+
+/* ══ HERO BLOG ══ */
+.hero-blog {
+    background: linear-gradient(135deg, var(--bg-card), var(--bg)); border-bottom: 1px solid var(--border);
+    color: #fff; text-align: center; padding: 56px 20px 48px;
+}
+.hero-blog h1 { font-size: 2.4em; font-weight: 900; margin-bottom: 10px; }
+.hero-blog h1 i { color: var(--primary); }
+.hero-blog p { font-size: 1.05em; color: var(--text-dim); max-width: 560px; margin: 0 auto; }
+
+/* ══ TAGS ══ */
+.tags-bar { background: var(--bg-card); border-bottom: 1px solid var(--border); padding: 18px 0; }
+.tags-row { display: flex; gap: 10px; flex-wrap: wrap; }
+.tag-chip { padding: 7px 18px; border-radius: 20px; border: 1.5px solid var(--border); background: var(--bg-card-alt); color: var(--text-dim); font-size: .88em; font-weight: 600; transition: all .2s; }
+.tag-chip:hover { border-color: var(--primary); color: var(--primary); }
+.tag-chip.active { background: var(--primary); border-color: var(--primary); color: var(--on-primary); }
+
+/* ══ GRID DE POSTS ══ */
+.blog-list-section { padding: 48px 0 60px; }
+.blog-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 22px; }
+.blog-card {
+    background: var(--bg-card); border: 1px solid var(--border); border-radius: 14px; overflow: hidden;
+    transition: transform .3s, border-color .3s;
+    display: flex; flex-direction: column; text-decoration: none; color: inherit;
+}
+.blog-card:hover { transform: translateY(-5px); border-color: var(--primary); }
+.blog-card-foto { width: 100%; height: 180px; overflow: hidden; background: var(--bg-card-alt); }
+.blog-card-foto img { width: 100%; height: 100%; object-fit: cover; transition: transform .4s; }
+.blog-card:hover .blog-card-foto img { transform: scale(1.06); }
+.blog-card-foto-placeholder { width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; background: var(--bg-card-alt); }
+.blog-card-foto-placeholder i { font-size: 2.5em; color: var(--primary); opacity: .5; }
+.blog-card-body { padding: 16px; flex: 1; display: flex; flex-direction: column; gap: 6px; }
+.blog-card-tags { display: flex; flex-wrap: wrap; gap: 5px; margin-bottom: 4px; }
+.blog-card-tag { background: var(--bg-card-alt); color: var(--text-dim); font-size: .72em; font-weight: 700; padding: 2px 9px; border-radius: 20px; }
+.blog-card-body h3 { font-size: 1.05em; font-weight: 700; color: #fff; line-height: 1.35; }
+.blog-card-body p { font-size: .88em; color: var(--text-dim); line-height: 1.5; flex: 1; }
+.blog-card-data { font-size: .78em; color: var(--text-dim); display: flex; align-items: center; gap: 5px; margin-top: 4px; }
+.blog-card-btn { margin-top: 10px; display: inline-block; background: var(--primary); color: var(--on-primary); padding: 9px 18px; border-radius: 6px; font-size: .88em; font-weight: 700; text-align: center; transition: background .2s; }
+.blog-card:hover .blog-card-btn { background: var(--dark); }
+.blog-vazio { text-align: center; color: var(--text-dim); padding: 60px 0; font-size: 1.05em; }
+.blog-vazio i { font-size: 2.5em; color: var(--border); display: block; margin-bottom: 14px; }
+
+/* ══ PAGINAÇÃO ══ */
+.blog-pagination { display: flex; align-items: center; justify-content: center; gap: 18px; margin-top: 44px; flex-wrap: wrap; }
+.page-btn { display: inline-flex; align-items: center; gap: 8px; background: var(--bg-card); border: 1.5px solid var(--border); color: var(--text); padding: 11px 22px; border-radius: 8px; font-weight: 700; font-size: .92em; transition: all .2s; }
+.page-btn:hover { border-color: var(--primary); color: var(--primary); }
+.page-info { color: var(--text-dim); font-size: .92em; font-weight: 600; }
+
+/* ══ FAIXA DE CADASTRO ══ */
+.faixa-cadastro { background: var(--bg-card-alt); border-top: 1px solid var(--border); border-bottom: 1px solid var(--border); padding: 40px 20px; text-align: center; }
+.faixa-cadastro h2 { font-size: 1.3em; margin-bottom: 10px; }
+.faixa-cadastro p { color: var(--text-dim); margin-bottom: 20px; }
+.btn-cta { display: inline-block; background: var(--primary); color: var(--on-primary); font-weight: 700; padding: 13px 30px; border-radius: 8px; border: none; cursor: pointer; font-size: 1em; font-family: 'Montserrat', sans-serif; }
+.btn-cta:hover { background: var(--dark); }
+
+/* ══ FOOTER ══ */
+footer { background: var(--bg-card); border-top: 1px solid var(--border); padding: 40px 20px 20px; }
+.footer-cols { display: flex; flex-wrap: wrap; gap: 40px; max-width: 1200px; margin: 0 auto 24px; justify-content: space-between; }
+.footer-cols h4 { color: #fff; margin-bottom: 12px; font-size: 1.05em; }
+.footer-cols p { color: var(--text-dim); font-size: .9em; max-width: 320px; }
+.footer-cols ul { list-style: none; }
+.footer-cols ul li { margin-bottom: 8px; }
+.footer-cols ul li a { color: var(--text-dim); font-size: .9em; transition: color .2s; }
+.footer-cols ul li a:hover { color: var(--primary); }
+.footer-bottom { text-align: center; border-top: 1px solid var(--border); padding-top: 16px; max-width: 1200px; margin: 0 auto; color: var(--text-dim); font-size: .85em; }
+
+/* Modal de cadastro */
+.modal-oculto { display: none !important; }
+#modal-cadastro { position: fixed; inset: 0; background: rgba(0,0,0,.75); z-index: 2000; display: flex; align-items: center; justify-content: center; padding: 16px; }
+#modal-cadastro .modal-box { background: var(--bg-card); border: 1px solid var(--border); border-radius: 14px; max-width: 480px; width: 100%; max-height: 90vh; overflow-y: auto; padding: 26px; position: relative; }
+#modal-cadastro .modal-fechar { position: absolute; top: 14px; right: 16px; background: none; border: none; color: var(--text-dim); font-size: 1.4em; cursor: pointer; }
+#form-cadastro { display: flex; flex-direction: column; gap: 12px; margin-top: 10px; }
+.cad-input { width: 100%; padding: 11px 12px; border: 1.5px solid var(--border); border-radius: 8px; font-size: 14px; background: var(--bg); color: var(--text); font-family: 'Montserrat', sans-serif; }
+.cad-input:focus { border-color: var(--primary); outline: none; }
+#btn-submit-cadastro { background: var(--primary); color: var(--on-primary); border: none; border-radius: 8px; padding: 13px; font-weight: 700; cursor: pointer; }
+#cadastro-sucesso { display: none; text-align: center; padding: 20px 0; }
+
+@media (max-width: 860px) { .logo img { height: 80px; } }
+@media (max-width: 768px) {
+    .hero-blog { padding: 40px 20px 34px; }
+    .hero-blog h1 { font-size: 1.8em; }
+}
+</style>
+</head>
+<body>
+
+{# Remove o prefixo "cinema_" (usado só internamente no slug) e formata o nome pra exibição. #}
+{% macro cat_label(cat) -%}
+{%- set n = (cat.nome or cat.slug or '') -%}
+{%- if n.startswith('cinema_') -%}{%- set n = n[7:] -%}{%- endif -%}
+{{ n }}
+{%- endmacro %}
+
+<!-- HEADER -->
+<header>
+  <div class="header-lights" aria-hidden="true">
+    <span class="spot spot-1"></span>
+    <span class="spot spot-2"></span>
+    <span class="spot spot-4"></span>
+    <span class="spot spot-5"></span>
+  </div>
+  <a class="logo" href="/">
+    <img src="{{ hub.logo_url or 'https://res.cloudinary.com/dec2b0u1/image/upload/v1784394139/cinema_ymuflx.png' }}" alt="{{ hub.nome or 'Cinema Perto de Mim' }}">
+  </a>
+  <nav class="desktop-nav">
+    <ul>
+      <li><a href="/em-cartaz/">Em cartaz</a></li>
+      <li><a href="/nao-quer-sair-de-casa/">Streaming</a></li>
+      <li><a href="/blog/" class="active-link">Blog</a></li>
+      {% if categorias %}
+      <li class="nav-dropdown">
+        <button type="button" class="nav-dropdown-toggle" id="nav-cinemas-toggle" onclick="toggleNavCinemas()" aria-haspopup="true" aria-expanded="false" aria-controls="nav-cinemas-panel">
+          Cinemas <i class="fas fa-chevron-down nav-dropdown-chevron" aria-hidden="true"></i>
+        </button>
+        <div class="nav-dropdown-panel" id="nav-cinemas-panel" role="menu" aria-label="Tipos de cinema">
+          {% for cat in categorias %}
+            <a href="/{{ cat.slug }}/" role="menuitem">{{ cat_label(cat) }}</a>
+          {% endfor %}
+        </div>
+      </li>
+      {% endif %}
+      <li><a href="#" onclick="abrirModalCadastro();return false;">Cadastrar cinema</a></li>
+    </ul>
+  </nav>
+  <div class="nav-dropdown-backdrop" id="nav-cinemas-backdrop" onclick="closeNavCinemas()"></div>
+</header>
+
+<script>
+(function(){
+  var panel = document.getElementById('nav-cinemas-panel');
+  var backdrop = document.getElementById('nav-cinemas-backdrop');
+  if(panel) document.body.appendChild(panel);
+  if(backdrop) document.body.appendChild(backdrop);
+})();
+function positionNavCinemasPanel(){
+  var toggle = document.getElementById('nav-cinemas-toggle');
+  var panel = document.getElementById('nav-cinemas-panel');
+  if(!toggle || !panel) return;
+  var rect = toggle.getBoundingClientRect();
+  var margin = 10;
+  var panelWidth = panel.offsetWidth || 300;
+  var left = rect.left + rect.width / 2 - panelWidth / 2;
+  if(left < margin) left = margin;
+  if(left + panelWidth > window.innerWidth - margin) left = window.innerWidth - margin - panelWidth;
+  panel.style.left = left + 'px';
+  panel.style.top = (rect.bottom + 8) + 'px';
+}
+function toggleNavCinemas(){
+  var toggle = document.getElementById('nav-cinemas-toggle');
+  var panel = document.getElementById('nav-cinemas-panel');
+  var backdrop = document.getElementById('nav-cinemas-backdrop');
+  if(!toggle || !panel) return;
+  var abrir = !panel.classList.contains('open');
+  toggle.classList.toggle('open', abrir);
+  panel.classList.toggle('open', abrir);
+  if(backdrop) backdrop.classList.toggle('open', abrir);
+  toggle.setAttribute('aria-expanded', abrir ? 'true' : 'false');
+  if(abrir) positionNavCinemasPanel();
+}
+function closeNavCinemas(){
+  var toggle = document.getElementById('nav-cinemas-toggle');
+  var panel = document.getElementById('nav-cinemas-panel');
+  var backdrop = document.getElementById('nav-cinemas-backdrop');
+  if(toggle) toggle.classList.remove('open');
+  if(panel) panel.classList.remove('open');
+  if(backdrop) backdrop.classList.remove('open');
+  if(toggle) toggle.setAttribute('aria-expanded', 'false');
+}
+document.addEventListener('keydown', function(e){ if(e.key === 'Escape') closeNavCinemas(); });
+window.addEventListener('resize', function(){
+  var panel = document.getElementById('nav-cinemas-panel');
+  if(panel && panel.classList.contains('open')) positionNavCinemasPanel();
+});
+window.addEventListener('scroll', function(){ closeNavCinemas(); }, { passive: true });
+</script>
+
+{% if anuncio_topo %}
+<div class="anuncio-slot">
+  <a href="{{ anuncio_topo.link_url or '#' }}" target="_blank" rel="noopener">
+    <img src="{{ anuncio_topo.imagem_url }}" alt="{{ anuncio_topo.titulo or 'Anúncio' }}">
+  </a>
+</div>
+{% endif %}
+
+<!-- HERO -->
+<section class="hero-blog">
+  <div class="container">
+    <h1><i class="fas fa-film"></i> Blog</h1>
+    <p>{% if tag_obj %}Posts sobre <strong>{{ tag_obj.nome }}</strong>{% else %}Dicas, guias e novidades sobre cinema, filmes e streaming{% endif %}</p>
+  </div>
+</section>
+
+<!-- TAGS -->
+{% if tags %}
+<div class="tags-bar">
+  <div class="container">
+    <div class="tags-row">
+      <a class="tag-chip {% if not tag_ativa %}active{% endif %}" href="/blog/">Todos</a>
+      {% for t in tags %}
+      <a class="tag-chip {% if tag_ativa == t.slug %}active{% endif %}" href="/blog/?tag={{ t.slug }}">#{{ t.nome }}</a>
+      {% endfor %}
+    </div>
+  </div>
+</div>
+{% endif %}
+
+<!-- GRID DE POSTS -->
+<section class="blog-list-section">
+  <div class="container">
+    {% if posts %}
+    <div class="blog-grid">
+      {% for p in posts %}
+      <a href="/blog/{{ p.slug }}/" class="blog-card">
+        <div class="blog-card-foto">
+          {% if p.capa_url %}
+          <img src="{{ p.capa_url }}" alt="{{ p.titulo }}" loading="lazy" width="600" height="180">
+          {% else %}
+          <div class="blog-card-foto-placeholder"><i class="fas fa-film"></i></div>
+          {% endif %}
+        </div>
+        <div class="blog-card-body">
+          {% if p.tags %}
+          <div class="blog-card-tags">
+            {% for tslug in p.tags[:3] %}
+            <span class="blog-card-tag">#{{ tslug }}</span>
+            {% endfor %}
+          </div>
+          {% endif %}
+          <h3>{{ p.titulo }}</h3>
+          {% if p.resumo %}
+          <p>{{ p.resumo[:120] }}{% if p.resumo | length > 120 %}…{% endif %}</p>
+          {% endif %}
+          {% if p.publicado_em %}
+          <span class="blog-card-data"><i class="fas fa-calendar-alt"></i> {{ p.publicado_em.strftime('%d %b %Y') if p.publicado_em.strftime else p.publicado_em }}</span>
+          {% endif %}
+          <span class="blog-card-btn">Ler post →</span>
+        </div>
+      </a>
+      {% endfor %}
+    </div>
+
+    <!-- PAGINAÇÃO -->
+    {% if total_pages > 1 %}
+    <div class="blog-pagination">
+      {% if page > 1 %}
+      <a class="page-btn" href="/blog/?{% if tag_ativa %}tag={{ tag_ativa }}&{% endif %}page={{ page - 1 }}"><i class="fas fa-chevron-left"></i> Anterior</a>
+      {% endif %}
+      <span class="page-info">Página {{ page }} de {{ total_pages }}</span>
+      {% if page < total_pages %}
+      <a class="page-btn" href="/blog/?{% if tag_ativa %}tag={{ tag_ativa }}&{% endif %}page={{ page + 1 }}">Próximo <i class="fas fa-chevron-right"></i></a>
+      {% endif %}
+    </div>
+    {% endif %}
+
+    {% else %}
+    <p class="blog-vazio"><i class="fas fa-film"></i>Nenhum post publicado ainda{% if tag_obj %} com essa tag{% endif %}.</p>
+    {% endif %}
+  </div>
+</section>
+
+<div class="faixa-cadastro">
+  <h2>Conhece um cinema que não está aqui?</h2>
+  <p>Cine de rua, cineclube, sala de arte — todo tipo de sala tem espaço no guia.</p>
+  <button class="btn-cta" onclick="abrirModalCadastro()">Cadastrar cinema</button>
+</div>
+
+<footer>
+  <div class="footer-cols">
+    <div>
+      <h4>{{ hub.nome or 'Cinema Perto de Mim' }}</h4>
+      <p>Descubra cinemas e cultura de cinema perto de mim.</p>
+    </div>
+    <div>
+      <h4>Navegue</h4>
+      <ul>
+        <li><a href="/em-cartaz/">Em cartaz</a></li>
+        <li><a href="/nao-quer-sair-de-casa/">Streaming</a></li>
+        <li><a href="/blog/">Blog</a></li>
+        {% if categorias %}<li><a href="/#tipos-cinema">Tipos de cinema</a></li>{% endif %}
+        <li><a href="#" onclick="abrirModalCadastro();return false;">Cadastrar cinema</a></li>
+      </ul>
+    </div>
+  </div>
+  <div class="footer-bottom">
+    &copy; {{ hub.nome or 'Cinema Perto de Mim' }} — todos os direitos reservados.
+  </div>
+</footer>
+
+<!-- Modal de cadastro -->
+<div id="modal-cadastro" class="modal-oculto">
+  <div class="modal-box">
+    <button class="modal-fechar" onclick="fecharModalCadastro()"><i class="fas fa-times"></i></button>
+    <h2>Cadastrar cinema</h2>
+    <p style="color:var(--text-dim);font-size:.9em;">Seu cadastro passa por uma revisão rápida antes de ir ao ar.</p>
+
+    <form id="form-cadastro" onsubmit="enviarCadastroNegocio(event)">
+      <input class="cad-input" type="text" name="nome" placeholder="Nome do cinema *" required>
+      <select class="cad-input" name="categoria_id">
+        <option value="">Tipo de cinema</option>
+        {% for cat in categorias %}
+          <option value="{{ cat.id }}">{{ cat_label(cat) }}</option>
+        {% endfor %}
+      </select>
+      <input class="cad-input" type="text" name="cidade" placeholder="Cidade">
+      <input class="cad-input" type="text" name="bairro" placeholder="Bairro">
+      <input class="cad-input" type="text" name="endereco" placeholder="Endereço">
+      <input class="cad-input" type="text" name="whatsapp" placeholder="WhatsApp">
+      <input class="cad-input" type="text" name="telefone" placeholder="Telefone">
+      <input class="cad-input" type="text" name="instagram" placeholder="Instagram">
+      <input class="cad-input" type="url" name="site_url" placeholder="Site (opcional)">
+      <input class="cad-input" type="url" name="foto_url" placeholder="URL de uma foto (opcional)">
+      <textarea class="cad-input" name="descricao" placeholder="Descrição curta" rows="3"></textarea>
+
+      <div id="cadastro-erro" style="display:none;color:#ff8080;font-size:13px;background:#2a1414;border:1px solid #5a2323;border-radius:8px;padding:10px 12px;"></div>
+
+      <button type="submit" id="btn-submit-cadastro">Enviar cadastro</button>
+    </form>
+
+    <div id="cadastro-sucesso">
+      <i class="fas fa-check-circle" style="font-size:2em;color:var(--gold);"></i>
+      <p style="margin-top:10px;">Recebemos seu cadastro! Ele vai passar por revisão antes de aparecer no site.</p>
+    </div>
+  </div>
+</div>
+
+<script>
+function abrirModalCadastro(){ document.getElementById('modal-cadastro').classList.remove('modal-oculto'); }
+function fecharModalCadastro(){
+  document.getElementById('modal-cadastro').classList.add('modal-oculto');
+  document.getElementById('form-cadastro').reset();
+  document.getElementById('form-cadastro').style.display = 'flex';
+  document.getElementById('cadastro-sucesso').style.display = 'none';
+  document.getElementById('cadastro-erro').style.display = 'none';
+}
+document.getElementById('modal-cadastro').addEventListener('click', function(e){ if (e.target === this) fecharModalCadastro(); });
+document.addEventListener('keydown', function(e){ if (e.key === 'Escape') fecharModalCadastro(); });
+
+async function enviarCadastroNegocio(e){
+  e.preventDefault();
+  const btn = document.getElementById('btn-submit-cadastro');
+  const erro = document.getElementById('cadastro-erro');
+  erro.style.display = 'none';
+  btn.disabled = true;
+  btn.textContent = 'Enviando...';
+  try {
+    const formData = new FormData(e.target);
+    const res = await fetch('/cadastrar-negocio', { method: 'POST', body: formData });
+    const data = await res.json();
+    if (res.ok && data.ok) {
+      document.getElementById('form-cadastro').style.display = 'none';
+      document.getElementById('cadastro-sucesso').style.display = 'block';
+    } else {
+      erro.textContent = data.erro || 'Erro ao enviar. Tente novamente.';
+      erro.style.display = 'block';
+    }
+  } catch (err) {
+    erro.textContent = 'Erro de conexão. Verifique sua internet e tente novamente.';
+    erro.style.display = 'block';
+  } finally {
+    btn.disabled = false;
+    btn.textContent = 'Enviar cadastro';
+  }
+}
+</script>
+
+{% if hub.ga4_id %}
+<script async src="https://www.googletagmanager.com/gtag/js?id={{ hub.ga4_id }}"></script>
+<script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag('js',new Date());gtag('config','{{ hub.ga4_id }}');</script>
+{% endif %}
+{% if hub.pixel_id %}
+<script>!function(f,b,e,v,n,t,s){if(f.fbq)return;n=f.fbq=function(){n.callMethod?n.callMethod.apply(n,arguments):n.queue.push(arguments)};if(!f._fbq)f._fbq=n;n.push=n;n.loaded=!0;n.version='2.0';n.queue=[];t=b.createElement(e);t.async=!0;t.src=v;s=b.getElementsByTagName(e)[0];s.parentNode.insertBefore(t,s)}(window,document,'script','https://connect.facebook.net/en_US/fbevents.js');fbq('init','{{ hub.pixel_id }}');fbq('track','PageView');</script>
+{% endif %}
+
+<!-- ── Google Translate (widget nativo oculto) ── -->
+<div id="google_translate_element"></div>
+<script>
+function googleTranslateElementInit() {
+    new google.translate.TranslateElement({ pageLanguage: 'pt', autoDisplay: false }, 'google_translate_element');
+}
+</script>
+<script src="//translate.google.com/translate_a/element.js?cb=googleTranslateElementInit"></script>
+
+<!-- ── Botão flutuante de tradução ── -->
+<button id="translate-btn" onclick="toggleTranslateDrawer()">
+    <i class="fas fa-language"></i> Traduzir
+</button>
+
+<!-- ── Drawer de idiomas ── -->
+<div id="translate-drawer">
+    <div class="td-header">
+        <input class="td-search" id="td-search" type="text" placeholder="Buscar idioma…" oninput="filterLangs(this.value)">
+        <button class="td-close" onclick="toggleTranslateDrawer()">&#10005;</button>
+    </div>
+    <div class="td-list" id="td-list"></div>
+</div>
+
+<style>
+    #google_translate_element { position: absolute; visibility: hidden; pointer-events: none; }
+    .goog-te-banner-frame, .skiptranslate { display: none !important; }
+    body { top: 0 !important; }
+
+    #translate-btn {
+        position: fixed; bottom: 20px; right: 20px; z-index: 999;
+        background: var(--white); border: none; border-radius: 50px;
+        padding: 10px 18px; display: flex; align-items: center; gap: 8px;
+        font-family: 'Montserrat', sans-serif; font-size: 14px; font-weight: 600;
+        color: #1a1a1a; cursor: pointer;
+        box-shadow: 0 4px 20px rgba(0,0,0,0.4);
+        transition: box-shadow 0.2s, transform 0.15s;
+    }
+    #translate-btn:hover { box-shadow: 0 6px 28px rgba(0,0,0,0.5); transform: translateY(-1px); }
+    #translate-btn i { color: var(--primary); font-size: 16px; }
+
+    #translate-drawer {
+        position: fixed; bottom: 70px; right: 20px; z-index: 1000;
+        background: var(--white); border-radius: 16px;
+        box-shadow: 0 8px 40px rgba(0,0,0,0.35);
+        width: 280px; max-height: 420px;
+        display: none; flex-direction: column;
+        overflow: hidden;
+    }
+    #translate-drawer.open { display: flex; }
+    .td-header {
+        padding: 12px 14px; border-bottom: 1px solid #e0e0e0;
+        display: flex; align-items: center; gap: 8px;
+    }
+    .td-search {
+        flex: 1; border: 1.5px solid #e0e0e0;
+        border-radius: 8px; padding: 8px 12px;
+        font-family: 'Montserrat', sans-serif; font-size: 13px;
+        outline: none; transition: border-color 0.2s;
+        color: #1a1a1a;
+    }
+    .td-search:focus { border-color: var(--primary); }
+    .td-close {
+        background: none; border: none; color: #aaa;
+        font-size: 18px; cursor: pointer; line-height: 1; padding: 2px 4px;
+    }
+    .td-close:hover { color: #555; }
+    .td-list { overflow-y: auto; flex: 1; padding: 6px 0; }
+    .td-item {
+        padding: 9px 18px; font-size: 14px; cursor: pointer;
+        color: #333; transition: background 0.1s;
+        display: flex; align-items: center; gap: 10px;
+    }
+    .td-item:hover { background: #f5f5f5; color: #1a1a1a; }
+    .td-item.active { color: var(--dark); font-weight: 600; background: #faf3d9; }
+    .td-item .flag { font-size: 18px; flex-shrink: 0; }
+    .td-empty { padding: 24px; text-align: center; color: #bbb; font-size: 13px; }
+
+    @media (max-width: 480px) {
+        #translate-drawer { width: calc(100vw - 32px); right: 16px; bottom: 72px; max-height: 55vh; }
+        #translate-btn { bottom: 16px; right: 16px; }
+    }
+</style>
+
+<script>
+const LANGS = [
+    {code:'af',name:'Afrikaans',flag:'🇿🇦'},{code:'sq',name:'Albanian',flag:'🇦🇱'},{code:'am',name:'Amharic',flag:'🇪🇹'},
+    {code:'ar',name:'Arabic',flag:'🇸🇦'},{code:'hy',name:'Armenian',flag:'🇦🇲'},{code:'az',name:'Azerbaijani',flag:'🇦🇿'},
+    {code:'eu',name:'Basque',flag:'🏴'},{code:'be',name:'Belarusian',flag:'🇧🇾'},{code:'bn',name:'Bengali',flag:'🇧🇩'},
+    {code:'bs',name:'Bosnian',flag:'🇧🇦'},{code:'bg',name:'Bulgarian',flag:'🇧🇬'},{code:'ca',name:'Catalan',flag:'🏴'},
+    {code:'ceb',name:'Cebuano',flag:'🇵🇭'},{code:'zh-CN',name:'Chinese (Simplified)',flag:'🇨🇳'},{code:'zh-TW',name:'Chinese (Traditional)',flag:'🇹🇼'},
+    {code:'co',name:'Corsican',flag:'🇫🇷'},{code:'hr',name:'Croatian',flag:'🇭🇷'},{code:'cs',name:'Czech',flag:'🇨🇿'},
+    {code:'da',name:'Danish',flag:'🇩🇰'},{code:'nl',name:'Dutch',flag:'🇳🇱'},{code:'en',name:'English',flag:'🇬🇧'},
+    {code:'eo',name:'Esperanto',flag:'🌍'},{code:'et',name:'Estonian',flag:'🇪🇪'},{code:'fi',name:'Finnish',flag:'🇫🇮'},
+    {code:'fr',name:'French',flag:'🇫🇷'},{code:'fy',name:'Frisian',flag:'🏴'},{code:'gl',name:'Galician',flag:'🏴'},
+    {code:'ka',name:'Georgian',flag:'🇬🇪'},{code:'de',name:'German',flag:'🇩🇪'},{code:'el',name:'Greek',flag:'🇬🇷'},
+    {code:'gu',name:'Gujarati',flag:'🇮🇳'},{code:'ht',name:'Haitian Creole',flag:'🇭🇹'},{code:'ha',name:'Hausa',flag:'🇳🇬'},
+    {code:'haw',name:'Hawaiian',flag:'🇺🇸'},{code:'he',name:'Hebrew',flag:'🇮🇱'},{code:'hi',name:'Hindi',flag:'🇮🇳'},
+    {code:'hmn',name:'Hmong',flag:'🌏'},{code:'hu',name:'Hungarian',flag:'🇭🇺'},{code:'is',name:'Icelandic',flag:'🇮🇸'},
+    {code:'ig',name:'Igbo',flag:'🇳🇬'},{code:'id',name:'Indonesian',flag:'🇮🇩'},{code:'ga',name:'Irish',flag:'🇮🇪'},
+    {code:'it',name:'Italian',flag:'🇮🇹'},{code:'ja',name:'Japanese',flag:'🇯🇵'},{code:'jv',name:'Javanese',flag:'🇮🇩'},
+    {code:'kn',name:'Kannada',flag:'🇮🇳'},{code:'kk',name:'Kazakh',flag:'🇰🇿'},{code:'km',name:'Khmer',flag:'🇰🇭'},
+    {code:'rw',name:'Kinyarwanda',flag:'🇷🇼'},{code:'ko',name:'Korean',flag:'🇰🇷'},{code:'ku',name:'Kurdish',flag:'🌍'},
+    {code:'ky',name:'Kyrgyz',flag:'🇰🇬'},{code:'lo',name:'Lao',flag:'🇱🇦'},{code:'la',name:'Latin',flag:'🏛️'},
+    {code:'lv',name:'Latvian',flag:'🇱🇻'},{code:'lt',name:'Lithuanian',flag:'🇱🇹'},{code:'lb',name:'Luxembourgish',flag:'🇱🇺'},
+    {code:'mk',name:'Macedonian',flag:'🇲🇰'},{code:'mg',name:'Malagasy',flag:'🇲🇬'},{code:'ms',name:'Malay',flag:'🇲🇾'},
+    {code:'ml',name:'Malayalam',flag:'🇮🇳'},{code:'mt',name:'Maltese',flag:'🇲🇹'},{code:'mi',name:'Maori',flag:'🇳🇿'},
+    {code:'mr',name:'Marathi',flag:'🇮🇳'},{code:'mn',name:'Mongolian',flag:'🇲🇳'},{code:'my',name:'Myanmar (Burmese)',flag:'🇲🇲'},
+    {code:'ne',name:'Nepali',flag:'🇳🇵'},{code:'no',name:'Norwegian',flag:'🇳🇴'},{code:'ny',name:'Nyanja (Chichewa)',flag:'🇲🇼'},
+    {code:'or',name:'Odia (Oriya)',flag:'🇮🇳'},{code:'ps',name:'Pashto',flag:'🇦🇫'},{code:'fa',name:'Persian',flag:'🇮🇷'},
+    {code:'pl',name:'Polish',flag:'🇵🇱'},{code:'pt',name:'Português',flag:'🇧🇷'},{code:'pa',name:'Punjabi',flag:'🇮🇳'},
+    {code:'ro',name:'Romanian',flag:'🇷🇴'},{code:'ru',name:'Russian',flag:'🇷🇺'},{code:'sm',name:'Samoan',flag:'🇼🇸'},
+    {code:'gd',name:'Scots Gaelic',flag:'🏴󠁧󠁢󠁳󠁣󠁴󠁿'},{code:'sr',name:'Serbian',flag:'🇷🇸'},{code:'st',name:'Sesotho',flag:'🇱🇸'},
+    {code:'sn',name:'Shona',flag:'🇿🇼'},{code:'sd',name:'Sindhi',flag:'🇵🇰'},{code:'si',name:'Sinhala',flag:'🇱🇰'},
+    {code:'sk',name:'Slovak',flag:'🇸🇰'},{code:'sl',name:'Slovenian',flag:'🇸🇮'},{code:'so',name:'Somali',flag:'🇸🇴'},
+    {code:'es',name:'Spanish',flag:'🇪🇸'},{code:'su',name:'Sundanese',flag:'🇮🇩'},{code:'sw',name:'Swahili',flag:'🇰🇪'},
+    {code:'sv',name:'Swedish',flag:'🇸🇪'},{code:'tl',name:'Tagalog (Filipino)',flag:'🇵🇭'},{code:'tg',name:'Tajik',flag:'🇹🇯'},
+    {code:'ta',name:'Tamil',flag:'🇮🇳'},{code:'tt',name:'Tatar',flag:'🇷🇺'},{code:'te',name:'Telugu',flag:'🇮🇳'},
+    {code:'th',name:'Thai',flag:'🇹🇭'},{code:'tr',name:'Turkish',flag:'🇹🇷'},{code:'tk',name:'Turkmen',flag:'🇹🇲'},
+    {code:'uk',name:'Ukrainian',flag:'🇺🇦'},{code:'ur',name:'Urdu',flag:'🇵🇰'},{code:'ug',name:'Uyghur',flag:'🇨🇳'},
+    {code:'uz',name:'Uzbek',flag:'🇺🇿'},{code:'vi',name:'Vietnamese',flag:'🇻🇳'},{code:'cy',name:'Welsh',flag:'🏴󠁧󠁢󠁷󠁬󠁳󠁿'},
+    {code:'xh',name:'Xhosa',flag:'🇿🇦'},{code:'yi',name:'Yiddish',flag:'🌍'},{code:'yo',name:'Yoruba',flag:'🇳🇬'},
+    {code:'zu',name:'Zulu',flag:'🇿🇦'}
+];
+
+let currentLang = 'pt';
+let drawerOpen  = false;
+
+function renderLangs(list) {
+    const el = document.getElementById('td-list');
+    if (!list.length) {
+        el.innerHTML = '<div class="td-empty">Nenhum idioma encontrado</div>';
+        return;
+    }
+    el.innerHTML = list.map(l =>
+        '<div class="td-item ' + (l.code === currentLang ? 'active' : '') + '" onclick="selectLang(\'' + l.code + '\',\'' + l.name + '\')"><span class="flag">' + l.flag + '</span> ' + l.name + '</div>'
+    ).join('');
+}
+
+function filterLangs(q) {
+    const filtered = LANGS.filter(function(l){ return l.name.toLowerCase().includes(q.toLowerCase()); });
+    renderLangs(filtered);
+}
+
+function selectLang(code, name) {
+    currentLang = code;
+    drawerOpen  = false;
+    document.getElementById('translate-drawer').classList.remove('open');
+
+    var lang = LANGS.find(function(l){ return l.code === code; });
+    document.getElementById('translate-btn').innerHTML =
+        '<i class="fas fa-language"></i> ' + (lang ? lang.flag + ' ' + name : name);
+
+    if (code === 'pt') {
+        var sel = document.querySelector('.goog-te-combo');
+        if (sel) { sel.value = ''; sel.dispatchEvent(new Event('change')); }
+        document.getElementById('translate-btn').innerHTML = '<i class="fas fa-language"></i> Traduzir';
+        return;
+    }
+
+    var tryTranslate = function(attempts) {
+        var sel = document.querySelector('.goog-te-combo');
+        if (sel) {
+            sel.value = code;
+            sel.dispatchEvent(new Event('change'));
+        } else if (attempts > 0) {
+            setTimeout(function(){ tryTranslate(attempts - 1); }, 300);
+        }
+    };
+    tryTranslate(10);
+}
+
+function toggleTranslateDrawer() {
+    drawerOpen = !drawerOpen;
+    var drawer = document.getElementById('translate-drawer');
+    if (drawerOpen) {
+        drawer.classList.add('open');
+        renderLangs(LANGS);
+        var search = document.getElementById('td-search');
+        search.value = '';
+        setTimeout(function(){ search.focus(); }, 50);
+    } else {
+        drawer.classList.remove('open');
+    }
+}
+
+document.addEventListener('click', function(e) {
+    if (drawerOpen &&
+        !document.getElementById('translate-drawer').contains(e.target) &&
+        !document.getElementById('translate-btn').contains(e.target)) {
+        drawerOpen = false;
+        document.getElementById('translate-drawer').classList.remove('open');
+    }
+});
+</script>
+</body>
+</html>
