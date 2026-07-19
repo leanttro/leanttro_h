@@ -310,12 +310,6 @@ window.addEventListener('scroll', function(){ closeNavCinemas(); }, { passive: t
         </div>
       {% endif %}
 
-      {# providers.link é uma URL da própria TMDB que resolve pro provider certo —
-         não é deep link direto, mas evita deixar o usuário sem nenhum clique #}
-      {% if providers.link %}
-        <a class="btn-assistir" href="{{ providers.link }}" target="_blank" rel="noopener">Ver onde assistir →</a>
-      {% endif %}
-
       {% include "cinema/_creditos_justwatch.html" %}
     </div>
   {% else %}
