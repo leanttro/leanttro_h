@@ -442,6 +442,86 @@ nav.desktop-nav ul li a:hover { background: var(--primary); color: var(--on-prim
 /* Placeholder enquanto carrega / se não tiver filme */
 .cine-hero[data-empty="1"] { display: none; }
 
+/* ══ "ACHE SEU FILME" — busca livre, sobreposta no topo da tela 3D ══ */
+.cine-hero-busca {
+    position: relative; z-index: 10; max-width: 480px; margin: 0 auto 22px;
+}
+.cine-hero-busca-campo {
+    position: relative; display: flex; align-items: center;
+    background: rgba(0,0,0,.55); border: 1.5px solid rgba(212,175,55,.4);
+    border-radius: 30px; padding: 4px 6px 4px 18px; backdrop-filter: blur(4px);
+    transition: border-color .2s, background .2s;
+}
+.cine-hero-busca-campo:focus-within { border-color: var(--primary); background: rgba(0,0,0,.7); }
+.cine-hero-busca-campo i.fa-search { color: var(--primary); font-size: .9em; margin-right: 10px; }
+.cine-hero-busca-campo input {
+    flex: 1; background: none; border: none; outline: none; color: #fff;
+    font-family: 'Montserrat', sans-serif; font-size: .92em; padding: 9px 0;
+}
+.cine-hero-busca-campo input::placeholder { color: rgba(255,255,255,.5); }
+.cine-hero-busca-campo .cine-hero-busca-limpar {
+    display: none; background: none; border: none; color: rgba(255,255,255,.6);
+    cursor: pointer; padding: 6px 10px; font-size: .85em;
+}
+.cine-hero-busca-campo.tem-texto .cine-hero-busca-limpar { display: block; }
+.cine-hero-busca-campo .cine-hero-busca-limpar:hover { color: #fff; }
+
+.cine-hero-busca-resultados {
+    position: absolute; top: calc(100% + 8px); left: 0; right: 0;
+    background: #17070a; border: 1px solid rgba(212,175,55,.35); border-radius: 12px;
+    box-shadow: 0 18px 46px rgba(0,0,0,.6); overflow: hidden;
+    max-height: 340px; overflow-y: auto; display: none;
+}
+.cine-hero-busca-resultados.aberto { display: block; }
+.cine-hero-busca-item {
+    display: flex; align-items: center; gap: 12px; padding: 9px 14px;
+    cursor: pointer; transition: background .15s; border-bottom: 1px solid rgba(255,255,255,.05);
+}
+.cine-hero-busca-item:last-child { border-bottom: none; }
+.cine-hero-busca-item:hover, .cine-hero-busca-item.ativo { background: rgba(212,175,55,.14); }
+.cine-hero-busca-item img {
+    width: 36px; height: 52px; object-fit: cover; border-radius: 4px; flex-shrink: 0;
+    background: #2b0d13;
+}
+.cine-hero-busca-item-info { min-width: 0; }
+.cine-hero-busca-item-titulo {
+    color: #fff; font-size: .88em; font-weight: 600; white-space: nowrap;
+    overflow: hidden; text-overflow: ellipsis;
+}
+.cine-hero-busca-item-ano { color: var(--text-dim); font-size: .78em; }
+.cine-hero-busca-vazio, .cine-hero-busca-carregando {
+    padding: 16px; text-align: center; color: var(--text-dim); font-size: .85em;
+}
+
+/* Quando um resultado da busca está em exibição na tela 3D */
+.cine-hero-sair-busca {
+    display: none; align-items: center; gap: 6px; background: rgba(0,0,0,.5);
+    border: 1px solid rgba(255,255,255,.25); color: #fff; border-radius: 20px;
+    padding: 6px 14px; font-size: .78em; cursor: pointer; backdrop-filter: blur(3px);
+    transition: background .2s, border-color .2s;
+}
+.cine-hero-sair-busca:hover { background: var(--primary); border-color: var(--primary); color: var(--on-primary); }
+.cine-hero[data-modo-busca="1"] .cine-hero-sair-busca { display: inline-flex; }
+.cine-hero[data-modo-busca="1"] .cine-hero-brand { display: none; }
+
+.cine-hero-onde {
+    display: flex; align-items: center; gap: 10px; margin: -4px 0 12px; min-height: 30px;
+}
+.cine-hero-onde-logos { display: flex; gap: 6px; }
+.cine-hero-onde-logos img {
+    width: 30px; height: 30px; border-radius: 7px; object-fit: cover;
+    box-shadow: 0 2px 8px rgba(0,0,0,.4);
+}
+.cine-hero-onde-texto { color: rgba(255,255,255,.75); font-size: .78em; }
+.cine-hero-onde a.cine-hero-onde-link {
+    color: var(--primary); font-size: .78em; font-weight: 700; white-space: nowrap;
+}
+.cine-hero-onde a.cine-hero-onde-link:hover { text-decoration: underline; }
+
+@media (max-width: 640px) {
+    .cine-hero-busca { max-width: 100%; margin-bottom: 16px; }
+}
+
 @media (max-width: 640px) {
     .cine-hero { padding: 36px 14px 30px; }
     .cine-hero-screen-inner { aspect-ratio: 16/11; }
@@ -691,8 +771,18 @@ window.addEventListener('scroll', function(){ closeNavCinemas(); }, { passive: t
   <p id="lazy-loading" style="display:none; text-align:center; color:var(--primary); padding:20px; font-size:.95em;"><i class="fas fa-spinner fa-spin"></i> Carregando mais cinemas...</p>
 </section>
 
-<section class="cine-hero" id="cine-hero" data-empty="1">
+<section class="cine-hero" id="cine-hero" data-empty="1" data-modo-busca="0">
   <div class="cine-hero-inner">
+
+    <div class="cine-hero-busca" id="cine-hero-busca">
+      <div class="cine-hero-busca-campo" id="cine-hero-busca-campo">
+        <i class="fas fa-search"></i>
+        <input type="text" id="busca-filme-input" placeholder="Ache seu filme — digite o título..." autocomplete="off">
+        <button type="button" class="cine-hero-busca-limpar" id="busca-filme-limpar" aria-label="Limpar busca"><i class="fas fa-times"></i></button>
+      </div>
+      <div class="cine-hero-busca-resultados" id="cine-hero-busca-resultados"></div>
+    </div>
+
     <div class="cine-hero-stage">
       <div class="cine-hero-curtain left"></div>
       <div class="cine-hero-screen-wrap">
@@ -707,11 +797,15 @@ window.addEventListener('scroll', function(){ closeNavCinemas(); }, { passive: t
         <div class="cine-hero-ui">
           <div class="cine-hero-top">
             <div class="cine-hero-brand"><i class="fas fa-film"></i><span>Em cartaz</span></div>
+            <button type="button" class="cine-hero-sair-busca" id="cine-hero-sair-busca">
+              <i class="fas fa-arrow-left"></i> Voltar pro em cartaz
+            </button>
             <span class="cine-hero-counter" id="cine-hero-counter">01</span>
           </div>
           <div class="cine-hero-bottom">
             <h3 class="cine-hero-title" id="cine-hero-title">Carregando...</h3>
             <p class="cine-hero-desc" id="cine-hero-desc"></p>
+            <div class="cine-hero-onde" id="cine-hero-onde" style="display:none;"></div>
             <div class="cine-hero-nav">
               <button type="button" id="cine-hero-prev" aria-label="Filme anterior"><i class="fas fa-chevron-left"></i></button>
               <button type="button" id="cine-hero-next" aria-label="Próximo filme"><i class="fas fa-chevron-right"></i></button>
