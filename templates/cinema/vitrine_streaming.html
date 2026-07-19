@@ -155,7 +155,7 @@ nav.desktop-nav ul li a:hover { background: var(--primary); color: var(--on-prim
 
 <div class="grid" id="filmes-grid">
   {% for f in filmes %}
-    <a class="card" data-titulo="{{ f.title | lower }}" href="/filme/{{ f.id }}/">
+    <a class="card" href="/filme/{{ f.id }}/">
       {% if f.poster_url %}
         <img class="poster" src="{{ f.poster_url }}" alt="Pôster de {{ f.title }}" loading="lazy">
       {% endif %}
@@ -169,36 +169,119 @@ nav.desktop-nav ul li a:hover { background: var(--primary); color: var(--on-prim
   {% endfor %}
 </div>
 <p class="info-message" id="busca-vazio" style="display:none;">Não encontramos nenhum filme com esse título.</p>
+<p class="info-message" id="busca-truncada" style="display:none;">Mostrando os resultados mais populares — refine a busca se não achou o que queria.</p>
 
-<div class="paginacao">
-  {% set base_url = '/nao-quer-sair-de-casa/' + provedor.slug + '/' if provedor else '/nao-quer-sair-de-casa/' %}
-  {% if page > 1 %}
-    <a href="{{ base_url }}?page={{ page - 1 }}">← Anterior</a>
-  {% endif %}
-  {% if page < total_pages %}
-    <a href="{{ base_url }}?page={{ page + 1 }}">Próxima →</a>
-  {% endif %}
-</div>
+<div id="lazy-sentinel" style="height:1px; margin-top:10px;"></div>
+<p id="lazy-loading" style="display:none; text-align:center; color:var(--primary); padding:20px; font-size:.95em;"><i class="fas fa-spinner fa-spin"></i> Carregando mais filmes...</p>
 
 {% include "cinema/_creditos.html" %}
 {% include "cinema/_creditos_justwatch.html" %}
 
 <script>
-// Busca client-side: filtra os cards já carregados nesta página pelo título.
-// (não busca em outras páginas de paginação — só o que já está renderizado aqui)
-function filtrarBuscaFilmes(termo){
-  var t = (termo || '').trim().toLowerCase();
-  var cards = document.querySelectorAll('#filmes-grid .card');
-  var algumVisivel = false;
-  cards.forEach(function(card){
-    var titulo = card.dataset.titulo || '';
-    var bate = !t || titulo.indexOf(t) !== -1;
-    card.style.display = bate ? '' : 'none';
-    if(bate) algumVisivel = true;
+// ══════════════════════════════════════════════════════════════════
+// SCROLL INFINITO — a página já chega com as 5 primeiras páginas da TMDB
+// (~100 filmes, renderizadas pelo Jinja acima). Conforme a pessoa rola
+// até perto do fim, carrega mais uma página (20 filmes) via
+// /api/cinema/streaming/<slug>?page=N, incrementando N.
+//
+// BUSCA — roda no servidor (/api/cinema/streaming/<slug>/buscar), que
+// varre o catálogo inteiro do provedor na TMDB (não só o que já foi
+// carregado aqui na tela) e filtra pelo título. Enquanto a busca está
+// ativa, o scroll infinito fica pausado; ao limpar o campo, volta pra
+// lista original sem precisar recarregar a página.
+// ══════════════════════════════════════════════════════════════════
+{% if provedor %}
+var _slugProvedor = {{ provedor.slug | tojson }};
+var _proximaPaginaTmdb = {{ proxima_pagina_tmdb }};
+var _temMaisFilmes = {{ 'true' if tem_mais else 'false' }};
+var _carregandoMais = false;
+var _buscaAtiva = false;
+var _buscaTimeout = null;
+var _gridOriginalHTML = null;
+
+function escapeHtmlFilme(s){
+  return (s || '').replace(/[&<>"']/g, function(c){
+    return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];
   });
-  var vazio = document.getElementById('busca-vazio');
-  if(vazio) vazio.style.display = (cards.length && !algumVisivel) ? '' : 'none';
 }
+
+function cardHTMLFilme(f){
+  var poster = f.poster_url
+    ? '<img class="poster" src="' + f.poster_url + '" alt="Pôster de ' + escapeHtmlFilme(f.title) + '" loading="lazy">'
+    : '';
+  return '<a class="card" href="/filme/' + f.id + '/">' + poster +
+    '<p>' + escapeHtmlFilme(f.title) + '</p>' +
+    '<div class="provider-icones"><img src="{{ provedor.logo_url }}" alt="{{ provedor.nome }}" title="{{ provedor.nome }}"></div>' +
+  '</a>';
+}
+
+function carregarMaisFilmes(){
+  if(_carregandoMais || !_temMaisFilmes || _buscaAtiva) return;
+  _carregandoMais = true;
+  document.getElementById('lazy-loading').style.display = '';
+  fetch('/api/cinema/streaming/' + _slugProvedor + '?page=' + _proximaPaginaTmdb)
+    .then(function(r){ return r.json(); })
+    .then(function(data){
+      var grid = document.getElementById('filmes-grid');
+      (data.filmes || []).forEach(function(f){ grid.insertAdjacentHTML('beforeend', cardHTMLFilme(f)); });
+      _temMaisFilmes = !!data.tem_mais;
+      _proximaPaginaTmdb++;
+    })
+    .catch(function(){ _temMaisFilmes = false; })
+    .finally(function(){
+      _carregandoMais = false;
+      document.getElementById('lazy-loading').style.display = 'none';
+    });
+}
+
+var _sentinel = document.getElementById('lazy-sentinel');
+if(_sentinel && 'IntersectionObserver' in window){
+  new IntersectionObserver(function(entries){
+    if(entries[0].isIntersecting) carregarMaisFilmes();
+  }, { rootMargin: '600px' }).observe(_sentinel);
+}
+
+function filtrarBuscaFilmes(termo){
+  clearTimeout(_buscaTimeout);
+  var t = (termo || '').trim();
+  if(!t){
+    _buscaAtiva = false;
+    if(_gridOriginalHTML !== null){
+      document.getElementById('filmes-grid').innerHTML = _gridOriginalHTML;
+      _gridOriginalHTML = null;
+    }
+    document.getElementById('busca-vazio').style.display = 'none';
+    document.getElementById('busca-truncada').style.display = 'none';
+    document.getElementById('lazy-sentinel').style.display = '';
+    return;
+  }
+  _buscaTimeout = setTimeout(function(){ _executarBusca(t); }, 350);
+}
+
+function _executarBusca(termo){
+  _buscaAtiva = true;
+  if(_gridOriginalHTML === null){
+    _gridOriginalHTML = document.getElementById('filmes-grid').innerHTML;
+  }
+  document.getElementById('lazy-sentinel').style.display = 'none';
+  document.getElementById('busca-truncada').style.display = 'none';
+  document.getElementById('lazy-loading').style.display = '';
+  fetch('/api/cinema/streaming/' + _slugProvedor + '/buscar?q=' + encodeURIComponent(termo))
+    .then(function(r){ return r.json(); })
+    .then(function(data){
+      var lista = data.filmes || [];
+      document.getElementById('filmes-grid').innerHTML = lista.map(cardHTMLFilme).join('');
+      document.getElementById('busca-vazio').style.display = lista.length ? 'none' : '';
+      document.getElementById('busca-truncada').style.display = (lista.length && data.truncado) ? '' : 'none';
+    })
+    .catch(function(){
+      document.getElementById('busca-vazio').style.display = '';
+    })
+    .finally(function(){
+      document.getElementById('lazy-loading').style.display = 'none';
+    });
+}
+{% endif %}
 </script>
 
 </body>
