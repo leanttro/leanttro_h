@@ -141,6 +141,34 @@ nav.desktop-nav ul li a {
     .header-lights .spot-4 { left: 68%; }
 }
 nav.desktop-nav ul li a:hover { background: var(--primary); color: var(--on-primary); }
+
+/* ══ DROPDOWN "CINEMAS" NO CABEÇALHO (substitui a lista espalhada de categorias) ══ */
+.nav-dropdown { position: relative; }
+.nav-dropdown-toggle {
+    background: none; border: none; cursor: pointer; font-family: 'Montserrat', sans-serif;
+    color: var(--header-text); font-weight: 500; font-size: .92em; padding: 10px 16px; border-radius: 6px;
+    display: inline-flex; align-items: center; gap: 7px; transition: background .2s, color .2s;
+}
+.nav-dropdown-toggle:hover, .nav-dropdown-toggle.open { background: var(--primary); color: var(--on-primary); }
+.nav-dropdown-chevron { font-size: .78em; transition: transform .25s; }
+.nav-dropdown-toggle.open .nav-dropdown-chevron { transform: rotate(180deg); }
+.nav-dropdown-panel {
+    display: none; position: absolute; top: calc(100% + 8px); left: 50%; transform: translateX(-50%);
+    background: var(--bg-card); border: 1px solid var(--border); border-radius: 12px;
+    box-shadow: 0 14px 38px rgba(0,0,0,.4); padding: 10px; z-index: 60;
+    width: max-content; max-width: min(560px, 90vw); max-height: 60vh; overflow-y: auto;
+    grid-template-columns: repeat(2, minmax(150px, 1fr)); gap: 2px;
+}
+.nav-dropdown-panel.open { display: grid; }
+.nav-dropdown-panel a {
+    padding: 9px 12px; border-radius: 7px; font-size: .88em; color: var(--text);
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis; transition: background .15s, color .15s;
+}
+.nav-dropdown-panel a:hover { background: var(--bg-card-alt); color: var(--gold); }
+.nav-dropdown-backdrop { display: none; position: fixed; inset: 0; z-index: 50; background: transparent; }
+.nav-dropdown-backdrop.open { display: block; }
+@media (max-width: 600px) { .nav-dropdown-panel { grid-template-columns: 1fr 1fr; max-width: 92vw; } }
+
 /* ══ ANÚNCIOS ══ */
 .anuncio-slot { text-align: center; padding: 10px 20px; background: var(--bg-card-alt); border-bottom: 1px solid var(--border); }
 .anuncio-slot img { max-height: 90px; margin: 0 auto; border-radius: 6px; }
@@ -199,6 +227,13 @@ nav.desktop-nav ul li a:hover { background: var(--primary); color: var(--on-prim
 .cat-card-overlay { position: absolute; inset: 0; background: linear-gradient(to top, rgba(0,0,0,.88) 0%, rgba(0,0,0,.35) 45%, rgba(0,0,0,.05) 75%); }
 .cat-card i { position: relative; z-index: 1; font-size: 1.7em; color: var(--gold); margin-bottom: 10px; display: block; }
 .cat-card span { position: relative; z-index: 1; font-weight: 700; font-size: 1.1em; padding: 18px 14px; text-shadow: 0 2px 8px rgba(0,0,0,.7); }
+
+/* ── "Tipos de cinema" em carrossel — mesmo padrão dos demais carrosséis ── */
+.carousel-track .cat-card { flex: 0 0 calc(25% - 14px); min-width: 0; }
+@media (max-width: 1100px) { .carousel-track .cat-card { flex: 0 0 calc(33.333% - 12px); } }
+@media (max-width: 900px) { .carousel-track .cat-card { flex: 0 0 calc(50% - 9px); } }
+@media (max-width: 768px) { .carousel-track .cat-card { scroll-snap-align: start; flex: 0 0 60%; } }
+@media (max-width: 480px) { .carousel-track .cat-card { flex: 0 0 75%; } }
 
 /* ══ BOTÃO DE LOCALIZAÇÃO ══ */
 .btn-loc { cursor: pointer; border: none; font-family: 'Montserrat', sans-serif; }
@@ -472,13 +507,47 @@ footer ul li a:hover { color: var(--gold); }
     <ul>
       <li><a href="/em-cartaz/">Em cartaz</a></li>
       <li><a href="/nao-quer-sair-de-casa/">Streaming</a></li>
-      {% for cat in categorias %}
-        <li><a href="/{{ cat.slug }}/">{{ cat_label(cat) }}</a></li>
-      {% endfor %}
+      {% if categorias %}
+      <li class="nav-dropdown">
+        <button type="button" class="nav-dropdown-toggle" id="nav-cinemas-toggle" onclick="toggleNavCinemas()" aria-haspopup="true" aria-expanded="false" aria-controls="nav-cinemas-panel">
+          Cinemas <i class="fas fa-chevron-down nav-dropdown-chevron" aria-hidden="true"></i>
+        </button>
+        <div class="nav-dropdown-panel" id="nav-cinemas-panel" role="menu" aria-label="Tipos de cinema">
+          {% for cat in categorias %}
+            <a href="/{{ cat.slug }}/" role="menuitem">{{ cat_label(cat) }}</a>
+          {% endfor %}
+        </div>
+      </li>
+      {% endif %}
       <li><a href="#" onclick="abrirModalCadastro();return false;">Cadastrar cinema</a></li>
     </ul>
   </nav>
+  <div class="nav-dropdown-backdrop" id="nav-cinemas-backdrop" onclick="closeNavCinemas()"></div>
 </header>
+
+<script>
+function toggleNavCinemas(){
+  var toggle = document.getElementById('nav-cinemas-toggle');
+  var panel = document.getElementById('nav-cinemas-panel');
+  var backdrop = document.getElementById('nav-cinemas-backdrop');
+  if(!toggle || !panel) return;
+  var abrir = !panel.classList.contains('open');
+  toggle.classList.toggle('open', abrir);
+  panel.classList.toggle('open', abrir);
+  if(backdrop) backdrop.classList.toggle('open', abrir);
+  toggle.setAttribute('aria-expanded', abrir ? 'true' : 'false');
+}
+function closeNavCinemas(){
+  var toggle = document.getElementById('nav-cinemas-toggle');
+  var panel = document.getElementById('nav-cinemas-panel');
+  var backdrop = document.getElementById('nav-cinemas-backdrop');
+  if(toggle) toggle.classList.remove('open');
+  if(panel) panel.classList.remove('open');
+  if(backdrop) backdrop.classList.remove('open');
+  if(toggle) toggle.setAttribute('aria-expanded', 'false');
+}
+document.addEventListener('keydown', function(e){ if(e.key === 'Escape') closeNavCinemas(); });
+</script>
 
 {% if anuncio_topo %}
 <div class="anuncio-slot">
@@ -497,10 +566,36 @@ footer ul li a:hover { color: var(--gold); }
   </div>
 </section>
 
-<section class="secao container">
+<section class="secao container" id="tipos-cinema">
   <h2>Tipos de cinema</h2>
   <p class="secao-sub">Da grande rede à sala de bairro — cada tipo tem sua experiência.</p>
-  <div class="cat-grid">
+
+  <div class="view-controls" id="view-controls-tipos">
+    <span>Ver como:</span>
+    <button class="view-btn active" id="btn-carousel-tipos" onclick="setViewTipos('carousel')"><i class="fas fa-grip-lines"></i></button>
+    <button class="view-btn" id="btn-grade-tipos" onclick="setViewTipos('grade')"><i class="fas fa-th"></i></button>
+  </div>
+
+  <div id="tipos-carousel-wrapper" class="carousel-wrapper">
+    <div class="carousel-track-outer">
+      <div class="carousel-track" id="tipos-track">
+        {% for cat in categorias %}
+          <a class="cat-card" href="/{{ cat.slug }}/" data-cat-slug="{{ cat.slug }}">
+            <img class="cat-card-img" src="{{ cat.icone_url or 'https://placehold.co/400x300/17171b/f5c518?text=%F0%9F%8E%9E' }}" alt="{{ cat_label(cat) }}" loading="lazy">
+            <div class="cat-card-overlay"></div>
+            <span>{{ cat_label(cat) }}</span>
+          </a>
+        {% endfor %}
+      </div>
+    </div>
+    <div class="carousel-nav" id="tipos-carousel-nav">
+      <button class="carousel-arrow" id="tipos-prev" onclick="moveCarouselTipos(-1)"><i class="fas fa-chevron-left"></i></button>
+      <div class="carousel-progress-bar"><div class="carousel-progress-fill" id="tipos-progress-fill"></div></div>
+      <button class="carousel-arrow" id="tipos-next" onclick="moveCarouselTipos(1)"><i class="fas fa-chevron-right"></i></button>
+    </div>
+  </div>
+
+  <div class="cat-grid" id="tipos-grade" style="display:none;">
     {% for cat in categorias %}
       <a class="cat-card" href="/{{ cat.slug }}/" data-cat-slug="{{ cat.slug }}">
         <img class="cat-card-img" src="{{ cat.icone_url or 'https://placehold.co/400x300/17171b/f5c518?text=%F0%9F%8E%9E' }}" alt="{{ cat_label(cat) }}" loading="lazy">
@@ -756,6 +851,93 @@ document.querySelectorAll('.cat-card[data-cat-slug]').forEach(function(card){
     })
     .catch(function(){ /* mantém placeholder */ });
 });
+</script>
+
+<script>
+// ══════════════════════════════════════════════════════════════════
+// CARROSSEL DE "Tipos de cinema" — mesmo padrão visual/UX dos demais
+// carrosséis do hub (arrasta no desktop, scroll nativo no mobile,
+// setas + barra de progresso, alterna pra grade). A ordenação por
+// quantidade de cinemas cadastrados por categoria é aplicada mais
+// abaixo, assim que os dados de "todosCinemas" estiverem disponíveis.
+// ══════════════════════════════════════════════════════════════════
+var _tiposState = { pos: 0, view: 'carousel' };
+
+function getCardWidthTipos(){
+  var track = document.getElementById('tipos-track');
+  if(!track) return 260;
+  var card = track.querySelector('.cat-card');
+  if(!card) return 260;
+  return card.offsetWidth + 18;
+}
+
+function isMobileTipos(){ return window.innerWidth <= 768; }
+
+function clampAndUpdateTipos(){
+  var track = document.getElementById('tipos-track');
+  if(!track) return;
+  if(isMobileTipos()){
+    var prevM = document.getElementById('tipos-prev');
+    var nextM = document.getElementById('tipos-next');
+    if(prevM) prevM.disabled = false;
+    if(nextM) nextM.disabled = false;
+    return;
+  }
+  var cards = track.querySelectorAll('.cat-card');
+  if(!cards.length) return;
+  var maxPos = Math.max(0, cards.length * getCardWidthTipos() - track.parentElement.offsetWidth);
+  _tiposState.pos = Math.max(0, Math.min(_tiposState.pos, maxPos));
+  track.style.transform = 'translateX(-' + _tiposState.pos + 'px)';
+  var fill = document.getElementById('tipos-progress-fill');
+  var prev = document.getElementById('tipos-prev');
+  var next = document.getElementById('tipos-next');
+  if(fill) fill.style.width = maxPos > 0 ? Math.min(100, (_tiposState.pos / maxPos) * 100) + '%' : '0%';
+  if(prev) prev.disabled = _tiposState.pos <= 0;
+  if(next) next.disabled = maxPos <= 0 || _tiposState.pos >= maxPos;
+}
+
+function snapCarouselTipos(){
+  var w = getCardWidthTipos(); if(!w) return;
+  _tiposState.pos = Math.round(_tiposState.pos / w) * w;
+  clampAndUpdateTipos();
+}
+
+function moveCarouselTipos(dir){
+  var track = document.getElementById('tipos-track');
+  if(!track) return;
+  var outer = track.parentElement;
+  var visivel = Math.max(1, Math.floor(outer.offsetWidth / getCardWidthTipos()));
+  _tiposState.pos += dir * visivel * getCardWidthTipos();
+  clampAndUpdateTipos();
+}
+
+function setViewTipos(mode){
+  _tiposState.view = mode;
+  var cw = document.getElementById('tipos-carousel-wrapper');
+  var gd = document.getElementById('tipos-grade');
+  var btnC = document.getElementById('btn-carousel-tipos');
+  var btnG = document.getElementById('btn-grade-tipos');
+  if(btnC) btnC.classList.toggle('active', mode === 'carousel');
+  if(btnG) btnG.classList.toggle('active', mode === 'grade');
+  if(cw) cw.style.display = mode === 'carousel' ? '' : 'none';
+  if(gd) gd.style.display = mode === 'grade' ? 'grid' : 'none';
+  if(mode === 'carousel') clampAndUpdateTipos();
+}
+
+(function initCarouselTipos(){
+  var track = document.getElementById('tipos-track');
+  if(!track) return;
+  var isDragging = false, startX = 0, startPos = 0;
+  function onStart(x){ isDragging = true; startX = x; startPos = _tiposState.pos; track.classList.add('dragging'); }
+  function onMove(x){ if(!isDragging) return; _tiposState.pos = startPos - (x - startX); clampAndUpdateTipos(); }
+  function onEnd(){ isDragging = false; track.classList.remove('dragging'); snapCarouselTipos(); }
+  track.addEventListener('mousedown', function(e){ if(isMobileTipos()) return; onStart(e.clientX); e.preventDefault(); });
+  window.addEventListener('mousemove', function(e){ if(isDragging) onMove(e.clientX); });
+  window.addEventListener('mouseup', function(){ if(isDragging) onEnd(); });
+  clampAndUpdateTipos();
+})();
+
+window.addEventListener('resize', function(){ clampAndUpdateTipos(); });
 </script>
 
 <script>
@@ -1379,6 +1561,34 @@ function renderCinemas(lista){
     if(!entries[0].isIntersecting) return;
     _renderizarProximoLoteCinema();
   }, { rootMargin: '400px' }).observe(sentinel);
+})();
+
+// ══════════════════════════════════════════════════════════════════
+// Reordena os cards de "Tipos de cinema" (carrossel e grade) pela
+// quantidade de cinemas já cadastrados em cada categoria — quem tem
+// mais itens aparece primeiro.
+// ══════════════════════════════════════════════════════════════════
+(function ordenarTiposPorQuantidade(){
+  var contagem = {};
+  todosCinemas.forEach(function(n){
+    if(!n.categoria_slug) return;
+    contagem[n.categoria_slug] = (contagem[n.categoria_slug] || 0) + 1;
+  });
+  ['tipos-track', 'tipos-grade'].forEach(function(id){
+    var container = document.getElementById(id);
+    if(!container) return;
+    var cards = Array.prototype.slice.call(container.querySelectorAll('.cat-card[data-cat-slug]'));
+    cards.sort(function(a, b){
+      var qa = contagem[a.dataset.catSlug] || 0;
+      var qb = contagem[b.dataset.catSlug] || 0;
+      return qb - qa;
+    });
+    cards.forEach(function(card){ container.appendChild(card); });
+  });
+  if(typeof clampAndUpdateTipos === 'function'){
+    _tiposState.pos = 0;
+    clampAndUpdateTipos();
+  }
 })();
 </script>
 
