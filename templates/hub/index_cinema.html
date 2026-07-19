@@ -14,8 +14,8 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
 <!-- SEO -->
-<title>{{ hub.titulo or 'Cinema Perto de Mim — Cinemas, cineclubes e salas de arte perto de você' }}</title>
-<meta name="description" content="{{ hub.descricao or 'Encontre cinemas, cine de rua, cineclubes, salas de arte e drive-ins perto de você. Veja também o que está em cartaz no Brasil e onde assistir em streaming.' }}">
+<title>{{ hub.titulo or 'Cinema Perto de Mim — Cinemas, cineclubes e salas de arte perto de mim' }}</title>
+<meta name="description" content="{{ hub.descricao or 'Encontre cinemas, cine de rua, cineclubes, salas de arte e drive-ins perto de mim. Veja também o que está em cartaz no Brasil e onde assistir em streaming.' }}">
 <meta name="keywords" content="cinema perto de mim, cine de rua, cineclube, sala de arte, cinemateca, drive-in, filmes em cartaz, onde assistir">
 <meta name="robots" content="index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1">
 <meta name="theme-color" content="#d4af37">
@@ -29,15 +29,15 @@
 <meta property="og:type"        content="website">
 <meta property="og:site_name"   content="{{ hub.nome or 'Cinema Perto de Mim' }}">
 <meta property="og:url"         content="https://{{ request.host }}/">
-<meta property="og:title"       content="{{ hub.titulo or 'Cinema Perto de Mim — cinemas e cultura de cinema perto de você' }}">
-<meta property="og:description" content="{{ hub.descricao or 'Cinemas, cine de rua, cineclubes e salas de arte perto de você — mais o que está em cartaz e onde assistir.' }}">
+<meta property="og:title"       content="{{ hub.titulo or 'Cinema Perto de Mim — cinemas e cultura de cinema perto de mim' }}">
+<meta property="og:description" content="{{ hub.descricao or 'Cinemas, cine de rua, cineclubes e salas de arte perto de mim — mais o que está em cartaz e onde assistir.' }}">
 {% if hub.banner_fundo_url %}<meta property="og:image" content="{{ hub.banner_fundo_url }}">{% endif %}
 <meta property="og:locale" content="pt_BR">
 
 <!-- Twitter -->
 <meta name="twitter:card" content="summary_large_image">
 <meta name="twitter:title" content="{{ hub.titulo or 'Cinema Perto de Mim' }}">
-<meta name="twitter:description" content="{{ hub.descricao or 'Cinemas perto de você, em cartaz e streaming.' }}">
+<meta name="twitter:description" content="{{ hub.descricao or 'Cinemas perto de mim, em cartaz e streaming.' }}">
 
 <!-- JSON-LD WebSite -->
 <script type="application/ld+json">
@@ -668,7 +668,7 @@ window.addEventListener('scroll', function(){ closeNavCinemas(); }, { passive: t
 {% endif %}
 
 <section class="hero">
-  <h1>Cinema <em>perto de você</em></h1>
+  <h1>Cinema <em>perto de mim</em></h1>
   <p>Do multiplex ao cine de rua, do cineclube à cinemateca — descubra as salas da sua cidade, veja o que está em cartaz e onde assistir sem sair de casa.</p>
   <div class="hero-btns">
     <a class="btn-hero primary" href="/em-cartaz/"><i class="fas fa-film"></i> Em cartaz agora</a>
@@ -899,7 +899,7 @@ window.addEventListener('scroll', function(){ closeNavCinemas(); }, { passive: t
   <div class="footer-cols">
     <div>
       <h4>{{ hub.nome or 'Cinema Perto de Mim' }}</h4>
-      <p>Descubra cinemas e cultura de cinema perto de você.</p>
+      <p>Descubra cinemas e cultura de cinema perto de mim.</p>
     </div>
     <div>
       <h4>Navegue</h4>
@@ -1685,7 +1685,7 @@ function toggleLocalizacao(){
       userLngCinema = pos.coords.longitude;
       geoAtivoCinema = true;
       btn.classList.add('ativo');
-      btn.innerHTML = '<i class="fas fa-map-marker-alt"></i> Perto de você ✓';
+      btn.innerHTML = '<i class="fas fa-map-marker-alt"></i> Perto de mim ✓';
       btn.disabled = false;
       _aplicarDistanciasCinema();
       cinemasFiltrados = _categoriaAtivaCinema
