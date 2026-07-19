@@ -503,6 +503,8 @@ nav.desktop-nav ul li a:hover { background: var(--primary); color: var(--on-prim
 .cine-hero-sair-busca:hover { background: var(--primary); border-color: var(--primary); color: var(--on-primary); }
 .cine-hero[data-modo-busca="1"] .cine-hero-sair-busca { display: inline-flex; }
 .cine-hero[data-modo-busca="1"] .cine-hero-brand { display: none; }
+.cine-hero[data-modo-busca="1"] .cine-hero-nav { display: none; }
+.cine-hero[data-modo-busca="1"] .cine-hero-counter { display: none; }
 
 .cine-hero-onde {
     display: flex; align-items: center; gap: 10px; margin: -4px 0 12px; min-height: 30px;
@@ -1285,6 +1287,170 @@ if(_cineHeroNextBtn) _cineHeroNextBtn.addEventListener('click', function(){ cine
   });
   inner.addEventListener('mouseleave', function(){
     stage.style.transform = 'rotateX(3deg) rotateY(0deg)';
+  });
+})();
+
+// ══════════════════════════════════════════════════════════════════
+// "ACHE SEU FILME" — busca livre integrada à tela 3D (cine-hero).
+// Autocomplete em /api/cinema/buscar-filme enquanto digita; ao
+// escolher um resultado, busca o detalhe completo em
+// /api/cinema/filme/<slug> e substitui o conteúdo da tela 3D (sem
+// sair da página), incluindo onde assistir se estiver em streaming.
+// ══════════════════════════════════════════════════════════════════
+(function(){
+  var input = document.getElementById('busca-filme-input');
+  var campo = document.getElementById('cine-hero-busca-campo');
+  var limparBtn = document.getElementById('busca-filme-limpar');
+  var resultadosBox = document.getElementById('cine-hero-busca-resultados');
+  var sairBtn = document.getElementById('cine-hero-sair-busca');
+  var section = document.getElementById('cine-hero');
+  var ondeBox = document.getElementById('cine-hero-onde');
+  if(!input || !section) return;
+
+  var debounceTimer = null;
+  var buscaAtualId = 0; // descarta resposta de busca antiga que chegue depois de uma mais nova
+
+  function abrirResultados(){ resultadosBox.classList.add('aberto'); }
+  function fecharResultados(){ resultadosBox.classList.remove('aberto'); }
+
+  function renderCarregando(){
+    resultadosBox.innerHTML = '<div class="cine-hero-busca-carregando"><i class="fas fa-spinner fa-spin"></i> Buscando...</div>';
+    abrirResultados();
+  }
+
+  function renderVazio(){
+    resultadosBox.innerHTML = '<div class="cine-hero-busca-vazio">Nenhum filme encontrado.</div>';
+    abrirResultados();
+  }
+
+  function escaparHtml(s){
+    return (s || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+  }
+
+  function renderResultados(filmes){
+    if(!filmes.length){ renderVazio(); return; }
+    resultadosBox.innerHTML = filmes.map(function(f){
+      var ano = (f.release_date || '').slice(0, 4);
+      var poster = f.poster_url || 'https://placehold.co/80x120/17171b/f5c518?text=%F0%9F%8E%9E';
+      return '<div class="cine-hero-busca-item" data-slug="' + escaparHtml(f.slug) + '">' +
+               '<img src="' + poster + '" alt="" loading="lazy">' +
+               '<div class="cine-hero-busca-item-info">' +
+                 '<div class="cine-hero-busca-item-titulo">' + escaparHtml(f.title) + '</div>' +
+                 (ano ? '<div class="cine-hero-busca-item-ano">' + ano + '</div>' : '') +
+               '</div>' +
+             '</div>';
+    }).join('');
+    abrirResultados();
+    resultadosBox.querySelectorAll('.cine-hero-busca-item').forEach(function(item){
+      item.addEventListener('click', function(){
+        var titulo = item.querySelector('.cine-hero-busca-item-titulo').textContent;
+        selecionarFilmeBusca(item.dataset.slug, titulo);
+      });
+    });
+  }
+
+  input.addEventListener('input', function(){
+    var termo = input.value.trim();
+    campo.classList.toggle('tem-texto', termo.length > 0);
+    clearTimeout(debounceTimer);
+    if(!termo){ fecharResultados(); return; }
+    renderCarregando();
+    var idBusca = ++buscaAtualId;
+    debounceTimer = setTimeout(function(){
+      fetch('/api/cinema/buscar-filme?q=' + encodeURIComponent(termo))
+        .then(function(r){ return r.json(); })
+        .then(function(data){
+          if(idBusca !== buscaAtualId) return;
+          renderResultados(data.filmes || []);
+        })
+        .catch(function(){
+          if(idBusca !== buscaAtualId) return;
+          renderVazio();
+        });
+    }, 300);
+  });
+
+  input.addEventListener('focus', function(){
+    if(input.value.trim() && resultadosBox.innerHTML.trim()) abrirResultados();
+  });
+
+  limparBtn.addEventListener('click', function(){
+    input.value = '';
+    campo.classList.remove('tem-texto');
+    fecharResultados();
+    input.focus();
+  });
+
+  document.addEventListener('click', function(e){
+    if(!campo.contains(e.target) && !resultadosBox.contains(e.target)) fecharResultados();
+  });
+
+  function selecionarFilmeBusca(slug, titulo){
+    fecharResultados();
+    input.value = titulo || '';
+    campo.classList.add('tem-texto');
+    input.blur();
+
+    clearInterval(_cineHero.timer); // pausa o autoplay do carrossel enquanto mostra o resultado da busca
+
+    document.getElementById('cine-hero-title').textContent = 'Carregando...';
+    document.getElementById('cine-hero-desc').textContent = '';
+    ondeBox.style.display = 'none';
+    section.setAttribute('data-modo-busca', '1');
+    section.setAttribute('data-empty', '0');
+
+    fetch('/api/cinema/filme/' + encodeURIComponent(slug))
+      .then(function(r){ return r.json(); })
+      .then(function(data){
+        if(data.erro || !data.filme){
+          document.getElementById('cine-hero-title').textContent = 'Filme não encontrado';
+          return;
+        }
+        var f = data.filme;
+        var img = document.getElementById('cine-hero-img');
+        var poster = f.backdrop_url || f.poster_url || 'https://placehold.co/1280x720/17171b/f5c518?text=%F0%9F%8E%9E';
+        img.classList.remove('loaded');
+        img.onload = function(){ img.classList.add('loaded'); };
+        img.src = poster;
+        img.alt = 'Cartaz de ' + (f.title || '');
+        document.getElementById('cine-hero-title').textContent = f.title || '';
+        document.getElementById('cine-hero-desc').textContent = f.overview || 'Sinopse não disponível.';
+
+        if(data.esta_em_streaming && (data.flatrate || []).length){
+          ondeBox.innerHTML =
+            '<div class="cine-hero-onde-logos">' +
+              data.flatrate.map(function(p){
+                return '<img src="' + p.logo_url + '" alt="' + escaparHtml(p.nome) + '" title="' + escaparHtml(p.nome) + '">';
+              }).join('') +
+            '</div>' +
+            '<span class="cine-hero-onde-texto">Disponível em streaming</span>' +
+            '<a class="cine-hero-onde-link" href="/filme/' + f.slug + '/">Ver detalhes <i class="fas fa-arrow-right"></i></a>';
+        } else {
+          ondeBox.innerHTML =
+            '<span class="cine-hero-onde-texto">Não encontramos esse título em streaming agora.</span>' +
+            '<a class="cine-hero-onde-link" href="/filme/' + f.slug + '/">Ver detalhes <i class="fas fa-arrow-right"></i></a>';
+        }
+        ondeBox.style.display = 'flex';
+      })
+      .catch(function(){
+        document.getElementById('cine-hero-title').textContent = 'Não foi possível carregar esse filme.';
+      });
+  }
+
+  sairBtn.addEventListener('click', function(){
+    section.setAttribute('data-modo-busca', '0');
+    input.value = '';
+    campo.classList.remove('tem-texto');
+    fecharResultados();
+    ondeBox.style.display = 'none';
+    ondeBox.innerHTML = '';
+    if(_cineHero.filmes.length){
+      section.setAttribute('data-empty', '0');
+      cineHeroRender();
+      cineHeroRestartAutoplay();
+    } else {
+      section.setAttribute('data-empty', '1');
+    }
   });
 })();
 
