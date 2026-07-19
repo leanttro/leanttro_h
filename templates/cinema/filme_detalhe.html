@@ -1,32 +1,260 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
+<!-- Google tag (gtag.js) -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-0G6MW6PBFR"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+
+  gtag('config', 'G-0G6MW6PBFR');
+</script>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>{{ filme.title }} — {{ hub.nome or 'Cinema Perto de Mim' }}</title>
-<meta name="description" content="{{ filme.overview | truncate(160) if filme.overview else filme.title }}">
+
+{# ══ SEO ══ #}
+{% set seo_title = filme.title ~ (" (" ~ filme.release_date[:4] ~ ")" if filme.release_date else "") ~ " — " ~ (hub.nome or 'Cinema Perto de Mim') %}
+{% set seo_desc  = filme.overview | truncate(160) if filme.overview else (filme.title ~ ". Veja onde assistir e cinemas perto de você em " ~ (hub.nome or 'Cinema Perto de Mim') ~ ".") %}
+
+<title>{{ seo_title }}</title>
+<meta name="description" content="{{ seo_desc }}">
+<meta name="robots" content="index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1">
+<meta name="theme-color" content="#d4af37">
+<meta name="author" content="{{ hub.nome or 'Cinema Perto de Mim' }}">
 <link rel="canonical" href="https://{{ request.host }}/filme/{{ filme.id }}/">
+
+<link rel="icon" type="image/png" href="{{ hub.logo_url or 'https://placehold.co/64x64/0d0d0f/e50914?text=%F0%9F%8E%9E' }}">
+<link rel="apple-touch-icon" href="{{ hub.logo_url or 'https://placehold.co/180x180/0d0d0f/e50914?text=%F0%9F%8E%9E' }}">
+
+<!-- Open Graph -->
+<meta property="og:type" content="video.movie">
+<meta property="og:site_name" content="{{ hub.nome or 'Cinema Perto de Mim' }}">
+<meta property="og:url" content="https://{{ request.host }}/filme/{{ filme.id }}/">
+<meta property="og:title" content="{{ seo_title }}">
+<meta property="og:description" content="{{ seo_desc }}">
+{% if filme.backdrop_url %}<meta property="og:image" content="{{ filme.backdrop_url }}">
+{% elif filme.poster_url %}<meta property="og:image" content="{{ filme.poster_url }}">{% endif %}
+<meta property="og:locale" content="pt_BR">
+
+<!-- Twitter -->
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="{{ seo_title }}">
+<meta name="twitter:description" content="{{ seo_desc }}">
+{% if filme.poster_url %}<meta name="twitter:image" content="{{ filme.poster_url }}">{% endif %}
+
+<!-- JSON-LD Movie -->
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "Movie",
+  "name": {{ filme.title | tojson }},
+  "url": "https://{{ request.host }}/filme/{{ filme.id }}/",
+  {% if filme.poster_url %}"image": {{ filme.poster_url | tojson }},{% endif %}
+  {% if filme.overview %}"description": {{ filme.overview | tojson }},{% endif %}
+  {% if filme.release_date %}"datePublished": {{ filme.release_date | tojson }},{% endif %}
+  "inLanguage": "pt-BR"
+}
+</script>
+
+<!-- JSON-LD Breadcrumb -->
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "BreadcrumbList",
+  "itemListElement": [
+    {"@type":"ListItem","position":1,"name":"Início","item":"https://{{ request.host }}/"},
+    {"@type":"ListItem","position":2,"name":"Em cartaz","item":"https://{{ request.host }}/em-cartaz/"},
+    {"@type":"ListItem","position":3,"name":"{{ filme.title }}","item":"https://{{ request.host }}/filme/{{ filme.id }}/"}
+  ]
+}
+</script>
+
+<link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+<link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+
 <style>
-  /* Estilo mínimo só pra estrutura funcionar — troque pelo tema real do hub */
-  body { font-family: system-ui, sans-serif; margin: 0; background: #0d0d0f; color: #eee; }
-  .hero { position: relative; background-size: cover; background-position: center top; }
-  .hero::after { content: ""; position: absolute; inset: 0; background: linear-gradient(180deg, rgba(13,13,15,.3), #0d0d0f 92%); }
-  .hero-conteudo { position: relative; display: flex; gap: 1.25rem; padding: 1.25rem; align-items: flex-end; }
-  .poster { width: 120px; border-radius: 8px; flex-shrink: 0; box-shadow: 0 8px 24px rgba(0,0,0,.5); }
-  h1 { margin: 0 0 .25rem; font-size: 1.4rem; }
-  .meta { font-size: .85rem; opacity: .8; }
-  main { padding: 1.25rem; max-width: 720px; margin: 0 auto; }
-  .sinopse { line-height: 1.5; }
-  .providers { margin-top: 1.5rem; }
-  .providers h2 { font-size: 1.1rem; }
-  .providers-lista { display: flex; flex-wrap: wrap; gap: .6rem; margin: .5rem 0; }
-  .providers-lista img { width: 46px; height: 46px; border-radius: 10px; }
-  .btn-assistir { display: inline-block; margin-top: .75rem; padding: .6rem 1.2rem; background: #e50914; color: #fff; text-decoration: none; border-radius: 6px; font-weight: 600; }
-  .link-diretorio { display: inline-block; margin-top: 2rem; padding: .6rem 1.2rem; border: 1px solid #444; border-radius: 6px; color: #eee; text-decoration: none; }
-  .creditos-tmdb, .creditos-justwatch { font-size: .7rem; opacity: .55; margin-top: .5rem; }
+:root {
+    /* Mesma paleta dourada fixa usada no restante do hub. */
+    --primary:     #d4af37;
+    --dark:        #a8841f;
+    --on-primary:  #1a0509;
+    --gold:        #f5c518;
+    --bg:          #1a0509;
+    --bg-card:     #2b0d13;
+    --bg-card-alt: #34121a;
+    --border:      #4a1b24;
+    --text:        #eee;
+    --text-dim:    #a5a5ab;
+    --header-bg:   #f0f0f0;
+    --header-text: #1a1a1a;
+    --header-border: #dcdcdc;
+}
+* { box-sizing: border-box; }
+html { scroll-behavior: smooth; overflow-x: hidden; }
+body { margin: 0; font-family: 'Montserrat', sans-serif; background: var(--bg); color: var(--text); line-height: 1.6; }
+a { text-decoration: none; color: inherit; }
+img { max-width: 100%; display: block; }
+
+/* ══ HEADER (mesmo padrão das outras páginas do hub) ══ */
+body > header {
+    background: var(--header-bg) !important; border-bottom: 1px solid var(--header-border);
+    padding: 20px 24px 14px; display: flex; flex-direction: column;
+    align-items: center; justify-content: center; gap: 10px;
+    width: 100% !important; overflow: hidden; margin: 0 !important;
+}
+.logo { display: block; text-align: center; position: relative; z-index: 1; }
+.logo img { height: 90px; width: auto; margin: 0 auto; display: block; }
+nav.desktop-nav { position: relative; z-index: 1; }
+nav.desktop-nav ul { list-style: none; display: flex; align-items: center; justify-content: center; flex-wrap: wrap; gap: 4px; margin: 0; padding: 0; }
+nav.desktop-nav ul li a {
+    color: var(--header-text); font-weight: 500; font-size: .92em; padding: 10px 16px; border-radius: 6px;
+    transition: background .2s, color .2s;
+}
+nav.desktop-nav ul li a:hover { background: var(--primary); color: var(--on-primary); }
+
+/* ══ DROPDOWN "CINEMAS" ══ */
+.nav-dropdown { position: relative; }
+.nav-dropdown-toggle {
+    background: none; border: none; cursor: pointer; font-family: 'Montserrat', sans-serif;
+    color: var(--header-text); font-weight: 500; font-size: .92em; padding: 10px 16px; border-radius: 6px;
+    display: inline-flex; align-items: center; gap: 7px; transition: background .2s, color .2s;
+}
+.nav-dropdown-toggle:hover, .nav-dropdown-toggle.open { background: var(--primary); color: var(--on-primary); }
+.nav-dropdown-chevron { font-size: .78em; transition: transform .25s; }
+.nav-dropdown-toggle.open .nav-dropdown-chevron { transform: rotate(180deg); }
+.nav-dropdown-panel {
+    display: none; position: fixed; top: 0; left: 0;
+    background-color: #1a0509; border: 1.5px solid #d4af37; border-radius: 12px;
+    box-shadow: 0 18px 46px rgba(0,0,0,.7); padding: 10px; z-index: 99999; opacity: 1;
+    width: max-content; max-width: min(560px, 90vw); max-height: 60vh; overflow-y: auto;
+    grid-template-columns: repeat(2, minmax(150px, 1fr)); gap: 2px;
+}
+.nav-dropdown-panel.open { display: grid; }
+.nav-dropdown-panel a {
+    padding: 9px 12px; border-radius: 7px; font-size: .9em; font-weight: 500; color: #ffffff;
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis; transition: background .15s, color .15s;
+}
+.nav-dropdown-panel a:hover { background: #d4af37; color: #1a0509; }
+.nav-dropdown-backdrop { display: none; position: fixed; inset: 0; z-index: 99998; background: rgba(0,0,0,.6); }
+.nav-dropdown-backdrop.open { display: block; }
+@media (max-width: 600px) { .nav-dropdown-panel { grid-template-columns: 1fr 1fr; max-width: 92vw; } }
+
+/* ══ BREADCRUMB ══ */
+.breadcrumb { max-width: 720px; margin: 18px auto 0; padding: 0 1.25rem; font-size: .82em; color: var(--text-dim); }
+.breadcrumb a:hover { color: var(--gold); }
+
+/* ══ HERO DO FILME ══ */
+.hero { position: relative; background-size: cover; background-position: center top; margin-top: 14px; }
+.hero::after { content: ""; position: absolute; inset: 0; background: linear-gradient(180deg, rgba(26,5,9,.35), var(--bg) 92%); }
+.hero-conteudo { position: relative; display: flex; gap: 1.25rem; padding: 1.25rem; align-items: flex-end; max-width: 720px; margin: 0 auto; }
+.poster { width: 120px; border-radius: 8px; flex-shrink: 0; box-shadow: 0 8px 24px rgba(0,0,0,.5); border: 1px solid var(--border); }
+h1 { margin: 0 0 .3rem; font-size: 1.5rem; font-weight: 800; color: #fff; }
+.meta { font-size: .88rem; color: var(--text-dim); }
+.meta .estrela { color: var(--gold); }
+
+main { padding: 1.25rem; max-width: 720px; margin: 0 auto; }
+.sinopse { line-height: 1.6; color: var(--text); }
+.providers { margin-top: 1.75rem; }
+.providers h2 { font-size: 1.15rem; color: #fff; margin-bottom: .4rem; }
+.providers p { color: var(--text-dim); font-size: .9em; margin-top: .8rem; margin-bottom: 0; }
+.providers-lista { display: flex; flex-wrap: wrap; gap: .6rem; margin: .5rem 0; }
+.providers-lista img { width: 46px; height: 46px; border-radius: 10px; border: 1px solid var(--border); }
+.btn-assistir { display: inline-flex; align-items: center; gap: 8px; margin-top: 1rem; padding: .75rem 1.4rem; background: var(--primary); color: var(--on-primary); text-decoration: none; border-radius: 8px; font-weight: 700; transition: background .2s; }
+.btn-assistir:hover { background: var(--dark); }
+.link-diretorio { display: inline-flex; align-items: center; gap: 8px; margin-top: 2rem; padding: .75rem 1.4rem; border: 1.5px solid var(--gold); border-radius: 8px; color: var(--gold); text-decoration: none; font-weight: 700; transition: background .2s, color .2s; }
+.link-diretorio:hover { background: var(--gold); color: #1a1a1a; }
+.creditos-tmdb, .creditos-justwatch { font-size: .7rem; color: var(--text-dim); opacity: .7; margin-top: .5rem; }
+
+/* ══ FOOTER (mesmo padrão do hub) ══ */
+footer { background: var(--bg-card-alt); border-top: 1px solid var(--border); padding: 34px 20px 20px; color: var(--text-dim); font-size: .88em; margin-top: 2rem; }
+footer .footer-cols { display: flex; flex-wrap: wrap; gap: 28px; max-width: 1200px; margin: 0 auto 20px; }
+footer h4 { color: #fff; font-size: .95em; margin-bottom: 10px; }
+footer ul { list-style: none; margin: 0; padding: 0; }
+footer ul li { margin-bottom: 6px; }
+footer ul li a:hover { color: var(--gold); }
+.footer-bottom { text-align: center; border-top: 1px solid var(--border); padding-top: 16px; }
+
+@media (max-width: 860px) { .logo img { height: 70px; } h1 { font-size: 1.3rem; } }
 </style>
 </head>
 <body>
+
+<header>
+  <a class="logo" href="/">
+    <img src="{{ hub.logo_url or 'https://res.cloudinary.com/dec2b0u1/image/upload/v1784394139/cinema_ymuflx.png' }}" alt="{{ hub.nome or 'Cinema Perto de Mim' }}">
+  </a>
+  <nav class="desktop-nav">
+    <ul>
+      <li><a href="/em-cartaz/">Em cartaz</a></li>
+      <li><a href="/nao-quer-sair-de-casa/">Streaming</a></li>
+      {% if categorias %}
+      <li class="nav-dropdown">
+        <button type="button" class="nav-dropdown-toggle" id="nav-cinemas-toggle" onclick="toggleNavCinemas()" aria-haspopup="true" aria-expanded="false" aria-controls="nav-cinemas-panel">
+          Cinemas <i class="fas fa-chevron-down nav-dropdown-chevron" aria-hidden="true"></i>
+        </button>
+        <div class="nav-dropdown-panel" id="nav-cinemas-panel" role="menu" aria-label="Tipos de cinema">
+          {% for cat in categorias %}
+            <a href="/{{ cat.slug }}/" role="menuitem">{{ cat.nome }}</a>
+          {% endfor %}
+        </div>
+      </li>
+      {% endif %}
+    </ul>
+  </nav>
+  <div class="nav-dropdown-backdrop" id="nav-cinemas-backdrop" onclick="closeNavCinemas()"></div>
+</header>
+
+<script>
+(function(){
+  var panel = document.getElementById('nav-cinemas-panel');
+  var backdrop = document.getElementById('nav-cinemas-backdrop');
+  if(panel) document.body.appendChild(panel);
+  if(backdrop) document.body.appendChild(backdrop);
+})();
+function positionNavCinemasPanel(){
+  var toggle = document.getElementById('nav-cinemas-toggle');
+  var panel = document.getElementById('nav-cinemas-panel');
+  if(!toggle || !panel) return;
+  var rect = toggle.getBoundingClientRect();
+  var margin = 10;
+  var panelWidth = panel.offsetWidth || 300;
+  var left = rect.left + rect.width / 2 - panelWidth / 2;
+  if(left < margin) left = margin;
+  if(left + panelWidth > window.innerWidth - margin) left = window.innerWidth - margin - panelWidth;
+  panel.style.left = left + 'px';
+  panel.style.top = (rect.bottom + 8) + 'px';
+}
+function toggleNavCinemas(){
+  var toggle = document.getElementById('nav-cinemas-toggle');
+  var panel = document.getElementById('nav-cinemas-panel');
+  var backdrop = document.getElementById('nav-cinemas-backdrop');
+  if(!toggle || !panel) return;
+  var abrir = !panel.classList.contains('open');
+  toggle.classList.toggle('open', abrir);
+  panel.classList.toggle('open', abrir);
+  if(backdrop) backdrop.classList.toggle('open', abrir);
+  toggle.setAttribute('aria-expanded', abrir ? 'true' : 'false');
+  if(abrir) positionNavCinemasPanel();
+}
+function closeNavCinemas(){
+  var toggle = document.getElementById('nav-cinemas-toggle');
+  var panel = document.getElementById('nav-cinemas-panel');
+  var backdrop = document.getElementById('nav-cinemas-backdrop');
+  if(toggle) toggle.classList.remove('open');
+  if(panel) panel.classList.remove('open');
+  if(backdrop) backdrop.classList.remove('open');
+  if(toggle) toggle.setAttribute('aria-expanded', 'false');
+}
+document.addEventListener('keydown', function(e){ if(e.key === 'Escape') closeNavCinemas(); });
+window.addEventListener('resize', function(){
+  var panel = document.getElementById('nav-cinemas-panel');
+  if(panel && panel.classList.contains('open')) positionNavCinemasPanel();
+});
+window.addEventListener('scroll', function(){ closeNavCinemas(); }, { passive: true });
+</script>
+
+<div class="breadcrumb"><a href="/">Início</a> / <a href="/em-cartaz/">Em cartaz</a> / {{ filme.title }}</div>
 
 <div class="hero" {% if filme.backdrop_url %}style="background-image:url('{{ filme.backdrop_url }}')"{% endif %}>
   <div class="hero-conteudo">
@@ -38,7 +266,7 @@
       <p class="meta">
         {% if filme.release_date %}{{ filme.release_date[:4] }} · {% endif %}
         {% if filme.runtime %}{{ filme.runtime }} min · {% endif %}
-        {% if filme.vote_average %}⭐ {{ "%.1f"|format(filme.vote_average) }}{% endif %}
+        {% if filme.vote_average %}<span class="estrela">⭐ {{ "%.1f"|format(filme.vote_average) }}</span>{% endif %}
       </p>
     </div>
   </div>
@@ -99,6 +327,229 @@
 
   {% include "cinema/_creditos.html" %}
 </main>
+
+<footer>
+  <div class="footer-cols">
+    <div>
+      <h4>{{ hub.nome or 'Cinema Perto de Mim' }}</h4>
+      <p>Descubra cinemas e cultura de cinema perto de você.</p>
+    </div>
+    <div>
+      <h4>Navegue</h4>
+      <ul>
+        <li><a href="/em-cartaz/">Em cartaz</a></li>
+        <li><a href="/nao-quer-sair-de-casa/">Streaming</a></li>
+        {% if categorias %}<li><a href="/#tipos-cinema">Tipos de cinema</a></li>{% endif %}
+      </ul>
+    </div>
+  </div>
+  <div class="footer-bottom">
+    &copy; {{ hub.nome or 'Cinema Perto de Mim' }} — todos os direitos reservados.
+  </div>
+</footer>
+
+{% if hub.ga4_id %}
+<script async src="https://www.googletagmanager.com/gtag/js?id={{ hub.ga4_id }}"></script>
+<script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag('js',new Date());gtag('config','{{ hub.ga4_id }}');</script>
+{% endif %}
+{% if hub.pixel_id %}
+<script>!function(f,b,e,v,n,t,s){if(f.fbq)return;n=f.fbq=function(){n.callMethod?n.callMethod.apply(n,arguments):n.queue.push(arguments)};if(!f._fbq)f._fbq=n;n.push=n;n.loaded=!0;n.version='2.0';n.queue=[];t=b.createElement(e);t.async=!0;t.src=v;s=b.getElementsByTagName(e)[0];s.parentNode.insertBefore(t,s)}(window,document,'script','https://connect.facebook.net/en_US/fbevents.js');fbq('init','{{ hub.pixel_id }}');fbq('track','PageView');</script>
+{% endif %}
+
+<!-- ── Google Translate (widget nativo oculto) ── -->
+<div id="google_translate_element"></div>
+<script>
+function googleTranslateElementInit() {
+    new google.translate.TranslateElement({ pageLanguage: 'pt', autoDisplay: false }, 'google_translate_element');
+}
+</script>
+<script src="//translate.google.com/translate_a/element.js?cb=googleTranslateElementInit"></script>
+
+<!-- ── Botão flutuante de tradução ── -->
+<button id="translate-btn" onclick="toggleTranslateDrawer()">
+    <i class="fas fa-language"></i> Traduzir
+</button>
+
+<!-- ── Drawer de idiomas ── -->
+<div id="translate-drawer">
+    <div class="td-header">
+        <input class="td-search" id="td-search" type="text" placeholder="Buscar idioma…" oninput="filterLangs(this.value)">
+        <button class="td-close" onclick="toggleTranslateDrawer()">&#10005;</button>
+    </div>
+    <div class="td-list" id="td-list"></div>
+</div>
+
+<style>
+    #google_translate_element { position: absolute; visibility: hidden; pointer-events: none; }
+    .goog-te-banner-frame, .skiptranslate { display: none !important; }
+    body { top: 0 !important; }
+
+    #translate-btn {
+        position: fixed; bottom: 20px; right: 20px; z-index: 999;
+        background: #fff; border: none; border-radius: 50px;
+        padding: 10px 18px; display: flex; align-items: center; gap: 8px;
+        font-family: 'Montserrat', sans-serif; font-size: 14px; font-weight: 600;
+        color: #1a1a1a; cursor: pointer;
+        box-shadow: 0 4px 20px rgba(0,0,0,0.4);
+        transition: box-shadow 0.2s, transform 0.15s;
+    }
+    #translate-btn:hover { box-shadow: 0 6px 28px rgba(0,0,0,0.5); transform: translateY(-1px); }
+    #translate-btn i { color: var(--primary); font-size: 16px; }
+
+    #translate-drawer {
+        position: fixed; bottom: 70px; right: 20px; z-index: 1000;
+        background: #fff; border-radius: 16px;
+        box-shadow: 0 8px 40px rgba(0,0,0,0.35);
+        width: 280px; max-height: 420px;
+        display: none; flex-direction: column;
+        overflow: hidden;
+    }
+    #translate-drawer.open { display: flex; }
+    .td-header {
+        padding: 12px 14px; border-bottom: 1px solid #e0e0e0;
+        display: flex; align-items: center; gap: 8px;
+    }
+    .td-search {
+        flex: 1; border: 1.5px solid #e0e0e0;
+        border-radius: 8px; padding: 8px 12px;
+        font-family: 'Montserrat', sans-serif; font-size: 13px;
+        outline: none; transition: border-color 0.2s;
+        color: #1a1a1a;
+    }
+    .td-search:focus { border-color: var(--primary); }
+    .td-close {
+        background: none; border: none; color: #aaa;
+        font-size: 18px; cursor: pointer; line-height: 1; padding: 2px 4px;
+    }
+    .td-close:hover { color: #555; }
+    .td-list { overflow-y: auto; flex: 1; padding: 6px 0; }
+    .td-item {
+        padding: 9px 18px; font-size: 14px; cursor: pointer;
+        color: #333; transition: background 0.1s;
+        display: flex; align-items: center; gap: 10px;
+    }
+    .td-item:hover { background: #f5f5f5; color: #1a1a1a; }
+    .td-item.active { color: var(--dark); font-weight: 600; background: #fdf3d9; }
+    .td-item .flag { font-size: 18px; flex-shrink: 0; }
+    .td-empty { padding: 24px; text-align: center; color: #bbb; font-size: 13px; }
+
+    @media (max-width: 480px) {
+        #translate-drawer { width: calc(100vw - 32px); right: 16px; bottom: 72px; max-height: 55vh; }
+        #translate-btn { bottom: 16px; right: 16px; }
+    }
+</style>
+
+<script>
+const LANGS = [
+    {code:'af',name:'Afrikaans',flag:'🇿🇦'},{code:'sq',name:'Albanian',flag:'🇦🇱'},{code:'am',name:'Amharic',flag:'🇪🇹'},
+    {code:'ar',name:'Arabic',flag:'🇸🇦'},{code:'hy',name:'Armenian',flag:'🇦🇲'},{code:'az',name:'Azerbaijani',flag:'🇦🇿'},
+    {code:'eu',name:'Basque',flag:'🏴'},{code:'be',name:'Belarusian',flag:'🇧🇾'},{code:'bn',name:'Bengali',flag:'🇧🇩'},
+    {code:'bs',name:'Bosnian',flag:'🇧🇦'},{code:'bg',name:'Bulgarian',flag:'🇧🇬'},{code:'ca',name:'Catalan',flag:'🏴'},
+    {code:'ceb',name:'Cebuano',flag:'🇵🇭'},{code:'zh-CN',name:'Chinese (Simplified)',flag:'🇨🇳'},{code:'zh-TW',name:'Chinese (Traditional)',flag:'🇹🇼'},
+    {code:'co',name:'Corsican',flag:'🇫🇷'},{code:'hr',name:'Croatian',flag:'🇭🇷'},{code:'cs',name:'Czech',flag:'🇨🇿'},
+    {code:'da',name:'Danish',flag:'🇩🇰'},{code:'nl',name:'Dutch',flag:'🇳🇱'},{code:'en',name:'English',flag:'🇬🇧'},
+    {code:'eo',name:'Esperanto',flag:'🌍'},{code:'et',name:'Estonian',flag:'🇪🇪'},{code:'fi',name:'Finnish',flag:'🇫🇮'},
+    {code:'fr',name:'French',flag:'🇫🇷'},{code:'fy',name:'Frisian',flag:'🏴'},{code:'gl',name:'Galician',flag:'🏴'},
+    {code:'ka',name:'Georgian',flag:'🇬🇪'},{code:'de',name:'German',flag:'🇩🇪'},{code:'el',name:'Greek',flag:'🇬🇷'},
+    {code:'gu',name:'Gujarati',flag:'🇮🇳'},{code:'ht',name:'Haitian Creole',flag:'🇭🇹'},{code:'ha',name:'Hausa',flag:'🇳🇬'},
+    {code:'haw',name:'Hawaiian',flag:'🇺🇸'},{code:'he',name:'Hebrew',flag:'🇮🇱'},{code:'hi',name:'Hindi',flag:'🇮🇳'},
+    {code:'hmn',name:'Hmong',flag:'🌏'},{code:'hu',name:'Hungarian',flag:'🇭🇺'},{code:'is',name:'Icelandic',flag:'🇮🇸'},
+    {code:'ig',name:'Igbo',flag:'🇳🇬'},{code:'id',name:'Indonesian',flag:'🇮🇩'},{code:'ga',name:'Irish',flag:'🇮🇪'},
+    {code:'it',name:'Italian',flag:'🇮🇹'},{code:'ja',name:'Japanese',flag:'🇯🇵'},{code:'jv',name:'Javanese',flag:'🇮🇩'},
+    {code:'kn',name:'Kannada',flag:'🇮🇳'},{code:'kk',name:'Kazakh',flag:'🇰🇿'},{code:'km',name:'Khmer',flag:'🇰🇭'},
+    {code:'rw',name:'Kinyarwanda',flag:'🇷🇼'},{code:'ko',name:'Korean',flag:'🇰🇷'},{code:'ku',name:'Kurdish',flag:'🌍'},
+    {code:'ky',name:'Kyrgyz',flag:'🇰🇬'},{code:'lo',name:'Lao',flag:'🇱🇦'},{code:'la',name:'Latin',flag:'🏛️'},
+    {code:'lv',name:'Latvian',flag:'🇱🇻'},{code:'lt',name:'Lithuanian',flag:'🇱🇹'},{code:'lb',name:'Luxembourgish',flag:'🇱🇺'},
+    {code:'mk',name:'Macedonian',flag:'🇲🇰'},{code:'mg',name:'Malagasy',flag:'🇲🇬'},{code:'ms',name:'Malay',flag:'🇲🇾'},
+    {code:'ml',name:'Malayalam',flag:'🇮🇳'},{code:'mt',name:'Maltese',flag:'🇲🇹'},{code:'mi',name:'Maori',flag:'🇳🇿'},
+    {code:'mr',name:'Marathi',flag:'🇮🇳'},{code:'mn',name:'Mongolian',flag:'🇲🇳'},{code:'my',name:'Myanmar (Burmese)',flag:'🇲🇲'},
+    {code:'ne',name:'Nepali',flag:'🇳🇵'},{code:'no',name:'Norwegian',flag:'🇳🇴'},{code:'ny',name:'Nyanja (Chichewa)',flag:'🇲🇼'},
+    {code:'or',name:'Odia (Oriya)',flag:'🇮🇳'},{code:'ps',name:'Pashto',flag:'🇦🇫'},{code:'fa',name:'Persian',flag:'🇮🇷'},
+    {code:'pl',name:'Polish',flag:'🇵🇱'},{code:'pt',name:'Português',flag:'🇧🇷'},{code:'pa',name:'Punjabi',flag:'🇮🇳'},
+    {code:'ro',name:'Romanian',flag:'🇷🇴'},{code:'ru',name:'Russian',flag:'🇷🇺'},{code:'sm',name:'Samoan',flag:'🇼🇸'},
+    {code:'gd',name:'Scots Gaelic',flag:'🏴󠁧󠁢󠁳󠁣󠁴󠁿'},{code:'sr',name:'Serbian',flag:'🇷🇸'},{code:'st',name:'Sesotho',flag:'🇱🇸'},
+    {code:'sn',name:'Shona',flag:'🇿🇼'},{code:'sd',name:'Sindhi',flag:'🇵🇰'},{code:'si',name:'Sinhala',flag:'🇱🇰'},
+    {code:'sk',name:'Slovak',flag:'🇸🇰'},{code:'sl',name:'Slovenian',flag:'🇸🇮'},{code:'so',name:'Somali',flag:'🇸🇴'},
+    {code:'es',name:'Spanish',flag:'🇪🇸'},{code:'su',name:'Sundanese',flag:'🇮🇩'},{code:'sw',name:'Swahili',flag:'🇰🇪'},
+    {code:'sv',name:'Swedish',flag:'🇸🇪'},{code:'tl',name:'Tagalog (Filipino)',flag:'🇵🇭'},{code:'tg',name:'Tajik',flag:'🇹🇯'},
+    {code:'ta',name:'Tamil',flag:'🇮🇳'},{code:'tt',name:'Tatar',flag:'🇷🇺'},{code:'te',name:'Telugu',flag:'🇮🇳'},
+    {code:'th',name:'Thai',flag:'🇹🇭'},{code:'tr',name:'Turkish',flag:'🇹🇷'},{code:'tk',name:'Turkmen',flag:'🇹🇲'},
+    {code:'uk',name:'Ukrainian',flag:'🇺🇦'},{code:'ur',name:'Urdu',flag:'🇵🇰'},{code:'ug',name:'Uyghur',flag:'🇨🇳'},
+    {code:'uz',name:'Uzbek',flag:'🇺🇿'},{code:'vi',name:'Vietnamese',flag:'🇻🇳'},{code:'cy',name:'Welsh',flag:'🏴󠁧󠁢󠁷󠁬󠁳󠁿'},
+    {code:'xh',name:'Xhosa',flag:'🇿🇦'},{code:'yi',name:'Yiddish',flag:'🌍'},{code:'yo',name:'Yoruba',flag:'🇳🇬'},
+    {code:'zu',name:'Zulu',flag:'🇿🇦'}
+];
+
+let currentLang = 'pt';
+let drawerOpen  = false;
+
+function renderLangs(list) {
+    const el = document.getElementById('td-list');
+    if (!list.length) {
+        el.innerHTML = '<div class="td-empty">Nenhum idioma encontrado</div>';
+        return;
+    }
+    el.innerHTML = list.map(l =>
+        '<div class="td-item ' + (l.code === currentLang ? 'active' : '') + '" onclick="selectLang(\'' + l.code + '\',\'' + l.name + '\')"><span class="flag">' + l.flag + '</span> ' + l.name + '</div>'
+    ).join('');
+}
+
+function filterLangs(q) {
+    const filtered = LANGS.filter(function(l){ return l.name.toLowerCase().includes(q.toLowerCase()); });
+    renderLangs(filtered);
+}
+
+function selectLang(code, name) {
+    currentLang = code;
+    drawerOpen  = false;
+    document.getElementById('translate-drawer').classList.remove('open');
+
+    var lang = LANGS.find(function(l){ return l.code === code; });
+    document.getElementById('translate-btn').innerHTML =
+        '<i class="fas fa-language"></i> ' + (lang ? lang.flag + ' ' + name : name);
+
+    if (code === 'pt') {
+        var sel = document.querySelector('.goog-te-combo');
+        if (sel) { sel.value = ''; sel.dispatchEvent(new Event('change')); }
+        document.getElementById('translate-btn').innerHTML = '<i class="fas fa-language"></i> Traduzir';
+        return;
+    }
+
+    var tryTranslate = function(attempts) {
+        var sel = document.querySelector('.goog-te-combo');
+        if (sel) {
+            sel.value = code;
+            sel.dispatchEvent(new Event('change'));
+        } else if (attempts > 0) {
+            setTimeout(function(){ tryTranslate(attempts - 1); }, 300);
+        }
+    };
+    tryTranslate(10);
+}
+
+function toggleTranslateDrawer() {
+    drawerOpen = !drawerOpen;
+    var drawer = document.getElementById('translate-drawer');
+    if (drawerOpen) {
+        drawer.classList.add('open');
+        renderLangs(LANGS);
+        var search = document.getElementById('td-search');
+        search.value = '';
+        setTimeout(function(){ search.focus(); }, 50);
+    } else {
+        drawer.classList.remove('open');
+    }
+}
+
+document.addEventListener('click', function(e) {
+    if (drawerOpen &&
+        !document.getElementById('translate-drawer').contains(e.target) &&
+        !document.getElementById('translate-btn').contains(e.target)) {
+        drawerOpen = false;
+        document.getElementById('translate-drawer').classList.remove('open');
+    }
+});
+</script>
 
 </body>
 </html>
