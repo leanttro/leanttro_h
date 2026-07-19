@@ -25,15 +25,18 @@
 <title>{{ seo_title }}</title>
 <meta name="description" content="{{ seo_desc }}">
 <meta name="robots" content="index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1">
-<meta name="theme-color" content="{{ hub.cor_primaria or '#e50914' }}">
+<meta name="theme-color" content="#d4af37">
 <link rel="canonical" href="https://{{ request.host }}/{{ segmento }}/">
 
 <link rel="icon" type="image/png" href="{{ hub.logo_url or 'https://placehold.co/64x64/0d0d0f/e50914?text=%F0%9F%8E%9E' }}">
+<link rel="apple-touch-icon" href="{{ hub.logo_url or 'https://placehold.co/180x180/0d0d0f/e50914?text=%F0%9F%8E%9E' }}">
 
 <meta property="og:type" content="website">
+<meta property="og:site_name" content="{{ hub.nome or 'Cinema Perto de Mim' }}">
 <meta property="og:title" content="{{ seo_title }}">
 <meta property="og:description" content="{{ seo_desc }}">
 <meta property="og:url" content="https://{{ request.host }}/{{ segmento }}/">
+<meta property="og:locale" content="pt_BR">
 
 <script type="application/ld+json">
 {
@@ -51,64 +54,171 @@
 
 <style>
 :root {
-    --primary: {{ hub.cor_primaria or '#e50914' }};
-    --dark:    {{ hub.cor_secundaria or '#a4060d' }};
-    --gold:    #f5c518;
-    --bg:      #1a0509;
-    --bg-card: #2b0d13;
+    /* Mesma paleta dourada fixa do index — pra manter identidade visual entre as páginas. */
+    --primary:     #d4af37;
+    --dark:        #a8841f;
+    --on-primary:  #1a0509;
+    --gold:        #ff2d2d;
+    --bg:          #1a0509;
+    --bg-card:     #2b0d13;
     --bg-card-alt: #34121a;
-    --border:  #4a1b24;
-    --text:    #eee;
-    --text-dim:#a5a5ab;
+    --border:      #4a1b24;
+    --text:        #eee;
+    --text-dim:    #a5a5ab;
+    --white:       #ffffff;
+    --header-bg:   #f0f0f0;
+    --header-text: #1a1a1a;
+    --header-border: #dcdcdc;
 }
 * { box-sizing: border-box; margin: 0; padding: 0; }
+html { scroll-behavior: smooth; overflow-x: hidden; }
 body { font-family: 'Montserrat', sans-serif; background: var(--bg); color: var(--text); line-height: 1.6; }
 h1, h2, .logo-txt { font-family: 'Montserrat', sans-serif; }
 a { text-decoration: none; color: inherit; }
 .container { max-width: 1200px; margin: 0 auto; padding: 0 20px; }
 img { max-width: 100%; display: block; }
 
-body > header {
-    background: var(--bg-card-alt); border-bottom: 1px solid var(--border);
-    padding: 18px 24px 12px; display: flex; flex-direction: column;
-    align-items: center; justify-content: center; gap: 8px;
-    position: sticky; top: 0; z-index: 100;
+/* ══ HEADER (idêntico ao index) ══ */
+body > header, header {
+    background: var(--header-bg) !important; border-bottom: 1px solid var(--header-border);
+    padding: 20px 24px 14px; display: flex; flex-direction: column;
+    align-items: center; justify-content: center; gap: 10px;
+    width: 100% !important; overflow: hidden; margin: 0 !important;
 }
-.logo { display: block; text-align: center; }
-.logo img { height: 80px !important; width: auto; margin: 0 auto; }
-.logo .marca-primary { color: var(--primary); }
+.logo { display: block; text-align: center; position: relative; z-index: 1; }
+.logo img { height: 110px; width: auto; margin: 0 auto; display: block; }
+nav.desktop-nav { position: relative; z-index: 1; }
 nav.desktop-nav ul { list-style: none; display: flex; align-items: center; justify-content: center; flex-wrap: wrap; gap: 4px; }
-nav.desktop-nav ul li a { color: #fff; font-weight: 500; font-size: .9em; padding: 10px 14px; border-radius: 6px; }
-nav.desktop-nav ul li a:hover { background: var(--primary); }
+nav.desktop-nav ul li a {
+    color: var(--header-text); font-weight: 500; font-size: .92em; padding: 10px 16px; border-radius: 6px;
+    transition: background .2s, color .2s;
+}
+nav.desktop-nav ul li a:hover { background: var(--primary); color: var(--on-primary); }
 
+/* ══ DROPDOWN "CINEMAS" NO CABEÇALHO ══ */
+.nav-dropdown { position: relative; }
+.nav-dropdown-toggle {
+    background: none; border: none; cursor: pointer; font-family: 'Montserrat', sans-serif;
+    color: var(--header-text); font-weight: 500; font-size: .92em; padding: 10px 16px; border-radius: 6px;
+    display: inline-flex; align-items: center; gap: 7px; transition: background .2s, color .2s;
+}
+.nav-dropdown-toggle:hover, .nav-dropdown-toggle.open { background: var(--primary); color: var(--on-primary); }
+.nav-dropdown-chevron { font-size: .78em; transition: transform .25s; }
+.nav-dropdown-toggle.open .nav-dropdown-chevron { transform: rotate(180deg); }
+.nav-dropdown-panel {
+    display: none; position: fixed; top: 0; left: 0;
+    background-color: #1a0509; border: 1.5px solid #d4af37; border-radius: 12px;
+    box-shadow: 0 18px 46px rgba(0,0,0,.7); padding: 10px; z-index: 99999; opacity: 1;
+    width: max-content; max-width: min(560px, 90vw); max-height: 60vh; overflow-y: auto;
+    grid-template-columns: repeat(2, minmax(150px, 1fr)); gap: 2px;
+}
+.nav-dropdown-panel.open { display: grid; }
+.nav-dropdown-panel a {
+    padding: 9px 12px; border-radius: 7px; font-size: .9em; font-weight: 500; color: #ffffff;
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis; transition: background .15s, color .15s;
+}
+.nav-dropdown-panel a:hover { background: #d4af37; color: #1a0509; }
+.nav-dropdown-backdrop { display: none; position: fixed; inset: 0; z-index: 99998; background: rgba(0,0,0,.6); }
+.nav-dropdown-backdrop.open { display: block; }
+@media (max-width: 600px) { .nav-dropdown-panel { grid-template-columns: 1fr 1fr; max-width: 92vw; } }
+
+/* ══ ANÚNCIOS ══ */
 .anuncio-slot { text-align: center; padding: 10px 20px; background: var(--bg-card-alt); border-bottom: 1px solid var(--border); }
 .anuncio-slot img { max-height: 90px; margin: 0 auto; border-radius: 6px; }
 
+/* ══ CABEÇALHO DA PÁGINA DE FILTRO ══ */
 .pagina-header { padding: 34px 20px 10px; }
 .pagina-header .breadcrumb { font-size: .82em; color: var(--text-dim); margin-bottom: 8px; }
 .pagina-header .breadcrumb a:hover { color: var(--gold); }
-.pagina-header h1 { font-size: 1.6em; }
-.pagina-header .total { color: var(--text-dim); font-size: .9em; margin-top: 4px; }
+.pagina-header h1 { font-size: 1.9em; font-weight: 800; }
+.pagina-header .total { color: var(--text-dim); font-size: .92em; margin-top: 6px; }
 
-.chips-row { display: flex; gap: 8px; flex-wrap: wrap; padding: 16px 20px 0; }
-.chip { padding: 7px 14px; border-radius: 20px; border: 1px solid var(--border); font-size: .85em; background: var(--bg-card); color: var(--text-dim); }
-.chip.ativo, .chip:hover { border-color: var(--primary); color: #fff; background: var(--primary); }
+/* ══ CHIPS (bairros / categorias) ══ */
+.chips-row { display: flex; gap: 8px; flex-wrap: wrap; padding: 18px 20px 0; max-width: 1200px; margin: 0 auto; }
+.chips-row .chips-label { width: 100%; font-size: .82em; color: var(--text-dim); text-transform: uppercase; letter-spacing: .05em; font-weight: 700; margin-bottom: 2px; }
+.chip {
+    padding: 8px 16px; border-radius: 20px; border: 1.5px solid var(--border); font-size: .85em;
+    background: var(--bg-card); color: var(--text-dim); font-weight: 600; transition: all .2s;
+}
+.chip.ativo, .chip:hover { border-color: var(--primary); color: var(--on-primary); background: var(--primary); }
 
-.secao { padding: 24px 20px 50px; }
+/* ══ CONTROLES DE VISUALIZAÇÃO ══ */
+.view-controls { display: flex; align-items: center; justify-content: flex-end; margin-bottom: 16px; gap: 8px; }
+.view-controls span { font-size: .85em; color: var(--text-dim); margin-right: 4px; }
+.view-btn {
+    background: var(--bg-card); border: 1.5px solid var(--border); border-radius: 8px; width: 36px; height: 36px;
+    display: flex; align-items: center; justify-content: center; cursor: pointer; transition: all .2s;
+    color: var(--text-dim); font-size: 1em;
+}
+.view-btn:hover { border-color: var(--primary); color: #fff; }
+.view-btn.active { background: var(--primary); border-color: var(--primary); color: var(--on-primary); }
+
+/* ══ SEÇÃO / GRID DE NEGÓCIOS ══ */
+.secao { padding: 24px 20px 60px; }
 .negocios-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); gap: 18px; }
-.negocio-card { background: var(--bg-card); border: 1px solid var(--border); border-radius: 12px; overflow: hidden; transition: transform .15s, border-color .15s; }
+.negocio-card { background: var(--bg-card); border: 1px solid var(--border); border-radius: 12px; overflow: hidden; transition: transform .15s, border-color .15s; display: flex; flex-direction: column; }
 .negocio-card:hover { transform: translateY(-3px); border-color: var(--primary); }
-.negocio-card img { width: 100%; height: 140px; object-fit: cover; }
-.negocio-card-body { padding: 14px; }
-.negocio-card-cat { font-size: .72em; color: var(--gold); font-weight: 700; text-transform: uppercase; }
-.negocio-card-nome { font-size: 1.05em; font-weight: 700; margin: 4px 0 6px; }
-.negocio-card-local { font-size: .85em; color: var(--text-dim); display: flex; gap: 6px; align-items: center; }
-.vazio { color: var(--text-dim); padding: 30px 0; text-align: center; }
+.card-foto { width: 100%; height: 0; padding-bottom: 62%; overflow: hidden; position: relative; background: var(--bg-card-alt); }
+.card-foto img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; transition: transform .4s; }
+.negocio-card:hover .card-foto img { transform: scale(1.06); }
+.badge-cat { position: absolute; top: 10px; left: 10px; background: var(--primary); color: var(--on-primary); font-size: .72em; font-weight: 700; padding: 3px 10px; border-radius: 20px; }
+.card-body { padding: 14px; flex: 1; display: flex; flex-direction: column; gap: 4px; }
+.card-body h3 { font-size: 1.05em; font-weight: 700; margin: 4px 0 6px; color: #fff; }
+.card-bairro { font-size: .85em; color: var(--text-dim); display: flex; align-items: center; gap: 6px; }
+.btn-ver { margin-top: auto; padding-top: 12px; display: inline-block; background: var(--primary); color: var(--on-primary); padding: 9px 18px; border-radius: 6px; font-size: .88em; font-weight: 700; text-align: center; transition: background .2s; }
+.negocio-card:hover .btn-ver { background: var(--dark); }
+.vazio, .info-message { color: var(--text-dim); padding: 50px 0; text-align: center; font-size: 1.02em; }
 
-footer { background: var(--bg-card-alt); border-top: 1px solid var(--border); padding: 24px 20px; color: var(--text-dim); font-size: .85em; text-align: center; }
+/* ══ CARROSSEL (idêntico ao index) ══ */
+.carousel-wrapper { position: relative; }
+.carousel-track-outer { overflow: hidden; border-radius: 12px; }
+.carousel-track { display: flex; gap: 18px; transition: transform .4s ease; will-change: transform; cursor: grab; user-select: none; }
+.carousel-track.dragging { transition: none; cursor: grabbing; }
+.carousel-track .negocio-card { flex: 0 0 calc(25% - 14px); min-width: 0; }
+@media (max-width: 900px) { .carousel-track .negocio-card { flex: 0 0 calc(50% - 9px); } }
+.carousel-nav { display: flex; align-items: center; justify-content: center; gap: 12px; margin-top: 20px; }
+.carousel-arrow {
+    background: var(--bg-card); border: 1.5px solid var(--border); border-radius: 50%; width: 42px; height: 42px;
+    display: flex; align-items: center; justify-content: center; cursor: pointer; font-size: 1em; color: var(--text);
+    transition: all .2s; flex-shrink: 0;
+}
+.carousel-arrow:hover:not(:disabled) { background: var(--primary); border-color: var(--primary); color: var(--on-primary); }
+.carousel-arrow:disabled { opacity: .3; cursor: not-allowed; }
+.carousel-progress-bar { flex: 1; max-width: 200px; height: 4px; background: var(--border); border-radius: 4px; overflow: hidden; }
+.carousel-progress-fill { height: 100%; background: var(--primary); border-radius: 4px; transition: width .35s cubic-bezier(.4,0,.2,1); }
+@media (max-width: 768px) {
+    .carousel-track-outer { overflow-x: scroll; overflow-y: hidden; -webkit-overflow-scrolling: touch; scroll-snap-type: x mandatory; scrollbar-width: none; }
+    .carousel-track-outer::-webkit-scrollbar { display: none; }
+    .carousel-track { transform: none !important; transition: none !important; cursor: default; gap: 14px; padding: 4px 0; }
+    .carousel-track .negocio-card { scroll-snap-align: start; flex: 0 0 78%; min-width: 0; }
+    .carousel-nav { display: none; }
+}
+@media (max-width: 480px) { .carousel-track .negocio-card { flex: 0 0 calc(85%); } }
+
+/* ══ FOOTER (idêntico ao index) ══ */
+footer { background: var(--bg-card-alt); border-top: 1px solid var(--border); padding: 34px 20px 20px; color: var(--text-dim); font-size: .88em; }
+footer .footer-cols { display: flex; flex-wrap: wrap; gap: 28px; max-width: 1200px; margin: 0 auto 20px; }
+footer h4 { color: #fff; font-size: .95em; margin-bottom: 10px; }
+footer ul { list-style: none; }
+footer ul li { margin-bottom: 6px; }
+footer ul li a:hover { color: var(--gold); }
+.footer-bottom { text-align: center; border-top: 1px solid var(--border); padding-top: 16px; }
+
+@media (max-width: 860px) {
+    .logo img { height: 80px; }
+    .pagina-header h1 { font-size: 1.5em; }
+}
 </style>
 </head>
 <body>
+
+{# Remove o prefixo "cinema_" (usado só internamente no slug) e formata o nome
+   pra exibição — mesma lógica do index. #}
+{% macro cat_label(cat) -%}
+{%- set n = (cat.nome or cat.slug or '') -%}
+{%- if n.startswith('cinema_') -%}{%- set n = n[7:] -%}{%- endif -%}
+{{- n.replace('-', ' ').replace('_', ' ') | title -}}
+{%- endmacro %}
 
 <header>
   <a class="logo" href="/">
@@ -118,12 +228,71 @@ footer { background: var(--bg-card-alt); border-top: 1px solid var(--border); pa
     <ul>
       <li><a href="/em-cartaz/">Em cartaz</a></li>
       <li><a href="/nao-quer-sair-de-casa/">Streaming</a></li>
-      {% for cat in categorias %}
-        <li><a href="/{{ cat.slug }}/">{{ cat.nome }}</a></li>
-      {% endfor %}
+      {% if categorias %}
+      <li class="nav-dropdown">
+        <button type="button" class="nav-dropdown-toggle" id="nav-cinemas-toggle" onclick="toggleNavCinemas()" aria-haspopup="true" aria-expanded="false" aria-controls="nav-cinemas-panel">
+          Cinemas <i class="fas fa-chevron-down nav-dropdown-chevron" aria-hidden="true"></i>
+        </button>
+        <div class="nav-dropdown-panel" id="nav-cinemas-panel" role="menu" aria-label="Tipos de cinema">
+          {% for cat in categorias %}
+            <a href="/{{ cat.slug }}/" role="menuitem">{{ cat_label(cat) }}</a>
+          {% endfor %}
+        </div>
+      </li>
+      {% endif %}
     </ul>
   </nav>
+  <div class="nav-dropdown-backdrop" id="nav-cinemas-backdrop" onclick="closeNavCinemas()"></div>
 </header>
+
+<script>
+(function(){
+  var panel = document.getElementById('nav-cinemas-panel');
+  var backdrop = document.getElementById('nav-cinemas-backdrop');
+  if(panel) document.body.appendChild(panel);
+  if(backdrop) document.body.appendChild(backdrop);
+})();
+function positionNavCinemasPanel(){
+  var toggle = document.getElementById('nav-cinemas-toggle');
+  var panel = document.getElementById('nav-cinemas-panel');
+  if(!toggle || !panel) return;
+  var rect = toggle.getBoundingClientRect();
+  var margin = 10;
+  var panelWidth = panel.offsetWidth || 300;
+  var left = rect.left + rect.width / 2 - panelWidth / 2;
+  if(left < margin) left = margin;
+  if(left + panelWidth > window.innerWidth - margin) left = window.innerWidth - margin - panelWidth;
+  panel.style.left = left + 'px';
+  panel.style.top = (rect.bottom + 8) + 'px';
+}
+function toggleNavCinemas(){
+  var toggle = document.getElementById('nav-cinemas-toggle');
+  var panel = document.getElementById('nav-cinemas-panel');
+  var backdrop = document.getElementById('nav-cinemas-backdrop');
+  if(!toggle || !panel) return;
+  var abrir = !panel.classList.contains('open');
+  toggle.classList.toggle('open', abrir);
+  panel.classList.toggle('open', abrir);
+  if(backdrop) backdrop.classList.toggle('open', abrir);
+  toggle.setAttribute('aria-expanded', abrir ? 'true' : 'false');
+  if(abrir) positionNavCinemasPanel();
+}
+function closeNavCinemas(){
+  var toggle = document.getElementById('nav-cinemas-toggle');
+  var panel = document.getElementById('nav-cinemas-panel');
+  var backdrop = document.getElementById('nav-cinemas-backdrop');
+  if(toggle) toggle.classList.remove('open');
+  if(panel) panel.classList.remove('open');
+  if(backdrop) backdrop.classList.remove('open');
+  if(toggle) toggle.setAttribute('aria-expanded', 'false');
+}
+document.addEventListener('keydown', function(e){ if(e.key === 'Escape') closeNavCinemas(); });
+window.addEventListener('resize', function(){
+  var panel = document.getElementById('nav-cinemas-panel');
+  if(panel && panel.classList.contains('open')) positionNavCinemasPanel();
+});
+window.addEventListener('scroll', function(){ closeNavCinemas(); }, { passive: true });
+</script>
 
 {% if anuncio_topo %}
 <div class="anuncio-slot">
@@ -144,6 +313,7 @@ footer { background: var(--bg-card-alt); border-top: 1px solid var(--border); pa
 
 {% if filtro_tipo == 'categoria' and bairros_disponiveis %}
 <div class="chips-row">
+  <div class="chips-label">Filtrar por bairro</div>
   {% for b in bairros_disponiveis %}
     <a class="chip" href="/{{ b | slugify }}/">{{ b }}</a>
   {% endfor %}
@@ -152,8 +322,9 @@ footer { background: var(--bg-card-alt); border-top: 1px solid var(--border); pa
 
 {% if filtro_tipo == 'categoria' and categorias | length > 1 %}
 <div class="chips-row">
+  <div class="chips-label">Tipo de cinema</div>
   {% for cat in categorias %}
-    <a class="chip {{ 'ativo' if filtro_valor == cat.slug }}" href="/{{ cat.slug }}/">{{ cat.nome }}</a>
+    <a class="chip {{ 'ativo' if filtro_valor == cat.slug }}" href="/{{ cat.slug }}/">{{ cat_label(cat) }}</a>
   {% endfor %}
 </div>
 {% endif %}
@@ -168,16 +339,52 @@ footer { background: var(--bg-card-alt); border-top: 1px solid var(--border); pa
 
 <section class="secao container">
   {% if negocios %}
-    <div class="negocios-grid">
+    <div class="view-controls" id="view-controls">
+      <span>Ver como:</span>
+      <button class="view-btn active" id="btn-carousel" title="Carrossel" onclick="setView('carousel')"><i class="fas fa-grip-lines"></i></button>
+      <button class="view-btn" id="btn-grade" title="Grade" onclick="setView('grade')"><i class="fas fa-th"></i></button>
+    </div>
+
+    <div id="negocios-carousel-wrapper" class="carousel-wrapper">
+      <div class="carousel-track-outer">
+        <div class="carousel-track" id="negocios-track">
+          {% for n in negocios %}
+            <a class="negocio-card" href="/{{ n.categoria_slug }}/{{ n.slug }}/">
+              <div class="card-foto">
+                <img src="{{ n.foto_url or 'https://placehold.co/400x260/17171b/f5c518?text=%F0%9F%8E%9E' }}" alt="{{ n.nome }}" loading="lazy">
+                <span class="badge-cat">{{ n.categoria_nome }}</span>
+              </div>
+              <div class="card-body">
+                <h3>{{ n.nome }}</h3>
+                {% if n.cidade %}
+                  <p class="card-bairro"><i class="fas fa-map-marker-alt" style="color:var(--gold)"></i> {{ n.bairro ~ ', ' if n.bairro }}{{ n.cidade }}</p>
+                {% endif %}
+                <span class="btn-ver">Ver detalhes →</span>
+              </div>
+            </a>
+          {% endfor %}
+        </div>
+      </div>
+      <div class="carousel-nav" id="negocios-carousel-nav">
+        <button class="carousel-arrow" id="negocios-prev" onclick="moveCarousel(-1)"><i class="fas fa-chevron-left"></i></button>
+        <div class="carousel-progress-bar"><div class="carousel-progress-fill" id="negocios-progress-fill"></div></div>
+        <button class="carousel-arrow" id="negocios-next" onclick="moveCarousel(1)"><i class="fas fa-chevron-right"></i></button>
+      </div>
+    </div>
+
+    <div class="negocios-grid" id="negocios-grade" style="display:none;">
       {% for n in negocios %}
         <a class="negocio-card" href="/{{ n.categoria_slug }}/{{ n.slug }}/">
-          <img src="{{ n.foto_url or 'https://placehold.co/400x260/17171b/f5c518?text=%F0%9F%8E%9E' }}" alt="{{ n.nome }}" loading="lazy">
-          <div class="negocio-card-body">
-            <div class="negocio-card-cat">{{ n.categoria_nome }}</div>
-            <div class="negocio-card-nome">{{ n.nome }}</div>
+          <div class="card-foto">
+            <img src="{{ n.foto_url or 'https://placehold.co/400x260/17171b/f5c518?text=%F0%9F%8E%9E' }}" alt="{{ n.nome }}" loading="lazy">
+            <span class="badge-cat">{{ n.categoria_nome }}</span>
+          </div>
+          <div class="card-body">
+            <h3>{{ n.nome }}</h3>
             {% if n.cidade %}
-              <div class="negocio-card-local"><i class="fas fa-map-marker-alt"></i> {{ n.bairro ~ ', ' if n.bairro }}{{ n.cidade }}</div>
+              <p class="card-bairro"><i class="fas fa-map-marker-alt" style="color:var(--gold)"></i> {{ n.bairro ~ ', ' if n.bairro }}{{ n.cidade }}</p>
             {% endif %}
+            <span class="btn-ver">Ver detalhes →</span>
           </div>
         </a>
       {% endfor %}
@@ -187,11 +394,108 @@ footer { background: var(--bg-card-alt); border-top: 1px solid var(--border); pa
   {% endif %}
 </section>
 
-<footer>&copy; {{ hub.nome or 'Cinema Perto de Mim' }} — todos os direitos reservados.</footer>
+<footer>
+  <div class="footer-cols">
+    <div>
+      <h4>{{ hub.nome or 'Cinema Perto de Mim' }}</h4>
+      <p>Descubra cinemas e cultura de cinema perto de você.</p>
+    </div>
+    <div>
+      <h4>Navegue</h4>
+      <ul>
+        <li><a href="/em-cartaz/">Em cartaz</a></li>
+        <li><a href="/nao-quer-sair-de-casa/">Streaming</a></li>
+        {% if categorias %}<li><a href="/#tipos-cinema">Tipos de cinema</a></li>{% endif %}
+      </ul>
+    </div>
+  </div>
+  <div class="footer-bottom">
+    &copy; {{ hub.nome or 'Cinema Perto de Mim' }} — todos os direitos reservados.
+  </div>
+</footer>
+
+{% if negocios %}
+<script>
+// ══════════════════════════════════════════════════════════════════
+// Carrossel de negócios desta página de filtro — conteúdo já vem
+// renderizado pelo servidor (sem fetch), mesmo padrão de arrastar/
+// setas/progresso e alternância carrossel↔grade usado no index.
+// ══════════════════════════════════════════════════════════════════
+var _carouselPos = 0;
+var _carouselView = 'carousel';
+
+function getCardWidthNegocios(){
+  var track = document.getElementById('negocios-track');
+  var card = track.querySelector('.negocio-card');
+  if(!card) return 280;
+  return card.offsetWidth + 18;
+}
+
+function isMobileNegocios(){ return window.innerWidth <= 768; }
+
+function clampAndUpdateNegocios(){
+  if(isMobileNegocios()) return;
+  var track = document.getElementById('negocios-track');
+  var cards = track.querySelectorAll('.negocio-card');
+  if(!cards.length) return;
+  var maxPos = Math.max(0, cards.length * getCardWidthNegocios() - track.parentElement.offsetWidth);
+  _carouselPos = Math.max(0, Math.min(_carouselPos, maxPos));
+  track.style.transform = 'translateX(-' + _carouselPos + 'px)';
+  var fill = document.getElementById('negocios-progress-fill');
+  var prev = document.getElementById('negocios-prev');
+  var next = document.getElementById('negocios-next');
+  if(fill) fill.style.width = maxPos > 0 ? Math.min(100, (_carouselPos / maxPos) * 100) + '%' : '0%';
+  if(prev) prev.disabled = _carouselPos <= 0;
+  if(next) next.disabled = maxPos <= 0 || _carouselPos >= maxPos;
+}
+
+function snapCarouselNegocios(){
+  var w = getCardWidthNegocios(); if(!w) return;
+  _carouselPos = Math.round(_carouselPos / w) * w;
+  clampAndUpdateNegocios();
+}
+
+function moveCarousel(dir){
+  var outer = document.getElementById('negocios-track').parentElement;
+  var visivel = Math.max(1, Math.floor(outer.offsetWidth / getCardWidthNegocios()));
+  _carouselPos += dir * visivel * getCardWidthNegocios();
+  clampAndUpdateNegocios();
+}
+
+function setView(mode){
+  _carouselView = mode;
+  var cw = document.getElementById('negocios-carousel-wrapper');
+  var gd = document.getElementById('negocios-grade');
+  document.getElementById('btn-carousel').classList.toggle('active', mode === 'carousel');
+  document.getElementById('btn-grade').classList.toggle('active', mode === 'grade');
+  if(cw) cw.style.display = mode === 'carousel' ? '' : 'none';
+  if(gd) gd.style.display = mode === 'grade' ? 'grid' : 'none';
+  if(mode === 'carousel') clampAndUpdateNegocios();
+}
+
+(function initCarouselNegocios(){
+  var track = document.getElementById('negocios-track');
+  if(!track) return;
+  var isDragging = false, startX = 0, startPos = 0;
+  function onStart(x){ isDragging = true; startX = x; startPos = _carouselPos; track.classList.add('dragging'); }
+  function onMove(x){ if(!isDragging) return; _carouselPos = startPos - (x - startX); clampAndUpdateNegocios(); }
+  function onEnd(){ isDragging = false; track.classList.remove('dragging'); snapCarouselNegocios(); }
+  track.addEventListener('mousedown', function(e){ if(isMobileNegocios()) return; onStart(e.clientX); e.preventDefault(); });
+  window.addEventListener('mousemove', function(e){ if(isDragging) onMove(e.clientX); });
+  window.addEventListener('mouseup', function(){ if(isDragging) onEnd(); });
+  clampAndUpdateNegocios();
+})();
+
+window.addEventListener('resize', function(){ clampAndUpdateNegocios(); });
+</script>
+{% endif %}
 
 {% if hub.ga4_id %}
 <script async src="https://www.googletagmanager.com/gtag/js?id={{ hub.ga4_id }}"></script>
 <script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag('js',new Date());gtag('config','{{ hub.ga4_id }}');</script>
+{% endif %}
+{% if hub.pixel_id %}
+<script>!function(f,b,e,v,n,t,s){if(f.fbq)return;n=f.fbq=function(){n.callMethod?n.callMethod.apply(n,arguments):n.queue.push(arguments)};if(!f._fbq)f._fbq=n;n.push=n;n.loaded=!0;n.version='2.0';n.queue=[];t=b.createElement(e);t.async=!0;t.src=v;s=b.getElementsByTagName(e)[0];s.parentNode.insertBefore(t,s)}(window,document,'script','https://connect.facebook.net/en_US/fbevents.js');fbq('init','{{ hub.pixel_id }}');fbq('track','PageView');</script>
 {% endif %}
 
 </body>
