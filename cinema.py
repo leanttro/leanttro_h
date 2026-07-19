@@ -277,9 +277,7 @@ def nao_quer_sair_de_casa_index():
     if not hub:
         return "Hub não encontrado", 404
 
-    todos = _providers_disponiveis_br()
-    por_slug = {p["slug"]: p for p in todos}
-    provedores = [por_slug[s] for s in SLUGS_PROVEDORES_PRINCIPAIS if s in por_slug]
+    provedores = _provedores_curados()
 
     return render_template("cinema/streaming_index.html", hub=hub, provedores=provedores)
 
@@ -373,9 +371,7 @@ def api_em_cartaz():
 def api_streaming_provedores():
     """Lista dos provedores curados (mesma lista de /nao-quer-sair-de-casa),
     em JSON, pro filtro/slicer da home montar os chips dinamicamente."""
-    todos = _providers_disponiveis_br()
-    por_slug = {p["slug"]: p for p in todos}
-    provedores = [por_slug[s] for s in SLUGS_PROVEDORES_PRINCIPAIS if s in por_slug]
+    provedores = _provedores_curados()
     return jsonify(provedores=provedores)
 
 
