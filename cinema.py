@@ -236,13 +236,27 @@ def _provider_por_slug(slug):
     return None
 
 
-def _ids_providers_flatrate_br():
-    """IDs de TODOS os provedores de streaming por assinatura catalogados
-    no Brasil pela TMDB (não só os curados no menu) — usado só pra tirar
-    de /em-cartaz um filme que já está disponível em algum streaming (ver
-    _params_em_cartaz abaixo). Filme com "aluguel"/"compra" avulsos não
-    entra nessa conta, só assinatura (flatrate) mesmo."""
-    return [p["id"] for p in _providers_disponiveis_br()]
+def _tem_streaming_flatrate_br(tmdb_id):
+    """True se o filme tem streaming por assinatura (flatrate) no Brasil
+    agora, segundo a TMDB — mesma checagem usada em /filme/<slug> pra
+    decidir o que mostrar. Cada chamada fica cacheada 30min, então
+    repetir isso pro mesmo filme em páginas/buscas diferentes não pesa
+    depois da primeira vez."""
+    dados, erro = _tmdb_get(f"/movie/{tmdb_id}/watch/providers")
+    if erro or not dados:
+        return False
+    br = (dados.get("results") or {}).get("BR", {})
+    return bool(br.get("flatrate"))
+
+
+def _sem_streaming(filmes):
+    """Tira da lista quem já tem streaming por assinatura no Brasil — em
+    cartaz e streaming são categorias mutuamente exclusivas aqui no site
+    (ver _params_em_cartaz). Fazemos a checagem filme a filme em vez de
+    tentar filtrar isso direto na consulta à TMDB (with_watch_providers
+    negado + monetization type combinados têm comportamento inconsistente
+    na API deles — já causou a listagem inteira vir vazia)."""
+    return [f for f in filmes if not _tem_streaming_flatrate_br(f["id"])]
 
 
 def _normalizar_busca(txt):
@@ -261,13 +275,11 @@ def _slugify(texto):
 
 def _params_em_cartaz(pagina):
     """Parâmetros do /discover/movie pra 'em cartaz': lançamento teatral/
-    limitado (2|3) nos últimos 45 dias no Brasil, EXCLUINDO quem já está
-    disponível em algum streaming por assinatura — regra de negócio: em
-    cartaz e streaming são categorias mutuamente exclusivas aqui no site,
-    então filme que já foi pro streaming sai daqui e só aparece na vitrine
-    de streaming (/nao-quer-sair-de-casa/<provedor>)."""
+    limitado (2|3) nos últimos 45 dias no Brasil. A exclusão de quem já
+    tem streaming acontece DEPOIS, com _sem_streaming(), não aqui — ver
+    comentário lá."""
     hoje = date.today()
-    params = {
+    return {
         "region": "BR",
         "with_release_type": "2|3",
         "primary_release_date.gte": (hoje - timedelta(days=45)).isoformat(),
@@ -276,16 +288,6 @@ def _params_em_cartaz(pagina):
         "include_adult": "false",
         "page": pagina,
     }
-    ids_flatrate = _ids_providers_flatrate_br()
-    if ids_flatrate:
-        params["watch_region"] = "BR"
-        params["with_watch_monetization_types"] = "flatrate"
-        params["without_watch_providers"] = "|".join(str(i) for i in ids_flatrate)
-    # Se a lista de provedores não carregou (TMDB fora do ar etc.), segue
-    # sem o filtro de exclusão em vez de quebrar a página inteira — pior
-    # caso é a lista de em-cartaz vir com algum filme repetido do streaming
-    # até a próxima chamada bem-sucedida (cache de 30min).
-    return params
 
 
 # ════════════════════════════════════════════════════════════
@@ -317,18 +319,22 @@ def em_cartaz():
     # nos últimos ~45 dias, e não o catálogo inteiro já lançado algum dia.
     filmes = []
     total_paginas_tmdb = 1
+    houve_erro_tmdb = False
     for pagina in range(1, PAGINAS_INICIAIS + 1):
         dados, erro = _tmdb_get("/discover/movie", _params_em_cartaz(pagina))
         if erro or not dados:
+            houve_erro_tmdb = True
             break
         total_paginas_tmdb = min(dados.get("total_pages", 1), 500)
         filmes.extend(_enriquecer_filme(f) for f in dados.get("results", []))
         if pagina >= total_paginas_tmdb:
             break
 
-    if not filmes and total_paginas_tmdb <= 1:
+    if not filmes and houve_erro_tmdb:
         return render_template("cinema/erro.html", hub=hub,
                                mensagem="Não foi possível carregar os filmes em cartaz agora. Tenta de novo em alguns minutos."), 502
+
+    filmes = _sem_streaming(filmes)
 
     return render_template(
         "cinema/em_cartaz.html",
@@ -488,7 +494,7 @@ def api_em_cartaz():
         return jsonify(filmes=[], tem_mais=False), 200
 
     total_paginas_tmdb = min(dados.get("total_pages", 1), 500)
-    filmes = [_enriquecer_filme(f) for f in dados.get("results", [])]
+    filmes = _sem_streaming([_enriquecer_filme(f) for f in dados.get("results", [])])
     return jsonify(filmes=filmes, tem_mais=(pagina < total_paginas_tmdb))
 
 
@@ -511,7 +517,7 @@ def api_em_cartaz_buscar():
             break
         total_paginas_tmdb = min(dados.get("total_pages", 1), 500)
         for f in dados.get("results", []):
-            if termo in _normalizar_busca(f.get("title", "")):
+            if termo in _normalizar_busca(f.get("title", "")) and not _tem_streaming_flatrate_br(f["id"]):
                 encontrados.append(_enriquecer_filme(f))
                 if len(encontrados) >= _BUSCA_LIMITE_RESULTADOS:
                     break
