@@ -19,6 +19,7 @@
 <link rel="icon" type="image/png" href="{{ hub.logo_url or 'https://placehold.co/64x64/0d0d0f/e50914?text=%F0%9F%8E%9E' }}">
 <link rel="apple-touch-icon" href="{{ hub.logo_url or 'https://placehold.co/180x180/0d0d0f/e50914?text=%F0%9F%8E%9E' }}">
 <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+<link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
 
 <style>
 :root {
@@ -94,6 +95,19 @@ nav.desktop-nav ul li a:hover { background: var(--primary); color: var(--on-prim
 .card p { font-size: .85rem; margin: .4rem 0 0; line-height: 1.3; }
 .provider-icones { display: flex; gap: .3rem; margin-top: .3rem; }
 .provider-icones img { width: 22px; height: 22px; border-radius: 5px; }
+
+/* ══ BARRA DE BUSCA ══ */
+.busca-wrap { padding: 0 1.25rem 1.25rem; }
+.busca-box { max-width: 480px; margin: 0 auto; position: relative; }
+.busca-box i { position: absolute; left: 16px; top: 50%; transform: translateY(-50%); color: var(--text-dim); }
+.busca-box input {
+    width: 100%; padding: 13px 16px 13px 42px; border-radius: 10px; border: 1px solid #444;
+    background: #241016; color: #fff; font-family: inherit; font-size: .95em;
+}
+.busca-box input::placeholder { color: var(--text-dim); }
+.busca-box input:focus { outline: none; border-color: var(--primary); }
+.info-message { text-align: center; color: var(--text-dim); padding: 30px 1.25rem; }
+
 .paginacao { display: flex; justify-content: center; gap: 1rem; padding: 1.5rem; }
 .paginacao a { color: #eee; text-decoration: none; border: 1px solid #444; padding: .4rem .9rem; border-radius: 6px; }
 .creditos-tmdb, .creditos-justwatch { text-align: center; }
@@ -132,9 +146,16 @@ nav.desktop-nav ul li a:hover { background: var(--primary); color: var(--on-prim
   <p>{{ 'Filmes disponíveis agora em ' + provedor.nome if provedor else 'Filmes em alta agora' }}</p>
 </div>
 
-<div class="grid">
+<div class="busca-wrap">
+  <div class="busca-box">
+    <i class="fas fa-search"></i>
+    <input type="text" id="busca-filme" placeholder="Buscar filme pelo título..." oninput="filtrarBuscaFilmes(this.value)">
+  </div>
+</div>
+
+<div class="grid" id="filmes-grid">
   {% for f in filmes %}
-    <a class="card" href="/filme/{{ f.id }}/">
+    <a class="card" data-titulo="{{ f.title | lower }}" href="/filme/{{ f.id }}/">
       {% if f.poster_url %}
         <img class="poster" src="{{ f.poster_url }}" alt="Pôster de {{ f.title }}" loading="lazy">
       {% endif %}
@@ -147,6 +168,7 @@ nav.desktop-nav ul li a:hover { background: var(--primary); color: var(--on-prim
     </a>
   {% endfor %}
 </div>
+<p class="info-message" id="busca-vazio" style="display:none;">Não encontramos nenhum filme com esse título.</p>
 
 <div class="paginacao">
   {% set base_url = '/nao-quer-sair-de-casa/' + provedor.slug + '/' if provedor else '/nao-quer-sair-de-casa/' %}
@@ -160,6 +182,24 @@ nav.desktop-nav ul li a:hover { background: var(--primary); color: var(--on-prim
 
 {% include "cinema/_creditos.html" %}
 {% include "cinema/_creditos_justwatch.html" %}
+
+<script>
+// Busca client-side: filtra os cards já carregados nesta página pelo título.
+// (não busca em outras páginas de paginação — só o que já está renderizado aqui)
+function filtrarBuscaFilmes(termo){
+  var t = (termo || '').trim().toLowerCase();
+  var cards = document.querySelectorAll('#filmes-grid .card');
+  var algumVisivel = false;
+  cards.forEach(function(card){
+    var titulo = card.dataset.titulo || '';
+    var bate = !t || titulo.indexOf(t) !== -1;
+    card.style.display = bate ? '' : 'none';
+    if(bate) algumVisivel = true;
+  });
+  var vazio = document.getElementById('busca-vazio');
+  if(vazio) vazio.style.display = (cards.length && !algumVisivel) ? '' : 'none';
+}
+</script>
 
 </body>
 </html>
