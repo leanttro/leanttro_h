@@ -616,3 +616,67 @@ def api_streaming_buscar(slug):
     # usuário que são os resultados mais populares, não literalmente 100%.
     truncado = pagina <= total_paginas_tmdb
     return jsonify(filmes=encontrados, truncado=truncado)
+
+
+# ════════════════════════════════════════════════════════════
+#  "Ache seu filme" — busca livre na home, integrada à tela 3D
+#  (cine-hero). Diferente das buscas acima, essa NÃO fica restrita a
+#  em-cartaz nem a um streaming específico: é o /search/movie da TMDB
+#  puro, cobre o catálogo inteiro.
+# ════════════════════════════════════════════════════════════
+
+@cinema_bp.route("/api/cinema/buscar-filme")
+def api_buscar_filme():
+    """Autocomplete da busca livre: título + pôster só, pra lista de
+    sugestão enquanto a pessoa digita. Sem paginação de propósito — é
+    só uma prévia rápida, o clique num resultado busca o detalhe
+    completo em /api/cinema/filme/<slug>."""
+    termo = (request.args.get("q") or "").strip()
+    if not termo:
+        return jsonify(filmes=[])
+
+    dados, erro = _tmdb_get("/search/movie", {
+        "query": termo,
+        "region": "BR",
+        "include_adult": "false",
+    })
+    if erro or not dados:
+        return jsonify(filmes=[])
+
+    filmes = [_enriquecer_filme(f) for f in dados.get("results", [])[:8]]
+    return jsonify(filmes=filmes)
+
+
+@cinema_bp.route("/api/cinema/filme/<slug>")
+def api_filme_detalhe(slug):
+    """Mesmo dado (e mesma regra de negócio) de /filme/<slug>, em JSON —
+    usado pela busca "Ache seu filme" da home pra mostrar o filme
+    escolhido direto na tela 3D, sem precisar sair da página."""
+    tmdb_id = _resolver_slug(slug)
+    if tmdb_id is None:
+        return jsonify(erro="Filme não encontrado"), 404
+
+    filme, erro = _tmdb_get(f"/movie/{tmdb_id}")
+    if erro or not filme or filme.get("success") is False:
+        return jsonify(erro="Filme não encontrado"), 404
+    _enriquecer_filme(filme)
+
+    providers_dados, _ = _tmdb_get(f"/movie/{tmdb_id}/watch/providers")
+    providers_br = (providers_dados or {}).get("results", {}).get("BR", {})
+    esta_em_streaming = bool(providers_br.get("flatrate"))
+
+    return jsonify(
+        filme={
+            "title": filme.get("title"),
+            "overview": filme.get("overview"),
+            "poster_url": filme.get("poster_url"),
+            "backdrop_url": filme.get("backdrop_url"),
+            "release_date": filme.get("release_date"),
+            "slug": filme.get("slug"),
+        },
+        esta_em_streaming=esta_em_streaming,
+        flatrate=[
+            {"nome": p["provider_name"], "logo_url": _poster_url(p.get("logo_path"), "w92")}
+            for p in providers_br.get("flatrate", [])
+        ],
+    )
