@@ -547,5 +547,156 @@ document.addEventListener('click', function(e) {
 });
 </script>
 
+<!-- ══════════════════════════════════════════════════════════
+     Widget do Chatbot — filmes e cinemas.
+     Usa as variáveis de tema já definidas em cada página
+     (--primary, --bg-card, --border, --text, --text-dim).
+     Fica no canto inferior ESQUERDO de propósito, pra não brigar
+     com o botão de tradução (que fica no canto inferior direito).
+     ══════════════════════════════════════════════════════════ -->
+
+<button id="chatbot-btn" onclick="toggleChatbot()" aria-label="Abrir assistente">
+    <i class="fas fa-comment-dots"></i>
+</button>
+
+<div id="chatbot-panel">
+    <div class="cb-header">
+        <span><i class="fas fa-clapperboard"></i> Assistente</span>
+        <button class="cb-close" onclick="toggleChatbot()">&#10005;</button>
+    </div>
+    <div class="cb-messages" id="cb-messages">
+        <div class="cb-msg cb-msg-bot">Oi! Posso te ajudar a achar um filme, ver o que está em cartaz, sugerir onde assistir em streaming, ou indicar um cinema perto de você. O que você procura?</div>
+    </div>
+    <div class="cb-typing" id="cb-typing" style="display:none;"><i class="fas fa-ellipsis"></i> digitando...</div>
+    <form class="cb-input-row" id="cb-form" onsubmit="return enviarMensagemChatbot(event)">
+        <input type="text" id="cb-input" placeholder="Pergunte sobre um filme ou cinema..." autocomplete="off">
+        <button type="submit" aria-label="Enviar"><i class="fas fa-paper-plane"></i></button>
+    </form>
+</div>
+
+<style>
+    #chatbot-btn {
+        position: fixed; bottom: 20px; left: 20px; z-index: 999;
+        width: 56px; height: 56px; border-radius: 50%;
+        background: var(--primary); border: none; color: #fff;
+        font-size: 22px; cursor: pointer;
+        display: flex; align-items: center; justify-content: center;
+        box-shadow: 0 4px 20px rgba(0,0,0,0.4);
+        transition: box-shadow 0.2s, transform 0.15s;
+    }
+    #chatbot-btn:hover { box-shadow: 0 6px 28px rgba(0,0,0,0.5); transform: translateY(-1px); }
+
+    #chatbot-panel {
+        position: fixed; bottom: 88px; left: 20px; z-index: 1000;
+        width: 320px; max-height: 460px;
+        background: var(--bg-card, #201014); border: 1px solid var(--border, #4a1b24);
+        border-radius: 16px; box-shadow: 0 8px 40px rgba(0,0,0,0.45);
+        display: none; flex-direction: column; overflow: hidden;
+    }
+    #chatbot-panel.open { display: flex; }
+
+    .cb-header {
+        padding: 14px 16px; border-bottom: 1px solid var(--border, #4a1b24);
+        display: flex; align-items: center; justify-content: space-between;
+        font-weight: 700; color: var(--text, #eee); font-size: .95em;
+    }
+    .cb-header i { color: var(--primary); margin-right: 6px; }
+    .cb-close { background: none; border: none; color: var(--text-dim, #a5a5ab); font-size: 18px; cursor: pointer; line-height: 1; }
+    .cb-close:hover { color: var(--text, #eee); }
+
+    .cb-messages {
+        flex: 1; overflow-y: auto; padding: 14px; display: flex; flex-direction: column; gap: 10px;
+        min-height: 200px;
+    }
+    .cb-msg { font-size: .88em; line-height: 1.45; padding: 9px 12px; border-radius: 12px; max-width: 88%; white-space: pre-wrap; }
+    .cb-msg-user { align-self: flex-end; background: var(--primary); color: #fff; border-bottom-right-radius: 4px; }
+    .cb-msg-bot { align-self: flex-start; background: rgba(255,255,255,0.06); color: var(--text, #eee); border-bottom-left-radius: 4px; }
+    .cb-msg-erro { align-self: flex-start; background: rgba(255,80,80,0.15); color: #ffb3b3; border-bottom-left-radius: 4px; }
+
+    .cb-typing { padding: 0 16px 8px; font-size: .8em; color: var(--text-dim, #a5a5ab); }
+
+    .cb-input-row {
+        display: flex; gap: 8px; padding: 12px; border-top: 1px solid var(--border, #4a1b24);
+    }
+    .cb-input-row input {
+        flex: 1; border: 1px solid var(--border, #4a1b24); border-radius: 8px;
+        background: rgba(255,255,255,0.05); color: var(--text, #eee);
+        padding: 9px 12px; font-family: 'Montserrat', sans-serif; font-size: .88em; outline: none;
+    }
+    .cb-input-row input:focus { border-color: var(--primary); }
+    .cb-input-row button {
+        background: var(--primary); border: none; color: #fff; width: 38px; border-radius: 8px; cursor: pointer;
+        display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+    }
+
+    @media (max-width: 480px) {
+        #chatbot-panel { width: calc(100vw - 32px); left: 16px; bottom: 84px; max-height: 60vh; }
+        #chatbot-btn { bottom: 16px; left: 16px; }
+    }
+</style>
+
+<script>
+var _cbHistorico = [];
+var _cbAberto = false;
+var _cbEnviando = false;
+
+function toggleChatbot() {
+    _cbAberto = !_cbAberto;
+    document.getElementById('chatbot-panel').classList.toggle('open', _cbAberto);
+    if (_cbAberto) {
+        setTimeout(function () { document.getElementById('cb-input').focus(); }, 50);
+    }
+}
+
+function _cbAdicionarMensagem(texto, tipo) {
+    var wrap = document.getElementById('cb-messages');
+    var div = document.createElement('div');
+    div.className = 'cb-msg cb-msg-' + tipo;
+    div.textContent = texto;
+    wrap.appendChild(div);
+    wrap.scrollTop = wrap.scrollHeight;
+}
+
+function enviarMensagemChatbot(e) {
+    e.preventDefault();
+    if (_cbEnviando) return false;
+
+    var input = document.getElementById('cb-input');
+    var texto = input.value.trim();
+    if (!texto) return false;
+
+    _cbAdicionarMensagem(texto, 'user');
+    _cbHistorico.push({ role: 'user', content: texto });
+    input.value = '';
+
+    _cbEnviando = true;
+    document.getElementById('cb-typing').style.display = '';
+
+    fetch('/api/chatbot', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ mensagem: texto, historico: _cbHistorico })
+    })
+        .then(function (r) { return r.json(); })
+        .then(function (data) {
+            if (data.resposta) {
+                _cbAdicionarMensagem(data.resposta, 'bot');
+                _cbHistorico.push({ role: 'assistant', content: data.resposta });
+            } else {
+                _cbAdicionarMensagem(data.erro || 'Não consegui responder agora, tenta de novo.', 'erro');
+            }
+        })
+        .catch(function () {
+            _cbAdicionarMensagem('Deu um erro de conexão. Tenta de novo em instantes.', 'erro');
+        })
+        .finally(function () {
+            _cbEnviando = false;
+            document.getElementById('cb-typing').style.display = 'none';
+        });
+
+    return false;
+}
+</script>
+
 </body>
 </html>
