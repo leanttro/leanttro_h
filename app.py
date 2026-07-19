@@ -2318,6 +2318,16 @@ app.register_blueprint(cinema_bp)
 
 
 # ════════════════════════════════════════════════════════════
+#  Blueprint — Assistente de Chat (filmes + cinemas)
+#  Mesmo padrão de import tardio do cinema_bp acima: chatbot.py importa
+#  query/get_hub_by_host de volta deste módulo dentro das próprias rotas.
+# ════════════════════════════════════════════════════════════
+
+from chatbot import chatbot_bp
+app.register_blueprint(chatbot_bp)
+
+
+# ════════════════════════════════════════════════════════════
 
 if __name__ == "__main__":
     app.run(debug=True, port=5000)
