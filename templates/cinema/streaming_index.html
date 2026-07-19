@@ -143,5 +143,352 @@ nav.desktop-nav ul li a:hover { background: var(--primary); color: var(--on-prim
 <p class="provedores-vazio">Nenhum streaming disponível no momento.</p>
 {% endif %}
 
+
+<!-- ── Google Translate (widget nativo oculto) ── -->
+<div id="google_translate_element"></div>
+<script>
+function googleTranslateElementInit() {
+    new google.translate.TranslateElement({ pageLanguage: 'pt', autoDisplay: false }, 'google_translate_element');
+}
+</script>
+<script src="//translate.google.com/translate_a/element.js?cb=googleTranslateElementInit"></script>
+
+<!-- ── Botão flutuante de tradução ── -->
+<button id="translate-btn" onclick="toggleTranslateDrawer()">
+    <i class="fas fa-language"></i> Traduzir
+</button>
+
+<!-- ── Drawer de idiomas ── -->
+<div id="translate-drawer">
+    <div class="td-header">
+        <input class="td-search" id="td-search" type="text" placeholder="Buscar idioma…" oninput="filterLangs(this.value)">
+        <button class="td-close" onclick="toggleTranslateDrawer()">&#10005;</button>
+    </div>
+    <div class="td-list" id="td-list"></div>
+</div>
+
+<style>
+    #google_translate_element { position: absolute; visibility: hidden; pointer-events: none; }
+    .goog-te-banner-frame, .skiptranslate { display: none !important; }
+    body { top: 0 !important; }
+
+    #translate-btn {
+        position: fixed; bottom: 20px; right: 20px; z-index: 999;
+        background: #fff; border: none; border-radius: 50px;
+        padding: 10px 18px; display: flex; align-items: center; gap: 8px;
+        font-family: 'Montserrat', sans-serif; font-size: 14px; font-weight: 600;
+        color: #1a1a1a; cursor: pointer;
+        box-shadow: 0 4px 20px rgba(0,0,0,0.4);
+        transition: box-shadow 0.2s, transform 0.15s;
+    }
+    #translate-btn:hover { box-shadow: 0 6px 28px rgba(0,0,0,0.5); transform: translateY(-1px); }
+    #translate-btn i { color: var(--primary); font-size: 16px; }
+
+    #translate-drawer {
+        position: fixed; bottom: 70px; right: 20px; z-index: 1000;
+        background: #fff; border-radius: 16px;
+        box-shadow: 0 8px 40px rgba(0,0,0,0.35);
+        width: 280px; max-height: 420px;
+        display: none; flex-direction: column;
+        overflow: hidden;
+    }
+    #translate-drawer.open { display: flex; }
+    .td-header {
+        padding: 12px 14px; border-bottom: 1px solid #e0e0e0;
+        display: flex; align-items: center; gap: 8px;
+    }
+    .td-search {
+        flex: 1; border: 1.5px solid #e0e0e0;
+        border-radius: 8px; padding: 8px 12px;
+        font-family: 'Montserrat', sans-serif; font-size: 13px;
+        outline: none; transition: border-color 0.2s;
+        color: #1a1a1a;
+    }
+    .td-search:focus { border-color: var(--primary); }
+    .td-close {
+        background: none; border: none; color: #aaa;
+        font-size: 18px; cursor: pointer; line-height: 1; padding: 2px 4px;
+    }
+    .td-close:hover { color: #555; }
+    .td-list { overflow-y: auto; flex: 1; padding: 6px 0; }
+    .td-item {
+        padding: 9px 18px; font-size: 14px; cursor: pointer;
+        color: #333; transition: background 0.1s;
+        display: flex; align-items: center; gap: 10px;
+    }
+    .td-item:hover { background: #f5f5f5; color: #1a1a1a; }
+    .td-item.active { color: var(--dark); font-weight: 600; background: #faf3d9; }
+    .td-item .flag { font-size: 18px; flex-shrink: 0; }
+    .td-empty { padding: 24px; text-align: center; color: #bbb; font-size: 13px; }
+
+    @media (max-width: 480px) {
+        #translate-drawer { width: calc(100vw - 32px); right: 16px; bottom: 72px; max-height: 55vh; }
+        #translate-btn { bottom: 16px; right: 16px; }
+    }
+</style>
+
+<script>
+const LANGS = [
+    {code:'af',name:'Afrikaans',flag:'🇿🇦'},{code:'sq',name:'Albanian',flag:'🇦🇱'},{code:'am',name:'Amharic',flag:'🇪🇹'},
+    {code:'ar',name:'Arabic',flag:'🇸🇦'},{code:'hy',name:'Armenian',flag:'🇦🇲'},{code:'az',name:'Azerbaijani',flag:'🇦🇿'},
+    {code:'eu',name:'Basque',flag:'🏴'},{code:'be',name:'Belarusian',flag:'🇧🇾'},{code:'bn',name:'Bengali',flag:'🇧🇩'},
+    {code:'bs',name:'Bosnian',flag:'🇧🇦'},{code:'bg',name:'Bulgarian',flag:'🇧🇬'},{code:'ca',name:'Catalan',flag:'🏴'},
+    {code:'ceb',name:'Cebuano',flag:'🇵🇭'},{code:'zh-CN',name:'Chinese (Simplified)',flag:'🇨🇳'},{code:'zh-TW',name:'Chinese (Traditional)',flag:'🇹🇼'},
+    {code:'co',name:'Corsican',flag:'🇫🇷'},{code:'hr',name:'Croatian',flag:'🇭🇷'},{code:'cs',name:'Czech',flag:'🇨🇿'},
+    {code:'da',name:'Danish',flag:'🇩🇰'},{code:'nl',name:'Dutch',flag:'🇳🇱'},{code:'en',name:'English',flag:'🇬🇧'},
+    {code:'eo',name:'Esperanto',flag:'🌍'},{code:'et',name:'Estonian',flag:'🇪🇪'},{code:'fi',name:'Finnish',flag:'🇫🇮'},
+    {code:'fr',name:'French',flag:'🇫🇷'},{code:'fy',name:'Frisian',flag:'🏴'},{code:'gl',name:'Galician',flag:'🏴'},
+    {code:'ka',name:'Georgian',flag:'🇬🇪'},{code:'de',name:'German',flag:'🇩🇪'},{code:'el',name:'Greek',flag:'🇬🇷'},
+    {code:'gu',name:'Gujarati',flag:'🇮🇳'},{code:'ht',name:'Haitian Creole',flag:'🇭🇹'},{code:'ha',name:'Hausa',flag:'🇳🇬'},
+    {code:'haw',name:'Hawaiian',flag:'🇺🇸'},{code:'he',name:'Hebrew',flag:'🇮🇱'},{code:'hi',name:'Hindi',flag:'🇮🇳'},
+    {code:'hmn',name:'Hmong',flag:'🌏'},{code:'hu',name:'Hungarian',flag:'🇭🇺'},{code:'is',name:'Icelandic',flag:'🇮🇸'},
+    {code:'ig',name:'Igbo',flag:'🇳🇬'},{code:'id',name:'Indonesian',flag:'🇮🇩'},{code:'ga',name:'Irish',flag:'🇮🇪'},
+    {code:'it',name:'Italian',flag:'🇮🇹'},{code:'ja',name:'Japanese',flag:'🇯🇵'},{code:'jv',name:'Javanese',flag:'🇮🇩'},
+    {code:'kn',name:'Kannada',flag:'🇮🇳'},{code:'kk',name:'Kazakh',flag:'🇰🇿'},{code:'km',name:'Khmer',flag:'🇰🇭'},
+    {code:'rw',name:'Kinyarwanda',flag:'🇷🇼'},{code:'ko',name:'Korean',flag:'🇰🇷'},{code:'ku',name:'Kurdish',flag:'🌍'},
+    {code:'ky',name:'Kyrgyz',flag:'🇰🇬'},{code:'lo',name:'Lao',flag:'🇱🇦'},{code:'la',name:'Latin',flag:'🏛️'},
+    {code:'lv',name:'Latvian',flag:'🇱🇻'},{code:'lt',name:'Lithuanian',flag:'🇱🇹'},{code:'lb',name:'Luxembourgish',flag:'🇱🇺'},
+    {code:'mk',name:'Macedonian',flag:'🇲🇰'},{code:'mg',name:'Malagasy',flag:'🇲🇬'},{code:'ms',name:'Malay',flag:'🇲🇾'},
+    {code:'ml',name:'Malayalam',flag:'🇮🇳'},{code:'mt',name:'Maltese',flag:'🇲🇹'},{code:'mi',name:'Maori',flag:'🇳🇿'},
+    {code:'mr',name:'Marathi',flag:'🇮🇳'},{code:'mn',name:'Mongolian',flag:'🇲🇳'},{code:'my',name:'Myanmar (Burmese)',flag:'🇲🇲'},
+    {code:'ne',name:'Nepali',flag:'🇳🇵'},{code:'no',name:'Norwegian',flag:'🇳🇴'},{code:'ny',name:'Nyanja (Chichewa)',flag:'🇲🇼'},
+    {code:'or',name:'Odia (Oriya)',flag:'🇮🇳'},{code:'ps',name:'Pashto',flag:'🇦🇫'},{code:'fa',name:'Persian',flag:'🇮🇷'},
+    {code:'pl',name:'Polish',flag:'🇵🇱'},{code:'pt',name:'Português',flag:'🇧🇷'},{code:'pa',name:'Punjabi',flag:'🇮🇳'},
+    {code:'ro',name:'Romanian',flag:'🇷🇴'},{code:'ru',name:'Russian',flag:'🇷🇺'},{code:'sm',name:'Samoan',flag:'🇼🇸'},
+    {code:'gd',name:'Scots Gaelic',flag:'🏴󠁧󠁢󠁳󠁣󠁴󠁿'},{code:'sr',name:'Serbian',flag:'🇷🇸'},{code:'st',name:'Sesotho',flag:'🇱🇸'},
+    {code:'sn',name:'Shona',flag:'🇿🇼'},{code:'sd',name:'Sindhi',flag:'🇵🇰'},{code:'si',name:'Sinhala',flag:'🇱🇰'},
+    {code:'sk',name:'Slovak',flag:'🇸🇰'},{code:'sl',name:'Slovenian',flag:'🇸🇮'},{code:'so',name:'Somali',flag:'🇸🇴'},
+    {code:'es',name:'Spanish',flag:'🇪🇸'},{code:'su',name:'Sundanese',flag:'🇮🇩'},{code:'sw',name:'Swahili',flag:'🇰🇪'},
+    {code:'sv',name:'Swedish',flag:'🇸🇪'},{code:'tl',name:'Tagalog (Filipino)',flag:'🇵🇭'},{code:'tg',name:'Tajik',flag:'🇹🇯'},
+    {code:'ta',name:'Tamil',flag:'🇮🇳'},{code:'tt',name:'Tatar',flag:'🇷🇺'},{code:'te',name:'Telugu',flag:'🇮🇳'},
+    {code:'th',name:'Thai',flag:'🇹🇭'},{code:'tr',name:'Turkish',flag:'🇹🇷'},{code:'tk',name:'Turkmen',flag:'🇹🇲'},
+    {code:'uk',name:'Ukrainian',flag:'🇺🇦'},{code:'ur',name:'Urdu',flag:'🇵🇰'},{code:'ug',name:'Uyghur',flag:'🇨🇳'},
+    {code:'uz',name:'Uzbek',flag:'🇺🇿'},{code:'vi',name:'Vietnamese',flag:'🇻🇳'},{code:'cy',name:'Welsh',flag:'🏴󠁧󠁢󠁷󠁬󠁳󠁿'},
+    {code:'xh',name:'Xhosa',flag:'🇿🇦'},{code:'yi',name:'Yiddish',flag:'🌍'},{code:'yo',name:'Yoruba',flag:'🇳🇬'},
+    {code:'zu',name:'Zulu',flag:'🇿🇦'}
+];
+
+let currentLang = 'pt';
+let drawerOpen  = false;
+
+function renderLangs(list) {
+    const el = document.getElementById('td-list');
+    if (!list.length) {
+        el.innerHTML = '<div class="td-empty">Nenhum idioma encontrado</div>';
+        return;
+    }
+    el.innerHTML = list.map(l =>
+        '<div class="td-item ' + (l.code === currentLang ? 'active' : '') + '" onclick="selectLang(\'' + l.code + '\',\'' + l.name + '\')"><span class="flag">' + l.flag + '</span> ' + l.name + '</div>'
+    ).join('');
+}
+
+function filterLangs(q) {
+    const filtered = LANGS.filter(function(l){ return l.name.toLowerCase().includes(q.toLowerCase()); });
+    renderLangs(filtered);
+}
+
+function selectLang(code, name) {
+    currentLang = code;
+    drawerOpen  = false;
+    document.getElementById('translate-drawer').classList.remove('open');
+
+    var lang = LANGS.find(function(l){ return l.code === code; });
+    document.getElementById('translate-btn').innerHTML =
+        '<i class="fas fa-language"></i> ' + (lang ? lang.flag + ' ' + name : name);
+
+    if (code === 'pt') {
+        var sel = document.querySelector('.goog-te-combo');
+        if (sel) { sel.value = ''; sel.dispatchEvent(new Event('change')); }
+        document.getElementById('translate-btn').innerHTML = '<i class="fas fa-language"></i> Traduzir';
+        return;
+    }
+
+    var tryTranslate = function(attempts) {
+        var sel = document.querySelector('.goog-te-combo');
+        if (sel) {
+            sel.value = code;
+            sel.dispatchEvent(new Event('change'));
+        } else if (attempts > 0) {
+            setTimeout(function(){ tryTranslate(attempts - 1); }, 300);
+        }
+    };
+    tryTranslate(10);
+}
+
+function toggleTranslateDrawer() {
+    drawerOpen = !drawerOpen;
+    var drawer = document.getElementById('translate-drawer');
+    if (drawerOpen) {
+        drawer.classList.add('open');
+        renderLangs(LANGS);
+        var search = document.getElementById('td-search');
+        search.value = '';
+        setTimeout(function(){ search.focus(); }, 50);
+    } else {
+        drawer.classList.remove('open');
+    }
+}
+
+document.addEventListener('click', function(e) {
+    if (drawerOpen &&
+        !document.getElementById('translate-drawer').contains(e.target) &&
+        !document.getElementById('translate-btn').contains(e.target)) {
+        drawerOpen = false;
+        document.getElementById('translate-drawer').classList.remove('open');
+    }
+});
+</script>
+
+<!-- ══════════════════════════════════════════════════════════
+     Widget do Chatbot — filmes e cinemas.
+     Usa as variáveis de tema já definidas em cada página
+     (--primary, --bg-card, --border, --text, --text-dim).
+     Fica no canto inferior ESQUERDO de propósito, pra não brigar
+     com o botão de tradução (que fica no canto inferior direito).
+     ══════════════════════════════════════════════════════════ -->
+
+<button id="chatbot-btn" onclick="toggleChatbot()" aria-label="Abrir assistente">
+    <i class="fas fa-comment-dots"></i>
+</button>
+
+<div id="chatbot-panel">
+    <div class="cb-header">
+        <span><i class="fas fa-clapperboard"></i> Assistente</span>
+        <button class="cb-close" onclick="toggleChatbot()">&#10005;</button>
+    </div>
+    <div class="cb-messages" id="cb-messages">
+        <div class="cb-msg cb-msg-bot">Oi! Posso te ajudar a achar um filme, ver o que está em cartaz, sugerir onde assistir em streaming, ou indicar um cinema perto de você. O que você procura?</div>
+    </div>
+    <div class="cb-typing" id="cb-typing" style="display:none;"><i class="fas fa-ellipsis"></i> digitando...</div>
+    <form class="cb-input-row" id="cb-form" onsubmit="return enviarMensagemChatbot(event)">
+        <input type="text" id="cb-input" placeholder="Pergunte sobre um filme ou cinema..." autocomplete="off">
+        <button type="submit" aria-label="Enviar"><i class="fas fa-paper-plane"></i></button>
+    </form>
+</div>
+
+<style>
+    #chatbot-btn {
+        position: fixed; bottom: 20px; left: 20px; z-index: 999;
+        width: 56px; height: 56px; border-radius: 50%;
+        background: var(--primary); border: none; color: #fff;
+        font-size: 22px; cursor: pointer;
+        display: flex; align-items: center; justify-content: center;
+        box-shadow: 0 4px 20px rgba(0,0,0,0.4);
+        transition: box-shadow 0.2s, transform 0.15s;
+    }
+    #chatbot-btn:hover { box-shadow: 0 6px 28px rgba(0,0,0,0.5); transform: translateY(-1px); }
+
+    #chatbot-panel {
+        position: fixed; bottom: 88px; left: 20px; z-index: 1000;
+        width: 320px; max-height: 460px;
+        background: var(--bg-card, #201014); border: 1px solid var(--border, #4a1b24);
+        border-radius: 16px; box-shadow: 0 8px 40px rgba(0,0,0,0.45);
+        display: none; flex-direction: column; overflow: hidden;
+    }
+    #chatbot-panel.open { display: flex; }
+
+    .cb-header {
+        padding: 14px 16px; border-bottom: 1px solid var(--border, #4a1b24);
+        display: flex; align-items: center; justify-content: space-between;
+        font-weight: 700; color: var(--text, #eee); font-size: .95em;
+    }
+    .cb-header i { color: var(--primary); margin-right: 6px; }
+    .cb-close { background: none; border: none; color: var(--text-dim, #a5a5ab); font-size: 18px; cursor: pointer; line-height: 1; }
+    .cb-close:hover { color: var(--text, #eee); }
+
+    .cb-messages {
+        flex: 1; overflow-y: auto; padding: 14px; display: flex; flex-direction: column; gap: 10px;
+        min-height: 200px;
+    }
+    .cb-msg { font-size: .88em; line-height: 1.45; padding: 9px 12px; border-radius: 12px; max-width: 88%; white-space: pre-wrap; }
+    .cb-msg-user { align-self: flex-end; background: var(--primary); color: #fff; border-bottom-right-radius: 4px; }
+    .cb-msg-bot { align-self: flex-start; background: rgba(255,255,255,0.06); color: var(--text, #eee); border-bottom-left-radius: 4px; }
+    .cb-msg-erro { align-self: flex-start; background: rgba(255,80,80,0.15); color: #ffb3b3; border-bottom-left-radius: 4px; }
+
+    .cb-typing { padding: 0 16px 8px; font-size: .8em; color: var(--text-dim, #a5a5ab); }
+
+    .cb-input-row {
+        display: flex; gap: 8px; padding: 12px; border-top: 1px solid var(--border, #4a1b24);
+    }
+    .cb-input-row input {
+        flex: 1; border: 1px solid var(--border, #4a1b24); border-radius: 8px;
+        background: rgba(255,255,255,0.05); color: var(--text, #eee);
+        padding: 9px 12px; font-family: 'Montserrat', sans-serif; font-size: .88em; outline: none;
+    }
+    .cb-input-row input:focus { border-color: var(--primary); }
+    .cb-input-row button {
+        background: var(--primary); border: none; color: #fff; width: 38px; border-radius: 8px; cursor: pointer;
+        display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+    }
+
+    @media (max-width: 480px) {
+        #chatbot-panel { width: calc(100vw - 32px); left: 16px; bottom: 84px; max-height: 60vh; }
+        #chatbot-btn { bottom: 16px; left: 16px; }
+    }
+</style>
+
+<script>
+var _cbHistorico = [];
+var _cbAberto = false;
+var _cbEnviando = false;
+
+function toggleChatbot() {
+    _cbAberto = !_cbAberto;
+    document.getElementById('chatbot-panel').classList.toggle('open', _cbAberto);
+    if (_cbAberto) {
+        setTimeout(function () { document.getElementById('cb-input').focus(); }, 50);
+    }
+}
+
+function _cbAdicionarMensagem(texto, tipo) {
+    var wrap = document.getElementById('cb-messages');
+    var div = document.createElement('div');
+    div.className = 'cb-msg cb-msg-' + tipo;
+    div.textContent = texto;
+    wrap.appendChild(div);
+    wrap.scrollTop = wrap.scrollHeight;
+}
+
+function enviarMensagemChatbot(e) {
+    e.preventDefault();
+    if (_cbEnviando) return false;
+
+    var input = document.getElementById('cb-input');
+    var texto = input.value.trim();
+    if (!texto) return false;
+
+    _cbAdicionarMensagem(texto, 'user');
+    _cbHistorico.push({ role: 'user', content: texto });
+    input.value = '';
+
+    _cbEnviando = true;
+    document.getElementById('cb-typing').style.display = '';
+
+    fetch('/api/chatbot', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ mensagem: texto, historico: _cbHistorico })
+    })
+        .then(function (r) { return r.json(); })
+        .then(function (data) {
+            if (data.resposta) {
+                _cbAdicionarMensagem(data.resposta, 'bot');
+                _cbHistorico.push({ role: 'assistant', content: data.resposta });
+            } else {
+                _cbAdicionarMensagem(data.erro || 'Não consegui responder agora, tenta de novo.', 'erro');
+            }
+        })
+        .catch(function () {
+            _cbAdicionarMensagem('Deu um erro de conexão. Tenta de novo em instantes.', 'erro');
+        })
+        .finally(function () {
+            _cbEnviando = false;
+            document.getElementById('cb-typing').style.display = 'none';
+        });
+
+    return false;
+}
+</script>
+
 </body>
 </html>
