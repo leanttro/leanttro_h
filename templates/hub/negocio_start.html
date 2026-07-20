@@ -198,6 +198,33 @@ nav.desktop-nav ul li:hover .nav-dropdown { display: block; }
 .breadcrumb-inner .bc-sep { color: #444; }
 .breadcrumb-inner .bc-atual { color: var(--primary); font-weight: 600; }
 
+/* ══ AVISO CADASTRO AUTOMÁTICO ══ */
+.aviso-automatico {
+  background: #241f0a;
+  border-top: 1px solid #4a3d0a;
+  border-bottom: 1px solid #4a3d0a;
+  padding: 10px 0;
+}
+.aviso-automatico-inner {
+  display: flex; align-items: center; justify-content: center;
+  gap: 14px; flex-wrap: wrap; text-align: center;
+}
+.aviso-automatico-texto {
+  font-size: 0.85em; color: #e8d495; font-weight: 500; margin: 0;
+}
+.aviso-automatico-texto strong { color: var(--primary); }
+.aviso-automatico-btn {
+  display: inline-flex; align-items: center; gap: 6px;
+  background: transparent; border: 1.5px solid var(--primary);
+  color: var(--primary); font-size: 0.82em; font-weight: 700;
+  padding: 6px 14px; border-radius: 30px; white-space: nowrap;
+  transition: background 0.2s, color 0.2s;
+}
+.aviso-automatico-btn:hover { background: var(--primary); color: #1a1a1a; }
+@media (max-width: 600px) {
+  .aviso-automatico-texto { font-size: 0.8em; }
+}
+
 /* ══ PERFIL HERO ══ */
 .perfil-hero {
   background:
@@ -658,6 +685,19 @@ footer a:hover { text-decoration: underline; }
   </div>
 </div>
 
+<!-- AVISO: CADASTRO AUTOMÁTICO -->
+<div class="aviso-automatico">
+  <div class="container aviso-automatico-inner">
+    <p class="aviso-automatico-texto">
+      📋 Cadastro <strong>automático</strong>, gerado a partir de dados públicos do Google — não somos afiliados a este negócio.
+    </p>
+    <a href="https://wa.me/5511913324827?text=Olá,+quero+solicitar+a+remoção+do+negócio+{{ negocio.nome }}+({{ negocio.categoria_nome }})+cadastrado+no+AgênciaStart.+Página:+https%3A%2F%2F{{ request.host }}%2F{{ segmento }}%2F{{ negocio.slug }}%2F"
+       target="_blank" rel="noopener nofollow" class="aviso-automatico-btn">
+      <i class="fas fa-trash-alt"></i> Solicitar remoção
+    </a>
+  </div>
+</div>
+
 <!-- PERFIL HERO -->
 <div class="perfil-hero">
   <div class="container perfil-hero-inner">
@@ -991,23 +1031,6 @@ footer a:hover { text-decoration: underline; }
           {% if not negocio.mostrar_whatsapp and not negocio.mostrar_telefone and not negocio.mostrar_instagram and not negocio.mostrar_site %}
           <p style="text-align:center; color:#666; font-size:0.85em; padding:10px 0;">Sem contato disponível.</p>
           {% endif %}
-        </div>
-      </div>
-
-      <!-- Aviso: diretório automatizado + solicitação de remoção -->
-      <div class="sidebar-block" style="border:1px solid var(--medium-gray); background:#161616;">
-        <div class="sidebar-block-header">
-          <i class="fas fa-info-circle"></i> Aviso importante
-        </div>
-        <div class="sidebar-block-body">
-          <p style="font-size:0.8em; color:#999; line-height:1.6; padding:2px 4px 12px;">
-            Este cadastro foi criado de forma <strong>automatizada</strong>, a partir de dados públicos do Google Meu Negócio. O {{ hub.nome or 'AgênciaStart' }} é apenas um diretório de divulgação: <strong>não somos a empresa listada aqui</strong>, não prestamos os mesmos serviços dela e não temos vínculo comercial, societário ou de representação com ela.
-          </p>
-          <a href="https://wa.me/5511913324827?text=Olá,+quero+solicitar+a+remoção+do+negócio+{{ negocio.nome }}+({{ negocio.categoria_nome }})+cadastrado+no+AgênciaStart.+Página:+https%3A%2F%2F{{ request.host }}%2F{{ segmento }}%2F{{ negocio.slug }}%2F"
-             target="_blank" rel="noopener nofollow"
-             class="btn-pf btn-pf-outline" style="width:100%; justify-content:center; margin-top:2px;">
-            <i class="fas fa-trash-alt"></i> Solicitar remoção deste negócio
-          </a>
         </div>
       </div>
 
