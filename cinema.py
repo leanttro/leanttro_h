@@ -19,6 +19,7 @@ from flask import Blueprint, render_template, request, jsonify, Response
 import os
 import re
 import time
+import threading
 import unicodedata
 import requests
 from datetime import date, timedelta, datetime, timezone
@@ -828,11 +829,13 @@ def _eh_hub_cinema(hub):
         or _PREFIXO_CATEGORIA_POR_DOMINIO.get(hub.get("dominio_proprio")) == "cinema_"
     )
 
-# Teto de páginas por fonte (em-cartaz, e cada streaming). 500 é o
-# máximo que a própria TMDB aceita por consulta (/discover/movie);
-# o teto aqui é só rede de segurança contra um total_pages absurdo,
-# não uma limitação artificial — a ideia é varrer TUDO que existir.
-_SITEMAP_MAX_PAGINAS_POR_FONTE = 500
+# Teto de páginas por fonte (em-cartaz, e cada streaming). Reduzido de
+# propósito: com em-cartaz + os 9 streamings curados (10 fontes), ir até
+# o teto real da TMDB (500 páginas cada) significa milhares de chamadas
+# — mesmo em background, isso trava por muito tempo sem necessidade.
+# 150 páginas (~3000 filmes) por fonte já cobre folgado o catálogo real
+# de qualquer streaming grande no Brasil hoje.
+_SITEMAP_MAX_PAGINAS_POR_FONTE = 150
 
 
 def _coletar_pra_sitemap(params_base):
@@ -858,7 +861,12 @@ def _construir_indice_sitemap_filmes(forcar=False):
     """Lista completa (sem repetir tmdb_id) de todo filme que tem
     página própria indicável no site: em-cartaz + catálogo de cada
     streaming curado. Cacheada por _SITEMAP_CACHE_TTL — ver comentário
-    da seção acima sobre o custo de montar isso do zero."""
+    da seção acima sobre o custo de montar isso do zero.
+
+    IMPORTANTE: essa função é lenta de propósito (varre até 10 fontes x
+    150 páginas da TMDB) — NUNCA chamar direto de dentro de uma rota.
+    Quem serve o sitemap chama _filmes_sitemap_cache_ou_disparar_build()
+    abaixo, que devolve na hora e roda isso em background."""
     agora = time.time()
     if not forcar and (agora - _sitemap_filmes_cache["gerado_em"]) < _SITEMAP_CACHE_TTL:
         return _sitemap_filmes_cache["filmes"]
@@ -893,6 +901,56 @@ def _construir_indice_sitemap_filmes(forcar=False):
     return filmes
 
 
+# ── Build em background: a rota do sitemap NUNCA espera a varredura ──
+# _sitemap_building trava com um Lock pra não disparar 2 varreduras ao
+# mesmo tempo se 2 requests chegarem juntas com o cache vencido (ex.:
+# Google batendo em /sitemap-cinema.xml e /sitemap-filmes-1.xml quase
+# junto). É por-processo (não compartilhado entre workers, se houver
+# mais de um) — mesmo trade-off que o _TMDB_CACHE já assume hoje.
+_sitemap_build_lock = threading.Lock()
+_sitemap_building = False
+
+
+def _disparar_build_sitemap_em_background():
+    global _sitemap_building
+    with _sitemap_build_lock:
+        if _sitemap_building:
+            return
+        _sitemap_building = True
+
+    def _build():
+        global _sitemap_building
+        try:
+            _construir_indice_sitemap_filmes(forcar=True)
+        except Exception:
+            pass  # a próxima chamada com cache vencido tenta de novo
+        finally:
+            with _sitemap_build_lock:
+                _sitemap_building = False
+
+    threading.Thread(target=_build, daemon=True, name="sitemap-filmes-build").start()
+
+
+def _filmes_sitemap_cache_ou_disparar_build():
+    """O que toda rota de sitemap de filme deve chamar. NUNCA bloqueia:
+    se o cache tiver vencido, dispara a varredura completa em background
+    (pode levar alguns minutos) e devolve JÁ o que tiver disponível —
+    mesmo que seja a leva anterior ou, logo após o deploy, uma lista
+    vazia. Bloquear a resposta esperando a varredura terminar foi
+    exatamente o que causou o "Não foi possível ler o sitemap" no
+    Search Console: com em-cartaz + 9 streamings, uma varredura do zero
+    é lenta demais pra caber no tempo de uma request HTTP."""
+    if (time.time() - _sitemap_filmes_cache["gerado_em"]) >= _SITEMAP_CACHE_TTL:
+        _disparar_build_sitemap_em_background()
+    return _sitemap_filmes_cache["filmes"]
+
+
+# Dispara a 1ª varredura já na subida do processo (não espera alguém
+# bater no sitemap pra começar) — reduz a janela em que /sitemap-filmes-1.xml
+# responderia vazio logo depois de um deploy.
+_disparar_build_sitemap_em_background()
+
+
 _SITEMAP_FILMES_POR_PARTE = 5000
 
 
@@ -909,7 +967,7 @@ def sitemap_cinema_index():
     base_url = f"https://{request.host}"
     hoje = datetime.now(timezone.utc).strftime("%Y-%m-%d")
 
-    total = len(_construir_indice_sitemap_filmes())
+    total = len(_filmes_sitemap_cache_ou_disparar_build())
     num_partes = max(1, -(-total // _SITEMAP_FILMES_POR_PARTE))
 
     linhas = ['<?xml version="1.0" encoding="UTF-8"?>']
@@ -934,7 +992,7 @@ def sitemap_filmes_parte(parte):
     base_url = f"https://{request.host}"
     hoje = datetime.now(timezone.utc).strftime("%Y-%m-%d")
 
-    filmes = _construir_indice_sitemap_filmes()
+    filmes = _filmes_sitemap_cache_ou_disparar_build()
     inicio = (parte - 1) * _SITEMAP_FILMES_POR_PARTE
     pedaco = filmes[inicio:inicio + _SITEMAP_FILMES_POR_PARTE]
 
