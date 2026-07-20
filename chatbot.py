@@ -50,7 +50,7 @@ _MAX_RODADAS_TOOLS = 4
 # isso é só uma trava de segurança pra não deixar o payload crescer sem fim.
 _MAX_HISTORICO = 12
 
-_SYSTEM_PROMPT = """Você é o assistente virtual do site "{hub_nome}".
+_SYSTEM_PROMPT = """Você é o assistente virtual do site cinema perto de mim "{hub_nome}".
 Você ajuda visitantes com DUAS coisas, e nada além disso:
 1) Informação sobre filmes (sinopse, se está em cartaz no cinema ou em qual streaming).
 2) Informação sobre os cinemas cadastrados no site (nome, endereço, telefone, WhatsApp).
