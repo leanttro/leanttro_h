@@ -166,6 +166,19 @@ main { padding: 1.25rem; max-width: 720px; margin: 0 auto; }
 .link-diretorio:hover { background: var(--gold); color: #1a1a1a; }
 .creditos-tmdb, .creditos-justwatch { font-size: .7rem; color: var(--text-dim); opacity: .7; margin-top: .5rem; }
 
+/* ══ AVALIAÇÃO (1-5 estrelas) ══ */
+.avaliacao-cinema { margin-top: 1.75rem; padding-top: 1.5rem; border-top: 1px solid var(--border); }
+.avaliacao-cinema h2 { font-size: 1.15rem; color: #fff; margin-bottom: .6rem; }
+.avaliacao-estrelas { display: flex; gap: 6px; }
+.avaliacao-estrela {
+    background: none; border: none; cursor: pointer; padding: 2px; font-size: 1.7rem;
+    line-height: 1; color: var(--border); transition: color .15s, transform .1s;
+}
+.avaliacao-estrela:hover:not(:disabled) { transform: scale(1.15); }
+.avaliacao-estrela.preenchida { color: var(--gold); }
+.avaliacao-estrela:disabled { cursor: default; }
+.avaliacao-resumo { margin-top: .5rem; font-size: .85em; color: var(--text-dim); }
+
 /* ══ FOOTER (mesmo padrão do hub) ══ */
 footer { background: var(--bg-card-alt); border-top: 1px solid var(--border); padding: 34px 20px 20px; color: var(--text-dim); font-size: .88em; margin-top: 2rem; }
 footer .footer-cols { display: flex; flex-wrap: wrap; gap: 28px; max-width: 1200px; margin: 0 auto 20px; }
@@ -276,6 +289,18 @@ window.addEventListener('scroll', function(){ closeNavCinemas(); }, { passive: t
   {% if filme.overview %}
     <p class="sinopse">{{ filme.overview }}</p>
   {% endif %}
+
+  <div class="avaliacao-cinema" data-tipo="filme" data-referencia="{{ filme.id }}">
+    <h2>Avalie esse filme</h2>
+    <div class="avaliacao-estrelas" role="radiogroup" aria-label="Avaliação de 1 a 5 estrelas">
+      <button type="button" class="avaliacao-estrela" data-valor="1" aria-label="1 estrela">★</button>
+      <button type="button" class="avaliacao-estrela" data-valor="2" aria-label="2 estrelas">★</button>
+      <button type="button" class="avaliacao-estrela" data-valor="3" aria-label="3 estrelas">★</button>
+      <button type="button" class="avaliacao-estrela" data-valor="4" aria-label="4 estrelas">★</button>
+      <button type="button" class="avaliacao-estrela" data-valor="5" aria-label="5 estrelas">★</button>
+    </div>
+    <p class="avaliacao-resumo">Carregando avaliações…</p>
+  </div>
 
   {# Em cartaz e streaming são categorias mutuamente exclusivas aqui (ver
      esta_em_streaming calculado no cinema.py): filme que já está em
@@ -696,6 +721,95 @@ function enviarMensagemChatbot(e) {
 
     return false;
 }
+</script>
+
+<script>
+(function () {
+    // ID anônimo do navegador — gerado uma vez só e guardado no localStorage.
+    // Nenhum dado é pedido à pessoa; é isso que trava "1 voto por máquina".
+    function visitanteId() {
+        var chave = 'cinema_visitante_id';
+        var id = localStorage.getItem(chave);
+        if (!id) {
+            id = (crypto.randomUUID ? crypto.randomUUID() :
+                'v-' + Date.now() + '-' + Math.random().toString(36).slice(2));
+            localStorage.setItem(chave, id);
+        }
+        return id;
+    }
+
+    function iniciarAvaliacao(container) {
+        var tipo = container.dataset.tipo;
+        var referencia = container.dataset.referencia;
+        var botoes = container.querySelectorAll('.avaliacao-estrela');
+        var resumoEl = container.querySelector('.avaliacao-resumo');
+        var visitante = visitanteId();
+
+        function pintar(ate) {
+            botoes.forEach(function (b) {
+                b.classList.toggle('preenchida', parseInt(b.dataset.valor, 10) <= ate);
+            });
+        }
+
+        function travar(minhaNota) {
+            botoes.forEach(function (b) { b.disabled = true; });
+            pintar(minhaNota);
+        }
+
+        function textoResumo(media, total, minhaNota) {
+            var txt = (total > 0)
+                ? '⭐ ' + media.toFixed(1) + ' (' + total + ' ' + (total === 1 ? 'avaliação' : 'avaliações') + ')'
+                : 'Ainda sem avaliações — seja o primeiro a avaliar!';
+            if (minhaNota) txt += ' · Você avaliou: ' + minhaNota + '★';
+            resumoEl.textContent = txt;
+        }
+
+        fetch('/api/cinema/avaliacoes/' + tipo + '/' + encodeURIComponent(referencia) + '?visitante=' + encodeURIComponent(visitante))
+            .then(function (r) { return r.json(); })
+            .then(function (d) {
+                textoResumo(d.media || 0, d.total || 0, d.minha_nota);
+                if (d.minha_nota) travar(d.minha_nota);
+            })
+            .catch(function () { resumoEl.textContent = 'Não foi possível carregar as avaliações agora.'; });
+
+        botoes.forEach(function (botao) {
+            botao.addEventListener('mouseenter', function () {
+                if (!botao.disabled) pintar(parseInt(botao.dataset.valor, 10));
+            });
+            botao.addEventListener('mouseleave', function () {
+                if (!container.dataset.minhaNota) pintar(0);
+                else pintar(parseInt(container.dataset.minhaNota, 10));
+            });
+            botao.addEventListener('click', function () {
+                if (botao.disabled) return;
+                var nota = parseInt(botao.dataset.valor, 10);
+                botoes.forEach(function (b) { b.disabled = true; });
+                fetch('/api/cinema/avaliar', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ tipo: tipo, referencia: referencia, nota: nota, visitante: visitante }),
+                })
+                    .then(function (r) { return r.json(); })
+                    .then(function (d) {
+                        if (d.erro) {
+                            resumoEl.textContent = 'Não foi possível registrar sua avaliação.';
+                            botoes.forEach(function (b) { b.disabled = false; });
+                            return;
+                        }
+                        container.dataset.minhaNota = d.minha_nota;
+                        textoResumo(d.media || 0, d.total || 0, d.minha_nota);
+                        travar(d.minha_nota);
+                    })
+                    .catch(function () {
+                        resumoEl.textContent = 'Deu um erro de conexão. Tenta de novo em instantes.';
+                        botoes.forEach(function (b) { b.disabled = false; });
+                    });
+            });
+        });
+    }
+
+    document.querySelectorAll('.avaliacao-cinema').forEach(iniciarAvaliacao);
+})();
 </script>
 
 </body>
