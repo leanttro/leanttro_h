@@ -11,7 +11,7 @@
   gtag('config', 'G-0G6MW6PBFR');
 </script>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 
 <!-- SEO -->
 <title>{{ hub.titulo or 'Cinema Perto de Mim — Cinemas, cineclubes e salas de arte perto de mim' }}</title>
@@ -100,6 +100,7 @@ img { max-width: 100%; display: block; }
 /* Header no fluxo normal da página — rola junto com o conteúdo e some de
    vista quando o usuário desce. Nada de fixed/sticky aqui. */
 html { overflow-x: hidden; }
+body { overflow-x: hidden; max-width: 100vw; }
 body > header, header {
     background: var(--header-bg) !important; border-bottom: 1px solid var(--header-border);
     padding: 20px 24px 14px; display: flex; flex-direction: column;
