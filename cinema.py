@@ -816,6 +816,18 @@ def api_filme_detalhe(slug):
 _SITEMAP_CACHE_TTL = 6 * 3600  # 6 horas
 _sitemap_filmes_cache = {"gerado_em": 0.0, "filmes": []}
 
+
+def _eh_hub_cinema(hub):
+    """Só o hub de cinema pode gerar/expor esse sitemap — isso aqui é uma
+    plataforma multi-nicho (app.py registra vários hub_clientes, cinema é
+    só um deles). Reaproveita o mesmo mapa hub_leanttro/domínio -> prefixo
+    que o app.py já usa pra decidir categorias por nicho."""
+    from app import _PREFIXO_CATEGORIA_POR_HUB, _PREFIXO_CATEGORIA_POR_DOMINIO
+    return (
+        _PREFIXO_CATEGORIA_POR_HUB.get(hub.get("hub_leanttro")) == "cinema_"
+        or _PREFIXO_CATEGORIA_POR_DOMINIO.get(hub.get("dominio_proprio")) == "cinema_"
+    )
+
 # Teto de páginas por fonte (em-cartaz, e cada streaming). 500 é o
 # máximo que a própria TMDB aceita por consulta (/discover/movie);
 # o teto aqui é só rede de segurança contra um total_pages absurdo,
@@ -890,7 +902,8 @@ def sitemap_cinema_index():
     principal do app.py referencia — o app.py não sabe (nem precisa
     saber) quantas partes existem, só aponta pra cá."""
     from app import get_hub_by_host  # import tardio: evita ciclo de import com app.py
-    if not get_hub_by_host():
+    hub = get_hub_by_host()
+    if not hub or not _eh_hub_cinema(hub):
         return "Hub não encontrado", 404
 
     base_url = f"https://{request.host}"
@@ -914,7 +927,8 @@ def sitemap_cinema_index():
 @cinema_bp.route("/sitemap-filmes-<int:parte>.xml")
 def sitemap_filmes_parte(parte):
     from app import get_hub_by_host  # import tardio: evita ciclo de import com app.py
-    if not get_hub_by_host():
+    hub = get_hub_by_host()
+    if not hub or not _eh_hub_cinema(hub):
         return "Hub não encontrado", 404
 
     base_url = f"https://{request.host}"
