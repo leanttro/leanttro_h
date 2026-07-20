@@ -420,7 +420,7 @@ window.addEventListener('scroll', function(){ closeNavCinemas(); }, { passive: t
       <div class="carousel-track-outer">
         <div class="carousel-track" id="negocios-track">
           {% for n in negocios %}
-            <a class="negocio-card" href="/{{ n.categoria_slug }}/{{ n.slug }}/" {% if n.latitude and n.longitude %}data-lat="{{ n.latitude }}" data-lng="{{ n.longitude }}"{% endif %}>
+            <a class="negocio-card" href="/{{ n.categoria_slug }}/{{ n.slug }}/" {% if (n.lat or n.latitude) and (n.lng or n.longitude) %}data-lat="{{ n.lat or n.latitude }}" data-lng="{{ n.lng or n.longitude }}"{% endif %}>
               <div class="card-foto">
                 <img src="{{ n.foto_url or 'https://placehold.co/400x260/17171b/f5c518?text=%F0%9F%8E%9E' }}" alt="{{ n.nome }}" loading="lazy">
                 <span class="badge-cat">{{ n.categoria_nome }}</span>
@@ -446,7 +446,7 @@ window.addEventListener('scroll', function(){ closeNavCinemas(); }, { passive: t
 
     <div class="negocios-grid" id="negocios-grade" style="display:none;">
       {% for n in negocios %}
-        <a class="negocio-card" href="/{{ n.categoria_slug }}/{{ n.slug }}/" {% if n.latitude and n.longitude %}data-lat="{{ n.latitude }}" data-lng="{{ n.longitude }}"{% endif %}>
+        <a class="negocio-card" href="/{{ n.categoria_slug }}/{{ n.slug }}/" {% if (n.lat or n.latitude) and (n.lng or n.longitude) %}data-lat="{{ n.lat or n.latitude }}" data-lng="{{ n.lng or n.longitude }}"{% endif %}>
           <div class="card-foto">
             <img src="{{ n.foto_url or 'https://placehold.co/400x260/17171b/f5c518?text=%F0%9F%8E%9E' }}" alt="{{ n.nome }}" loading="lazy">
             <span class="badge-cat">{{ n.categoria_nome }}</span>
