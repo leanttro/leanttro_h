@@ -601,7 +601,7 @@ footer a:hover { text-decoration: underline; }
         </div>
       </li>
       <li><a href="/blog/">Blog</a></li>
-      <li><a href="https://wa.me/55{{ hub.whatsapp or '11913324827' }}?text=Olá,+quero+saber+mais" target="_blank" rel="noopener">Contato</a></li>
+      {% if hub.whatsapp %}<li><a href="https://wa.me/55{{ hub.whatsapp }}?text=Olá,+quero+saber+mais" target="_blank" rel="noopener">Contato</a></li>{% endif %}
     </ul>
   </nav>
   <button class="hamburger-btn" id="hamburger-btn" aria-label="Abrir menu">
@@ -623,7 +623,7 @@ footer a:hover { text-decoration: underline; }
         <div class="mobile-nav-submenu" id="mobile-nav-categorias-dropdown"></div>
       </li>
       <li><a href="/blog/" onclick="closeMobileNav()">Blog</a></li>
-      <li><a href="https://wa.me/55{{ hub.whatsapp or '11913324827' }}?text=Olá,+quero+saber+mais" target="_blank" rel="noopener" onclick="closeMobileNav()">Contato</a></li>
+      {% if hub.whatsapp %}<li><a href="https://wa.me/55{{ hub.whatsapp }}?text=Olá,+quero+saber+mais" target="_blank" rel="noopener" onclick="closeMobileNav()">Contato</a></li>{% endif %}
     </ul>
   </nav>
 </div>
@@ -640,9 +640,9 @@ footer a:hover { text-decoration: underline; }
     <img src="{{ hub.banner1_foto_url }}" alt="Publicidade"
          style="max-height:90px; width:auto; max-width:100%; border-radius:8px; margin:0 auto;">
   </a>
-  {% else %}
+  {% elif hub.whatsapp %}
   <a class="banner-placeholder"
-     href="https://wa.me/55{{ hub.whatsapp or '11913324827' }}?text=Quero+anunciar+no+AgênciaStart"
+     href="https://wa.me/55{{ hub.whatsapp }}?text=Quero+anunciar+no+AgênciaStart"
      target="_blank" rel="noopener">📣 Anuncie aqui — espaço disponível</a>
   {% endif %}
 </div>
@@ -719,11 +719,6 @@ footer a:hover { text-decoration: underline; }
         {% else %}
           {% if negocio.whatsapp and negocio.mostrar_whatsapp %}
           <a href="https://wa.me/55{{ negocio.whatsapp | replace(' ','') | replace('-','') | replace('(','') | replace(')','') }}"
-             class="btn-pf btn-pf-wpp" target="_blank" rel="noopener">
-            <i class="fab fa-whatsapp"></i> WhatsApp
-          </a>
-          {% elif hub.whatsapp %}
-          <a href="https://wa.me/55{{ hub.whatsapp | replace(' ','') | replace('-','') | replace('(','') | replace(')','') }}"
              class="btn-pf btn-pf-wpp" target="_blank" rel="noopener">
             <i class="fab fa-whatsapp"></i> WhatsApp
           </a>
@@ -999,6 +994,23 @@ footer a:hover { text-decoration: underline; }
         </div>
       </div>
 
+      <!-- Aviso: diretório automatizado + solicitação de remoção -->
+      <div class="sidebar-block" style="border:1px solid var(--medium-gray); background:#161616;">
+        <div class="sidebar-block-header">
+          <i class="fas fa-info-circle"></i> Aviso importante
+        </div>
+        <div class="sidebar-block-body">
+          <p style="font-size:0.8em; color:#999; line-height:1.6; padding:2px 4px 12px;">
+            Este cadastro foi criado de forma <strong>automatizada</strong>, a partir de dados públicos do Google Meu Negócio. O {{ hub.nome or 'AgênciaStart' }} é apenas um diretório de divulgação: <strong>não somos a empresa listada aqui</strong>, não prestamos os mesmos serviços dela e não temos vínculo comercial, societário ou de representação com ela.
+          </p>
+          <a href="https://wa.me/5511913324827?text=Olá,+quero+solicitar+a+remoção+do+negócio+{{ negocio.nome }}+({{ negocio.categoria_nome }})+cadastrado+no+AgênciaStart.+Página:+https%3A%2F%2F{{ request.host }}%2F{{ segmento }}%2F{{ negocio.slug }}%2F"
+             target="_blank" rel="noopener nofollow"
+             class="btn-pf btn-pf-outline" style="width:100%; justify-content:center; margin-top:2px;">
+            <i class="fas fa-trash-alt"></i> Solicitar remoção deste negócio
+          </a>
+        </div>
+      </div>
+
       <!-- Mini relacionados na sidebar -->
       {% if negocios_relacionados %}
       <div class="sidebar-block">
@@ -1057,9 +1069,9 @@ footer a:hover { text-decoration: underline; }
     <img src="{{ hub.banner2_foto_url }}" alt="Publicidade"
          style="max-height:120px; width:auto; max-width:100%; border-radius:8px; margin:0 auto;">
   </a>
-  {% else %}
+  {% elif hub.whatsapp %}
   <a class="banner-placeholder"
-     href="https://wa.me/55{{ hub.whatsapp or '11913324827' }}?text=Quero+anunciar+no+AgênciaStart"
+     href="https://wa.me/55{{ hub.whatsapp }}?text=Quero+anunciar+no+AgênciaStart"
      target="_blank" rel="noopener">📣 Anuncie aqui — espaço disponível</a>
   {% endif %}
 </div>
