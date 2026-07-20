@@ -95,6 +95,122 @@ def _enriquecer_filme(filme):
     return filme
 
 
+# ════════════════════════════════════════════════════════════
+#  Avaliações (1 a 5 estrelas) — filme e cinema (negócio)
+#
+#  Tabela NOVA e isolada (cinema_avaliacoes), criada sozinha pelo próprio
+#  código (CREATE TABLE IF NOT EXISTS) — não mexe em hub_negocios nem em
+#  nenhuma tabela já existente, e não precisa de migração manual: na
+#  primeira chamada de avaliação/consulta depois do deploy, a tabela já
+#  aparece. Só CREATE; em código nenhum daqui tem DROP/DELETE/TRUNCATE/
+#  ALTER — impossível apagar dado de alguém sem querer.
+#
+#  Anônimo de propósito: não tem login público no site do cinema, então
+#  o "visitante" é um ID aleatório (UUID) que o JS gera e guarda no
+#  localStorage do navegador da pessoa — nenhum dado é pedido a ela.
+#  Isso trava 1 voto por (filme/cinema, navegador): é uma barreira de
+#  "mesma máquina", não uma prova de identidade — trocar de navegador/
+#  aba anônima/dispositivo ou limpar o localStorage libera votar de novo,
+#  o que é a limitação natural de qualquer sistema sem conta de usuário.
+# ════════════════════════════════════════════════════════════
+
+_TABELA_AVALIACOES_CRIADA = False
+
+
+def _garantir_tabela_avaliacoes():
+    """Cria cinema_avaliacoes se ainda não existir. Roda de verdade só na
+    1ª vez do processo (flag em memória); depois disso as rotas nem
+    tocam nesse SQL de novo. IF NOT EXISTS garante que rodar de novo
+    (reinício do processo, deploy novo) nunca dá erro nem mexe no que
+    já tem lá."""
+    global _TABELA_AVALIACOES_CRIADA
+    if _TABELA_AVALIACOES_CRIADA:
+        return
+    from app import query  # import tardio: mesmo motivo do get_hub_by_host acima
+    query("""
+        CREATE TABLE IF NOT EXISTS cinema_avaliacoes (
+            id SERIAL PRIMARY KEY,
+            tipo TEXT NOT NULL CHECK (tipo IN ('filme', 'negocio')),
+            referencia TEXT NOT NULL,   -- tmdb_id (filme) ou id do hub_negocios (cinema)
+            visitante TEXT NOT NULL,    -- UUID anônimo gerado no navegador
+            nota SMALLINT NOT NULL CHECK (nota BETWEEN 1 AND 5),
+            criado_em TIMESTAMPTZ NOT NULL DEFAULT now(),
+            UNIQUE (tipo, referencia, visitante)
+        )
+    """, commit=True)
+    query("""
+        CREATE INDEX IF NOT EXISTS idx_cinema_avaliacoes_busca
+        ON cinema_avaliacoes (tipo, referencia)
+    """, commit=True)
+    _TABELA_AVALIACOES_CRIADA = True
+
+
+def _resumo_avaliacoes(tipo, referencia, visitante):
+    """(media, total, minha_nota) pro par tipo/referencia. minha_nota vem
+    None se esse visitante ainda não votou nesse item."""
+    from app import query
+    linha = query("""
+        SELECT COUNT(*) AS total,
+               AVG(nota)::numeric(3,2) AS media,
+               MAX(nota) FILTER (WHERE visitante = %s) AS minha_nota
+        FROM cinema_avaliacoes
+        WHERE tipo = %s AND referencia = %s
+    """, (visitante, tipo, referencia), one=True)
+    return (
+        float(linha["media"]) if linha["media"] is not None else None,
+        linha["total"],
+        linha["minha_nota"],
+    )
+
+
+@cinema_bp.route("/api/cinema/avaliacoes/<tipo>/<referencia>")
+def api_cinema_avaliacoes(tipo, referencia):
+    """Estado atual das avaliações de um filme/cinema — chamado ao abrir
+    a página, pra pintar as estrelas já preenchidas (média) e marcar se
+    esse navegador já votou."""
+    if tipo not in ("filme", "negocio"):
+        return jsonify(erro="tipo inválido"), 400
+
+    _garantir_tabela_avaliacoes()
+    visitante = (request.args.get("visitante") or "").strip()[:64]
+    media, total, minha_nota = _resumo_avaliacoes(tipo, referencia, visitante)
+    return jsonify(media=media, total=total, minha_nota=minha_nota)
+
+
+@cinema_bp.route("/api/cinema/avaliar", methods=["POST"])
+def api_cinema_avaliar():
+    """Registra 1 voto (1 a 5 estrelas) de um visitante pra um filme ou
+    cinema. ON CONFLICT DO NOTHING: se esse UUID já votou nesse item
+    antes, o voto novo é ignorado (não sobrescreve) e a resposta vem com
+    ja_votou=true mostrando a nota que já estava registrada."""
+    dados = request.get_json(silent=True) or {}
+    tipo = (dados.get("tipo") or "").strip()
+    referencia = str(dados.get("referencia") or "").strip()[:64]
+    visitante = (dados.get("visitante") or "").strip()[:64]
+    try:
+        nota = int(dados.get("nota"))
+    except (TypeError, ValueError):
+        nota = None
+
+    if tipo not in ("filme", "negocio") or not referencia or not visitante or nota not in (1, 2, 3, 4, 5):
+        return jsonify(erro="Dados inválidos"), 400
+
+    _garantir_tabela_avaliacoes()
+
+    from app import query
+    linhas_inseridas = query("""
+        INSERT INTO cinema_avaliacoes (tipo, referencia, visitante, nota)
+        VALUES (%s, %s, %s, %s)
+        ON CONFLICT (tipo, referencia, visitante) DO NOTHING
+    """, (tipo, referencia, visitante, nota), commit=True)
+
+    media, total, minha_nota = _resumo_avaliacoes(tipo, referencia, visitante)
+    return jsonify(
+        ja_votou=(linhas_inseridas == 0),
+        media=media, total=total, minha_nota=minha_nota,
+    )
+
+
 # Índice slug -> tmdb_id, em memória. Alimentado toda vez que um filme
 # passa por qualquer listagem (em cartaz, streaming, busca...), então na
 # hora de abrir /filme/<slug> a gente já sabe o id sem precisar dele na
