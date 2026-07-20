@@ -308,6 +308,25 @@ def sitemap():
         linhas.append(f"    <loc>{base_url}/sitemap-{i}.xml</loc>")
         linhas.append(f"    <lastmod>{hoje}</lastmod>")
         linhas.append("  </sitemap>")
+
+    # Filmes (/filme/<slug>) não vêm de hub_negocios — quem monta essa
+    # lista é o próprio cinema.py, direto da TMDB. Aqui só referenciamos
+    # o índice dele; ele decide sozinho quantas partes precisa.
+    #
+    # SÓ entra se o hub atual for o de cinema: isso aqui é uma plataforma
+    # multi-nicho (ver _PREFIXO_CATEGORIA_POR_HUB acima) — um hub de
+    # outro nicho (academia, restaurante etc.) não tem nada a ver com
+    # filme, e não pode ganhar um sitemap de filme no lugar dele.
+    _eh_hub_cinema = (
+        _PREFIXO_CATEGORIA_POR_HUB.get(hub.get("hub_leanttro")) == "cinema_"
+        or _PREFIXO_CATEGORIA_POR_DOMINIO.get(hub.get("dominio_proprio")) == "cinema_"
+    )
+    if _eh_hub_cinema:
+        linhas.append("  <sitemap>")
+        linhas.append(f"    <loc>{base_url}/sitemap-cinema.xml</loc>")
+        linhas.append(f"    <lastmod>{hoje}</lastmod>")
+        linhas.append("  </sitemap>")
+
     linhas.append("</sitemapindex>")
 
     return Response("\n".join(linhas), mimetype="application/xml")
