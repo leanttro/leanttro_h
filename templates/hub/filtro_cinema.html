@@ -487,6 +487,46 @@ window.addEventListener('scroll', function(){ closeNavCinemas(); }, { passive: t
   </div>
 </footer>
 
+<!-- BEGIN LEANTTRO FOOTER SEAL -->
+<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@700;900&family=Montserrat:wght@400;600&display=swap" rel="stylesheet">
+<style>
+  .leanttro-seal-wrap { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 12px; padding: 40px 16px; background: #000; font-family: 'Montserrat', sans-serif; }
+  .leanttro-seal-label { color: rgba(255,255,255,0.4); font-size: 0.7rem; letter-spacing: 3px; text-transform: uppercase; }
+  .leanttro-seal-link { text-decoration: none; display: inline-block; transition: transform 0.3s ease, filter 0.3s ease; }
+  .leanttro-seal-link:hover { transform: scale(1.06); filter: brightness(1.2); }
+  .leanttro-seal { position: relative; width: 300px; height: 190px; }
+  .leanttro-seal svg { width: 100%; height: 100%; overflow: visible; }
+  .leanttro-seal-glow { position: absolute; inset: 0; background: radial-gradient(ellipse 55% 60% at 50% 52%, rgba(255,200,80,0.55) 0%, rgba(212,150,30,0.25) 45%, transparent 75%); filter: blur(10px); z-index: 0; }
+  .leanttro-seal-logo-wrap { position: relative; z-index: 1; display: flex; align-items: center; justify-content: center; }
+  .leanttro-seal-logo-wrap img { max-width: 260px; width: 100%; height: auto; display: block; filter: brightness(0) invert(1); }
+  .leanttro-seal-ring { fill: none; }
+  .leanttro-seal-ring-text { font-family: 'Cinzel', serif; font-size: 9.5px; letter-spacing: 3px; fill: #D4AF37; text-transform: uppercase; }
+</style>
+<div class="leanttro-seal-wrap">
+  <span class="leanttro-seal-label">Desenvolvido por</span>
+  <a href="https://www.leanttro.com" target="_blank" rel="noopener noreferrer" class="leanttro-seal-link" aria-label="Site da Leanttro Tecnologia">
+    <div class="leanttro-seal">
+      <div class="leanttro-seal-glow"></div>
+      <svg viewBox="0 0 300 190">
+        <defs>
+          <path id="leanttroRing" class="leanttro-seal-ring" d="M 150,20 A 130,75 0 1 1 149.9,20 Z" />
+        </defs>
+        <text class="leanttro-seal-ring-text">
+          <textPath href="#leanttroRing" startOffset="0%">
+            &#8226; BEST PICTURE &#8226; BEST DIRECTOR &#8226; BEST ACTOR &#8226; THE ACADEMY AWARDS &#8226; 2026 &#8226; BEST ACTRESS
+          </textPath>
+        </text>
+        <foreignObject x="10" y="65" width="280" height="70">
+          <div xmlns="http://www.w3.org/1999/xhtml" class="leanttro-seal-logo-wrap">
+            <img src="https://res.cloudinary.com/dzcaxmbjn/image/upload/v1773591878/presentes_180_x_50_px_720_x_200_px_1440_x_264_px_1_azuhgq.png" alt="Leanttro">
+          </div>
+        </foreignObject>
+      </svg>
+    </div>
+  </a>
+</div>
+<!-- END LEANTTRO FOOTER SEAL -->
+
 {% if filtro_tipo == 'categoria' and categorias | length > 1 %}
 <script>
 // ══════════════════════════════════════════════════════════════════
