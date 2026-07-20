@@ -2268,6 +2268,12 @@ document.addEventListener('click', function(e) {
     @media (max-width: 480px) {
         #chatbot-panel { width: calc(100vw - 32px); left: 16px; bottom: 84px; max-height: 60vh; }
         #chatbot-btn { bottom: 16px; left: 16px; }
+        /* iOS dá zoom automático em inputs com font-size menor que 16px ao focar.
+           Forçamos 16px só aqui (mobile) pra travar o zoom sem mudar o visual no desktop. */
+        .cb-input-row input { font-size: 16px; }
+        /* Trava o scroll/posição da página enquanto o chat está aberto no mobile,
+           evitando o "pulo"/zoom visual quando o teclado abre. */
+        body.cb-open { position: fixed; width: 100%; overflow: hidden; }
     }
 </style>
 
@@ -2276,11 +2282,21 @@ var _cbHistorico = [];
 var _cbAberto = false;
 var _cbEnviando = false;
 
+var _cbScrollY = 0;
+
 function toggleChatbot() {
     _cbAberto = !_cbAberto;
     document.getElementById('chatbot-panel').classList.toggle('open', _cbAberto);
+
     if (_cbAberto) {
+        _cbScrollY = window.scrollY || window.pageYOffset || 0;
+        document.body.classList.add('cb-open');
+        document.body.style.top = (-_cbScrollY) + 'px';
         setTimeout(function () { document.getElementById('cb-input').focus(); }, 50);
+    } else {
+        document.body.classList.remove('cb-open');
+        document.body.style.top = '';
+        window.scrollTo(0, _cbScrollY);
     }
 }
 
