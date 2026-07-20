@@ -15,13 +15,13 @@
 #  não o Bearer token v4 — é a mais simples de usar em query string).
 # ════════════════════════════════════════════════════════════
 
-from flask import Blueprint, render_template, request, jsonify
+from flask import Blueprint, render_template, request, jsonify, Response
 import os
 import re
 import time
 import unicodedata
 import requests
-from datetime import date, timedelta
+from datetime import date, timedelta, datetime, timezone
 
 cinema_bp = Blueprint("cinema", __name__)
 
@@ -796,3 +796,155 @@ def api_filme_detalhe(slug):
             for p in providers_br.get("flatrate", [])
         ],
     )
+
+
+# ════════════════════════════════════════════════════════════
+#  SITEMAP — todo filme que aparece em /em-cartaz ou em algum
+#  /nao-quer-sair-de-casa/<provedor> ganha aqui uma <url> pra
+#  /filme/<slug>. O /sitemap.xml principal (app.py) só referencia
+#  o índice daqui embaixo — quem monta a lista de filmes é este
+#  arquivo, não o app.py.
+#
+#  Por que cacheado por horas (e não por request, como o resto da
+#  TMDB aqui): montar essa lista varre página por página o
+#  em-cartaz + o catálogo de CADA streaming curado — pode ser
+#  bem mais que as ~30-40 chamadas de uma página normal do site.
+#  A 1ª geração depois do cache vencer fica mais lenta; as
+#  seguintes usam o resultado pronto.
+# ════════════════════════════════════════════════════════════
+
+_SITEMAP_CACHE_TTL = 6 * 3600  # 6 horas
+_sitemap_filmes_cache = {"gerado_em": 0.0, "filmes": []}
+
+# Teto de páginas por fonte (em-cartaz, e cada streaming). 500 é o
+# máximo que a própria TMDB aceita por consulta (/discover/movie);
+# o teto aqui é só rede de segurança contra um total_pages absurdo,
+# não uma limitação artificial — a ideia é varrer TUDO que existir.
+_SITEMAP_MAX_PAGINAS_POR_FONTE = 500
+
+
+def _coletar_pra_sitemap(params_base):
+    """Varre /discover/movie com os params dados, página por página, até
+    acabar o catálogo da fonte ou bater o teto de segurança. Cada
+    página individual já passa pelo cache de 30min do _tmdb_get, então
+    reprocessar isso pouco depois (ex.: 2 fontes que compartilham
+    filme) não bate na TMDB de novo."""
+    filmes = []
+    pagina = 1
+    total_paginas = 1
+    while pagina <= min(total_paginas, _SITEMAP_MAX_PAGINAS_POR_FONTE):
+        dados, erro = _tmdb_get("/discover/movie", dict(params_base, page=pagina))
+        if erro or not dados:
+            break
+        total_paginas = min(dados.get("total_pages", 1), 500)
+        filmes.extend(dados.get("results", []))
+        pagina += 1
+    return filmes
+
+
+def _construir_indice_sitemap_filmes(forcar=False):
+    """Lista completa (sem repetir tmdb_id) de todo filme que tem
+    página própria indicável no site: em-cartaz + catálogo de cada
+    streaming curado. Cacheada por _SITEMAP_CACHE_TTL — ver comentário
+    da seção acima sobre o custo de montar isso do zero."""
+    agora = time.time()
+    if not forcar and (agora - _sitemap_filmes_cache["gerado_em"]) < _SITEMAP_CACHE_TTL:
+        return _sitemap_filmes_cache["filmes"]
+
+    vistos = {}
+
+    hoje = date.today()
+    params_em_cartaz = {
+        "region": "BR",
+        "with_release_type": "2|3",
+        "primary_release_date.gte": (hoje - timedelta(days=45)).isoformat(),
+        "primary_release_date.lte": hoje.isoformat(),
+        "sort_by": "popularity.desc",
+        "include_adult": "false",
+    }
+    for f in _coletar_pra_sitemap(params_em_cartaz):
+        vistos[f["id"]] = f
+
+    for provedor in _provedores_curados():
+        params_provedor = {
+            "watch_region": "BR",
+            "with_watch_providers": provedor["id"],
+            "sort_by": "popularity.desc",
+            "include_adult": "false",
+        }
+        for f in _coletar_pra_sitemap(params_provedor):
+            vistos[f["id"]] = f
+
+    filmes = [_enriquecer_filme(f) for f in vistos.values()]
+    _sitemap_filmes_cache["filmes"] = filmes
+    _sitemap_filmes_cache["gerado_em"] = agora
+    return filmes
+
+
+_SITEMAP_FILMES_POR_PARTE = 5000
+
+
+@cinema_bp.route("/sitemap-cinema.xml")
+def sitemap_cinema_index():
+    """Índice dos sitemaps de filme. É essa URL que o /sitemap.xml
+    principal do app.py referencia — o app.py não sabe (nem precisa
+    saber) quantas partes existem, só aponta pra cá."""
+    from app import get_hub_by_host  # import tardio: evita ciclo de import com app.py
+    if not get_hub_by_host():
+        return "Hub não encontrado", 404
+
+    base_url = f"https://{request.host}"
+    hoje = datetime.now(timezone.utc).strftime("%Y-%m-%d")
+
+    total = len(_construir_indice_sitemap_filmes())
+    num_partes = max(1, -(-total // _SITEMAP_FILMES_POR_PARTE))
+
+    linhas = ['<?xml version="1.0" encoding="UTF-8"?>']
+    linhas.append('<sitemapindex xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">')
+    for i in range(1, num_partes + 1):
+        linhas.append("  <sitemap>")
+        linhas.append(f"    <loc>{base_url}/sitemap-filmes-{i}.xml</loc>")
+        linhas.append(f"    <lastmod>{hoje}</lastmod>")
+        linhas.append("  </sitemap>")
+    linhas.append("</sitemapindex>")
+
+    return Response("\n".join(linhas), mimetype="application/xml")
+
+
+@cinema_bp.route("/sitemap-filmes-<int:parte>.xml")
+def sitemap_filmes_parte(parte):
+    from app import get_hub_by_host  # import tardio: evita ciclo de import com app.py
+    if not get_hub_by_host():
+        return "Hub não encontrado", 404
+
+    base_url = f"https://{request.host}"
+    hoje = datetime.now(timezone.utc).strftime("%Y-%m-%d")
+
+    filmes = _construir_indice_sitemap_filmes()
+    inicio = (parte - 1) * _SITEMAP_FILMES_POR_PARTE
+    pedaco = filmes[inicio:inicio + _SITEMAP_FILMES_POR_PARTE]
+
+    if not pedaco:
+        return "Não encontrado", 404
+
+    def fmt_date(val):
+        return val[:10] if val else hoje
+
+    def gerar():
+        yield '<?xml version="1.0" encoding="UTF-8"?>\n'
+        yield '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n'
+        for f in pedaco:
+            slug = f.get("slug")
+            if not slug:
+                continue
+            yield (
+                "  <url>\n"
+                f"    <loc>{base_url}/filme/{slug}</loc>\n"
+                f"    <lastmod>{fmt_date(f.get('release_date'))}</lastmod>\n"
+                "    <changefreq>monthly</changefreq>\n"
+                "    <priority>0.6</priority>\n"
+                "  </url>\n"
+            )
+        yield "</urlset>"
+
+    return Response(gerar(), mimetype="application/xml")
