@@ -20,6 +20,38 @@ app.url_map.strict_slashes = False
 
 DOMINIO_BASE = os.getenv("DOMINIO_BASE", "leanttro.com")
 
+# ── Canonicalização: domínio próprio SEMPRE com www ────────────
+# Roda antes de QUALQUER rota (inclusive as do cinema_bp e chatbot_bp,
+# registrados mais abaixo) — não precisa listar hub por hub, nem mexer
+# de novo aqui quando um hub novo com domínio próprio entrar no ar.
+#
+# Só mexe em domínio próprio (ex.: cinemapertodemim.com.br). Subdomínio
+# do leanttro (ex.: cinema.leanttro.com) nunca teve www e continua sem
+# redirect nenhum — só entraria aqui um "www.<hub>.leanttro.com", que já
+# termina em ".{DOMINIO_BASE}" e é ignorado pela condição abaixo.
+#
+# Isso resolve pra QUALQUER sitemap: como o sitemap.xml/sitemap-N.xml
+# monta as URLs com request.host, e agora todo mundo só chega nessas
+# rotas já pela versão com www (o sem-www redireciona ANTES de a rota
+# rodar), as URLs dentro do sitemap saem sempre consistentes com www —
+# não muda comportamento nenhum de hub que já não tenha domínio próprio.
+@app.before_request
+def _forcar_www_dominio_proprio():
+    host = request.host.split(":")[0].lower()
+
+    if (
+        host.startswith("www.")
+        or host == DOMINIO_BASE
+        or host.endswith(f".{DOMINIO_BASE}")
+        or host in ("localhost", "127.0.0.1")
+        or "." not in host  # host tipo "localhost" sem porta, IP interno etc.
+    ):
+        return  # já é www, é subdomínio interno, ou é ambiente local — nada a fazer
+
+    novo_url = request.url.replace(f"//{host}", f"//www.{host}", 1)
+    return redirect(novo_url, code=301)
+
+
 # campos de texto livre que sofrem de grafias inconsistentes (maiúscula/minúscula, acento, espaços)
 CAMPOS_NORMALIZAVEIS = {"bairro", "cidade"}
 
