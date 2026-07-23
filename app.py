@@ -20,36 +20,30 @@ app.url_map.strict_slashes = False
 
 DOMINIO_BASE = os.getenv("DOMINIO_BASE", "leanttro.com")
 
-# ── Canonicalização: domínio próprio SEMPRE com www ────────────
-# Roda antes de QUALQUER rota (inclusive as do cinema_bp e chatbot_bp,
-# registrados mais abaixo) — não precisa listar hub por hub, nem mexer
-# de novo aqui quando um hub novo com domínio próprio entrar no ar.
+# ── Canonicalização de host: NÃO força www em ninguém ──────────
+# Subdomínio do leanttro (ex.: cinema.leanttro.com) nunca teve www e
+# continua sem redirect nenhum, como sempre foi.
 #
-# Só mexe em domínio próprio (ex.: cinemapertodemim.com.br). Subdomínio
-# do leanttro (ex.: cinema.leanttro.com) nunca teve www e continua sem
-# redirect nenhum — só entraria aqui um "www.<hub>.leanttro.com", que já
-# termina em ".{DOMINIO_BASE}" e é ignorado pela condição abaixo.
+# Domínio próprio (ex.: soscorporativa.com.br / indica.soscorporativa.com.br):
+# antes a gente forçava redirect 301 pra "www.<dominio>" achando que isso
+# deixava as URLs do sitemap mais "bonitas" e consistentes. O problema é
+# que a gente NÃO controla o DNS do cliente — muita gente só cadastra o
+# registro sem www (ou só com www), e forçar a outra forma faz o navegador
+# tentar resolver um host que nem existe no DNS, derrubando o site inteiro
+# pro visitante (nem chega a dar erro 301, dá erro de DNS antes disso).
 #
-# Isso resolve pra QUALQUER sitemap: como o sitemap.xml/sitemap-N.xml
-# monta as URLs com request.host, e agora todo mundo só chega nessas
-# rotas já pela versão com www (o sem-www redireciona ANTES de a rota
-# rodar), as URLs dentro do sitemap saem sempre consistentes com www —
-# não muda comportamento nenhum de hub que já não tenha domínio próprio.
+# Por isso agora NÃO redirecionamos entre www <-> sem-www em hipótese
+# nenhuma: o site responde do jeito que o visitante digitou/o DNS resolveu.
+# get_hub_by_host() já ignora www ao buscar o hub no banco, então tanto faz
+# a forma que o request chegar — funciona igual. As URLs do sitemap saem
+# consistentes com request.host de cada domínio próprio (com ou sem www,
+# conforme o cliente configurou), o que é o comportamento correto aqui.
 @app.before_request
-def _forcar_www_dominio_proprio():
-    host = request.host.split(":")[0].lower()
-
-    if (
-        host.startswith("www.")
-        or host == DOMINIO_BASE
-        or host.endswith(f".{DOMINIO_BASE}")
-        or host in ("localhost", "127.0.0.1")
-        or "." not in host  # host tipo "localhost" sem porta, IP interno etc.
-    ):
-        return  # já é www, é subdomínio interno, ou é ambiente local — nada a fazer
-
-    novo_url = request.url.replace(f"//{host}", f"//www.{host}", 1)
-    return redirect(novo_url, code=301)
+def _canonicalizar_host():
+    # Sem redirect de www: mantido só como hook central caso surja outra
+    # regra de canonicalização de host no futuro (ex.: http->https, se o
+    # proxy na frente não cuidar disso).
+    return
 
 
 # campos de texto livre que sofrem de grafias inconsistentes (maiúscula/minúscula, acento, espaços)
