@@ -44,6 +44,11 @@ loteria_bp = Blueprint("loteria", __name__)
 
 CAIXA_BASE_URL = "https://servicebus2.caixa.gov.br/portaldeloterias/api"
 
+# Espelho de terceiros usado como FALLBACK quando a Caixa não responde
+# direto (ver _buscar_do_espelho mais abaixo) — API pública bem estabelecida,
+# usada por dezenas de projetos open source (loteriascaixa-api).
+_ESPELHO_BASE_URL = "https://loteriascaixa-api.herokuapp.com/api"
+
 # ── Jogos suportados ────────────────────────────────────────────
 # chave = slug usado nas nossas URLs (/resultados/<jogo>/)
 # "caixa"  = nome do jogo na URL da API da Caixa (sem hífen)
@@ -156,15 +161,25 @@ def _parse_data_caixa(texto):
 # curto e captura ampla de exceção, pra nunca derrubar a página por
 # causa de instabilidade dela.
 
-def _caixa_get(jogo_caixa, concurso=None):
-    """GET na API da Caixa. concurso=None busca o último resultado
-    disponível. Retorna (dados, erro); erro é string legível em caso
-    de falha, None em caso de sucesso.
+# ── Cliente da API da Caixa ──────────────────────────────────────
+# Não é API oficialmente documentada como pública — por isso timeout
+# curto e captura ampla de exceção, pra nunca derrubar a página por
+# causa de instabilidade dela.
+#
+# DESCOBERTA (26/07/2026): a Caixa bloqueia (403) requisições vindas de
+# IP fora do Brasil — não é sobre header/User-Agent (confirmado: persiste
+# mesmo simulando navegador). Servidores de hospedagem fora do Brasil
+# (ex.: Railway, que roda nos EUA) sempre vão tomar 403 daqui. Por isso
+# existe o fallback pro espelho logo abaixo — ele é quem efetivamente
+# fala com a Caixa a partir de infraestrutura própria, e nós só
+# consumimos o resultado já processado.
 
-    IMPORTANTE: a API bloqueia (403) requisições com o User-Agent padrão
-    do requests/Python — trata como bot. Por isso simulamos um navegador
-    de verdade nos headers abaixo. Sem isso, TODA chamada falha com 403,
-    mesmo a URL/formato estando certos."""
+def _buscar_da_caixa(jogo_caixa, concurso=None):
+    """Tentativa DIRETA na API oficial da Caixa. Só funciona se o
+    servidor estiver com IP do Brasil — ver nota acima. Mantida como
+    1ª tentativa de propósito: se um dia a hospedagem mudar pra uma
+    com IP brasileiro, volta a funcionar sozinha, sem precisar mexer
+    em mais nada."""
     url = f"{CAIXA_BASE_URL}/{jogo_caixa}"
     if concurso is not None:
         url += f"/{concurso}"
@@ -185,6 +200,70 @@ def _caixa_get(jogo_caixa, concurso=None):
     if not dados or dados.get("numero") is None:
         return None, "Resposta inesperada da API da Caixa"
     return dados, None
+
+
+def _adaptar_espelho_para_formato_caixa(d):
+    """O espelho (loteriascaixa-api) devolve um JSON com nomes de campo
+    DIFERENTES da Caixa (concurso/data/dezenas/premiacoes/acumulou, em vez
+    de numero/dataApuracao/listaDezenas/listaRateioPremio/acumulado).
+    Aqui a gente converte pro formato da Caixa — assim todo o resto do
+    arquivo (templates, gravação no banco) nem percebe de onde veio o
+    dado, sempre trabalha com as mesmas chaves."""
+    premiacoes = d.get("premiacoes") or []
+    return {
+        "numero": d.get("concurso"),
+        "dataApuracao": d.get("data"),
+        "dataProximoConcurso": d.get("dataProximoConcurso"),
+        "listaDezenas": d.get("dezenas"),
+        "dezenasSorteadasOrdemSorteio": d.get("dezenasOrdemSorteio") or d.get("dezenas"),
+        "acumulado": bool(d.get("acumulou")),
+        "valorArrecadado": d.get("valorArrecadado"),
+        "valorEstimadoProximoConcurso": d.get("valorEstimadoProximoConcurso"),
+        "valorAcumuladoProximoConcurso": d.get("valorAcumuladoProximoConcurso"),
+        "nomeMunicipioUFSorteio": d.get("local"),
+        "listaRateioPremio": [
+            {
+                "descricaoFaixa": p.get("descricao"),
+                "faixa": p.get("faixa"),
+                "numeroDeGanhadores": p.get("ganhadores"),
+                "valorPremio": p.get("valorPremio"),
+            }
+            for p in premiacoes
+        ],
+    }
+
+
+def _buscar_do_espelho(jogo_caixa, concurso=None):
+    """Fallback quando a Caixa direta falha (403 por IP fora do Brasil,
+    instabilidade, etc.). Usa um espelho de terceiros bem estabelecido
+    (loteriascaixa-api, usado por dezenas de projetos open source),
+    que já resolve esse mesmo bloqueio geográfico do lado dele."""
+    url = f"{_ESPELHO_BASE_URL}/{jogo_caixa}/" + (str(concurso) if concurso is not None else "latest")
+    try:
+        resp = requests.get(url, timeout=8)
+        resp.raise_for_status()
+        bruto = resp.json()
+    except requests.RequestException as e:
+        return None, str(e)
+    if not bruto or bruto.get("concurso") is None:
+        return None, "Resposta inesperada do espelho"
+    return _adaptar_espelho_para_formato_caixa(bruto), None
+
+
+def _caixa_get(jogo_caixa, concurso=None):
+    """Ponto único chamado pelo resto do arquivo. Tenta a Caixa direto
+    primeiro; se falhar (por qualquer motivo), cai pro espelho antes de
+    desistir. Retorna (dados, erro) sempre no formato da Caixa."""
+    dados, erro_caixa = _buscar_da_caixa(jogo_caixa, concurso)
+    if dados:
+        return dados, None
+
+    print(f"[loteria] Caixa direta falhou pra {jogo_caixa} ({erro_caixa}); tentando espelho...")
+    dados, erro_espelho = _buscar_do_espelho(jogo_caixa, concurso)
+    if dados:
+        return dados, None
+
+    return None, f"Caixa: {erro_caixa} | Espelho: {erro_espelho}"
 
 
 def _normalizar_para_gravar(jogo_slug, dados_caixa):
