@@ -65,6 +65,28 @@ nav.desktop-nav ul li a:hover { background: var(--primary-dark); }
 .pagina-header h1 { font-size: 1.5em; color: var(--primary-dark); }
 .pagina-header .dias { color: var(--text-dim); font-size: .9em; margin-top: 4px; }
 
+/* ══ BUSCA REAL (lotérica / cidade / concurso) ══ */
+.busca-real { position: relative; width: 100%; max-width: 480px; margin: 16px auto 0; }
+.busca-real i.busca-icone { position: absolute; left: 16px; top: 50%; transform: translateY(-50%); color: var(--text-dim); pointer-events: none; }
+.busca-real input {
+    width: 100%; padding: 13px 16px 13px 44px; border: 1.5px solid var(--border); border-radius: 12px;
+    font-family: inherit; font-size: .92em; outline: none; background: var(--bg-card); color: var(--text);
+    transition: border-color .2s; box-shadow: 0 2px 10px rgba(3,81,5,0.06);
+}
+.busca-real input:focus { border-color: var(--primary); }
+.busca-dropdown {
+    display: none; position: absolute; top: calc(100% + 8px); left: 0; right: 0; background: var(--bg-card);
+    border: 1px solid var(--border); border-radius: 12px; box-shadow: 0 10px 30px rgba(0,0,0,.15);
+    max-height: 360px; overflow-y: auto; z-index: 200; text-align: left;
+}
+.busca-dropdown.open { display: block; }
+.busca-grupo-titulo { padding: 10px 16px 4px; font-size: .7em; font-weight: 700; text-transform: uppercase; letter-spacing: .04em; color: var(--text-dim); }
+.busca-item { display: flex; align-items: center; gap: 10px; padding: 10px 16px; font-size: .9em; color: var(--text); }
+.busca-item:hover { background: var(--bg); }
+.busca-item i { color: var(--primary); width: 16px; text-align: center; flex-shrink: 0; }
+.busca-item small { display: block; color: var(--text-dim); font-size: .8em; margin-top: 1px; }
+.busca-vazio, .busca-carregando { padding: 18px 16px; text-align: center; color: var(--text-dim); font-size: .88em; }
+
 .card-resultado {
     background: var(--bg-card); border: 1px solid var(--border); border-radius: 16px;
     margin: 20px 0; padding: 24px 20px; text-align: center;
@@ -128,6 +150,13 @@ footer a { color: #fff; }
   </div>
   <h1>Resultado da {{ jogo.nome }} — Concurso {{ resultado.numero }}</h1>
   <div class="dias">Sorteios {{ jogo.dias }}</div>
+
+  <div class="busca-real" id="busca-real">
+    <i class="fas fa-search busca-icone"></i>
+    <input type="text" id="busca-input" placeholder="Buscar lotérica, cidade ou outro concurso (ex: Quina 6700)…"
+           autocomplete="off" oninput="buscaOnInput(this.value)" onfocus="buscaOnFocus()">
+    <div class="busca-dropdown" id="busca-dropdown"></div>
+  </div>
 </div>
 
 <div class="container">
@@ -193,6 +222,106 @@ footer a { color: #fff; }
 {% endif %}
 
 <footer>&copy; {{ hub.nome or 'Lotérica Perto de Mim' }} — todos os direitos reservados. Resultados oficiais: Caixa Econômica Federal.</footer>
+
+{# Lista dos jogos pro JS da barra de busca reconhecer "Quina 6700" etc. #}
+<script>
+const JOGOS_BUSCA = [
+  {% for slug, info_jogo in jogos_menu.items() if jogos_menu is defined %}{ slug: {{ slug | tojson }}, nome: {{ info_jogo.nome | tojson }} },{% endfor %}
+];
+
+function _normalizarBusca(s) {
+  return (s || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().trim();
+}
+
+function _escapeHtmlBusca(s) {
+  return (s || '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+}
+
+let _buscaTimer = null;
+let _buscaAbort = null;
+
+function buscaOnFocus() {
+  const val = document.getElementById('busca-input').value;
+  if (val.trim().length >= 2) buscaOnInput(val);
+}
+
+function buscaOnInput(valor) {
+  clearTimeout(_buscaTimer);
+  const dropdown = document.getElementById('busca-dropdown');
+  const termo = valor.trim();
+  if (termo.length < 2) {
+    dropdown.classList.remove('open');
+    dropdown.innerHTML = '';
+    return;
+  }
+  _buscaTimer = setTimeout(() => _executarBusca(termo), 300);
+}
+
+function _matchConcurso(termo) {
+  const numeroMatch = termo.match(/(\d{2,6})/);
+  if (!numeroMatch) return null;
+  const numero = numeroMatch[1];
+  const textoSemNumero = _normalizarBusca(termo.replace(numero, ''));
+  if (!textoSemNumero) return null;
+  const jogo = JOGOS_BUSCA.find(j => {
+    const nomeNorm = _normalizarBusca(j.nome);
+    return nomeNorm.includes(textoSemNumero) || nomeNorm.replace(/-/g, ' ').includes(textoSemNumero);
+  });
+  if (!jogo) return null;
+  return { jogo, numero };
+}
+
+async function _executarBusca(termo) {
+  const dropdown = document.getElementById('busca-dropdown');
+  dropdown.classList.add('open');
+  dropdown.innerHTML = '<div class="busca-carregando"><i class="fas fa-spinner fa-spin"></i> Buscando…</div>';
+
+  if (_buscaAbort) _buscaAbort.abort();
+  _buscaAbort = new AbortController();
+
+  let html = '';
+
+  const concurso = _matchConcurso(termo);
+  if (concurso) {
+    html += '<div class="busca-grupo-titulo">Concurso</div>';
+    html += `<a class="busca-item" href="/resultados/${concurso.jogo.slug}/${concurso.numero}/">
+      <i class="fas fa-ticket"></i>
+      <span>Concurso ${concurso.numero} — ${_escapeHtmlBusca(concurso.jogo.nome)}</span>
+    </a>`;
+  }
+
+  let negocios = [];
+  try {
+    const resp = await fetch('/api/hub/negocios?q=' + encodeURIComponent(termo) + '&limit=6', { signal: _buscaAbort.signal });
+    if (resp.ok) negocios = await resp.json();
+  } catch (e) { /* aborted ou sem rede — sem problema, segue com o que já tem */ }
+
+  if (negocios.length) {
+    html += '<div class="busca-grupo-titulo">Lotéricas</div>';
+    negocios.forEach(n => {
+      const url = `/${n.categoria_slug || 'loterica'}/${n.slug}/`;
+      const local = [n.cidade, n.bairro].filter(Boolean).join(', ');
+      html += `<a class="busca-item" href="${url}">
+        <i class="fas fa-store"></i>
+        <span>${_escapeHtmlBusca(n.nome)}${local ? '<small>' + _escapeHtmlBusca(local) + '</small>' : ''}</span>
+      </a>`;
+    });
+  }
+
+  if (!html) {
+    html = '<div class="busca-vazio">Nada encontrado. Tente outro nome, cidade ou "Quina 6700".</div>';
+  }
+
+  dropdown.innerHTML = html;
+}
+
+document.addEventListener('click', function(e) {
+  const wrap = document.getElementById('busca-real');
+  if (wrap && !wrap.contains(e.target)) {
+    document.getElementById('busca-dropdown').classList.remove('open');
+  }
+});
+</script>
 
 </body>
 </html>
