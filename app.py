@@ -2270,6 +2270,7 @@ def api_negocios():
     categoria = request.args.get("categoria")
     bairro    = request.args.get("bairro")
     cidade    = request.args.get("cidade")
+    q         = request.args.get("q", "").strip()
     # Categorias com volume muito maior que a média (ex.: pontos de ônibus, que
     # numa cidade grande passam de milhares de registros). Pra essas, o corte de
     # 200 em ordem alfabética escondia o resultado mais próximo de verdade —
@@ -2300,6 +2301,13 @@ def api_negocios():
     if bairro:
         sql += " AND n.bairro = ANY(%s)"
         params.append(_variantes_bairro(hub["id"], bairro, cidade_var))
+    if q:
+        # Busca livre pra barra de pesquisa pública: nome OU cidade OU bairro,
+        # sem precisar bater exato (diferente do filtro `cidade`/`bairro` acima,
+        # que são pra clique em card/link e exigem variante normalizada).
+        sql += " AND (n.nome ILIKE %s OR n.cidade ILIKE %s OR n.bairro ILIKE %s)"
+        termo = f"%{q}%"
+        params += [termo, termo, termo]
     sql += " ORDER BY n.nome LIMIT %s OFFSET %s"
     params += [limit, offset]
     negocios = query(sql, params)
