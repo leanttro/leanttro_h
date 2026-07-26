@@ -56,10 +56,14 @@ _ESPELHO_BASE_URL = "https://loteriascaixa-api.herokuapp.com/api"
 # "dias"   = texto informativo dos dias de sorteio (não crítico,
 #            é só copy de página — a Caixa pode alterar a agenda)
 JOGOS = {
-    "mega-sena": {"caixa": "megasena",  "nome": "Mega-Sena",  "dias": "quartas e sábados"},
-    "quina":     {"caixa": "quina",     "nome": "Quina",      "dias": "de segunda a sábado"},
-    "lotofacil": {"caixa": "lotofacil", "nome": "Lotofácil",  "dias": "de segunda a sábado"},
-    "lotomania": {"caixa": "lotomania", "nome": "Lotomania",  "dias": "segundas e quintas-feiras"},
+    # ⚠️ Dias atualizados conforme mudança oficial da Caixa em 19/07/2026:
+    # os sorteios que caíam aos sábados passaram pra domingo (11h). Se a
+    # Caixa mudar de novo, é só ajustar o texto "dias" aqui — não afeta
+    # nenhuma lógica, é só copy exibido na página.
+    "mega-sena": {"caixa": "megasena",  "nome": "Mega-Sena",  "dias": "terças, quintas e domingos"},
+    "quina":     {"caixa": "quina",     "nome": "Quina",      "dias": "diariamente, exceto sábados"},
+    "lotofacil": {"caixa": "lotofacil", "nome": "Lotofácil",  "dias": "diariamente, exceto sábados"},
+    "lotomania": {"caixa": "lotomania", "nome": "Lotomania",  "dias": "segundas, quartas e sextas-feiras"},
 }
 
 
@@ -106,6 +110,13 @@ _SQL_UPSERT = """
         valor_estimado_proximo  = EXCLUDED.valor_estimado_proximo,
         dados_json              = EXCLUDED.dados_json,
         atualizado_em           = now()
+    WHERE
+        -- nunca deixa um write AUTOMÁTICO (Caixa/espelho/backfill) sobrescrever
+        -- uma linha marcada como preenchida manualmente pelo admin (ver seção
+        -- ADMIN mais abaixo). Só um novo save manual (que também vem com
+        -- _manual=true) pode sobrescrever um manual já existente.
+        COALESCE(NULLIF(loteria_resultados.dados_json, '')::jsonb ->> '_manual', 'false') <> 'true'
+        OR COALESCE(NULLIF(EXCLUDED.dados_json, '')::jsonb ->> '_manual', 'false') = 'true'
 """
 
 
@@ -365,16 +376,32 @@ def _resultado_mais_recente(jogo_slug, jogo_caixa):
     if item and (agora - item[0]) < _CACHE_ULTIMO_TTL:
         return item[1], None
 
+    # Vê se existe um preenchimento MANUAL salvo pro último concurso do banco
+    # (ver seção ADMIN mais abaixo). Se existir, ele só perde pra API quando a
+    # API devolver um concurso MAIS NOVO que o manual — assim o admin não
+    # precisa fazer nada quando a Caixa/espelho finalmente atualizar.
+    linha_banco = query_loteria(_SQL_SELECT_ULTIMO, (jogo_slug,), one=True)
+    override_manual = None
+    if linha_banco:
+        bruto_banco = _linha_banco_para_template(dict(linha_banco))
+        if bruto_banco.get("_manual"):
+            override_manual = bruto_banco
+
     dados, erro = _caixa_get(jogo_caixa)
     if dados:
+        concurso_api = dados.get("numero") or 0
+        concurso_manual = (override_manual or {}).get("numero") or 0
+        if override_manual and concurso_manual >= concurso_api:
+            _CACHE_ULTIMO[jogo_slug] = (agora, override_manual)
+            return override_manual, None
         _salvar_resultado(jogo_slug, dados)
         _CACHE_ULTIMO[jogo_slug] = (agora, dados)
         return dados, None
 
     print(f"[loteria] Caixa indisponível pra {jogo_caixa} ({jogo_slug}): {erro}")
 
-    # Caixa indisponível: cai pro cache local (loteria_resultados)
-    linha_banco = query_loteria(_SQL_SELECT_ULTIMO, (jogo_slug,), one=True)
+    # Caixa indisponível: cai pro cache local (loteria_resultados) — que já
+    # é o override manual, se existir, ou o último salvo automaticamente.
     if linha_banco:
         return _linha_banco_para_template(dict(linha_banco)), None
     return None, erro
@@ -592,3 +619,294 @@ def sitemap_resultados():
     linhas.append("</urlset>")
 
     return Response("\n".join(linhas), mimetype="application/xml")
+
+
+# ════════════════════════════════════════════════════════════
+#  ADMIN — preenchimento manual de resultado
+#
+#  Pra que serve: quando um sorteio acabou de sair e a Caixa/espelho ainda
+#  não atualizou (comum — vimos isso acontecer com o concurso de hoje),
+#  você pode preencher aqui na mão. Enquanto o concurso que você preencheu
+#  for igual ou mais novo que o que a API devolve, o site usa o SEU dado.
+#  Assim que a API alcançar (ou passar) esse concurso, ela volta a
+#  assumir sozinha — não precisa fazer nada.
+#
+#  Autenticação: HTTP Basic Auth simples (usuário: qualquer coisa, senha:
+#  variável de ambiente LOTERIA_ADMIN_SENHA). Se essa variável não estiver
+#  configurada, o painel fica bloqueado pra todo mundo (fail-closed).
+#
+#  Variável de ambiente necessária: LOTERIA_ADMIN_SENHA
+# ════════════════════════════════════════════════════════════
+
+from flask import render_template_string
+import functools
+
+_SQL_SELECT_MANUAIS = """
+    SELECT jogo, concurso, data_sorteio, dados_json
+    FROM loteria_resultados
+    WHERE COALESCE(NULLIF(dados_json, '')::jsonb ->> '_manual', 'false') = 'true'
+    ORDER BY jogo, concurso DESC
+"""
+
+_SQL_ATUALIZAR_DADOS_JSON = """
+    UPDATE loteria_resultados SET dados_json = %(dados_json)s, atualizado_em = now()
+    WHERE jogo = %(jogo)s AND concurso = %(concurso)s
+"""
+
+
+def _checar_senha_admin():
+    senha_certa = os.getenv("LOTERIA_ADMIN_SENHA")
+    if not senha_certa:
+        return False  # sem senha configurada = painel desativado (fail-closed)
+    auth = request.authorization
+    return bool(auth) and auth.password == senha_certa
+
+
+def _exigir_admin(view):
+    @functools.wraps(view)
+    def wrapper(*args, **kwargs):
+        if not _checar_senha_admin():
+            return Response(
+                "Autenticação necessária.", 401,
+                {"WWW-Authenticate": 'Basic realm="Admin Loteria"'},
+            )
+        return view(*args, **kwargs)
+    return wrapper
+
+
+def _parse_data_html(valor):
+    """Input <input type=date> vem como yyyy-mm-dd; converte pro formato
+    dd/mm/yyyy que o resto do arquivo usa (mesmo formato que a Caixa manda)."""
+    if not valor:
+        return None
+    try:
+        return datetime.strptime(valor, "%Y-%m-%d").strftime("%d/%m/%Y")
+    except ValueError:
+        return None
+
+
+def _parse_premiacoes_texto(texto):
+    """Cada linha: 'descrição | ganhadores | valor'. Linhas em branco ou mal
+    formatadas são ignoradas (não derruba o salvamento por causa de 1 linha
+    digitada errado)."""
+    premiacoes = []
+    for i, linha in enumerate((texto or "").splitlines(), start=1):
+        linha = linha.strip()
+        if not linha:
+            continue
+        partes = [p.strip() for p in linha.split("|")]
+        if len(partes) != 3:
+            continue
+        descricao, ganhadores_txt, valor_txt = partes
+        try:
+            ganhadores = int(ganhadores_txt.replace(".", "").replace(",", ""))
+        except ValueError:
+            ganhadores = 0
+        try:
+            valor = float(valor_txt.replace(".", "").replace(",", "."))
+        except ValueError:
+            valor = 0.0
+        premiacoes.append({
+            "descricaoFaixa": descricao,
+            "faixa": i,
+            "numeroDeGanhadores": ganhadores,
+            "valorPremio": valor,
+        })
+    return premiacoes
+
+
+_ADMIN_HTML = """
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<title>Admin — Lotérica Perto de Mim</title>
+<meta name="robots" content="noindex, nofollow">
+<style>
+  body { font-family: system-ui, sans-serif; background: #def8c3; color: #0a2e0a; padding: 24px; max-width: 720px; margin: 0 auto; }
+  h1 { color: #035105; }
+  .card { background: #fff; border-radius: 12px; padding: 20px; margin-bottom: 20px; box-shadow: 0 2px 6px rgba(0,0,0,.08); }
+  label { display: block; margin-top: 12px; font-weight: 600; font-size: 14px; }
+  input, select, textarea { width: 100%; padding: 8px; margin-top: 4px; border: 1px solid #ccc; border-radius: 6px; font-size: 14px; box-sizing: border-box; }
+  textarea { font-family: monospace; height: 80px; }
+  button { margin-top: 16px; background: #035105; color: #fff; border: none; padding: 10px 20px; border-radius: 8px; font-size: 15px; cursor: pointer; }
+  button:hover { background: #024004; }
+  .checkbox-row { display: flex; align-items: center; gap: 8px; margin-top: 12px; }
+  .checkbox-row input { width: auto; }
+  table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+  th, td { text-align: left; padding: 6px 8px; border-bottom: 1px solid #eee; font-size: 14px; }
+  .btn-remover { background: #a11; padding: 4px 10px; font-size: 12px; }
+  .msg { background: #d4f7d4; border: 1px solid #4a4; padding: 10px; border-radius: 8px; margin-bottom: 16px; }
+  .aviso { background: #fff3cd; border: 1px solid #cc9; padding: 10px; border-radius: 8px; margin-bottom: 16px; font-size: 14px; }
+</style>
+</head>
+<body>
+  <h1>Admin — Resultados manuais</h1>
+  <p class="aviso">Preenchimentos aqui têm prioridade sobre a API enquanto o concurso digitado for igual ou mais novo que o que ela devolve. Quando a API alcançar, ela assume sozinha.</p>
+
+  {% if mensagem %}<div class="msg">{{ mensagem }}</div>{% endif %}
+
+  <div class="card">
+    <form method="post" action="/resultados/admin/salvar">
+      <label>Jogo</label>
+      <select name="jogo" required>
+        {% for slug, info in jogos.items() %}
+        <option value="{{ slug }}">{{ info.nome }}</option>
+        {% endfor %}
+      </select>
+
+      <label>Concurso</label>
+      <input type="number" name="concurso" required min="1">
+
+      <label>Data do sorteio</label>
+      <input type="date" name="data_sorteio" required>
+
+      <label>Dezenas sorteadas (separadas por vírgula, ex: 05,07,17,51,56,59)</label>
+      <input type="text" name="dezenas" required placeholder="05,07,17,51,56,59">
+
+      <div class="checkbox-row">
+        <input type="checkbox" name="acumulou" id="acumulou">
+        <label for="acumulou" style="margin:0">Acumulou?</label>
+      </div>
+
+      <label>Estimativa de prêmio do próximo concurso (R$, opcional)</label>
+      <input type="text" name="valor_estimado_proximo" placeholder="70000000.00">
+
+      <label>Data do próximo concurso (opcional)</label>
+      <input type="date" name="data_proximo_concurso">
+
+      <label>Local do sorteio (opcional)</label>
+      <input type="text" name="local_sorteio" placeholder="ESPAÇO DA SORTE em SÃO PAULO, SP">
+
+      <label>Premiação por faixa (opcional — uma linha por faixa: descrição | ganhadores | valor)</label>
+      <textarea name="premiacoes_texto" placeholder="6 acertos | 0 | 0&#10;5 acertos | 92 | 28109.79&#10;4 acertos | 7263 | 586.92"></textarea>
+
+      <button type="submit">Salvar resultado manual</button>
+    </form>
+  </div>
+
+  <div class="card">
+    <h2 style="color:#035105; margin-top:0;">Overrides manuais ativos</h2>
+    {% if manuais %}
+    <table>
+      <tr><th>Jogo</th><th>Concurso</th><th>Data</th><th></th></tr>
+      {% for m in manuais %}
+      <tr>
+        <td>{{ jogos.get(m.jogo, {}).get('nome', m.jogo) }}</td>
+        <td>{{ m.concurso }}</td>
+        <td>{{ m.data_sorteio.strftime('%d/%m/%Y') if m.data_sorteio else '—' }}</td>
+        <td>
+          <form method="post" action="/resultados/admin/remover" style="margin:0">
+            <input type="hidden" name="jogo" value="{{ m.jogo }}">
+            <input type="hidden" name="concurso" value="{{ m.concurso }}">
+            <button type="submit" class="btn-remover" onclick="return confirm('Remover o preenchimento manual desse concurso? A API volta a poder atualizar ele.')">Remover override</button>
+          </form>
+        </td>
+      </tr>
+      {% endfor %}
+    </table>
+    {% else %}
+    <p>Nenhum override manual ativo no momento.</p>
+    {% endif %}
+  </div>
+</body>
+</html>
+"""
+
+
+@loteria_bp.route("/resultados/admin/")
+@_exigir_admin
+def admin_painel():
+    manuais = query_loteria(_SQL_SELECT_MANUAIS)
+    mensagem = request.args.get("msg")
+    return render_template_string(_ADMIN_HTML, jogos=JOGOS, manuais=manuais, mensagem=mensagem)
+
+
+@loteria_bp.route("/resultados/admin/salvar", methods=["POST"])
+@_exigir_admin
+def admin_salvar():
+    jogo_slug = request.form.get("jogo")
+    info = JOGOS.get(jogo_slug)
+    if not info:
+        return redirect_admin("Jogo inválido.")
+
+    try:
+        concurso = int(request.form.get("concurso", ""))
+    except ValueError:
+        return redirect_admin("Número de concurso inválido.")
+
+    data_sorteio = _parse_data_html(request.form.get("data_sorteio"))
+    if not data_sorteio:
+        return redirect_admin("Data do sorteio inválida.")
+
+    dezenas_txt = request.form.get("dezenas", "")
+    dezenas = [d.strip().zfill(2) for d in dezenas_txt.split(",") if d.strip()]
+    if not dezenas:
+        return redirect_admin("Informe as dezenas sorteadas.")
+
+    valor_estimado_txt = (request.form.get("valor_estimado_proximo") or "").strip()
+    try:
+        valor_estimado = float(valor_estimado_txt) if valor_estimado_txt else None
+    except ValueError:
+        valor_estimado = None
+
+    dados_caixa = {
+        "numero": concurso,
+        "dataApuracao": data_sorteio,
+        "dataProximoConcurso": _parse_data_html(request.form.get("data_proximo_concurso")),
+        "listaDezenas": dezenas,
+        "dezenasSorteadasOrdemSorteio": dezenas,
+        "acumulado": request.form.get("acumulou") == "on",
+        "valorArrecadado": None,
+        "valorEstimadoProximoConcurso": valor_estimado,
+        "valorAcumuladoProximoConcurso": None,
+        "nomeMunicipioUFSorteio": (request.form.get("local_sorteio") or "").strip() or None,
+        "listaRateioPremio": _parse_premiacoes_texto(request.form.get("premiacoes_texto")),
+        "_manual": True,
+    }
+
+    _salvar_resultado(jogo_slug, dados_caixa)
+    # atualiza o cache em memória na hora, pra aparecer no site sem esperar
+    # o TTL de 10min expirar
+    _CACHE_ULTIMO[jogo_slug] = (time.time(), dados_caixa)
+
+    return redirect_admin(f"Resultado do concurso {concurso} ({info['nome']}) salvo como manual.")
+
+
+@loteria_bp.route("/resultados/admin/remover", methods=["POST"])
+@_exigir_admin
+def admin_remover():
+    jogo_slug = request.form.get("jogo")
+    try:
+        concurso = int(request.form.get("concurso", ""))
+    except ValueError:
+        return redirect_admin("Concurso inválido.")
+
+    linha = query_loteria(_SQL_SELECT_POR_CONCURSO, (jogo_slug, concurso), one=True)
+    if not linha:
+        return redirect_admin("Concurso não encontrado no banco.")
+
+    # remove só a flag _manual, mantendo o resto do dado intacto — assim não
+    # perde histórico, só libera esse concurso pra API poder atualizar de novo
+    try:
+        bruto = json.loads(linha["dados_json"]) if linha.get("dados_json") else {}
+    except (ValueError, TypeError):
+        bruto = {}
+    bruto.pop("_manual", None)
+
+    query_loteria(_SQL_ATUALIZAR_DADOS_JSON, {
+        "dados_json": json.dumps(bruto, ensure_ascii=False, default=str),
+        "jogo": jogo_slug,
+        "concurso": concurso,
+    }, commit=True)
+
+    # também limpa o cache em memória pra não continuar servindo o manual
+    _CACHE_ULTIMO.pop(jogo_slug, None)
+
+    return redirect_admin(f"Override do concurso {concurso} ({jogo_slug}) removido.")
+
+
+def redirect_admin(mensagem):
+    from flask import redirect, url_for
+    from urllib.parse import quote
+    return redirect(f"/resultados/admin/?msg={quote(mensagem)}")
