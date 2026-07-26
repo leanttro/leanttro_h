@@ -1,0 +1,671 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+
+<!-- SEO -->
+<title>{{ hub.titulo or 'Lotérica Perto de Mim — resultados e lotéricas perto de você' }}</title>
+<meta name="description" content="{{ hub.descricao or 'Encontre a lotérica mais perto de você e confira os resultados mais recentes de Mega-Sena, Quina, Lotofácil e Lotomania.' }}">
+<meta name="keywords" content="lotérica perto de mim, resultado mega-sena, resultado quina, resultado lotofácil, resultado lotomania, lotérica">
+<meta name="robots" content="index, follow, max-image-preview:large, max-snippet:-1">
+<meta name="theme-color" content="#035105">
+<meta name="author" content="{{ hub.nome or 'Lotérica Perto de Mim' }}">
+<link rel="canonical" href="https://{{ request.host }}/">
+
+<link rel="icon" type="image/png" href="{{ hub.logo_url or 'https://placehold.co/64x64/035105/def8c3?text=%F0%9F%8D%80' }}">
+<link rel="apple-touch-icon" href="{{ hub.logo_url or 'https://placehold.co/180x180/035105/def8c3?text=%F0%9F%8D%80' }}">
+
+<!-- Open Graph -->
+<meta property="og:type"        content="website">
+<meta property="og:site_name"   content="{{ hub.nome or 'Lotérica Perto de Mim' }}">
+<meta property="og:url"         content="https://{{ request.host }}/">
+<meta property="og:title"       content="{{ hub.titulo or 'Lotérica Perto de Mim' }}">
+<meta property="og:description" content="{{ hub.descricao or 'Lotéricas perto de você e resultados das principais loterias da Caixa.' }}">
+{% if hub.banner_fundo_url %}<meta property="og:image" content="{{ hub.banner_fundo_url }}">{% endif %}
+<meta property="og:locale" content="pt_BR">
+
+<!-- JSON-LD WebSite -->
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "WebSite",
+  "name": "{{ hub.nome or 'Lotérica Perto de Mim' }}",
+  "url": "https://{{ request.host }}/",
+  "inLanguage": "pt-BR"
+}
+</script>
+
+{# Lista fixa dos jogos — igual ao dicionário JOGOS de loteria.py.
+   Definida aqui (e não recebida via contexto) porque a rota "/" continua
+   sendo a genérica do app.py (render_template(f"hub/{template}.html",
+   hub=hub, negocios=negocios, categorias=categorias, anuncio_topo=...,
+   anuncio_meio=...)) — sem jogos_menu no contexto. Se um jogo for
+   adicionado/removido em loteria.py, espelhe a mudança aqui também. #}
+{% set jogos_menu = [
+    {"slug": "mega-sena", "nome": "Mega-Sena", "dias": "quartas e sábados"},
+    {"slug": "quina", "nome": "Quina", "dias": "de segunda a sábado"},
+    {"slug": "lotofacil", "nome": "Lotofácil", "dias": "de segunda a sábado"},
+    {"slug": "lotomania", "nome": "Lotomania", "dias": "segundas e quintas-feiras"},
+] %}
+
+<link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+<link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+
+<style>
+:root {
+    --primary:     #035105;
+    --dark:        #023a04;
+    --on-primary:  #ffffff;
+    --gold:        #d4a017;
+    --bg:          #def8c3;
+    --bg-card:     #ffffff;
+    --bg-card-alt: #eafcd9;
+    --border:      #bfe6a0;
+    --text:        #1b2a12;
+    --text-dim:    #4d5c45;
+    --header-bg:   #035105;
+    --header-text: #ffffff;
+    --header-border: #023a04;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html { scroll-behavior: smooth; overflow-x: hidden; }
+body { font-family: 'Montserrat', sans-serif; background: var(--bg); color: var(--text); line-height: 1.6; max-width: 100vw; overflow-x: hidden; }
+h1, h2, h3, .logo-txt { font-family: 'Montserrat', sans-serif; }
+a { text-decoration: none; color: inherit; }
+.container { max-width: 1200px; margin: 0 auto; padding: 0 20px; }
+img { max-width: 100%; display: block; }
+
+/* ══ HEADER ══ */
+body > header {
+    background: var(--header-bg); border-bottom: 1px solid var(--header-border);
+    padding: 18px 24px 14px; display: flex; flex-direction: column;
+    align-items: center; justify-content: center; gap: 10px;
+    width: 100%; margin: 0;
+}
+.logo { display: block; text-align: center; }
+.logo img { height: 74px; width: auto; margin: 0 auto; display: block; }
+nav.desktop-nav ul { list-style: none; display: flex; align-items: center; justify-content: center; flex-wrap: wrap; gap: 4px; }
+nav.desktop-nav ul li a {
+    color: var(--header-text); font-weight: 500; font-size: .92em; padding: 10px 16px; border-radius: 6px;
+    transition: background .2s, color .2s;
+}
+nav.desktop-nav ul li a:hover { background: rgba(255,255,255,0.15); }
+
+/* ══ ANÚNCIOS ══ */
+.anuncio-slot { text-align: center; padding: 10px 20px; background: var(--bg-card-alt); border-bottom: 1px solid var(--border); }
+.anuncio-slot img { max-height: 90px; margin: 0 auto; border-radius: 6px; }
+
+/* ══ HERO ══ */
+.hero { padding: 46px 20px 30px; text-align: center; }
+.hero h1 { font-size: 2em; color: var(--dark); margin-bottom: 10px; }
+.hero p { color: var(--text-dim); max-width: 640px; margin: 0 auto; }
+.hero-btns { display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; margin-top: 20px; }
+.btn-hero { display: inline-flex; align-items: center; gap: 8px; padding: 13px 22px; border-radius: 10px; font-weight: 700; font-size: .95em; }
+.btn-hero.primary { background: var(--primary); color: #fff; }
+.btn-hero.primary:hover { background: var(--dark); }
+.btn-hero.outline { border: 1.5px solid var(--primary); color: var(--dark); background: var(--bg-card); }
+.btn-hero.outline:hover { background: var(--bg-card-alt); }
+
+.secao { padding: 40px 20px; }
+.secao h2 { font-size: 1.5em; color: var(--dark); }
+.secao-sub { color: var(--text-dim); font-size: .92em; margin-top: 4px; margin-bottom: 20px; }
+.secao-header-flex { display: flex; justify-content: space-between; align-items: flex-end; flex-wrap: wrap; gap: 10px; margin-bottom: 6px; }
+.btn-ver-todos { font-size: .88em; font-weight: 700; color: var(--dark); display: inline-flex; align-items: center; gap: 6px; }
+.btn-ver-todos:hover { text-decoration: underline; }
+
+/* ══ SEÇÃO DE JOGOS (resultados das loterias) ══ */
+.jogos-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 16px; }
+.jogo-card {
+    background: var(--bg-card); border: 1px solid var(--border); border-radius: 14px;
+    padding: 20px; display: flex; flex-direction: column; gap: 10px;
+    box-shadow: 0 4px 14px rgba(3,81,5,0.06); transition: transform .15s, border-color .15s;
+}
+.jogo-card:hover { transform: translateY(-3px); border-color: var(--primary); }
+.jogo-card .jogo-icone {
+    width: 46px; height: 46px; border-radius: 50%; background: var(--primary); color: #fff;
+    display: flex; align-items: center; justify-content: center; font-size: 1.2em;
+}
+.jogo-card h3 { font-size: 1.1em; color: var(--dark); }
+.jogo-card .jogo-dias { font-size: .85em; color: var(--text-dim); }
+.jogo-card .jogo-link { margin-top: auto; font-weight: 700; font-size: .88em; color: var(--dark); display: inline-flex; align-items: center; gap: 6px; }
+.jogo-card:hover .jogo-link { text-decoration: underline; }
+
+/* ══ CATEGORIA/LOCALIZAÇÃO ══ */
+.btn-geo {
+    display: inline-flex; align-items: center; gap: 8px; padding: 11px 18px; border-radius: 24px;
+    border: 1.5px solid var(--primary); color: var(--dark); background: var(--bg-card);
+    font-weight: 600; font-size: .88em; cursor: pointer; margin-bottom: 20px;
+}
+.btn-geo.ativo { background: var(--primary); color: #fff; }
+.btn-geo:hover { background: var(--bg-card-alt); }
+.btn-geo.ativo:hover { background: var(--dark); }
+
+/* ══ GRID DE NEGÓCIOS ══ */
+.view-controls { display: flex; align-items: center; gap: 8px; font-size: .85em; color: var(--text-dim); margin-bottom: 14px; }
+.view-btn { background: var(--bg-card); border: 1px solid var(--border); border-radius: 6px; padding: 6px 10px; cursor: pointer; color: var(--text-dim); }
+.view-btn.active { background: var(--primary); color: #fff; border-color: var(--primary); }
+
+.carousel-wrapper { position: relative; }
+.carousel-track-outer { overflow: hidden; }
+.carousel-track { display: flex; gap: 18px; transition: transform .3s ease; will-change: transform; }
+.carousel-track.dragging { transition: none; cursor: grabbing; }
+.carousel-nav { display: flex; align-items: center; gap: 10px; margin-top: 14px; }
+.carousel-arrow { background: var(--bg-card); border: 1px solid var(--border); border-radius: 50%; width: 34px; height: 34px; cursor: pointer; color: var(--dark); }
+.carousel-arrow:disabled { opacity: .35; cursor: default; }
+.carousel-progress-bar { flex: 1; height: 4px; background: var(--border); border-radius: 4px; overflow: hidden; }
+.carousel-progress-fill { height: 100%; background: var(--primary); width: 0%; }
+
+.negocios-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); gap: 18px; }
+.negocio-card {
+    background: var(--bg-card); border: 1px solid var(--border); border-radius: 12px; overflow: hidden;
+    flex: 0 0 230px; transition: transform .15s, border-color .15s;
+}
+.carousel-track .negocio-card { flex: 0 0 230px; }
+.negocio-card:hover { transform: translateY(-3px); border-color: var(--primary); }
+.card-foto { position: relative; }
+.card-foto img { width: 100%; height: 140px; object-fit: cover; }
+.badge-cat { position: absolute; top: 10px; left: 10px; background: var(--primary); color: #fff; font-size: .68em; font-weight: 700; text-transform: uppercase; padding: 4px 9px; border-radius: 20px; }
+.card-body { padding: 14px; }
+.card-body h3 { font-size: 1.02em; margin-bottom: 6px; }
+.card-bairro { font-size: .85em; color: var(--text-dim); display: flex; align-items: center; gap: 6px; }
+.card-dist { font-size: .8em; color: var(--dark); font-weight: 600; display: block; margin-top: 4px; }
+.btn-ver { display: inline-block; margin-top: 10px; font-size: .85em; font-weight: 700; color: var(--dark); }
+
+.info-message { color: var(--text-dim); padding: 30px 0; text-align: center; }
+
+/* ══ CADASTRO — modal ══ */
+.faixa-cadastro { background: var(--primary); color: #fff; text-align: center; padding: 40px 20px; }
+.faixa-cadastro h2 { font-size: 1.4em; margin-bottom: 8px; }
+.faixa-cadastro p { opacity: .9; margin-bottom: 18px; }
+.btn-cta { background: #fff; color: var(--dark); font-weight: 700; padding: 13px 26px; border-radius: 10px; border: none; cursor: pointer; font-size: .95em; }
+.btn-cta:hover { background: var(--gold); color: #fff; }
+
+.modal-oculto { display: none; }
+#modal-cadastro:not(.modal-oculto) { position: fixed; inset: 0; background: rgba(0,0,0,.5); z-index: 2000; display: flex; align-items: center; justify-content: center; padding: 16px; }
+.modal-box { background: var(--bg-card); border-radius: 16px; padding: 26px; max-width: 420px; width: 100%; max-height: 90vh; overflow-y: auto; position: relative; }
+.modal-fechar { position: absolute; top: 14px; right: 14px; background: none; border: none; font-size: 1.1em; color: var(--text-dim); cursor: pointer; }
+.modal-box h2 { color: var(--dark); margin-bottom: 6px; }
+.cad-input { width: 100%; padding: 11px 13px; margin-top: 10px; border: 1px solid var(--border); border-radius: 8px; font-family: inherit; font-size: .92em; }
+#form-cadastro button[type="submit"] {
+    width: 100%; margin-top: 16px; padding: 13px; background: var(--primary); color: #fff;
+    border: none; border-radius: 8px; font-weight: 700; cursor: pointer; font-size: .95em;
+}
+#form-cadastro button[type="submit"]:hover { background: var(--dark); }
+#cadastro-sucesso { display: none; text-align: center; padding: 20px 0; }
+
+footer { background: var(--dark); color: #cfe8c0; padding: 30px 20px 10px; }
+.footer-cols { display: flex; flex-wrap: wrap; gap: 30px; max-width: 1200px; margin: 0 auto; justify-content: space-between; }
+.footer-cols h4 { color: #fff; margin-bottom: 10px; }
+.footer-cols ul { list-style: none; }
+.footer-cols ul li { margin-bottom: 6px; }
+.footer-cols ul li a:hover { color: #fff; text-decoration: underline; }
+.footer-bottom { text-align: center; padding: 20px 0 6px; font-size: .82em; opacity: .85; }
+</style>
+</head>
+<body>
+
+<header>
+  <a class="logo" href="/">
+    <img src="{{ hub.logo_url or 'https://placehold.co/260x74/035105/def8c3?text=Loterica+Perto+de+Mim' }}" alt="{{ hub.nome or 'Lotérica Perto de Mim' }}">
+  </a>
+  <nav class="desktop-nav">
+    <ul>
+      {% for j in jogos_menu %}
+        <li><a href="/resultados/{{ j.slug }}/">{{ j.nome }}</a></li>
+      {% endfor %}
+    </ul>
+  </nav>
+</header>
+
+{% if anuncio_topo %}
+<div class="anuncio-slot">
+  <a href="{{ anuncio_topo.link_url or '#' }}" target="_blank" rel="noopener">
+    <img src="{{ anuncio_topo.imagem_url }}" alt="{{ anuncio_topo.titulo or 'Anúncio' }}">
+  </a>
+</div>
+{% endif %}
+
+<section class="hero container">
+  <h1>{{ hub.nome or 'Lotérica Perto de Mim' }}</h1>
+  <p>Encontre a lotérica mais perto de você e confira na hora o resultado mais recente da Mega-Sena, Quina, Lotofácil e Lotomania.</p>
+  <div class="hero-btns">
+    <a class="btn-hero primary" href="#loterias"><i class="fas fa-map-marker-alt"></i> Achar lotérica perto de mim</a>
+    <a class="btn-hero outline" href="#jogos"><i class="fas fa-ticket"></i> Ver resultados</a>
+  </div>
+</section>
+
+<section class="secao container" id="jogos">
+  <h2>Resultados das loterias</h2>
+  <p class="secao-sub">Números sorteados, prêmio e acumulado — atualizados direto da Caixa.</p>
+  <div class="jogos-grid">
+    {% for j in jogos_menu %}
+      <a class="jogo-card" href="/resultados/{{ j.slug }}/">
+        <span class="jogo-icone"><i class="fas fa-ticket"></i></span>
+        <h3>{{ j.nome }}</h3>
+        <span class="jogo-dias">Sorteios {{ j.dias }}</span>
+        <span class="jogo-link">Ver resultado mais recente <i class="fas fa-arrow-right"></i></span>
+      </a>
+    {% endfor %}
+  </div>
+</section>
+
+{% if anuncio_meio %}
+<div class="anuncio-slot">
+  <a href="{{ anuncio_meio.link_url or '#' }}" target="_blank" rel="noopener">
+    <img src="{{ anuncio_meio.imagem_url }}" alt="{{ anuncio_meio.titulo or 'Anúncio' }}">
+  </a>
+</div>
+{% endif %}
+
+<section class="secao container" id="loterias">
+  <h2>Lotéricas cadastradas</h2>
+  <p class="secao-sub" id="loterica-total">{{ negocios | length }} lotérica{{ 's' if negocios | length != 1 else '' }} no guia até agora.</p>
+
+  <div style="text-align:center;">
+    <button class="btn-geo" id="btnLoc" onclick="toggleLocalizacao()">
+      <i class="fas fa-map-marker-alt"></i> Usar minha localização
+    </button>
+  </div>
+
+  <div class="view-controls" id="view-controls" style="display:none;">
+    <span>Ver como:</span>
+    <button class="view-btn active" id="btn-carousel" title="Carrossel" onclick="setView('carousel')"><i class="fas fa-grip-lines"></i></button>
+    <button class="view-btn" id="btn-grade" title="Grade" onclick="setView('grade')"><i class="fas fa-th"></i></button>
+  </div>
+
+  <div id="negocios-carousel-wrapper" class="carousel-wrapper">
+    <div class="carousel-track-outer">
+      <div class="carousel-track" id="negocios-track"></div>
+    </div>
+    <div class="carousel-nav" id="negocios-carousel-nav">
+      <button class="carousel-arrow" id="negocios-prev" onclick="moveCarousel(-1)"><i class="fas fa-chevron-left"></i></button>
+      <div class="carousel-progress-bar"><div class="carousel-progress-fill" id="negocios-progress-fill"></div></div>
+      <button class="carousel-arrow" id="negocios-next" onclick="moveCarousel(1)"><i class="fas fa-chevron-right"></i></button>
+    </div>
+  </div>
+
+  <div class="negocios-grid" id="negocios-grade" style="display:none;"></div>
+  <p class="info-message" id="negocios-vazio" style="display:none;">Ainda não temos lotéricas cadastradas por aqui — seja o primeiro a indicar uma.</p>
+  <div id="lazy-sentinel" style="height:1px; margin-top:10px;"></div>
+  <p id="lazy-loading" style="display:none; text-align:center; color:var(--primary); padding:20px; font-size:.95em;"><i class="fas fa-spinner fa-spin"></i> Carregando mais lotéricas...</p>
+</section>
+
+<div class="faixa-cadastro">
+  <h2>Conhece uma lotérica que não está aqui?</h2>
+  <p>Ajude outras pessoas a encontrar — o cadastro é rápido.</p>
+  <button class="btn-cta" onclick="abrirModalCadastro()">Cadastrar lotérica</button>
+</div>
+
+<footer>
+  <div class="footer-cols">
+    <div>
+      <h4>{{ hub.nome or 'Lotérica Perto de Mim' }}</h4>
+      <p>Lotéricas perto de você e resultados das principais loterias.</p>
+    </div>
+    <div>
+      <h4>Navegue</h4>
+      <ul>
+        {% for j in jogos_menu %}
+          <li><a href="/resultados/{{ j.slug }}/">{{ j.nome }}</a></li>
+        {% endfor %}
+        <li><a href="#" onclick="abrirModalCadastro();return false;">Cadastrar lotérica</a></li>
+      </ul>
+    </div>
+  </div>
+  <div class="footer-bottom">
+    &copy; {{ hub.nome or 'Lotérica Perto de Mim' }} — todos os direitos reservados. Resultados oficiais: Caixa Econômica Federal.
+  </div>
+</footer>
+
+<!-- Modal de cadastro -->
+<div id="modal-cadastro" class="modal-oculto">
+  <div class="modal-box">
+    <button class="modal-fechar" onclick="fecharModalCadastro()"><i class="fas fa-times"></i></button>
+    <h2>Cadastrar lotérica</h2>
+    <p style="color:var(--text-dim);font-size:.9em;">Seu cadastro passa por uma revisão rápida antes de ir ao ar.</p>
+
+    <form id="form-cadastro" onsubmit="enviarCadastroNegocio(event)">
+      <input class="cad-input" type="text" name="nome" placeholder="Nome da lotérica *" required>
+      <input class="cad-input" type="text" name="cidade" placeholder="Cidade">
+      <input class="cad-input" type="text" name="bairro" placeholder="Bairro">
+      <input class="cad-input" type="text" name="endereco" placeholder="Endereço">
+      <input class="cad-input" type="text" name="whatsapp" placeholder="WhatsApp">
+      <input class="cad-input" type="text" name="telefone" placeholder="Telefone">
+      <input class="cad-input" type="text" name="instagram" placeholder="Instagram">
+      <input class="cad-input" type="url" name="site_url" placeholder="Site (opcional)">
+      <input class="cad-input" type="url" name="foto_url" placeholder="URL de uma foto (opcional)">
+      <textarea class="cad-input" name="descricao" placeholder="Descrição curta" rows="3"></textarea>
+
+      <div id="cadastro-erro" style="display:none;color:#a83c1e;font-size:13px;background:#fde8df;border:1px solid #e3b39f;border-radius:8px;padding:10px 12px;"></div>
+
+      <button type="submit" id="btn-submit-cadastro">Enviar cadastro</button>
+    </form>
+
+    <div id="cadastro-sucesso">
+      <i class="fas fa-check-circle" style="font-size:2em;color:var(--primary);"></i>
+      <p style="margin-top:10px;">Recebemos seu cadastro! Ele vai passar por revisão antes de aparecer no site.</p>
+    </div>
+  </div>
+</div>
+
+<script>
+function abrirModalCadastro(){ document.getElementById('modal-cadastro').classList.remove('modal-oculto'); }
+function fecharModalCadastro(){
+  document.getElementById('modal-cadastro').classList.add('modal-oculto');
+  document.getElementById('form-cadastro').style.display = '';
+  document.getElementById('cadastro-sucesso').style.display = 'none';
+}
+document.getElementById('modal-cadastro').addEventListener('click', function(e){ if (e.target === this) fecharModalCadastro(); });
+document.addEventListener('keydown', function(e){ if (e.key === 'Escape') fecharModalCadastro(); });
+
+async function enviarCadastroNegocio(e){
+  e.preventDefault();
+  const btn = document.getElementById('btn-submit-cadastro');
+  const erro = document.getElementById('cadastro-erro');
+  erro.style.display = 'none';
+  btn.disabled = true;
+  btn.textContent = 'Enviando...';
+  try {
+    const formData = new FormData(e.target);
+    const res = await fetch('/cadastrar-negocio', { method: 'POST', body: formData });
+    const data = await res.json();
+    if (res.ok && data.ok) {
+      document.getElementById('form-cadastro').style.display = 'none';
+      document.getElementById('cadastro-sucesso').style.display = 'block';
+    } else {
+      erro.textContent = data.erro || 'Erro ao enviar. Tente novamente.';
+      erro.style.display = 'block';
+    }
+  } catch (err) {
+    erro.textContent = 'Erro de conexão. Verifique sua internet e tente novamente.';
+    erro.style.display = 'block';
+  } finally {
+    btn.disabled = false;
+    btn.textContent = 'Enviar cadastro';
+  }
+}
+</script>
+
+<script>
+// ══════════════════════════════════════════════════════════════════
+// GRID DE LOTÉRICAS — mesmo padrão usado nos outros hubs (cinema,
+// cestas etc.): renderiza os negócios recebidos no HTML e busca mais
+// em lotes via /api/hub/negocios (paginação por offset), com
+// ordenação por geolocalização client-side. Sem filtro de categoria
+// aqui porque, diferente do cinema, esse hub trabalha com uma única
+// categoria ("Lotérica") — se um dia entrar mais de uma, dá pra
+// portar o mesmo bloco de chips/slicer que o cinema usa.
+// ══════════════════════════════════════════════════════════════════
+
+var todosLotericas = {{ negocios | tojson }};
+var _apiOffsetLot = {{ negocios | length }};
+var _apiFimLot = false;
+var _apiCarregandoLot = false;
+var _loteSizeLot = 96;
+var lotericasFiltradas = todosLotericas.slice();
+var userLatLot = null, userLngLot = null, geoAtivoLot = false;
+var carouselPosLot = 0, carouselViewLot = 'carousel';
+var _apiCallbacksLot = [];
+
+function _carregarLoteLotericas(callback){
+  if(_apiFimLot){ if(callback) callback(); return; }
+  if(callback) _apiCallbacksLot.push(callback);
+  if(_apiCarregandoLot) return;
+  _apiCarregandoLot = true;
+  var loading = document.getElementById('lazy-loading');
+  if(loading) loading.style.display = 'block';
+  var url = '/api/hub/negocios?limit=' + _loteSizeLot + '&offset=' + _apiOffsetLot;
+  fetch(url)
+    .then(function(r){ return r.json(); })
+    .then(function(data){
+      _apiCarregandoLot = false;
+      if(Array.isArray(data) && data.length > 0){
+        _apiOffsetLot += data.length;
+        todosLotericas = todosLotericas.concat(data);
+        if(geoAtivoLot && userLatLot !== null) _aplicarDistanciasLot();
+        lotericasFiltradas = todosLotericas.slice();
+      } else {
+        _apiFimLot = true;
+      }
+      if(loading) loading.style.display = 'none';
+      var cbs = _apiCallbacksLot.slice(); _apiCallbacksLot = [];
+      cbs.forEach(function(cb){ cb(); });
+    })
+    .catch(function(){
+      _apiCarregandoLot = false;
+      _apiFimLot = true;
+      if(loading) loading.style.display = 'none';
+      var cbs = _apiCallbacksLot.slice(); _apiCallbacksLot = [];
+      cbs.forEach(function(cb){ cb(); });
+    });
+}
+
+function _renderizarProximoLoteLot(){
+  var lista = lotericasFiltradas;
+  var trackCards = document.getElementById('negocios-track') ? document.getElementById('negocios-track').querySelectorAll('.negocio-card').length : 0;
+  if(trackCards < lista.length){
+    var proximo = lista.slice(trackCards, trackCards + _loteSizeLot);
+    if(!proximo.length) return;
+    var novosCards = proximo.map(cardHTMLLot);
+    var track = document.getElementById('negocios-track');
+    if(track){
+      var tmp = document.createElement('div');
+      tmp.innerHTML = novosCards.join('');
+      while(tmp.firstChild) track.appendChild(tmp.firstChild);
+      clampAndUpdateLot();
+    }
+    var gd = document.getElementById('negocios-grade');
+    if(gd && gd.style.display !== 'none') gd.innerHTML += novosCards.join('');
+    return;
+  }
+  if(!_apiFimLot){
+    _carregarLoteLotericas(function(){ _renderizarProximoLoteLot(); });
+  }
+}
+
+function haversineKmLot(lat1, lng1, lat2, lng2){
+  var R = 6371;
+  var dLat = (lat2 - lat1) * Math.PI / 180;
+  var dLng = (lng2 - lng1) * Math.PI / 180;
+  var a = Math.sin(dLat/2)*Math.sin(dLat/2) +
+          Math.cos(lat1*Math.PI/180)*Math.cos(lat2*Math.PI/180)*
+          Math.sin(dLng/2)*Math.sin(dLng/2);
+  return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+}
+
+function _aplicarDistanciasLot(){
+  todosLotericas.forEach(function(n){
+    var lat = parseFloat(n.lat);
+    var lng = parseFloat(n.lng);
+    if(userLatLot !== null && !isNaN(lat) && !isNaN(lng) && lat !== 0 && lng !== 0){
+      n._dist = haversineKmLot(userLatLot, userLngLot, lat, lng);
+    } else {
+      n._dist = 99999;
+    }
+  });
+  todosLotericas.sort(function(a, b){ return (a._dist || 99999) - (b._dist || 99999); });
+}
+
+function toggleLocalizacao(){
+  var btn = document.getElementById('btnLoc');
+  if(geoAtivoLot){
+    geoAtivoLot = false;
+    userLatLot = null; userLngLot = null;
+    btn.classList.remove('ativo');
+    btn.innerHTML = '<i class="fas fa-map-marker-alt"></i> Usar minha localização';
+    todosLotericas.forEach(function(n){ delete n._dist; });
+    lotericasFiltradas = todosLotericas.slice();
+    renderLotericas(lotericasFiltradas);
+    return;
+  }
+  if(!navigator.geolocation){
+    alert('Geolocalização não suportada pelo seu navegador.');
+    return;
+  }
+  btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Localizando...';
+  btn.disabled = true;
+  navigator.geolocation.getCurrentPosition(
+    function(pos){
+      userLatLot = pos.coords.latitude;
+      userLngLot = pos.coords.longitude;
+      geoAtivoLot = true;
+      btn.classList.add('ativo');
+      btn.innerHTML = '<i class="fas fa-map-marker-alt"></i> Perto de mim ✓';
+      btn.disabled = false;
+      _aplicarDistanciasLot();
+      lotericasFiltradas = todosLotericas.slice();
+      renderLotericas(lotericasFiltradas);
+    },
+    function(){
+      btn.innerHTML = '<i class="fas fa-map-marker-alt"></i> Usar minha localização';
+      btn.disabled = false;
+      alert('Não foi possível obter sua localização. Verifique as permissões.');
+    },
+    { timeout: 10000, maximumAge: 60000 }
+  );
+}
+
+function cardHTMLLot(n){
+  var dist = (n._dist && n._dist < 9999) ? '<span class="card-dist"><i class="fas fa-map-marker-alt"></i> ' + n._dist.toFixed(1) + ' km de você</span>' : '';
+  var foto = n.foto_url || 'https://placehold.co/400x260/035105/def8c3?text=%F0%9F%8D%80';
+  var local = [n.bairro, n.cidade].filter(Boolean).join(', ');
+  return '<a href="/' + n.categoria_slug + '/' + n.slug + '/" class="negocio-card">' +
+    '<div class="card-foto">' +
+      '<img src="' + foto + '" alt="' + n.nome + '" loading="lazy" width="400" height="248">' +
+      '<span class="badge-cat">' + (n.categoria_nome || 'Lotérica') + '</span>' +
+    '</div>' +
+    '<div class="card-body">' +
+      '<h3>' + n.nome + '</h3>' +
+      (local ? '<p class="card-bairro"><i class="fas fa-map-marker-alt" style="color:var(--gold)"></i> ' + local + '</p>' : '') +
+      dist +
+      '<span class="btn-ver">Ver detalhes →</span>' +
+    '</div>' +
+  '</a>';
+}
+
+function getCardWidthLot(){
+  var track = document.getElementById('negocios-track');
+  var card = track.querySelector('.negocio-card');
+  if(!card) return 248;
+  return card.offsetWidth + 18;
+}
+
+function isMobileLot(){ return window.innerWidth <= 768; }
+
+function clampAndUpdateLot(){
+  if(isMobileLot()) return;
+  var track = document.getElementById('negocios-track');
+  var cards = track.querySelectorAll('.negocio-card');
+  if(!cards.length) return;
+  var maxPos = Math.max(0, cards.length * getCardWidthLot() - track.parentElement.offsetWidth);
+  carouselPosLot = Math.max(0, Math.min(carouselPosLot, maxPos));
+  track.style.transform = 'translateX(-' + carouselPosLot + 'px)';
+  var fill = document.getElementById('negocios-progress-fill');
+  var prev = document.getElementById('negocios-prev');
+  var next = document.getElementById('negocios-next');
+  if(fill) fill.style.width = maxPos > 0 ? Math.min(100, (carouselPosLot / maxPos) * 100) + '%' : '0%';
+  if(prev) prev.disabled = carouselPosLot <= 0;
+  if(next) next.disabled = maxPos <= 0 || carouselPosLot >= maxPos;
+}
+
+function snapCarouselLot(){
+  var w = getCardWidthLot(); if(!w) return;
+  carouselPosLot = Math.round(carouselPosLot / w) * w;
+  clampAndUpdateLot();
+}
+
+function buildCarouselLot(cards){
+  var track = document.getElementById('negocios-track');
+  track.innerHTML = cards.join('');
+  carouselPosLot = 0;
+  track.style.transform = 'translateX(0)';
+  clampAndUpdateLot();
+  var isDragging = false, startX = 0, startPos = 0;
+  var newTrack = track.cloneNode(true);
+  track.parentNode.replaceChild(newTrack, track);
+  track = document.getElementById('negocios-track');
+  function onStart(x){ isDragging = true; startX = x; startPos = carouselPosLot; track.classList.add('dragging'); }
+  function onMove(x){ if(!isDragging) return; carouselPosLot = startPos - (x - startX); clampAndUpdateLot(); }
+  function onEnd(){ isDragging = false; track.classList.remove('dragging'); snapCarouselLot(); }
+  if(!isMobileLot()){
+    track.addEventListener('mousedown', function(e){ onStart(e.clientX); e.preventDefault(); });
+    window.addEventListener('mousemove', function(e){ if(isDragging) onMove(e.clientX); });
+    window.addEventListener('mouseup', function(){ if(isDragging) onEnd(); });
+    var _ty = 0, _horiz = false, _det = false;
+    track.addEventListener('touchstart', function(e){ _ty = e.touches[0].clientY; _horiz = false; _det = false; onStart(e.touches[0].clientX); }, { passive: true });
+    track.addEventListener('touchmove', function(e){
+      if(!isDragging) return;
+      if(!_det){ var dx = Math.abs(e.touches[0].clientX - startX), dy = Math.abs(e.touches[0].clientY - _ty); if(dx > 5 || dy > 5){ _horiz = dx >= dy; _det = true; } }
+      if(!_det || !_horiz) return; e.preventDefault(); onMove(e.touches[0].clientX);
+    }, { passive: false });
+    track.addEventListener('touchend', function(){ if(_horiz) onEnd(); else isDragging = false; });
+  }
+}
+
+function moveCarousel(dir){
+  var outer = document.getElementById('negocios-track').parentElement;
+  var visivel = Math.max(1, Math.floor(outer.offsetWidth / getCardWidthLot()));
+  carouselPosLot += dir * visivel * getCardWidthLot();
+  clampAndUpdateLot();
+}
+
+function setView(mode){
+  carouselViewLot = mode;
+  var cw = document.getElementById('negocios-carousel-wrapper');
+  var gd = document.getElementById('negocios-grade');
+  document.getElementById('btn-carousel').classList.toggle('active', mode === 'carousel');
+  document.getElementById('btn-grade').classList.toggle('active', mode === 'grade');
+  if(cw) cw.style.display = mode === 'carousel' ? '' : 'none';
+  if(gd) gd.style.display = mode === 'grade' ? 'grid' : 'none';
+}
+
+function renderLotericas(lista){
+  lotericasFiltradas = lista;
+  var vc = document.getElementById('view-controls');
+  var vazio = document.getElementById('negocios-vazio');
+  var total = document.getElementById('loterica-total');
+  if(total) total.textContent = lista.length + (lista.length !== 1 ? ' lotéricas encontradas' : ' lotérica encontrada');
+
+  if(!lista.length){
+    if(vc) vc.style.display = 'none';
+    var cw = document.getElementById('negocios-carousel-wrapper');
+    var gd = document.getElementById('negocios-grade');
+    if(cw) cw.style.display = 'none';
+    if(gd) gd.style.display = 'none';
+    if(vazio) vazio.style.display = '';
+    return;
+  }
+  if(vazio) vazio.style.display = 'none';
+  if(vc) vc.style.display = 'flex';
+  var cards = lista.map(cardHTMLLot);
+  buildCarouselLot(cards);
+  var gd = document.getElementById('negocios-grade');
+  if(gd) gd.innerHTML = cards.join('');
+  setView(carouselViewLot);
+}
+
+(function mostrarTodasLotericasInicial(){
+  renderLotericas(lotericasFiltradas);
+})();
+
+(function(){
+  var sentinel = document.getElementById('lazy-sentinel');
+  if(!sentinel || !('IntersectionObserver' in window)) return;
+  new IntersectionObserver(function(entries){
+    if(!entries[0].isIntersecting) return;
+    _renderizarProximoLoteLot();
+  }, { rootMargin: '400px' }).observe(sentinel);
+})();
+</script>
+
+{% if hub.ga4_id %}
+<script async src="https://www.googletagmanager.com/gtag/js?id={{ hub.ga4_id }}"></script>
+<script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag('js',new Date());gtag('config','{{ hub.ga4_id }}');</script>
+{% endif %}
+{% if hub.pixel_id %}
+<script>!function(f,b,e,v,n,t,s){if(f.fbq)return;n=f.fbq=function(){n.callMethod?n.callMethod.apply(n,arguments):n.queue.push(arguments)};if(!f._fbq)f._fbq=n;n.push=n;n.loaded=!0;n.version='2.0';n.queue=[];t=b.createElement(e);t.async=!0;t.src=v;s=b.getElementsByTagName(e)[0];s.parentNode.insertBefore(t,s)}(window,document,'script','https://connect.facebook.net/en_US/fbevents.js');fbq('init','{{ hub.pixel_id }}');fbq('track','PageView');</script>
+{% endif %}
+
+</body>
+</html>

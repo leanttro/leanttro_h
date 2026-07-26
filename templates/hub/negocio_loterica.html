@@ -1,0 +1,264 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<title>{{ negocio.nome }} — {{ hub.nome or 'Lotérica Perto de Mim' }}</title>
+<meta name="description" content="{% if negocio.descricao %}{{ negocio.descricao | truncate(160) }}{% else %}{{ negocio.nome }} — lotérica. Endereço, contato e informações completas.{% endif %}">
+<meta name="keywords" content="{{ negocio.nome }}, lotérica, {% if negocio.cidade %}{{ negocio.cidade }}, {% endif %}lotérica perto de mim">
+<meta name="robots" content="index, follow, max-image-preview:large, max-snippet:-1">
+<meta name="theme-color" content="#035105">
+<link rel="canonical" href="https://{{ request.host }}/{{ segmento }}/{{ negocio.slug }}/">
+
+<link rel="icon" type="image/png" href="{{ hub.logo_url or 'https://placehold.co/64x64/035105/def8c3?text=%F0%9F%8D%80' }}">
+
+<meta property="og:type" content="business.business">
+<meta property="og:url" content="https://{{ request.host }}/{{ segmento }}/{{ negocio.slug }}/">
+<meta property="og:title" content="{{ negocio.nome }} — {{ hub.nome or 'Lotérica Perto de Mim' }}">
+<meta property="og:description" content="{% if negocio.descricao %}{{ negocio.descricao | truncate(160) }}{% else %}Conheça {{ negocio.nome }}.{% endif %}">
+{% if negocio.foto_url %}<meta property="og:image" content="{{ negocio.foto_url }}">{% endif %}
+
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "LocalBusiness",
+  "@id": "https://{{ request.host }}/{{ segmento }}/{{ negocio.slug }}/",
+  "name": "{{ negocio.nome }}",
+  "url": "https://{{ request.host }}/{{ segmento }}/{{ negocio.slug }}/",
+  {% if negocio.descricao %}"description": "{{ negocio.descricao }}",{% endif %}
+  {% if negocio.foto_url %}"image": ["{{ negocio.foto_url }}"],{% endif %}
+  {% if negocio.endereco and negocio.mostrar_endereco %}
+  "address": {
+    "@type": "PostalAddress",
+    "streetAddress": "{{ negocio.endereco }}",
+    "addressLocality": "{{ negocio.cidade or '' }}",
+    "addressCountry": "BR"
+  },
+  {% endif %}
+  {% if negocio.telefone and negocio.mostrar_telefone %}"telephone": "{{ negocio.telefone }}",{% endif %}
+  "areaServed": "{{ negocio.cidade or 'Brasil' }}"
+}
+</script>
+
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "BreadcrumbList",
+  "itemListElement": [
+    {"@type":"ListItem","position":1,"name":"Início","item":"https://{{ request.host }}/"},
+    {"@type":"ListItem","position":2,"name":"{{ negocio.categoria_nome or 'Lotérica' }}","item":"https://{{ request.host }}/{{ segmento }}/"},
+    {"@type":"ListItem","position":3,"name":"{{ negocio.nome }}","item":"https://{{ request.host }}/{{ segmento }}/{{ negocio.slug }}/"}
+  ]
+}
+</script>
+
+<link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+<link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+
+<style>
+:root {
+    --primary: #035105;
+    --dark:    #023a04;
+    --gold:    #d4a017;
+    --bg:      #def8c3;
+    --bg-card: #ffffff;
+    --bg-card-alt: #eafcd9;
+    --border:  #bfe6a0;
+    --text:    #1b2a12;
+    --text-dim:#4d5c45;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: 'Montserrat', sans-serif; background: var(--bg); color: var(--text); line-height: 1.6; }
+h1, h2 { font-family: 'Montserrat', sans-serif; }
+a { text-decoration: none; color: inherit; }
+.container { max-width: 900px; margin: 0 auto; padding: 0 20px; }
+img { max-width: 100%; display: block; }
+
+body > header {
+    background: var(--primary); color: #fff;
+    padding: 18px 24px 12px; display: flex; flex-direction: column;
+    align-items: center; justify-content: center; gap: 8px;
+    position: sticky; top: 0; z-index: 100;
+}
+.logo img { height: 60px !important; width: auto; margin: 0 auto; }
+
+.anuncio-slot { text-align: center; padding: 10px 20px; background: var(--bg-card-alt); border-bottom: 1px solid var(--border); }
+.anuncio-slot img { max-height: 90px; margin: 0 auto; border-radius: 6px; }
+
+.breadcrumb { font-size: .82em; color: var(--text-dim); padding: 18px 20px 0; max-width: 900px; margin: 0 auto; }
+.breadcrumb a:hover { color: var(--dark); }
+.breadcrumb .bc-atual { color: var(--text); }
+
+.perfil-hero { padding: 20px; max-width: 900px; margin: 0 auto; }
+.perfil-foto { width: 100%; max-height: 340px; object-fit: cover; border-radius: 14px; border: 1px solid var(--border); }
+.perfil-cat { color: var(--dark); font-weight: 700; font-size: .8em; text-transform: uppercase; margin-top: 16px; }
+.perfil-nome { font-size: 1.7em; margin: 4px 0 12px; color: var(--dark); }
+.perfil-selos { display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 14px; }
+.perfil-selo { font-size: .85em; color: var(--text-dim); display: flex; align-items: center; gap: 6px; border: 1px solid var(--border); padding: 5px 12px; border-radius: 20px; }
+.perfil-descricao { color: var(--text-dim); margin-bottom: 20px; }
+
+.acoes { display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 26px; }
+.btn-pf { display: inline-flex; align-items: center; gap: 8px; padding: 12px 20px; border-radius: 8px; font-weight: 700; font-size: .92em; }
+.btn-pf-whats { background: #25d366; color: #06210f; }
+.btn-pf-outline { border: 1.5px solid var(--border); color: var(--text); background: var(--bg-card); }
+.btn-pf-outline:hover { border-color: var(--primary); color: var(--dark); }
+.btn-pf-cta { background: var(--primary); color: #fff; }
+.btn-pf-cta:hover { background: var(--dark); }
+
+.info-box { background: var(--bg-card); border: 1px solid var(--border); border-radius: 12px; padding: 18px; margin-bottom: 22px; }
+.info-box h3 { font-size: 1em; margin-bottom: 8px; color: var(--dark); }
+.info-box p { color: var(--text-dim); font-size: .92em; }
+
+.jogos-mini { background: var(--bg-card); border: 1px solid var(--border); border-radius: 12px; padding: 18px; margin-bottom: 26px; }
+.jogos-mini h2 { font-size: 1.05em; color: var(--dark); margin-bottom: 12px; }
+.jogos-mini-lista { display: flex; flex-wrap: wrap; gap: 8px; }
+.jogos-mini-lista a {
+    background: var(--bg); border: 1px solid var(--border); border-radius: 20px;
+    padding: 8px 16px; font-size: .88em; font-weight: 600; color: var(--dark);
+}
+.jogos-mini-lista a:hover { background: var(--primary); color: #fff; border-color: var(--primary); }
+
+.cross-link { display: inline-flex; align-items: center; gap: 8px; font-weight: 700; color: var(--dark); margin-bottom: 30px; }
+.cross-link:hover { text-decoration: underline; }
+
+footer { background: var(--dark); color: #cfe8c0; padding: 22px 20px; font-size: .85em; text-align: center; }
+</style>
+</head>
+<body>
+
+<header>
+  <a class="logo" href="/">
+    <img src="{{ hub.logo_url or 'https://placehold.co/200x60/035105/def8c3?text=Loterica+Perto+de+Mim' }}" alt="{{ hub.nome or 'Lotérica Perto de Mim' }}">
+  </a>
+</header>
+
+{% if anuncio_topo %}
+<div class="anuncio-slot">
+  <a href="{{ anuncio_topo.link_url or '#' }}" target="_blank" rel="noopener">
+    <img src="{{ anuncio_topo.imagem_url }}" alt="{{ anuncio_topo.titulo or 'Anúncio' }}">
+  </a>
+</div>
+{% endif %}
+
+<div class="breadcrumb">
+  <a href="/">Início</a> /
+  <a href="/{{ segmento }}/">{{ negocio.categoria_nome or 'Lotérica' }}</a> /
+  <span class="bc-atual">{{ negocio.nome }}</span>
+</div>
+
+<div class="perfil-hero">
+  {% if negocio.foto_url and negocio.mostrar_foto %}
+    <img class="perfil-foto" src="{{ negocio.foto_url }}" alt="{{ negocio.nome }}">
+  {% endif %}
+
+  <div class="perfil-cat">{{ negocio.categoria_nome or 'Lotérica' }}</div>
+  <h1 class="perfil-nome">{{ negocio.nome }}</h1>
+
+  <div class="perfil-selos">
+    {% if negocio.cidade %}
+      <span class="perfil-selo"><i class="fas fa-map-marker-alt"></i> {{ negocio.cidade }}{{ ', ' ~ negocio.bairro if negocio.bairro }}</span>
+    {% endif %}
+  </div>
+
+  {% if negocio.descricao and negocio.mostrar_descricao %}
+    <p class="perfil-descricao">{{ negocio.descricao }}</p>
+  {% endif %}
+
+  {% if anuncio_meio %}
+  <div class="anuncio-slot" style="margin-bottom:20px;border-radius:12px;">
+    <a href="{{ anuncio_meio.link_url or '#' }}" target="_blank" rel="noopener">
+      <img src="{{ anuncio_meio.imagem_url }}" alt="{{ anuncio_meio.titulo or 'Anúncio' }}">
+    </a>
+  </div>
+  {% endif %}
+
+  <div class="acoes">
+    {% if negocio.whatsapp and negocio.mostrar_whatsapp %}
+      <a class="btn-pf btn-pf-whats" href="https://wa.me/{{ negocio.whatsapp | replace('(','') | replace(')','') | replace('-','') | replace(' ','') }}" target="_blank" rel="noopener">
+        <i class="fab fa-whatsapp"></i> WhatsApp
+      </a>
+    {% endif %}
+
+    {% if negocio.telefone and negocio.mostrar_telefone %}
+      <a class="btn-pf btn-pf-outline" href="tel:{{ negocio.telefone }}"><i class="fas fa-phone"></i> Ligar</a>
+    {% endif %}
+
+    {% if negocio.instagram and negocio.mostrar_instagram %}
+      <a class="btn-pf btn-pf-outline" href="https://instagram.com/{{ negocio.instagram | replace('@','') }}" target="_blank" rel="noopener">
+        <i class="fab fa-instagram"></i> Instagram
+      </a>
+    {% endif %}
+
+    {% if negocio.site_url and negocio.mostrar_site %}
+      <a class="btn-pf btn-pf-outline" href="{{ negocio.site_url }}" target="_blank" rel="noopener"><i class="fas fa-globe"></i> Site</a>
+    {% endif %}
+
+    {% if negocio.exibir_geo and negocio.endereco and negocio.mostrar_endereco %}
+      <button class="btn-pf btn-pf-outline" onclick="comoChegar()"><i class="fas fa-route"></i> Como chegar</button>
+    {% endif %}
+  </div>
+
+  {% if negocio.exibir_geo and negocio.endereco and negocio.mostrar_endereco %}
+    <div class="info-box">
+      <h3><i class="fas fa-map-marker-alt"></i> Endereço</h3>
+      <p>{{ negocio.endereco }}{{ ', ' ~ negocio.bairro if negocio.bairro }}{{ ', ' ~ negocio.cidade if negocio.cidade }}</p>
+    </div>
+  {% endif %}
+
+  {# Lista fixa dos jogos — mesmo motivo do index_loterica.html: essa
+     rota (/<segmento>/<slug>/) é a genérica do app.py e não passa
+     jogos_meno no contexto. #}
+  {% set jogos_mini = [
+      {"slug": "mega-sena", "nome": "Mega-Sena"},
+      {"slug": "quina", "nome": "Quina"},
+      {"slug": "lotofacil", "nome": "Lotofácil"},
+      {"slug": "lotomania", "nome": "Lotomania"},
+  ] %}
+  <div class="jogos-mini">
+    <h2>Resultado das loterias</h2>
+    <div class="jogos-mini-lista">
+      {% for j in jogos_mini %}
+        <a href="/resultados/{{ j.slug }}/"><i class="fas fa-ticket"></i> {{ j.nome }}</a>
+      {% endfor %}
+    </div>
+  </div>
+
+  <a class="cross-link" href="/">
+    <i class="fas fa-map-marker-alt"></i> Veja outras lotéricas perto de você →
+  </a>
+</div>
+
+<footer>&copy; {{ hub.nome or 'Lotérica Perto de Mim' }} — todos os direitos reservados.</footer>
+
+<script>
+var DEST_LAT = {{ negocio.lat or 'null' }};
+var DEST_LNG = {{ negocio.lng or 'null' }};
+var DEST_ENDERECO = {{ (negocio.endereco ~ ', ' ~ (negocio.cidade or '')) | tojson }};
+
+function comoChegar() {
+  var destino = (DEST_LAT !== null && DEST_LNG !== null) ? (DEST_LAT + ',' + DEST_LNG) : encodeURIComponent(DEST_ENDERECO);
+  if (!navigator.geolocation) {
+    window.open('https://www.google.com/maps/search/?api=1&query=' + destino, '_blank');
+    return;
+  }
+  navigator.geolocation.getCurrentPosition(
+    function(pos) {
+      var origem = pos.coords.latitude + ',' + pos.coords.longitude;
+      window.open('https://www.google.com/maps/dir/?api=1&origin=' + origem + '&destination=' + destino + '&travelmode=driving', '_blank');
+    },
+    function() {
+      window.open('https://www.google.com/maps/search/?api=1&query=' + destino, '_blank');
+    },
+    { timeout: 8000, maximumAge: 60000 }
+  );
+}
+</script>
+
+{% if hub.ga4_id %}
+<script async src="https://www.googletagmanager.com/gtag/js?id={{ hub.ga4_id }}"></script>
+<script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag('js',new Date());gtag('config','{{ hub.ga4_id }}');</script>
+{% endif %}
+
+</body>
+</html>
