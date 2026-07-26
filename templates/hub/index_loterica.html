@@ -238,6 +238,12 @@ nav.desktop-nav ul li:hover .nav-dropdown { display: block; }
 .carousel-track-outer { overflow: hidden; }
 .carousel-track { display: flex; gap: 18px; transition: transform .3s ease; will-change: transform; }
 .carousel-track.dragging { transition: none; cursor: grabbing; }
+@media (max-width: 768px) {
+  .carousel-track-outer { overflow-x: auto; -webkit-overflow-scrolling: touch; scrollbar-width: none; -ms-overflow-style: none; }
+  .carousel-track-outer::-webkit-scrollbar { display: none; }
+  .carousel-track { scroll-snap-type: x proximity; transition: none; transform: none !important; }
+  .carousel-track .negocio-card, .carousel-track .cidade-card { scroll-snap-align: start; }
+}
 .carousel-nav { display: flex; align-items: center; gap: 10px; margin-top: 14px; }
 .carousel-arrow { background: var(--bg-card); border: 1px solid var(--border); border-radius: 50%; width: 34px; height: 34px; cursor: pointer; color: var(--dark); }
 .carousel-arrow:disabled { opacity: .35; cursor: default; }
@@ -761,16 +767,24 @@ function getCardWidthLot(){
 function isMobileLot(){ return window.innerWidth <= 768; }
 
 function clampAndUpdateLot(){
-  if(isMobileLot()) return;
   var track = document.getElementById('negocios-track');
   var cards = track.querySelectorAll('.negocio-card');
   if(!cards.length) return;
-  var maxPos = Math.max(0, cards.length * getCardWidthLot() - track.parentElement.offsetWidth);
-  carouselPosLot = Math.max(0, Math.min(carouselPosLot, maxPos));
-  track.style.transform = 'translateX(-' + carouselPosLot + 'px)';
   var fill = document.getElementById('negocios-progress-fill');
   var prev = document.getElementById('negocios-prev');
   var next = document.getElementById('negocios-next');
+  if(isMobileLot()){
+    var outer = track.parentElement;
+    var maxScroll = Math.max(0, outer.scrollWidth - outer.clientWidth);
+    var pos = outer.scrollLeft;
+    if(fill) fill.style.width = maxScroll > 0 ? Math.min(100, (pos / maxScroll) * 100) + '%' : '0%';
+    if(prev) prev.disabled = pos <= 2;
+    if(next) next.disabled = maxScroll <= 0 || pos >= maxScroll - 2;
+    return;
+  }
+  var maxPos = Math.max(0, cards.length * getCardWidthLot() - track.parentElement.offsetWidth);
+  carouselPosLot = Math.max(0, Math.min(carouselPosLot, maxPos));
+  track.style.transform = 'translateX(-' + carouselPosLot + 'px)';
   if(fill) fill.style.width = maxPos > 0 ? Math.min(100, (carouselPosLot / maxPos) * 100) + '%' : '0%';
   if(prev) prev.disabled = carouselPosLot <= 0;
   if(next) next.disabled = maxPos <= 0 || carouselPosLot >= maxPos;
@@ -807,11 +821,20 @@ function buildCarouselLot(cards){
       if(!_det || !_horiz) return; e.preventDefault(); onMove(e.touches[0].clientX);
     }, { passive: false });
     track.addEventListener('touchend', function(){ if(_horiz) onEnd(); else isDragging = false; });
+  } else {
+    track.parentElement.addEventListener('scroll', function(){ clampAndUpdateLot(); }, { passive: true });
   }
 }
 
 function moveCarousel(dir){
-  var outer = document.getElementById('negocios-track').parentElement;
+  var track = document.getElementById('negocios-track');
+  var outer = track.parentElement;
+  if(isMobileLot()){
+    var card = track.querySelector('.negocio-card');
+    var step = card ? card.offsetWidth + 18 : outer.clientWidth;
+    outer.scrollBy({ left: dir * step, behavior: 'smooth' });
+    return;
+  }
   var visivel = Math.max(1, Math.floor(outer.offsetWidth / getCardWidthLot()));
   carouselPosLot += dir * visivel * getCardWidthLot();
   clampAndUpdateLot();
@@ -953,17 +976,25 @@ if(TOTAL_NEGOCIOS_LOT > todosLotericas.length){
     }
 
     function clampCid(){
-        if(isMobileCid()) return;
         var track = document.getElementById('cidades-track');
         if(!track) return;
         var cards = track.querySelectorAll('.cidade-card');
         if(!cards.length) return;
-        var maxPos = Math.max(0, cards.length * cidCardWidth() - track.parentElement.offsetWidth);
-        cidPos = Math.max(0, Math.min(cidPos, maxPos));
-        track.style.transform = 'translateX(-'+cidPos+'px)';
         var fill = document.getElementById('cidades-progress-fill');
         var prev = document.getElementById('cidades-prev');
         var next = document.getElementById('cidades-next');
+        if(isMobileCid()){
+            var outer = track.parentElement;
+            var maxScroll = Math.max(0, outer.scrollWidth - outer.clientWidth);
+            var pos = outer.scrollLeft;
+            if(fill) fill.style.width = maxScroll>0 ? Math.min(100,(pos/maxScroll)*100)+'%' : '0%';
+            if(prev) prev.disabled = pos<=2;
+            if(next) next.disabled = maxScroll<=0 || pos>=maxScroll-2;
+            return;
+        }
+        var maxPos = Math.max(0, cards.length * cidCardWidth() - track.parentElement.offsetWidth);
+        cidPos = Math.max(0, Math.min(cidPos, maxPos));
+        track.style.transform = 'translateX(-'+cidPos+'px)';
         if(fill) fill.style.width = maxPos>0 ? Math.min(100,(cidPos/maxPos)*100)+'%' : '0%';
         if(prev) prev.disabled = cidPos<=0;
         if(next) next.disabled = maxPos<=0 || cidPos>=maxPos;
@@ -1000,13 +1031,22 @@ if(TOTAL_NEGOCIOS_LOT > todosLotericas.length){
                 if(!_det||!_horiz) return; e.preventDefault(); onMove(e.touches[0].clientX);
             },{passive:false});
             track.addEventListener('touchend',function(e){ if(_horiz) onEnd(); else isDragging=false; });
+        } else {
+            track.parentElement.addEventListener('scroll', function(){ clampCid(); }, { passive: true });
         }
     }
 
     window.moveCarouselCidades = function(dir){
         var track = document.getElementById('cidades-track');
         if(!track) return;
-        var visivel = Math.max(1, Math.floor(track.parentElement.offsetWidth / cidCardWidth()));
+        var outer = track.parentElement;
+        if(isMobileCid()){
+            var card = track.querySelector('.cidade-card');
+            var step = card ? card.offsetWidth + 18 : outer.clientWidth;
+            outer.scrollBy({ left: dir * step, behavior: 'smooth' });
+            return;
+        }
+        var visivel = Math.max(1, Math.floor(outer.offsetWidth / cidCardWidth()));
         cidPos += dir * visivel * cidCardWidth();
         clampCid();
     };
