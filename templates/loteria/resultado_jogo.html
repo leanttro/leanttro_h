@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<title>{{ jogo.nome }} — Resultado do concurso {{ resultado.numero }} | {{ hub.nome or 'Lotérica Perto de Mim' }}</title>
+<meta name="description" content="Resultado mais recente da {{ jogo.nome }}: dezenas sorteadas, prêmio, acumulado e próximo concurso.">
+<meta name="robots" content="index, follow, max-image-preview:large, max-snippet:-1">
+<meta name="theme-color" content="#035105">
+<link rel="canonical" href="https://{{ request.host }}/resultados/{{ jogo_slug }}/">
+
+<link rel="icon" type="image/png" href="{{ hub.logo_url or 'https://placehold.co/64x64/035105/def8c3?text=%F0%9F%8D%80' }}">
+
+<meta property="og:type" content="website">
+<meta property="og:title" content="{{ jogo.nome }} — Resultado do concurso {{ resultado.numero }}">
+<meta property="og:description" content="Dezenas sorteadas, prêmio e acumulado da {{ jogo.nome }}.">
+
+<link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+<link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+
+<style>
+:root {
+    --primary: #035105;
+    --primary-dark: #023a04;
+    --bg:      #def8c3;
+    --bg-card: #ffffff;
+    --gold:    #d4a017;
+    --text:    #1b2a12;
+    --text-dim:#4d5c45;
+    --border:  #bfe6a0;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: 'Montserrat', sans-serif; background: var(--bg); color: var(--text); line-height: 1.6; }
+a { text-decoration: none; color: inherit; }
+.container { max-width: 900px; margin: 0 auto; padding: 0 20px; }
+img { max-width: 100%; display: block; }
+
+body > header {
+    background: var(--primary); color: #fff;
+    padding: 16px 20px; display: flex; flex-direction: column;
+    align-items: center; justify-content: center; gap: 6px;
+    position: sticky; top: 0; z-index: 100;
+}
+.logo { display: block; text-align: center; }
+.logo img { height: 56px !important; width: auto; margin: 0 auto; }
+nav.desktop-nav ul { list-style: none; display: flex; align-items: center; justify-content: center; flex-wrap: wrap; gap: 4px; margin-top: 6px; }
+nav.desktop-nav ul li a { color: #fff; font-weight: 500; font-size: .85em; padding: 8px 12px; border-radius: 6px; }
+nav.desktop-nav ul li a:hover { background: var(--primary-dark); }
+
+.pagina-header { padding: 30px 20px 10px; }
+.pagina-header .breadcrumb { font-size: .82em; color: var(--text-dim); margin-bottom: 8px; }
+.pagina-header .breadcrumb a:hover { color: var(--gold); }
+.pagina-header h1 { font-size: 1.5em; color: var(--primary-dark); }
+.pagina-header .dias { color: var(--text-dim); font-size: .9em; margin-top: 4px; }
+
+.card-resultado {
+    background: var(--bg-card); border: 1px solid var(--border); border-radius: 16px;
+    margin: 20px 0; padding: 24px 20px; text-align: center;
+    box-shadow: 0 4px 14px rgba(3,81,5,0.08);
+}
+.card-resultado .concurso-numero { font-size: .85em; color: var(--text-dim); font-weight: 600; text-transform: uppercase; letter-spacing: .04em; }
+.card-resultado .concurso-data { font-size: .85em; color: var(--text-dim); margin-bottom: 16px; }
+
+.dezenas-row { display: flex; flex-wrap: wrap; gap: 10px; justify-content: center; margin: 16px 0 20px; }
+.bolinha {
+    width: 52px; height: 52px; border-radius: 50%;
+    background: var(--primary); color: #fff;
+    display: flex; align-items: center; justify-content: center;
+    font-weight: 800; font-size: 1.15em;
+    box-shadow: inset 0 -4px 0 rgba(0,0,0,0.15), 0 3px 6px rgba(0,0,0,0.15);
+}
+
+.info-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 14px; margin-top: 10px; text-align: left; }
+.info-item { background: var(--bg); border-radius: 10px; padding: 12px 14px; }
+.info-item .label { font-size: .72em; color: var(--text-dim); text-transform: uppercase; font-weight: 700; letter-spacing: .03em; }
+.info-item .valor { font-size: 1.05em; font-weight: 700; color: var(--primary-dark); margin-top: 2px; }
+.status-acumulou { color: #b23b00; }
+.status-nao-acumulou { color: var(--primary-dark); }
+
+.secao-titulo { font-size: 1.1em; color: var(--primary-dark); margin: 30px 0 12px; padding: 0 20px; }
+.historico-lista { list-style: none; display: flex; flex-direction: column; gap: 8px; padding: 0 20px 40px; }
+.historico-lista li a {
+    display: flex; justify-content: space-between; align-items: center;
+    background: var(--bg-card); border: 1px solid var(--border); border-radius: 10px;
+    padding: 12px 16px; font-size: .9em;
+}
+.historico-lista li a:hover { border-color: var(--primary); }
+.historico-lista .concurso { font-weight: 700; color: var(--primary-dark); }
+.historico-lista .data { color: var(--text-dim); }
+
+.link-voltar { display: inline-block; margin: 10px 20px 30px; font-size: .88em; color: var(--primary-dark); font-weight: 600; }
+.link-voltar:hover { text-decoration: underline; }
+
+footer { background: var(--primary); color: #cfe8c0; padding: 22px 20px; font-size: .82em; text-align: center; }
+footer a { color: #fff; }
+</style>
+</head>
+<body>
+
+<header>
+  <a class="logo" href="/">
+    <img src="{{ hub.logo_url or 'https://placehold.co/200x60/035105/def8c3?text=Loterica+Perto+de+Mim' }}" alt="{{ hub.nome or 'Lotérica Perto de Mim' }}">
+  </a>
+  <nav class="desktop-nav">
+    <ul>
+      {% for slug, info_jogo in jogos_menu.items() if jogos_menu is defined %}
+        <li><a href="/resultados/{{ slug }}/">{{ info_jogo.nome }}</a></li>
+      {% endfor %}
+    </ul>
+  </nav>
+</header>
+
+<div class="pagina-header container">
+  <div class="breadcrumb">
+    <a href="/">Início</a> / <a href="/resultados/{{ jogo_slug }}/">{{ jogo.nome }}</a>
+  </div>
+  <h1>Resultado da {{ jogo.nome }} — Concurso {{ resultado.numero }}</h1>
+  <div class="dias">Sorteios {{ jogo.dias }}</div>
+</div>
+
+<div class="container">
+  <div class="card-resultado">
+    <div class="concurso-numero">Concurso {{ resultado.numero }}</div>
+    <div class="concurso-data">{{ resultado.dataApuracao }}</div>
+
+    <div class="dezenas-row">
+      {% for dezena in (resultado.listaDezenas or resultado.dezenasSorteadasOrdemSorteio or resultado.dezenas or []) %}
+        <div class="bolinha">{{ dezena }}</div>
+      {% endfor %}
+    </div>
+
+    <div class="info-grid">
+      <div class="info-item">
+        <div class="label">Acumulou?</div>
+        <div class="valor {{ 'status-acumulou' if resultado.acumulado else 'status-nao-acumulou' }}">
+          {{ 'Sim' if resultado.acumulado else 'Não' }}
+        </div>
+      </div>
+      {% if resultado.valorAcumuladoProximoConcurso %}
+      <div class="info-item">
+        <div class="label">Acumulado p/ próximo concurso</div>
+        <div class="valor">R$ {{ '{:,.2f}'.format(resultado.valorAcumuladoProximoConcurso).replace(',', 'X').replace('.', ',').replace('X', '.') }}</div>
+      </div>
+      {% endif %}
+      {% if resultado.valorEstimadoProximoConcurso %}
+      <div class="info-item">
+        <div class="label">Estimativa do próximo prêmio</div>
+        <div class="valor">R$ {{ '{:,.2f}'.format(resultado.valorEstimadoProximoConcurso).replace(',', 'X').replace('.', ',').replace('X', '.') }}</div>
+      </div>
+      {% endif %}
+      {% if resultado.dataProximoConcurso %}
+      <div class="info-item">
+        <div class="label">Próximo concurso</div>
+        <div class="valor">{{ resultado.dataProximoConcurso }}</div>
+      </div>
+      {% endif %}
+      {% if resultado.nomeMunicipioUFSorteio %}
+      <div class="info-item">
+        <div class="label">Local do sorteio</div>
+        <div class="valor">{{ resultado.nomeMunicipioUFSorteio }}</div>
+      </div>
+      {% endif %}
+    </div>
+  </div>
+
+  <a class="link-voltar" href="/">&larr; Ver lotéricas perto de você</a>
+</div>
+
+{% if historico_ano %}
+<h2 class="secao-titulo container">Concursos de {{ ano_atual }}</h2>
+<ul class="historico-lista">
+  {% for h in historico_ano %}
+    <li>
+      <a href="/resultados/{{ jogo_slug }}/{{ h.concurso }}/">
+        <span class="concurso">Concurso {{ h.concurso }}</span>
+        <span class="data">{{ h.data_apuracao }}</span>
+      </a>
+    </li>
+  {% endfor %}
+</ul>
+{% endif %}
+
+<footer>&copy; {{ hub.nome or 'Lotérica Perto de Mim' }} — todos os direitos reservados. Resultados oficiais: Caixa Econômica Federal.</footer>
+
+</body>
+</html>
