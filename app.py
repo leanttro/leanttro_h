@@ -142,10 +142,12 @@ def _cache_invalidar():
 _PREFIXO_CATEGORIA_POR_HUB = {
     # hub_leanttro (subdomínio .leanttro.com) -> prefixo de slug
     "cinema": "cinema_",
+    "loterica": "loterica_",
 }
 _PREFIXO_CATEGORIA_POR_DOMINIO = {
     # dominio_proprio -> prefixo de slug (quando o domínio próprio entrar no ar)
     "cinemapertodemim.com.br": "cinema_",
+    "lotericapertodemim.com.br": "loterica_",
 }
 
 def _categorias_do_hub(hub):
@@ -350,6 +352,20 @@ def sitemap():
     if _eh_hub_cinema:
         linhas.append("  <sitemap>")
         linhas.append(f"    <loc>{base_url}/sitemap-cinema.xml</loc>")
+        linhas.append(f"    <lastmod>{hoje}</lastmod>")
+        linhas.append("  </sitemap>")
+
+    # Resultados de loteria (/resultados/<jogo>/) também não vêm de
+    # hub_negocios — quem monta esse sitemap é o próprio loteria.py.
+    # Mesmo raciocínio do bloco de cinema acima: só entra se o hub
+    # atual for o de lotérica.
+    _eh_hub_loterica = (
+        _PREFIXO_CATEGORIA_POR_HUB.get(hub.get("hub_leanttro")) == "loterica_"
+        or _PREFIXO_CATEGORIA_POR_DOMINIO.get(hub.get("dominio_proprio")) == "loterica_"
+    )
+    if _eh_hub_loterica:
+        linhas.append("  <sitemap>")
+        linhas.append(f"    <loc>{base_url}/sitemap-resultados.xml</loc>")
         linhas.append(f"    <lastmod>{hoje}</lastmod>")
         linhas.append("  </sitemap>")
 
@@ -2370,6 +2386,19 @@ app.register_blueprint(cinema_bp)
 
 from chatbot import chatbot_bp
 app.register_blueprint(chatbot_bp)
+
+
+# ════════════════════════════════════════════════════════════
+#  Blueprint — Lotérica Perto de Mim (resultados de loteria via API da Caixa)
+#  Mesmo padrão de import tardio do cinema_bp acima: loteria.py importa
+#  get_hub_by_host de volta deste módulo dentro das próprias rotas, não
+#  no topo do arquivo — não existe ciclo de import real, só essa ordem
+#  de registro no fim. Usa banco PRÓPRIO (LOTERIA_DB_*), isolado do
+#  banco do hub — ver loteria.py.
+# ════════════════════════════════════════════════════════════
+
+from loteria import loteria_bp
+app.register_blueprint(loteria_bp)
 
 
 # ════════════════════════════════════════════════════════════
