@@ -32,6 +32,7 @@ from flask import Blueprint, render_template, request, jsonify, g, Response
 from datetime import datetime, date, timezone
 import os
 import re
+import json
 import time
 import threading
 import unicodedata
@@ -71,40 +72,35 @@ _SQL_SELECT_ULTIMO = """
 """
 
 _SQL_SELECT_ANO_ATUAL = """
-    SELECT * FROM loteria_resultados
-    WHERE jogo = %s AND EXTRACT(YEAR FROM data_apuracao) = %s
+    SELECT *, data_sorteio AS data_apuracao FROM loteria_resultados
+    WHERE jogo = %s AND EXTRACT(YEAR FROM data_sorteio) = %s
     ORDER BY concurso DESC
 """
 
 _SQL_SELECT_SITEMAP_ANO_ATUAL = """
-    SELECT jogo, concurso, data_apuracao FROM loteria_resultados
-    WHERE EXTRACT(YEAR FROM data_apuracao) = %s
+    SELECT jogo, concurso, data_sorteio AS data_apuracao FROM loteria_resultados
+    WHERE EXTRACT(YEAR FROM data_sorteio) = %s
     ORDER BY jogo, concurso
 """
 
 _SQL_UPSERT = """
     INSERT INTO loteria_resultados
-        (jogo, concurso, data_apuracao, data_proximo_concurso,
-         dezenas, acumulado, valor_arrecadado, valor_estimado_proximo,
-         valor_acumulado_proximo, local_sorteio, premiacoes, dados_brutos,
-         atualizado_em)
+        (jogo, concurso, data_sorteio, data_proximo_concurso,
+         dezenas, acumulou, valor_premio, valor_estimado_proximo,
+         dados_json)
     VALUES
-        (%(jogo)s, %(concurso)s, %(data_apuracao)s, %(data_proximo_concurso)s,
-         %(dezenas)s, %(acumulado)s, %(valor_arrecadado)s, %(valor_estimado_proximo)s,
-         %(valor_acumulado_proximo)s, %(local_sorteio)s, %(premiacoes)s, %(dados_brutos)s,
-         now())
+        (%(jogo)s, %(concurso)s, %(data_sorteio)s, %(data_proximo_concurso)s,
+         %(dezenas)s, %(acumulou)s, %(valor_premio)s, %(valor_estimado_proximo)s,
+         %(dados_json)s)
     ON CONFLICT (jogo, concurso) DO UPDATE SET
-        data_apuracao           = EXCLUDED.data_apuracao,
-        data_proximo_concurso    = EXCLUDED.data_proximo_concurso,
-        dezenas                  = EXCLUDED.dezenas,
-        acumulado                = EXCLUDED.acumulado,
-        valor_arrecadado         = EXCLUDED.valor_arrecadado,
-        valor_estimado_proximo   = EXCLUDED.valor_estimado_proximo,
-        valor_acumulado_proximo  = EXCLUDED.valor_acumulado_proximo,
-        local_sorteio            = EXCLUDED.local_sorteio,
-        premiacoes               = EXCLUDED.premiacoes,
-        dados_brutos             = EXCLUDED.dados_brutos,
-        atualizado_em            = now()
+        data_sorteio            = EXCLUDED.data_sorteio,
+        data_proximo_concurso   = EXCLUDED.data_proximo_concurso,
+        dezenas                 = EXCLUDED.dezenas,
+        acumulou                = EXCLUDED.acumulou,
+        valor_premio            = EXCLUDED.valor_premio,
+        valor_estimado_proximo  = EXCLUDED.valor_estimado_proximo,
+        dados_json              = EXCLUDED.dados_json,
+        atualizado_em           = now()
 """
 
 
@@ -179,28 +175,41 @@ def _caixa_get(jogo_caixa, concurso=None):
 
 
 def _normalizar_para_gravar(jogo_slug, dados_caixa):
-    """Converte o JSON bruto da Caixa pro formato de linha da nossa tabela."""
+    """Converte o JSON bruto da Caixa pro formato de linha da nossa tabela
+    (schema real: ver script_loteria_resultados.py — NÃO tem coluna própria
+    pra local do sorteio nem pra rateio completo; tudo isso vai preservado
+    dentro de dados_json, que guarda a resposta bruta inteira)."""
+    dezenas_lista = dados_caixa.get("listaDezenas") or dados_caixa.get("dezenasSorteadasOrdemSorteio") or []
+    rateio = dados_caixa.get("listaRateioPremio") or []
+    # valor_premio = prêmio da faixa principal (1ª faixa do rateio) desse
+    # concurso — é o número mais próximo de "quanto pagou o prêmio" que dá
+    # pra extrair sem ambiguidade do payload da Caixa.
+    valor_premio = rateio[0].get("valorPremio") if rateio else None
     return {
         "jogo": jogo_slug,
         "concurso": dados_caixa.get("numero"),
-        "data_apuracao": _parse_data_caixa(dados_caixa.get("dataApuracao")),
+        "data_sorteio": _parse_data_caixa(dados_caixa.get("dataApuracao")),
         "data_proximo_concurso": _parse_data_caixa(dados_caixa.get("dataProximoConcurso")),
-        "dezenas": dados_caixa.get("listaDezenas") or dados_caixa.get("dezenasSorteadasOrdemSorteio") or [],
-        "acumulado": bool(dados_caixa.get("acumulado")),
-        "valor_arrecadado": dados_caixa.get("valorArrecadado"),
+        "dezenas": ",".join(str(d) for d in dezenas_lista),
+        "acumulou": bool(dados_caixa.get("acumulado")),
+        "valor_premio": valor_premio,
         "valor_estimado_proximo": dados_caixa.get("valorEstimadoProximoConcurso"),
-        "valor_acumulado_proximo": dados_caixa.get("valorAcumuladoProximoConcurso"),
-        "local_sorteio": dados_caixa.get("nomeMunicipioUFSorteio"),
-        "premiacoes": psycopg2.extras.Json(dados_caixa.get("listaRateioPremio") or []),
-        "dados_brutos": psycopg2.extras.Json(dados_caixa),
+        "dados_json": json.dumps(dados_caixa, ensure_ascii=False, default=str),
     }
 
 
 def _salvar_resultado(jogo_slug, dados_caixa):
     linha = _normalizar_para_gravar(jogo_slug, dados_caixa)
-    if not linha["concurso"] or not linha["data_apuracao"]:
+    if not linha["concurso"] or not linha["data_sorteio"]:
         return  # dado incompleto vindo da Caixa — não grava lixo no banco
-    query_loteria(_SQL_UPSERT, linha, commit=True)
+    try:
+        query_loteria(_SQL_UPSERT, linha, commit=True)
+    except Exception as e:
+        # Nunca deixa uma falha de escrita do cache derrubar a página —
+        # o visitante já tem o resultado (veio direto da Caixa), só não
+        # conseguimos guardar cópia local dessa vez. Fica logado pra dar
+        # pra investigar depois.
+        print(f"[loteria] Falha ao salvar cache {jogo_slug}/{linha.get('concurso')}: {e}")
 
 
 # ── Cache leve em memória só pro "último resultado" ─────────────
@@ -211,6 +220,34 @@ def _salvar_resultado(jogo_slug, dados_caixa):
 # /resultados/<jogo>/ chamaria a Caixa de novo.
 _CACHE_ULTIMO = {}
 _CACHE_ULTIMO_TTL = 600  # 10 minutos
+
+
+def _linha_banco_para_template(linha):
+    """Os templates (resultado_jogo.html, concurso_detalhe.html) esperam as
+    MESMAS chaves que a API da Caixa devolve (numero, dataApuracao,
+    listaDezenas, acumulado, listaRateioPremio, nomeMunicipioUFSorteio...).
+    Quando o resultado vem do banco (fallback ou concurso já sorteado), a
+    fonte mais completa e fiel é dados_json (resposta bruta salva
+    inteira) — as colunas soltas (concurso, data_sorteio etc.) existem só
+    pra permitir filtro/ordenação em SQL, não pra remontar a página."""
+    bruto_txt = linha.get("dados_json")
+    if bruto_txt:
+        try:
+            bruto = json.loads(bruto_txt)
+            if isinstance(bruto, dict):
+                return bruto
+        except (ValueError, TypeError):
+            pass
+    # dados_json vazio/corrompido (linha antiga, por exemplo): monta o
+    # mínimo a partir das colunas soltas, o suficiente pro template não quebrar
+    return {
+        "numero": linha.get("concurso"),
+        "dataApuracao": linha["data_sorteio"].strftime("%d/%m/%Y") if linha.get("data_sorteio") else None,
+        "dezenasSorteadasOrdemSorteio": (linha.get("dezenas") or "").split(",") if linha.get("dezenas") else [],
+        "acumulado": bool(linha.get("acumulou")),
+        "valorEstimadoProximoConcurso": linha.get("valor_estimado_proximo"),
+        "dataProximoConcurso": linha["data_proximo_concurso"].strftime("%d/%m/%Y") if linha.get("data_proximo_concurso") else None,
+    }
 
 
 def _resultado_mais_recente(jogo_slug, jogo_caixa):
@@ -231,10 +268,12 @@ def _resultado_mais_recente(jogo_slug, jogo_caixa):
         _CACHE_ULTIMO[jogo_slug] = (agora, dados)
         return dados, None
 
+    print(f"[loteria] Caixa indisponível pra {jogo_caixa} ({jogo_slug}): {erro}")
+
     # Caixa indisponível: cai pro cache local (loteria_resultados)
     linha_banco = query_loteria(_SQL_SELECT_ULTIMO, (jogo_slug,), one=True)
     if linha_banco:
-        return dict(linha_banco), None
+        return _linha_banco_para_template(dict(linha_banco)), None
     return None, erro
 
 
@@ -243,7 +282,7 @@ def _resultado_por_concurso(jogo_slug, jogo_caixa, concurso):
     (cache permanente) antes de chamar a Caixa."""
     linha_banco = query_loteria(_SQL_SELECT_POR_CONCURSO, (jogo_slug, concurso), one=True)
     if linha_banco:
-        return dict(linha_banco), None
+        return _linha_banco_para_template(dict(linha_banco)), None
 
     dados, erro = _caixa_get(jogo_caixa, concurso)
     if erro or not dados:
@@ -328,6 +367,7 @@ def resultado_jogo(jogo):
 
     dados, erro = _resultado_mais_recente(jogo, info["caixa"])
     if not dados:
+        print(f"[loteria] /resultados/{jogo}/ sem dados (Caixa e banco falharam): {erro}")
         return render_template("loteria/erro.html", hub=hub, jogo=info,
                                 mensagem="Não foi possível carregar o resultado agora. Tenta de novo em instantes."), 502
 
@@ -361,6 +401,7 @@ def resultado_concurso(jogo, concurso):
 
     dados, erro = _resultado_por_concurso(jogo, info["caixa"], concurso)
     if not dados:
+        print(f"[loteria] /resultados/{jogo}/{concurso}/ sem dados: {erro}")
         return render_template("loteria/erro.html", hub=hub, jogo=info,
                                 mensagem="Concurso não encontrado."), 404
 
