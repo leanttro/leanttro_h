@@ -1,0 +1,17 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>{{ jogo.nome if jogo else 'Resultado' }} — indisponível | {{ hub.nome or 'Lotérica Perto de Mim' }}</title>
+<meta name="robots" content="noindex">
+<style>
+  body { font-family: 'Montserrat', sans-serif; background: #def8c3; color: #1b2a12; text-align: center; padding: 60px 20px; }
+  a { color: #035105; font-weight: 600; }
+</style>
+</head>
+<body>
+  <p>{{ mensagem }}</p>
+  <p><a href="/">&larr; Voltar ao início</a></p>
+</body>
+</html>
