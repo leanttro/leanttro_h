@@ -1,6 +1,17 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
+<script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-7617881885143728"
+     crossorigin="anonymous"></script>
+<!-- Google tag (gtag.js) -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-Q7QW6NB48T"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+
+  gtag('config', 'G-Q7QW6NB48T');
+</script>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 
@@ -128,7 +139,7 @@ nav.desktop-nav ul li:hover .nav-dropdown { display: block; }
   content: "";
   position: absolute;
   inset: 0;
-  background: linear-gradient(180deg, rgba(255,255,255,.94) 0%, rgba(255,255,255,.88) 55%, rgba(255,255,255,.94) 100%);
+  background: linear-gradient(180deg, rgba(255,255,255,.75) 0%, rgba(255,255,255,.65) 55%, rgba(255,255,255,.75) 100%);
   z-index: 0;
 }
 .hero > * { position: relative; z-index: 1; }
@@ -665,7 +676,7 @@ function toggleLocalizacao(){
 
 function cardHTMLLot(n){
   var dist = (n._dist && n._dist < 9999) ? '<span class="card-dist"><i class="fas fa-map-marker-alt"></i> ' + n._dist.toFixed(1) + ' km de você</span>' : '';
-  var foto = n.foto_url || 'https://placehold.co/400x260/035105/def8c3?text=%F0%9F%8D%80';
+  var foto = n.foto_url || 'https://res.cloudinary.com/dec2b0u1/image/upload/v1785093445/perto_de_mim_1260_x_915_px_1_if28v0.png';
   var local = [n.bairro, n.cidade].filter(Boolean).join(', ');
   return '<a href="/' + n.categoria_slug + '/' + n.slug + '/" class="negocio-card">' +
     '<div class="card-foto">' +
@@ -804,7 +815,7 @@ function renderLotericas(lista){
 (function(){
     var _todasCidades = [];
     var cidPos = 0, cidView = 'carousel';
-    var fotoBase = 'https://placehold.co/300x300/def8c3/035105?text=%F0%9F%8D%80';
+    var fotoBase = 'https://res.cloudinary.com/dec2b0u1/image/upload/v1785093445/perto_de_mim_1260_x_915_px_1_if28v0.png';
 
     function _slugCidade(nome){
         return nome.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/\s+/g,'-').replace(/[^a-z0-9-]/g,'');
