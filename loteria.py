@@ -331,14 +331,25 @@ def _linha_banco_para_template(linha):
         except (ValueError, TypeError):
             pass
     # dados_json vazio/corrompido (linha antiga, por exemplo): monta o
-    # mínimo a partir das colunas soltas, o suficiente pro template não quebrar
+    # mínimo a partir das colunas soltas. IMPORTANTE: precisa incluir TODAS
+    # as chaves que a Caixa devolveria (mesmo que vazias/None), porque os
+    # templates fazem "{% for x in resultado.listaRateioPremio %}" etc. —
+    # se a chave não existisse, o Jinja tenta iterar um Undefined e
+    # quebra com 500 (foi exatamente isso que aconteceu com concursos
+    # antigos sem dados_json, ex.: mega-sena/3029).
+    dezenas_lista = (linha.get("dezenas") or "").split(",") if linha.get("dezenas") else []
     return {
         "numero": linha.get("concurso"),
         "dataApuracao": linha["data_sorteio"].strftime("%d/%m/%Y") if linha.get("data_sorteio") else None,
-        "dezenasSorteadasOrdemSorteio": (linha.get("dezenas") or "").split(",") if linha.get("dezenas") else [],
-        "acumulado": bool(linha.get("acumulou")),
-        "valorEstimadoProximoConcurso": linha.get("valor_estimado_proximo"),
         "dataProximoConcurso": linha["data_proximo_concurso"].strftime("%d/%m/%Y") if linha.get("data_proximo_concurso") else None,
+        "listaDezenas": dezenas_lista,
+        "dezenasSorteadasOrdemSorteio": dezenas_lista,
+        "acumulado": bool(linha.get("acumulou")),
+        "valorArrecadado": None,
+        "valorEstimadoProximoConcurso": linha.get("valor_estimado_proximo"),
+        "valorAcumuladoProximoConcurso": None,
+        "nomeMunicipioUFSorteio": None,
+        "listaRateioPremio": [],
     }
 
 
