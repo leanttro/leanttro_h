@@ -416,6 +416,49 @@ def resultado_concurso(jogo, concurso):
 #  /sitemap-resultados.xml — só concursos do ano atual (backfill)
 # ════════════════════════════════════════════════════════════
 
+# ════════════════════════════════════════════════════════════
+#  ⚠️ ROTA TEMPORÁRIA DE DIAGNÓSTICO — REMOVER DEPOIS DE USAR
+#  Não exige nada (sem senha/login) e mostra erro técnico cru,
+#  então não deve ficar em produção depois que o problema for achado.
+#  Testa, isoladamente: (1) se dá pra alcançar a API da Caixa,
+#  (2) se a conexão com o banco 'metro' (LOTERIA_DB_*) funciona.
+# ════════════════════════════════════════════════════════════
+
+@loteria_bp.route("/resultados/_debug/")
+def _debug_diagnostico():
+    import traceback
+    resultado = {}
+
+    # 1) Testa a API da Caixa
+    try:
+        r = requests.get(f"{CAIXA_BASE_URL}/megasena", timeout=8,
+                          headers={"Content-Type": "application/json"})
+        resultado["caixa_status_code"] = r.status_code
+        resultado["caixa_preview"] = r.text[:300]
+    except Exception as e:
+        resultado["caixa_excecao"] = f"{type(e).__name__}: {e}"
+        resultado["caixa_traceback"] = traceback.format_exc()
+
+    # 2) Testa a conexão com o banco 'metro' (LOTERIA_DB_*)
+    resultado["env_vars_presentes"] = {
+        "LOTERIA_DB_HOST": bool(os.getenv("LOTERIA_DB_HOST")),
+        "LOTERIA_DB_PORT": bool(os.getenv("LOTERIA_DB_PORT")),
+        "LOTERIA_DB_NAME": bool(os.getenv("LOTERIA_DB_NAME")),
+        "LOTERIA_DB_USER": bool(os.getenv("LOTERIA_DB_USER")),
+        "LOTERIA_DB_PASS": bool(os.getenv("LOTERIA_DB_PASS")),
+    }
+    try:
+        linha = query_loteria("SELECT COUNT(*) as total FROM loteria_resultados", one=True)
+        resultado["banco_ok"] = True
+        resultado["banco_total_linhas"] = linha["total"] if linha else None
+    except Exception as e:
+        resultado["banco_ok"] = False
+        resultado["banco_excecao"] = f"{type(e).__name__}: {e}"
+        resultado["banco_traceback"] = traceback.format_exc()
+
+    return jsonify(resultado)
+
+
 @loteria_bp.route("/sitemap-resultados.xml")
 def sitemap_resultados():
     from app import get_hub_by_host
