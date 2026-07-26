@@ -174,6 +174,23 @@ nav.desktop-nav ul li:hover .nav-dropdown { display: block; }
 .busca-item small { display: block; color: var(--text-dim); font-size: .8em; margin-top: 1px; }
 .busca-vazio, .busca-carregando { padding: 18px 16px; text-align: center; color: var(--text-dim); font-size: .88em; }
 
+/* ══ BARRA DE PROGRESSO — carregamento de TODAS as lotéricas ══ */
+.carga-progresso {
+    max-width: 480px; margin: 0 auto 18px; background: var(--bg-card); border: 1px solid var(--border);
+    border-radius: 10px; padding: 12px 16px; transition: opacity .4s ease, max-height .4s ease, padding .4s ease, margin .4s ease;
+    max-height: 80px; overflow: hidden;
+}
+.carga-progresso-topo { display: flex; justify-content: space-between; gap: 10px; font-size: .84em; color: var(--text-dim); margin-bottom: 8px; }
+.carga-progresso-topo strong { color: var(--dark); }
+.carga-progresso-barra { height: 7px; background: var(--border); border-radius: 6px; overflow: hidden; }
+.carga-progresso-fill {
+    height: 100%; width: 0%; background: linear-gradient(90deg, var(--primary), var(--dark));
+    border-radius: 6px; transition: width .3s ease;
+    background-size: 200% 100%; animation: cargaShimmer 1.4s linear infinite;
+}
+@keyframes cargaShimmer { 0% { background-position: 0% 0; } 100% { background-position: -200% 0; } }
+.carga-progresso.concluido { opacity: 0; max-height: 0; padding: 0 16px; margin-bottom: 0; border-width: 0; pointer-events: none; }
+
 .secao { padding: 40px 20px; }
 .secao h2 { font-size: 1.5em; color: var(--dark); }
 .secao-sub { color: var(--text-dim); font-size: .92em; margin-top: 4px; margin-bottom: 20px; }
@@ -390,7 +407,15 @@ footer { background: var(--dark); color: #cfe8c0; padding: 30px 20px 10px; }
 
 <section class="secao container" id="loterias">
   <h2>Lotéricas cadastradas</h2>
-  <p class="secao-sub" id="loterica-total">{{ negocios | length }} lotérica{{ 's' if negocios | length != 1 else '' }} no guia até agora.</p>
+  <p class="secao-sub" id="loterica-total">{{ negocios | length }} lotérica{{ 's' if negocios | length != 1 else '' }} carregada{{ 's' if negocios | length != 1 else '' }} até agora.</p>
+
+  <div class="carga-progresso" id="carga-progresso">
+    <div class="carga-progresso-topo">
+      <span id="carga-progresso-texto">Carregando lotéricas…</span>
+      <strong id="carga-progresso-pct">0%</strong>
+    </div>
+    <div class="carga-progresso-barra"><div class="carga-progresso-fill" id="carga-progresso-fill"></div></div>
+  </div>
 
   <div style="text-align:center;">
     <button class="btn-geo" id="btnLoc" onclick="toggleLocalizacao()">
@@ -576,6 +601,7 @@ async function enviarCadastroNegocio(e){
 // ══════════════════════════════════════════════════════════════════
 
 var todosLotericas = {{ negocios | tojson }};
+var TOTAL_NEGOCIOS_LOT = {{ total_negocios | default(negocios | length) }};
 var _apiOffsetLot = {{ negocios | length }};
 var _apiFimLot = false;
 var _apiCarregandoLot = false;
@@ -825,6 +851,56 @@ function renderLotericas(lista){
 (function mostrarTodasLotericasInicial(){
   renderLotericas(lotericasFiltradas);
 })();
+
+// ══════════════════════════════════════════════════════════════════
+// Carregamento TOTAL em segundo plano — não depende de rolar até nenhum
+// sentinel: assim que a página abre, já dispara e continua buscando
+// lotes de 96 (ver _loteSizeLot acima) até bater o TOTAL_NEGOCIOS_LOT,
+// mostrando progresso real (X de Y / %) na barrinha acima da lista.
+// Pausa curta entre lotes só pra não travar a thread principal enquanto
+// os cards vão sendo inseridos no DOM.
+// ══════════════════════════════════════════════════════════════════
+function _atualizarProgressoLot(){
+  var fill  = document.getElementById('carga-progresso-fill');
+  var texto = document.getElementById('carga-progresso-texto');
+  var pctEl = document.getElementById('carga-progresso-pct');
+  var totalLabel = document.getElementById('loterica-total');
+  var alvo = TOTAL_NEGOCIOS_LOT > 0 ? TOTAL_NEGOCIOS_LOT : todosLotericas.length;
+  var pct = alvo > 0 ? Math.min(100, Math.round((todosLotericas.length / alvo) * 100)) : 100;
+  if(fill)  fill.style.width = pct + '%';
+  if(pctEl) pctEl.textContent = pct + '%';
+  if(texto) texto.textContent = 'Carregando lotéricas… (' + todosLotericas.length.toLocaleString('pt-BR') + ' de ' + alvo.toLocaleString('pt-BR') + ')';
+  if(totalLabel) totalLabel.textContent = todosLotericas.length.toLocaleString('pt-BR') + (todosLotericas.length !== 1 ? ' lotéricas carregadas até agora.' : ' lotérica carregada até agora.');
+}
+
+function _finalizarCargaLot(){
+  var wrap = document.getElementById('carga-progresso');
+  var totalLabel = document.getElementById('loterica-total');
+  if(wrap) wrap.classList.add('concluido');
+  if(totalLabel){
+    totalLabel.textContent = todosLotericas.length.toLocaleString('pt-BR') + (todosLotericas.length !== 1 ? ' lotéricas no guia.' : ' lotérica no guia.');
+  }
+}
+
+function _carregarTudoLot(){
+  if(_apiFimLot){ _finalizarCargaLot(); return; }
+  _carregarLoteLotericas(function(){
+    _renderizarProximoLoteLot();
+    _atualizarProgressoLot();
+    if(_apiFimLot || todosLotericas.length >= TOTAL_NEGOCIOS_LOT){
+      _finalizarCargaLot();
+    } else {
+      setTimeout(_carregarTudoLot, 80);
+    }
+  });
+}
+
+_atualizarProgressoLot();
+if(TOTAL_NEGOCIOS_LOT > todosLotericas.length){
+  _carregarTudoLot();
+} else {
+  _finalizarCargaLot();
+}
 
 (function(){
   var sentinel = document.getElementById('lazy-sentinel');
