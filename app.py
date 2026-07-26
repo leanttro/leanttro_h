@@ -276,10 +276,16 @@ def index():
     # Templates preparados p/ infinite-scroll (JS busca o resto via
     # /api/hub/negocios?offset=...) carregam só a 1ª leva no HTML.
     # Os demais hubs (volume pequeno/médio, sem esse JS) carregam a lista
-    # inteira de uma vez — 5000 aqui é só um teto de segurança, não um
-    # limite de negócio real.
-    TEMPLATES_INFINITE_SCROLL = {"index_otp"}
-    limite = 48 if template in TEMPLATES_INFINITE_SCROLL else 5000
+    # inteira de uma vez.
+    #
+    # index_loterica: NÃO tem teto de verdade — o JS (ver script no fim do
+    # template) continua paginando em segundo plano até carregar TODAS as
+    # lotéricas ativas do hub, com barra de progresso. Por isso a 1ª leva
+    # aqui só precisa ser pequena (mesmo tamanho de lote do JS, 96) — embutir
+    # milhares de registros direto no HTML só deixava a página mais pesada
+    # à toa, já que o JS ia buscar tudo de novo por cima mesmo assim.
+    LIMITE_INICIAL_POR_TEMPLATE = {"index_otp": 48, "index_loterica": 96}
+    limite = LIMITE_INICIAL_POR_TEMPLATE.get(template, 5000)
 
     negocios = query("""
         SELECT n.*, c.nome as categoria_nome, c.slug as categoria_slug
@@ -290,10 +296,28 @@ def index():
         ORDER BY n.nome
         LIMIT %s
     """, (hub["id"], limite))
+
+    # Contagem real (sem LIMIT) só pra alimentar a barra de progresso do
+    # front do hub de lotérica — o JS usa isso pra saber quantas faltam
+    # carregar, não pra limitar nada.
+    #
+    # ⚠️ Só roda essa query extra se o template for "index_loterica".
+    # Pra qualquer outro hub, total_negocios fica None e nem essa consulta
+    # a mais no banco é feita — zero mudança de comportamento/custo pros
+    # outros hubs.
+    total_negocios = None
+    if template == "index_loterica":
+        total_negocios = query("""
+            SELECT COUNT(*) as total
+            FROM hub_negocios n
+            JOIN hub_negocio_hubs nh ON nh.negocio_id = n.id
+            WHERE nh.hub_id = %s AND n.ativo = true
+        """, (hub["id"],), one=True)["total"]
+
     anuncio_topo = _get_anuncios(hub["id"], "topo")
     anuncio_meio = _get_anuncios(hub["id"], "meio")
     return render_template(f"hub/{template}.html", hub=hub, negocios=negocios, categorias=categorias,
-                           anuncio_topo=anuncio_topo, anuncio_meio=anuncio_meio)
+                           anuncio_topo=anuncio_topo, anuncio_meio=anuncio_meio, total_negocios=total_negocios)
 
 
 @app.route("/robots.txt")
