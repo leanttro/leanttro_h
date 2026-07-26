@@ -133,12 +133,16 @@ nav.desktop-nav ul li:hover .nav-dropdown { display: block; }
   background-size: cover;
   background-position: center;
   border-radius: 0 0 18px 18px;
-  overflow: hidden;
+  /* overflow:hidden removido — era o que estava CORTANDO o dropdown da
+     barra de busca (o resultado ficava escondido atrás da borda do hero).
+     O ::before abaixo ganhou "border-radius: inherit" pra continuar com
+     os cantos arredondados certinhos sem precisar cortar nada. */
 }
 .hero::before {
   content: "";
   position: absolute;
   inset: 0;
+  border-radius: inherit;
   background: linear-gradient(180deg, rgba(255,255,255,.75) 0%, rgba(255,255,255,.65) 55%, rgba(255,255,255,.75) 100%);
   z-index: 0;
 }
