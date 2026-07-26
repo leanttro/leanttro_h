@@ -159,12 +159,25 @@ def _parse_data_caixa(texto):
 def _caixa_get(jogo_caixa, concurso=None):
     """GET na API da Caixa. concurso=None busca o último resultado
     disponível. Retorna (dados, erro); erro é string legível em caso
-    de falha, None em caso de sucesso."""
+    de falha, None em caso de sucesso.
+
+    IMPORTANTE: a API bloqueia (403) requisições com o User-Agent padrão
+    do requests/Python — trata como bot. Por isso simulamos um navegador
+    de verdade nos headers abaixo. Sem isso, TODA chamada falha com 403,
+    mesmo a URL/formato estando certos."""
     url = f"{CAIXA_BASE_URL}/{jogo_caixa}"
     if concurso is not None:
         url += f"/{concurso}"
+    headers = {
+        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 "
+                       "(KHTML, like Gecko) Chrome/125.0.0.0 Safari/537.36",
+        "Accept": "application/json, text/plain, */*",
+        "Accept-Language": "pt-BR,pt;q=0.9",
+        "Referer": "https://loterias.caixa.gov.br/",
+        "Origin": "https://loterias.caixa.gov.br",
+    }
     try:
-        resp = requests.get(url, timeout=8, headers={"Content-Type": "application/json"})
+        resp = requests.get(url, timeout=8, headers=headers)
         resp.raise_for_status()
         dados = resp.json()
     except requests.RequestException as e:
