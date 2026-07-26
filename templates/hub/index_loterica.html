@@ -109,7 +109,29 @@ nav.desktop-nav ul li:hover .nav-dropdown { display: block; }
 .anuncio-slot img { max-height: 90px; margin: 0 auto; border-radius: 6px; }
 
 /* ══ HERO ══ */
-.hero { padding: 46px 20px 30px; text-align: center; }
+.hero {
+  position: relative;
+  padding: 46px 20px 30px;
+  text-align: center;
+  min-height: 260px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  background-image: url('https://res.cloudinary.com/dec2b0u1/image/upload/v1785093838/perto_de_mim_1_nz2xre.png');
+  background-size: cover;
+  background-position: center;
+  border-radius: 0 0 18px 18px;
+  overflow: hidden;
+}
+.hero::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(180deg, rgba(255,255,255,.94) 0%, rgba(255,255,255,.88) 55%, rgba(255,255,255,.94) 100%);
+  z-index: 0;
+}
+.hero > * { position: relative; z-index: 1; }
 .hero h1 { font-size: 2em; color: var(--dark); margin-bottom: 10px; }
 .hero p { color: var(--text-dim); max-width: 640px; margin: 0 auto; }
 .hero-btns { display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; margin-top: 20px; }
@@ -296,7 +318,7 @@ footer { background: var(--dark); color: #cfe8c0; padding: 30px 20px 10px; }
 
 <section class="hero container">
   <h1>{{ hub.nome or 'Lotérica Perto de Mim' }}</h1>
-  <p>Encontre a lotérica mais perto de você e confira na hora o resultado mais recente da Mega-Sena, Quina, Lotofácil e Lotomania.</p>
+  <p>Encontre a lotérica mais perto de você e confira na hora o resultado mais recente da Mega-Sena, Quina, Lotofácil e Lotomania e muito mais.</p>
   <div class="hero-btns">
     <a class="btn-hero primary" href="#loterias"><i class="fas fa-map-marker-alt"></i> Achar lotérica perto de mim</a>
     <a class="btn-hero outline" href="#jogos"><i class="fas fa-ticket"></i> Ver resultados</a>
@@ -643,7 +665,7 @@ function toggleLocalizacao(){
 
 function cardHTMLLot(n){
   var dist = (n._dist && n._dist < 9999) ? '<span class="card-dist"><i class="fas fa-map-marker-alt"></i> ' + n._dist.toFixed(1) + ' km de você</span>' : '';
-  var foto = n.foto_url || 'https://res.cloudinary.com/dec2b0u1/image/upload/v1785093445/perto_de_mim_1260_x_915_px_1_if28v0.png';
+  var foto = n.foto_url || 'https://placehold.co/400x260/035105/def8c3?text=%F0%9F%8D%80';
   var local = [n.bairro, n.cidade].filter(Boolean).join(', ');
   return '<a href="/' + n.categoria_slug + '/' + n.slug + '/" class="negocio-card">' +
     '<div class="card-foto">' +
@@ -782,7 +804,7 @@ function renderLotericas(lista){
 (function(){
     var _todasCidades = [];
     var cidPos = 0, cidView = 'carousel';
-    var fotoBase = 'https://res.cloudinary.com/dec2b0u1/image/upload/v1785093445/perto_de_mim_1260_x_915_px_1_if28v0.png';
+    var fotoBase = 'https://placehold.co/300x300/def8c3/035105?text=%F0%9F%8D%80';
 
     function _slugCidade(nome){
         return nome.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/\s+/g,'-').replace(/[^a-z0-9-]/g,'');
