@@ -184,6 +184,33 @@ nav.desktop-nav ul li:hover .nav-dropdown { display: block; }
 .banner-topo img, .banner-meio img { margin: 0 auto; }
 .banner-placeholder:hover { border-color: var(--primary); color: var(--primary); }
 
+/* ══ AVISO CADASTRO AUTOMÁTICO ══ */
+.aviso-automatico {
+  background: var(--primary);
+  border-top: 1px solid var(--dark);
+  border-bottom: 1px solid var(--dark);
+  padding: 10px 0;
+}
+.aviso-automatico-inner {
+  display: flex; align-items: center; justify-content: center;
+  gap: 14px; flex-wrap: wrap; text-align: center;
+}
+.aviso-automatico-texto {
+  font-size: 0.85em; color: #fff; font-weight: 600; margin: 0;
+}
+.aviso-automatico-texto strong { color: #fff; font-weight: 800; }
+.aviso-automatico-btn {
+  display: inline-flex; align-items: center; gap: 6px;
+  background: #1a1a1a; border: 1.5px solid #1a1a1a;
+  color: #fff; font-size: 0.82em; font-weight: 700;
+  padding: 6px 14px; border-radius: 30px; white-space: nowrap;
+  transition: background 0.2s, color 0.2s;
+}
+.aviso-automatico-btn:hover { background: #000; }
+@media (max-width: 600px) {
+  .aviso-automatico-texto { font-size: 0.8em; }
+}
+
 /* ══ HERO NEGÓCIO ══ */
 .negocio-hero {
   background: linear-gradient(rgba(0,0,0,0.55), rgba(0,0,0,0.55)),
@@ -347,6 +374,19 @@ footer p { margin: 8px 0; }
      href="https://wa.me/55{{ hub.whatsapp or '11999999999' }}?text=Quero+anunciar+na+Cesta+de+Presentes"
      target="_blank" rel="noopener">📣 Anuncie aqui — espaço disponível</a>
   {% endif %}
+</div>
+
+<!-- AVISO: CADASTRO AUTOMÁTICO -->
+<div class="aviso-automatico">
+  <div class="container aviso-automatico-inner">
+    <p class="aviso-automatico-texto">
+      📋 Cadastro <strong>automático</strong>, gerado a partir de dados públicos do Google — não somos afiliados a este negócio.
+    </p>
+    <a href="https://wa.me/5511913324827?text=Olá,+quero+solicitar+a+remoção+do+negócio+{{ negocio.nome }}+({{ negocio.categoria_nome }})+cadastrado+na+Cesta+de+Presentes,+ou+adicionar%2Fatualizar+meu+negócio.+Página:+https%3A%2F%2F{{ request.host }}%2F{{ segmento }}%2F{{ negocio.slug }}%2F"
+       target="_blank" rel="noopener nofollow" class="aviso-automatico-btn">
+      <i class="fas fa-trash-alt"></i> Solicitar remoção
+    </a>
+  </div>
 </div>
 
 <!-- HERO -->
