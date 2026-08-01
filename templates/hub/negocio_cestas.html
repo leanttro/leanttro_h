@@ -402,11 +402,6 @@ footer p { margin: 8px 0; }
          class="hero-btn" target="_blank" rel="noopener">
         <i class="fab fa-whatsapp"></i> WhatsApp
       </a>
-      {% elif hub.whatsapp %}
-      <a href="https://wa.me/55{{ hub.whatsapp | replace(' ','') | replace('-','') | replace('(','') | replace(')','') }}"
-         class="hero-btn" target="_blank" rel="noopener">
-        <i class="fab fa-whatsapp"></i> WhatsApp
-      </a>
       {% endif %}
 
       {% if negocio.telefone and negocio.mostrar_telefone %}
