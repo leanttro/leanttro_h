@@ -320,6 +320,14 @@ def index():
                            anuncio_topo=anuncio_topo, anuncio_meio=anuncio_meio, total_negocios=total_negocios)
 
 
+@app.route("/ads.txt")
+def ads_txt():
+    linhas = [
+        "google.com, pub-7617881885143728, DIRECT, f08c47fec0942fa0",
+    ]
+    return Response("\n".join(linhas), mimetype="text/plain")
+
+
 @app.route("/robots.txt")
 def robots():
     hub = get_hub_by_host()
