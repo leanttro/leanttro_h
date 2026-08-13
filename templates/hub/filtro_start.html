@@ -26,10 +26,10 @@
 {# ══ SEO dinâmico ══ #}
 {% if filtro_tipo == 'categoria' %}
   {% set seo_title = (filtro_nome if is_ferramenta_ia else (filtro_nome ~ " perto de você")) ~ " — " ~ (hub.nome or 'AgênciaStart') %}
-  {% set seo_desc  = "Encontre " ~ filtro_nome ~ " no " ~ (hub.nome or 'AgênciaStart') ~ ". Portfólio, contato e localização de agências, estúdios e freelancers." %}
+  {% set seo_desc  = "Encontre " ~ filtro_nome ~ " no " ~ (hub.nome or 'AgênciaStart') ~ ". Endereço, horário e contato, tudo num só lugar." %}
 {% else %}
-  {% set seo_title = "Agências e criativos no bairro " ~ (filtro_valor | capitalize) ~ " — " ~ (hub.nome or 'AgênciaStart') %}
-  {% set seo_desc  = "Descubra agências, estúdios e freelancers no bairro " ~ filtro_valor ~ " em " ~ (hub.nome or 'AgênciaStart') ~ ". Contato e localização perto de você." %}
+  {% set seo_title = "Cartório e correio no bairro " ~ (filtro_valor | capitalize) ~ " — " ~ (hub.nome or 'AgênciaStart') %}
+  {% set seo_desc  = "Descubra cartórios, correios, freelancers de tecnologia e ferramentas de IA no bairro " ~ filtro_valor ~ " em " ~ (hub.nome or 'AgênciaStart') ~ ". Contato e localização perto de você." %}
 {% endif %}
 
 <title>{{ seo_title }}</title>
@@ -334,7 +334,7 @@
                  alt="{{ hub.nome or 'AgênciaStart' }}" height="80" loading="eager">
         </a>
     </div>
-    <p class="header-subtitle">Diretório de Agências, Estúdios e&nbsp;Freelancers</p>
+    <p class="header-subtitle">Cartório, Correio e Serviços Perto de Você</p>
     <nav class="desktop-nav" aria-label="Navegação principal">
         <ul>
             <li><a href="/">Início</a></li>
@@ -394,7 +394,7 @@
     </a>
     {% else %}
     <a class="banner-placeholder"
-       href="https://wa.me/55{{ hub.whatsapp or '11913324827' }}?text=Quero+cadastrar+minha+agência+ou+estúdio"
+       href="https://wa.me/55{{ hub.whatsapp or '11913324827' }}?text=Quero+cadastrar+meu+negócio"
        target="_blank" rel="noopener">📣 Anuncie aqui — espaço disponível</a>
     {% endif %}
 </div>
@@ -419,7 +419,7 @@
             <em>{{ filtro_nome }}</em> perto de você
             {% endif %}
             {% else %}
-            Agências no bairro <em>{{ filtro_valor | capitalize }}</em>
+            Cartório e correio no bairro <em>{{ filtro_valor | capitalize }}</em>
             {% endif %}
         </h1>
         <p>
@@ -427,10 +427,10 @@
             {% if is_ferramenta_ia %}
             Encontre as melhores {{ filtro_nome }} com descrição, modelo de preço e link direto — tudo num só lugar.
             {% else %}
-            Encontre as melhores opções de {{ filtro_nome }} com portfólio, contato e localização — tudo num só lugar.
+            Encontre as melhores opções de {{ filtro_nome }} com endereço, horário e contato — tudo num só lugar.
             {% endif %}
             {% else %}
-            Todas as agências, estúdios e freelancers cadastrados no bairro {{ filtro_valor | capitalize }}.
+            Todos os cartórios, correios, freelancers de tecnologia e ferramentas de IA cadastrados no bairro {{ filtro_valor | capitalize }}.
             {% endif %}
         </p>
         <div class="filtro-hero-stats">
@@ -1076,7 +1076,7 @@ document.addEventListener('click', function(e) {
     <!-- Abas Agência / Freelancer -->
     <div id="cadastro-tabs" style="display:flex; gap:8px; margin-bottom:20px; border-bottom:2px solid #eee;">
       <button type="button" id="tab-agencia" class="cad-tab cad-tab-active" onclick="selecionarTipoCadastro('agencia')">
-        Agência / Estúdio
+        Negócio / Estabelecimento
       </button>
       <button type="button" id="tab-freelancer" class="cad-tab" onclick="selecionarTipoCadastro('freelancer')">
         Freelancer
