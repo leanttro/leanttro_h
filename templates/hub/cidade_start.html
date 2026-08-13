@@ -25,12 +25,12 @@
       {% set seo_desc  = "Encontre " ~ categoria.nome ~ " em " ~ cidade ~ ". Lista completa com endereços, telefones e localização perto de você." %}
       {% set seo_url   = "https://" ~ request.host ~ "/cidade/" ~ (cidade | slugify) ~ "/" ~ categoria.slug ~ "/" %}
     {% elif bairro %}
-      {% set seo_title = "Agências e criativos no " ~ bairro ~ " — " ~ cidade ~ " | AgênciaStart" %}
-      {% set seo_desc  = "Descubra agências, estúdios e profissionais criativos no bairro " ~ bairro ~ " em " ~ cidade ~ ". Encontre tudo perto de você." %}
+      {% set seo_title = "Cartório e correio no " ~ bairro ~ " — " ~ cidade ~ " | AgênciaStart" %}
+      {% set seo_desc  = "Descubra cartórios, correios, freelancers de tecnologia e ferramentas de IA no bairro " ~ bairro ~ " em " ~ cidade ~ ". Encontre tudo perto de você." %}
       {% set seo_url   = "https://" ~ request.host ~ "/cidade/" ~ (cidade | slugify) ~ "/" ~ (bairro | slugify) ~ "/" %}
     {% else %}
-      {% set seo_title = "Agências e criativos em " ~ cidade ~ " perto de mim | AgênciaStart" %}
-      {% set seo_desc  = "Encontre agências de publicidade, fotógrafos, produtoras de vídeo e estúdios de design em " ~ cidade ~ ". O guia completo de agências e criativos perto de você." %}
+      {% set seo_title = "Cartório e Correio em " ~ cidade ~ " perto de mim | AgênciaStart" %}
+      {% set seo_desc  = "Encontre cartórios, agências dos Correios, freelancers de tecnologia e ferramentas de IA em " ~ cidade ~ ". O guia completo perto de você." %}
       {% set seo_url   = "https://" ~ request.host ~ "/cidade/" ~ (cidade | slugify) ~ "/" %}
     {% endif %}
 
@@ -340,7 +340,7 @@
                  alt="{{ hub.nome or 'AgênciaStart' }}" height="80" loading="eager">
         </a>
     </div>
-    <p class="header-subtitle">Diretório de Agências, Estúdios e&nbsp;Freelancers</p>
+    <p class="header-subtitle">Cartório, Correio e Serviços Perto de Você</p>
     <nav class="desktop-nav" aria-label="Navegação principal">
         <ul>
             <li><a href="/">Início</a></li>
@@ -352,7 +352,7 @@
                     {% endfor %}
                 </div>
             </li>
-            <li><a href="#negocios">Agências e Estúdios</a></li>
+            <li><a href="#negocios">Cartório e Correio</a></li>
             <li><a href="https://wa.me/55{{ hub.whatsapp or '11913324827' }}?text=Olá,+quero+saber+mais" target="_blank" rel="noopener">Contato</a></li>
         </ul>
     </nav>
@@ -376,7 +376,7 @@
                     {% endfor %}
                 </div>
             </li>
-            <li><a href="#negocios" onclick="closeMobileNav()">Agências e Estúdios</a></li>
+            <li><a href="#negocios" onclick="closeMobileNav()">Cartório e Correio</a></li>
             <li><a href="https://wa.me/55{{ hub.whatsapp or '11913324827' }}?text=Olá,+quero+saber+mais" target="_blank" rel="noopener" onclick="closeMobileNav()">Contato</a></li>
         </ul>
     </nav>
@@ -396,7 +396,7 @@
     </a>
     {% else %}
     <a class="banner-placeholder"
-       href="https://wa.me/55{{ hub.whatsapp or '11913324827' }}?text=Quero+cadastrar+minha+agência+ou+estúdio"
+       href="https://wa.me/55{{ hub.whatsapp or '11913324827' }}?text=Quero+cadastrar+meu+negócio"
        target="_blank" rel="noopener">📣 Anuncie aqui — espaço disponível</a>
     {% endif %}
 </div>
@@ -418,17 +418,17 @@
         <h1>
             {% if categoria and bairro %}{{ categoria.nome }} em <em>{{ bairro }}</em>
             {% elif categoria %}{{ categoria.nome }} em <em>{{ cidade }}</em>
-            {% elif bairro %}Agências e criativos em <em>{{ bairro }}</em>
-            {% else %}Agências e criativos em <em>{{ cidade }}</em>{% endif %}
+            {% elif bairro %}Cartório e correio em <em>{{ bairro }}</em>
+            {% else %}Cartório e correio em <em>{{ cidade }}</em>{% endif %}
         </h1>
         {% if bairro or categoria %}
-        <p class="hero-sub-filtro">Mostrando {% if categoria %}{{ categoria.nome | lower }}{% else %}todas as agências e estúdios{% endif %}{% if bairro %} no bairro {{ bairro }}{% endif %} em {{ cidade }}.</p>
+        <p class="hero-sub-filtro">Mostrando {% if categoria %}{{ categoria.nome | lower }}{% else %}todos os cartórios e correios{% endif %}{% if bairro %} no bairro {{ bairro }}{% endif %} em {{ cidade }}.</p>
         {% else %}
-        <p class="hero-sub-filtro">Explore agências, estúdios e profissionais criativos em {{ cidade }}.</p>
+        <p class="hero-sub-filtro">Explore cartórios, correios, freelancers de tecnologia e ferramentas de IA em {{ cidade }}.</p>
         {% endif %}
         <div class="hero-btns">
             <button class="btn-hero" onclick="toggleLocalizacao()"><i class="fas fa-location-arrow"></i> Ver o que tem perto de mim</button>
-            <a href="#negocios" class="btn-hero-outline"><i class="fas fa-list"></i> Ver agências e estúdios</a>
+            <a href="#negocios" class="btn-hero-outline"><i class="fas fa-list"></i> Ver cartórios e correios</a>
         </div>
     </div>
 </section>
@@ -547,7 +547,7 @@
     </a>
     {% else %}
     <a class="banner-placeholder"
-       href="https://wa.me/55{{ hub.whatsapp or '11913324827' }}?text=Quero+cadastrar+minha+agência+ou+estúdio"
+       href="https://wa.me/55{{ hub.whatsapp or '11913324827' }}?text=Quero+cadastrar+meu+negócio"
        target="_blank" rel="noopener">📣 Anuncie aqui — espaço disponível</a>
     {% endif %}
 </div>
@@ -556,13 +556,13 @@
 <section class="section" id="negocios" style="background:var(--white);">
     <div class="container">
         <h2 class="section-title">
-            {% if categoria %}{{ categoria.nome }}{% else %}Agências e Estúdios{% endif %}
+            {% if categoria %}{{ categoria.nome }}{% else %}Cartório e Correio{% endif %}
             {% if bairro %} em {{ bairro }}{% else %} em {{ cidade }}{% endif %}
         </h2>
         <p class="section-subtitle">
             {% if total_negocios == 0 %}Nenhum resultado encontrado.
             {% elif total_negocios == 1 %}1 estabelecimento encontrado
-            {% else %}{{ total_negocios }} agências e estúdios encontrados{% endif %}
+            {% else %}{{ total_negocios }} estabelecimentos encontrados{% endif %}
         </p>
 
         <!-- Filtros -->
@@ -613,7 +613,7 @@
         <div class="negocios-grid" id="negocios-grade" style="display:none;"></div>
         <p class="info-message" id="negocios-vazio" style="display:none;">Nenhum estabelecimento encontrado com esses filtros.</p>
         <div id="lazy-sentinel" style="height:1px; margin-top:10px;"></div>
-        <p id="lazy-loading" style="display:none; text-align:center; color:var(--primary); padding:20px; font-size:0.95em;"><i class="fas fa-spinner fa-spin"></i> Carregando mais agências e estúdios...</p>
+        <p id="lazy-loading" style="display:none; text-align:center; color:var(--primary); padding:20px; font-size:0.95em;"><i class="fas fa-spinner fa-spin"></i> Carregando mais estabelecimentos...</p>
     </div>
 </section>
 
@@ -621,10 +621,10 @@
 <section class="anuncie-section">
     <div class="container">
         <h2>Seu negócio em {{ cidade }}</h2>
-        <p>Apareça para marcas e clientes que buscam criativos em {{ cidade }} todos os dias.</p>
-        <a href="https://wa.me/55{{ hub.whatsapp or '11913324827' }}?text=Quero+cadastrar+minha+agência+em+{{ cidade | urlencode }}"
+        <p>Apareça para quem busca cartório, correio e serviços em {{ cidade }} todos os dias.</p>
+        <a href="https://wa.me/55{{ hub.whatsapp or '11913324827' }}?text=Quero+cadastrar+meu+negócio+em+{{ cidade | urlencode }}"
            target="_blank" rel="noopener" class="btn-anuncie">
-            <i class="fab fa-whatsapp"></i> Quero cadastrar minha agência
+            <i class="fab fa-whatsapp"></i> Quero cadastrar meu negócio
         </a>
     </div>
 </section>
@@ -1380,7 +1380,7 @@ document.addEventListener('click', function(e) {
     <!-- Abas Agência / Freelancer -->
     <div id="cadastro-tabs" style="display:flex; gap:8px; margin-bottom:20px; border-bottom:2px solid #eee;">
       <button type="button" id="tab-agencia" class="cad-tab cad-tab-active" onclick="selecionarTipoCadastro('agencia')">
-        Agência / Estúdio
+        Negócio / Estabelecimento
       </button>
       <button type="button" id="tab-freelancer" class="cad-tab" onclick="selecionarTipoCadastro('freelancer')">
         Freelancer
