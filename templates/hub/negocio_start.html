@@ -15,8 +15,8 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>{{ negocio.nome }} — {{ hub.nome or 'AgênciaStart' }}</title>
-<meta name="description" content="{% if negocio.descricao %}{{ negocio.descricao | truncate(160) }}{% else %}{{ negocio.nome }} — {{ negocio.categoria_nome }}. Portfólio, contato e informações completas no AgênciaStart.{% endif %}">
-<meta name="keywords" content="{{ negocio.nome }}, {{ negocio.categoria_nome }}, {% if negocio.cidade %}{{ negocio.cidade }}, {% endif %}agência criativa, AgênciaStart">
+<meta name="description" content="{% if negocio.descricao %}{{ negocio.descricao | truncate(160) }}{% else %}{{ negocio.nome }} — {{ negocio.categoria_nome }}. Endereço, horário e contato completos no AgênciaStart.{% endif %}">
+<meta name="keywords" content="{{ negocio.nome }}, {{ negocio.categoria_nome }}, {% if negocio.cidade %}{{ negocio.cidade }}, {% endif %}cartório perto de mim, correio perto de mim, AgênciaStart">
 <meta name="robots" content="index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1">
 <meta name="theme-color" content="#FFC107">
 <meta name="author" content="{{ hub.nome or 'AgênciaStart' }}">
@@ -29,7 +29,7 @@
 <meta property="og:site_name" content="{{ hub.nome or 'AgênciaStart' }}">
 <meta property="og:url" content="https://{{ request.host }}/{{ segmento }}/{{ negocio.slug }}/">
 <meta property="og:title" content="{{ negocio.nome }} — {{ hub.nome or 'AgênciaStart' }}">
-<meta property="og:description" content="{% if negocio.descricao %}{{ negocio.descricao | truncate(160) }}{% else %}Conheça {{ negocio.nome }}. Informações, contato e mais no AgênciaStart.{% endif %}">
+<meta property="og:description" content="{% if negocio.descricao %}{{ negocio.descricao | truncate(160) }}{% else %}Conheça {{ negocio.nome }}. Endereço, horário e contato no AgênciaStart.{% endif %}">
 {% if negocio.foto_url %}<meta property="og:image" content="{{ negocio.foto_url }}">{% else %}<meta property="og:image" content="https://res.cloudinary.com/dhu1cqvrb/image/upload/v1783643721/Massas_Sabores_6_utat55.png">{% endif %}
 <meta property="og:locale" content="pt_BR">
 
@@ -618,7 +618,7 @@ footer a:hover { text-decoration: underline; }
            alt="{{ hub.nome or 'AgênciaStart' }}" height="80" loading="eager">
     </a>
   </div>
-  <p class="header-subtitle">Diretório de Agências, Estúdios e&nbsp;Freelancers</p>
+  <p class="header-subtitle">Cartório, Correio e Serviços Perto de Você</p>
   <nav class="desktop-nav" aria-label="Navegação principal">
     <ul>
       <li><a href="/">Início</a></li>
@@ -727,7 +727,7 @@ footer a:hover { text-decoration: underline; }
         <span class="badge-curadoria" style="margin:0;">✨ Curadoria AgênciaStart</span>
         {% else %}
         {% if negocio.foto_url %}
-        <span class="perfil-selo">🎨 Portfólio</span>
+        <span class="perfil-selo">📷 Fotos</span>
         {% endif %}
         {% if negocio.whatsapp and negocio.mostrar_whatsapp %}
         <span class="perfil-selo">✅ Verificado</span>
@@ -1228,7 +1228,7 @@ footer a:hover { text-decoration: underline; }
         <button type="button" id="tab-agencia" onclick="selecionarTipoCadastro('agencia')"
           class="cad-tab-active"
           style="flex:1; padding:9px; border-radius:8px; font-size:13px; font-weight:700; cursor:pointer; font-family:inherit; border:2px solid #ddd; background:#fff; color:#333; transition:all .15s;"
-        >🏢 Agência / Estúdio</button>
+        >🏢 Negócio / Estabelecimento</button>
         <button type="button" id="tab-freelancer" onclick="selecionarTipoCadastro('freelancer')"
           style="flex:1; padding:9px; border-radius:8px; font-size:13px; font-weight:700; cursor:pointer; font-family:inherit; border:2px solid #ddd; background:#fff; color:#333; transition:all .15s;"
         >👤 Freelancer</button>
@@ -1238,7 +1238,7 @@ footer a:hover { text-decoration: underline; }
         <label style="font-size:13px; font-weight:600; color:#333; display:block; margin-bottom:5px;">
           Nome do negócio <span style="color:#e53935">*</span>
         </label>
-        <input name="nome" required maxlength="255" placeholder="Ex: Agência Criativa SP" class="cad-input">
+        <input name="nome" required maxlength="255" placeholder="Ex: Cartório do 1º Ofício" class="cad-input">
       </div>
 
       <div>
