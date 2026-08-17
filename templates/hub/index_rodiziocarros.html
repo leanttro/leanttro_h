@@ -1,0 +1,556 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta name="google-adsense-account" content="ca-pub-7617881885143728">
+<!-- Google tag (gtag.js) -->
+<script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-7617881885143728"
+     crossorigin="anonymous"></script>
+<!-- ⚠️ Trocar pelo ID de GA4 próprio do carros.guiadorodizio.com.br quando criar a propriedade -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-XXXXXXXXXX"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+  gtag('config', 'G-XXXXXXXXXX');
+</script>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <!-- SEO -->
+    <title>Rodízio de Carros Hoje em SP — Consulte sua Placa | Guia do Rodízio</title>
+    <meta name="description" content="Saiba na hora se hoje tem rodízio pra sua placa em São Paulo. Consulte o final da placa, veja os 7 dias da semana e encontre concessionária, oficina e autopeças perto de você.">
+    <meta name="keywords" content="rodízio carros hoje, rodízio sp, rodízio de veículos, final de placa hoje, rodízio suspenso, rodízio segunda-feira, rodízio terça-feira, concessionária perto de mim, oficina mecânica perto de mim, autopeças, borracharia, seguro auto">
+    <meta name="robots" content="index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1">
+    <meta name="theme-color" content="#1b0052">
+    <meta name="author" content="Guia do Rodízio">
+    <link rel="canonical" href="https://{{ request.host }}/">
+
+    <!-- Favicon -->
+    <link rel="icon" type="image/png" href="{{ hub.favicon_url or 'https://res.cloudinary.com/dhu1cqvrb/image/upload/v1779207400/leanttro_bohuce.png' }}">
+
+    <!-- Open Graph -->
+    <meta property="og:type"        content="website">
+    <meta property="og:site_name"   content="Rodízio de Carros — Guia do Rodízio">
+    <meta property="og:url"         content="https://{{ request.host }}/">
+    <meta property="og:title"       content="Rodízio de Carros Hoje em SP — Consulte sua Placa">
+    <meta property="og:description" content="Descubra na hora se hoje é dia de rodízio pra sua placa. Calendário completo da semana + diretório automotivo perto de você.">
+    <meta property="og:image"       content="{{ hub.banner_fundo_url or 'https://res.cloudinary.com/dhu1cqvrb/image/upload/v1779207400/leanttro_bohuce.png' }}">
+    <meta property="og:locale"      content="pt_BR">
+
+    <!-- Twitter Card -->
+    <meta name="twitter:card"        content="summary_large_image">
+    <meta name="twitter:title"       content="Rodízio de Carros Hoje em SP — Consulte sua Placa">
+    <meta name="twitter:description" content="Descubra na hora se hoje é dia de rodízio pra sua placa em São Paulo.">
+
+    <!-- JSON-LD WebSite -->
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "WebSite",
+      "name": "Rodízio de Carros — Guia do Rodízio",
+      "url": "https://{{ request.host }}/",
+      "description": "Consulta de rodízio de veículos de São Paulo por placa, calendário da semana e diretório automotivo.",
+      "inLanguage": "pt-BR"
+    }
+    </script>
+
+    <!-- JSON-LD FAQPage (30 perguntas — reforça SEO de "rodízio hoje / multa / placa / feriado" etc.) -->
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "FAQPage",
+      "mainEntity": [
+        {"@type":"Question","name":"O que é o rodízio de veículos em São Paulo?","acceptedAnswer":{"@type":"Answer","text":"O rodízio municipal é uma restrição de circulação de automóveis no Centro Expandido de São Paulo, definida pelo último número da placa e por dia da semana, nos horários de pico."}},
+        {"@type":"Question","name":"Qual é o horário do rodízio em SP em 2026?","acceptedAnswer":{"@type":"Answer","text":"O rodízio funciona das 7h às 10h e das 17h às 20h, de segunda a sexta-feira, exceto feriados."}},
+        {"@type":"Question","name":"Quais dias da semana têm rodízio?","acceptedAnswer":{"@type":"Answer","text":"O rodízio vale de segunda a sexta-feira; não há restrição aos sábados, domingos e feriados."}},
+        {"@type":"Question","name":"Qual placa não circula em cada dia?","acceptedAnswer":{"@type":"Answer","text":"Segunda: 1 e 2; terça: 3 e 4; quarta: 5 e 6; quinta: 7 e 8; sexta: 9 e 0."}},
+        {"@type":"Question","name":"Onde vale o rodízio em São Paulo?","acceptedAnswer":{"@type":"Answer","text":"No Centro Expandido, delimitado pelas Marginais Tietê e Pinheiros, Avenida dos Bandeirantes e Avenida Salim Farah Maluf (Mini-Anel Viário)."}},
+        {"@type":"Question","name":"Tem rodízio hoje em SP?","acceptedAnswer":{"@type":"Answer","text":"Depende do dia e da placa: consulte o calendário oficial da CET e verifique suspensões eventuais no site ou app da Prefeitura."}},
+        {"@type":"Question","name":"Tem rodízio aos feriados?","acceptedAnswer":{"@type":"Answer","text":"Não. O rodízio não vale em feriados municipais, estaduais ou nacionais."}},
+        {"@type":"Question","name":"Tem rodízio no sábado e domingo?","acceptedAnswer":{"@type":"Answer","text":"Não. A restrição só ocorre em dias úteis (segunda a sexta)."}},
+        {"@type":"Question","name":"Motos pegam rodízio em SP?","acceptedAnswer":{"@type":"Answer","text":"Não. Motocicletas estão isentas do rodízio municipal."}},
+        {"@type":"Question","name":"Carros elétricos pegam rodízio?","acceptedAnswer":{"@type":"Answer","text":"Não. Veículos elétricos, híbridos e a hidrogênio são isentos até 2030, conforme lei municipal."}},
+        {"@type":"Question","name":"Qual o valor da multa do rodízio?","acceptedAnswer":{"@type":"Answer","text":"A infração é média: R$ 130,16 e 4 pontos na CNH."}},
+        {"@type":"Question","name":"Posso ser multado duas vezes no mesmo dia?","acceptedAnswer":{"@type":"Answer","text":"Sim. É possível levar multa no período da manhã (7h–10h) e outra à tarde (17h–20h)."}},
+        {"@type":"Question","name":"Carro de outra cidade/estado pode ser multado?","acceptedAnswer":{"@type":"Answer","text":"Sim. A regra vale para qualquer veículo que circule na área restrita, independentemente da placa."}},
+        {"@type":"Question","name":"Quando o rodízio é suspenso?","acceptedAnswer":{"@type":"Answer","text":"Em situações excepcionais, como greves do transporte público (CPTM) ou fortes chuvas, a Prefeitura pode suspender temporariamente."}},
+        {"@type":"Question","name":"Como saber se o rodízio foi suspenso hoje?","acceptedAnswer":{"@type":"Answer","text":"Acompanhe o site da CET, o portal da Prefeitura (156) e canais oficiais de notícias; a suspensão é comunicada no dia."}},
+        {"@type":"Question","name":"Táxi e transporte por aplicativo pegam rodízio?","acceptedAnswer":{"@type":"Answer","text":"Táxis são isentos; veículos de transporte por aplicativo (particulares) seguem a regra normal, salvo suspensões oficiais."}},
+        {"@type":"Question","name":"Veículos de emergência são isentos?","acceptedAnswer":{"@type":"Answer","text":"Sim. Ambulâncias, viaturas policiais, bombeiros e serviços essenciais estão isentos."}},
+        {"@type":"Question","name":"Transporte escolar e vans de fretamento têm isenção?","acceptedAnswer":{"@type":"Answer","text":"Transporte escolar é isento; fretados e veículos pesados podem ter regras específicas e zonas de restrição próprias."}},
+        {"@type":"Question","name":"Como consultar multas de rodízio?","acceptedAnswer":{"@type":"Answer","text":"Pelo site da CET, na área de multas, ou pelo portal de serviços da Prefeitura (156)."}},
+        {"@type":"Question","name":"Dá para recorrer da multa de rodízio?","acceptedAnswer":{"@type":"Answer","text":"Sim. É possível apresentar recurso administrativo à CET, sem necessidade de advogado, juntando provas e argumentos."}},
+        {"@type":"Question","name":"Qual a área exata do rodízio (ruas e avenidas)?","acceptedAnswer":{"@type":"Answer","text":"Inclui trechos das Marginais Tietê e Pinheiros, Avenida dos Bandeirantes, Avenida Salim Farah Maluf, Complexo Viário Maria Maluf, entre outras vias do perímetro."}},
+        {"@type":"Question","name":"O rodízio vale para caminhões?","acceptedAnswer":{"@type":"Answer","text":"Sim, há restrição para caminhões nos mesmos horários, além de regras específicas por tipo e zona de carga."}},
+        {"@type":"Question","name":"Veículos de pessoas com deficiência (PcD) são isentos?","acceptedAnswer":{"@type":"Answer","text":"Sim. Veículos que transportam PcD podem obter isenção mediante cadastro no portal 156 da Prefeitura."}},
+        {"@type":"Question","name":"Como cadastrar isenção de rodízio para PcD?","acceptedAnswer":{"@type":"Answer","text":"Pelo portal 156 da Prefeitura de São Paulo, seguindo as instruções para veículos de pessoas com deficiência ou mobilidade reduzida."}},
+        {"@type":"Question","name":"Rodízio vale durante férias escolares?","acceptedAnswer":{"@type":"Answer","text":"Normalmente vale; eventuais suspensões ocorrem apenas por decisão oficial (ex.: greves, chuvas extremas)."}},
+        {"@type":"Question","name":"O rodízio reduz trânsito e poluição?","acceptedAnswer":{"@type":"Answer","text":"Sim. Estudos e balanços da CET indicam redução de congestionamentos e emissões nos horários de pico no Centro Expandido."}},
+        {"@type":"Question","name":"Desde quando existe o rodízio em SP?","acceptedAnswer":{"@type":"Answer","text":"O rodízio foi implantado em 1996/1997 e completou 30 anos em 2026, mantendo-se como política de mobilidade."}},
+        {"@type":"Question","name":"Posso circular fora dos horários de pico no dia do meu rodízio?","acceptedAnswer":{"@type":"Answer","text":"Sim. A restrição só vale das 7h às 10h e das 17h às 20h; fora desses horários a circulação é livre dentro do perímetro."}},
+        {"@type":"Question","name":"Como funciona a fiscalização do rodízio?","acceptedAnswer":{"@type":"Answer","text":"A CET utiliza câmeras de monitoramento e agentes de trânsito para autuar veículos que circulam em dias/horários proibidos."}},
+        {"@type":"Question","name":"Onde ver o mapa oficial do rodízio?","acceptedAnswer":{"@type":"Answer","text":"No site da CET (cetsp.com.br), na seção “Rodízio Municipal”, há mapa e lista de vias do perímetro restrito."}}
+      ]
+    }
+    </script>
+
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700;900&display=swap" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+
+    <style>
+        :root {
+            --primary:       #1b0052;
+            --accent:        #ff6b35;
+            --dark:          #12003a;
+            --light:         #e8e0ff;
+            --light-gray:    #f8f9fa;
+            --medium-gray:   #e0e0e0;
+            --dark-gray:     #343a40;
+            --text-color:    #495057;
+            --white:         #ffffff;
+            --ok:            #1e8e3e;
+            --alerta:        #c0392b;
+        }
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        html { scroll-behavior: smooth; }
+        body { font-family: 'Roboto', sans-serif; background: var(--light-gray); color: var(--text-color); line-height: 1.6; }
+        .container { max-width: 1200px; margin: 0 auto; padding: 0 20px; }
+        a { text-decoration: none; color: inherit; }
+
+        /* ══ HEADER ══ */
+        body > header {
+            background: var(--primary);
+            padding: 14px 24px;
+            display: flex; align-items: center; justify-content: space-between;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.15);
+            flex-wrap: wrap;
+        }
+        .header-logo a { color: #fff; font-weight: 900; font-size: 1.3em; }
+        .header-logo span { color: var(--accent); }
+        nav.desktop-nav ul { list-style: none; display: flex; gap: 4px; flex-wrap: wrap; }
+        nav.desktop-nav ul li a {
+            color: #fff; font-weight: 600; font-size: 0.92em;
+            padding: 10px 16px; display: block; border-radius: 6px;
+            transition: background 0.2s;
+        }
+        nav.desktop-nav ul li a:hover { background: rgba(255,255,255,0.12); }
+
+        /* ══ HERO + CALCULADORA ══ */
+        .hero-section {
+            background: linear-gradient(135deg, var(--primary), var(--dark));
+            color: #fff; text-align: center; padding: 56px 20px 64px;
+        }
+        .hero-section h1 { font-size: 2.4em; font-weight: 900; margin-bottom: 12px; }
+        .hero-section p.subtitle { font-size: 1.1em; opacity: 0.85; max-width: 640px; margin: 0 auto 32px; }
+
+        .calc-box {
+            background: var(--white); color: var(--text-color);
+            max-width: 480px; margin: 0 auto;
+            border-radius: 16px; padding: 28px 24px;
+            box-shadow: 0 12px 40px rgba(0,0,0,0.25);
+        }
+        .calc-box label { display:block; font-weight:700; margin-bottom:10px; color: var(--primary); }
+        .calc-input-row { display:flex; gap:10px; }
+        .calc-input-row input {
+            flex:1; font-size:1.6em; text-align:center; font-weight:900;
+            border:2px solid var(--medium-gray); border-radius:10px; padding:10px;
+            width: 100%;
+        }
+        .calc-input-row input:focus { border-color: var(--primary); outline:none; }
+        #calc-resultado {
+            margin-top: 18px; padding: 16px; border-radius: 10px;
+            font-weight: 700; font-size: 1.05em; display:none;
+        }
+        #calc-resultado.ok    { background:#e6f4ea; color: var(--ok); display:block; }
+        #calc-resultado.alerta{ background:#fdecea; color: var(--alerta); display:block; }
+
+        /* ══ CARDS DOS 7 DIAS ══ */
+        .dias-section { padding: 48px 20px; }
+        .dias-section h2 { text-align:center; font-size:1.8em; color: var(--primary); margin-bottom: 8px; }
+        .dias-section p.sub { text-align:center; color:#777; margin-bottom: 32px; }
+        .dias-grid {
+            display: grid; grid-template-columns: repeat(auto-fit, minmax(220px,1fr));
+            gap: 16px; max-width: 1200px; margin: 0 auto;
+        }
+        .dia-card {
+            background: var(--white); border-radius: 12px; padding: 20px;
+            border: 1px solid var(--medium-gray); transition: transform .15s, box-shadow .15s;
+            display: flex; flex-direction: column; gap: 6px;
+        }
+        .dia-card:hover { transform: translateY(-3px); box-shadow: 0 8px 24px rgba(0,0,0,0.1); }
+        .dia-card.hoje { border: 2px solid var(--accent); background: #fff8f5; }
+        .dia-card .dia-nome { font-weight: 900; font-size: 1.15em; color: var(--primary); }
+        .dia-card .dia-placas { font-size: 1.4em; font-weight: 900; color: var(--accent); }
+        .dia-card .dia-horario { font-size: 0.85em; color: #888; }
+        .dia-card .dia-link { margin-top: 8px; font-size: 0.85em; font-weight:700; color: var(--primary); }
+        .badge-hoje {
+            display:inline-block; background: var(--accent); color:#fff;
+            font-size: 0.7em; font-weight: 800; padding: 3px 10px; border-radius: 20px;
+            width: fit-content; margin-bottom: 4px; text-transform: uppercase;
+        }
+
+        /* ══ CATEGORIAS ══ */
+        .cat-section { background: var(--white); padding: 48px 20px; }
+        .cat-section h2 { text-align:center; font-size:1.8em; color: var(--primary); margin-bottom: 32px; }
+        .cat-grid { display:flex; gap:14px; overflow-x:auto; max-width: 1200px; margin: 0 auto; padding-bottom: 8px; }
+        .cat-card {
+            flex: 0 0 auto; min-width: 180px; background: var(--light-gray);
+            border-radius: 12px; padding: 18px; text-align:center;
+            border: 1px solid var(--medium-gray);
+        }
+        .cat-card .cat-nome { font-weight: 700; color: var(--primary); margin-bottom: 4px; }
+        .cat-card .cat-count { font-size: 0.82em; color: #888; }
+
+        /* ══ NEGÓCIOS ══ */
+        .negocios-section { padding: 48px 20px; }
+        .negocios-section h2 { text-align:center; font-size:1.8em; color: var(--primary); margin-bottom: 32px; }
+        .negocios-grid {
+            display: grid; grid-template-columns: repeat(auto-fill, minmax(260px,1fr));
+            gap: 18px; max-width: 1200px; margin: 0 auto;
+        }
+        .negocio-card {
+            background: var(--white); border-radius: 12px; overflow:hidden;
+            border: 1px solid var(--medium-gray); transition: box-shadow .15s;
+        }
+        .negocio-card:hover { box-shadow: 0 8px 24px rgba(0,0,0,0.1); }
+        .negocio-card img { width:100%; height:140px; object-fit:cover; background: var(--light-gray); }
+        .negocio-card .info { padding: 14px 16px; }
+        .negocio-card .cat-tag { font-size:0.72em; font-weight:700; color: var(--accent); text-transform:uppercase; }
+        .negocio-card .nome { font-weight:700; color: var(--primary); margin: 4px 0; }
+        .negocio-card .local { font-size:0.85em; color:#888; }
+
+        /* ══ FAQ ══ */
+        .faq-section { background: var(--white); padding: 48px 20px; }
+        .faq-section h2 { text-align:center; font-size:1.8em; color: var(--primary); margin-bottom: 8px; }
+        .faq-section p.sub { text-align:center; color:#777; margin-bottom: 32px; }
+        .faq-list { max-width: 780px; margin: 0 auto; display: flex; flex-direction: column; gap: 10px; }
+        .faq-item {
+            border: 1px solid var(--medium-gray); border-radius: 10px;
+            background: var(--light-gray); overflow: hidden;
+        }
+        .faq-item.principal { border-color: var(--accent); background: #fff8f5; }
+        .faq-item summary {
+            cursor: pointer; list-style: none; padding: 16px 18px;
+            font-weight: 700; color: var(--primary); font-size: 0.98em;
+            display: flex; align-items: center; justify-content: space-between; gap: 12px;
+        }
+        .faq-item summary::-webkit-details-marker { display: none; }
+        .faq-item summary::after {
+            content: "+"; font-size: 1.3em; font-weight: 900; color: var(--accent);
+            flex-shrink: 0; transition: transform .2s;
+        }
+        .faq-item[open] summary::after { transform: rotate(45deg); }
+        .faq-item .faq-resposta { padding: 0 18px 16px; color: var(--text-color); font-size: 0.94em; }
+        .faq-mais-toggle {
+            max-width: 780px; margin: 22px auto 0; text-align: center;
+        }
+        .faq-mais-toggle summary {
+            cursor: pointer; list-style: none; display: inline-block;
+            font-weight: 700; color: var(--primary); padding: 10px 20px;
+            border: 2px solid var(--primary); border-radius: 30px; font-size: 0.9em;
+        }
+        .faq-mais-toggle summary::-webkit-details-marker { display: none; }
+        .faq-mais-toggle .faq-list { margin-top: 18px; }
+
+        /* ══ FOOTER ══ */
+        body > footer {
+            background: var(--dark); color: #ccc; padding: 32px 20px; text-align:center; font-size: 0.85em;
+        }
+        body > footer a { color: var(--accent); font-weight:600; }
+
+        @media (max-width: 720px) {
+            nav.desktop-nav { display:none; }
+            .hero-section h1 { font-size: 1.8em; }
+        }
+    </style>
+</head>
+<body>
+
+<header>
+    <div class="header-logo"><a href="/">Guia do <span>Rodízio</span> · Carros</a></div>
+    <nav class="desktop-nav">
+        <ul>
+            <li><a href="/">Início</a></li>
+            {% for cat in categorias %}
+            <li><a href="/{{ cat.slug }}/">{{ cat.nome }}</a></li>
+            {% endfor %}
+            <li><a href="/blog/">Blog</a></li>
+        </ul>
+    </nav>
+</header>
+
+<!-- topo AdSense -->
+{% if anuncio_topo %}
+<div class="container" style="text-align:center; padding: 12px 0;">{{ anuncio_topo|safe }}</div>
+{% endif %}
+
+<section class="hero-section">
+    <h1>Rodízio de Carros Hoje em São Paulo</h1>
+    <p class="subtitle">Digite o final da sua placa e descubra na hora se hoje tem restrição — sem precisar decorar dia da semana.</p>
+
+    <div class="calc-box">
+        <label for="calc-placa">Final da sua placa</label>
+        <div class="calc-input-row">
+            <input type="number" id="calc-placa" min="0" max="9" maxlength="1" placeholder="Ex: 7" inputmode="numeric">
+        </div>
+        <div id="calc-resultado"></div>
+    </div>
+</section>
+
+<section class="dias-section">
+    <div class="container">
+        <h2>Rodízio da Semana</h2>
+        <p class="sub">Válido de segunda a sexta, das 7h às 10h e das 17h às 20h. Veja o dia completo no blog.</p>
+        <div class="dias-grid">
+            {% set dias = [
+                ("Segunda-feira", "1 e 2", "rodizio-segunda-feira"),
+                ("Terça-feira",   "3 e 4", "rodizio-terca-feira"),
+                ("Quarta-feira",  "5 e 6", "rodizio-quarta-feira"),
+                ("Quinta-feira",  "7 e 8", "rodizio-quinta-feira"),
+                ("Sexta-feira",   "9 e 0", "rodizio-sexta-feira"),
+                ("Sábado",        "sem rodízio", "rodizio-sabado"),
+                ("Domingo",       "sem rodízio", "rodizio-domingo"),
+            ] %}
+            {% for nome, placas, slug in dias %}
+            <div class="dia-card" data-dia="{{ loop.index0 }}">
+                <span class="badge-hoje" style="display:none;">Hoje</span>
+                <div class="dia-nome">{{ nome }}</div>
+                <div class="dia-placas">{{ placas }}</div>
+                <div class="dia-horario">{% if placas != "sem rodízio" %}7h–10h e 17h–20h{% else %}Sem restrição{% endif %}</div>
+                <a class="dia-link" href="/blog/{{ slug }}/">Ver detalhes e exceções →</a>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+</section>
+
+{% if anuncio_meio %}
+<div class="container" style="text-align:center; padding: 12px 0;">{{ anuncio_meio|safe }}</div>
+{% endif %}
+
+<section class="cat-section">
+    <div class="container">
+        <h2>Diretório Automotivo Perto de Você</h2>
+        <div class="cat-grid">
+            {% for cat in categorias %}
+            <a href="/{{ cat.slug }}/" class="cat-card">
+                <div class="cat-nome">{{ cat.nome }}</div>
+                <div class="cat-count">Ver negócios →</div>
+            </a>
+            {% endfor %}
+        </div>
+    </div>
+</section>
+
+<section class="negocios-section">
+    <div class="container">
+        <h2>Negócios Cadastrados</h2>
+        <div class="negocios-grid">
+            {% for n in negocios %}
+            <a href="/{{ n.categoria_slug }}/{{ n.slug }}/" class="negocio-card">
+                {% if n.mostrar_foto and n.foto_url %}
+                <img src="{{ n.foto_url }}" alt="{{ n.nome }}" loading="lazy">
+                {% else %}
+                <img src="https://res.cloudinary.com/dhu1cqvrb/image/upload/v1779207400/leanttro_bohuce.png" alt="{{ n.nome }}" loading="lazy">
+                {% endif %}
+                <div class="info">
+                    <div class="cat-tag">{{ n.categoria_nome }}</div>
+                    <div class="nome">{{ n.nome }}</div>
+                    <div class="local">{{ n.bairro }}, {{ n.cidade }}</div>
+                </div>
+            </a>
+            {% endfor %}
+        </div>
+    </div>
+</section>
+
+<section class="faq-section">
+    <div class="container">
+        <h2>Perguntas Frequentes sobre o Rodízio</h2>
+        <p class="sub">As dúvidas mais buscadas sobre o rodízio de veículos em São Paulo — direto ao ponto.</p>
+
+        <div class="faq-list">
+            <details class="faq-item principal">
+                <summary>O que é o rodízio de veículos em São Paulo?</summary>
+                <div class="faq-resposta">O rodízio municipal é uma restrição de circulação de automóveis no Centro Expandido de São Paulo, definida pelo último número da placa e por dia da semana, nos horários de pico.</div>
+            </details>
+            <details class="faq-item principal">
+                <summary>Qual é o horário do rodízio em SP em 2026?</summary>
+                <div class="faq-resposta">O rodízio funciona das 7h às 10h e das 17h às 20h, de segunda a sexta-feira, exceto feriados.</div>
+            </details>
+            <details class="faq-item principal">
+                <summary>Quais dias da semana têm rodízio?</summary>
+                <div class="faq-resposta">O rodízio vale de segunda a sexta-feira; não há restrição aos sábados, domingos e feriados.</div>
+            </details>
+            <details class="faq-item principal">
+                <summary>Qual placa não circula em cada dia?</summary>
+                <div class="faq-resposta">Segunda: 1 e 2; terça: 3 e 4; quarta: 5 e 6; quinta: 7 e 8; sexta: 9 e 0.</div>
+            </details>
+            <details class="faq-item principal">
+                <summary>Tem rodízio hoje em SP?</summary>
+                <div class="faq-resposta">Depende do dia e da placa: use a calculadora no topo desta página, ou consulte o calendário oficial da CET e eventuais suspensões no site ou app da Prefeitura.</div>
+            </details>
+            <details class="faq-item principal">
+                <summary>Tem rodízio aos feriados, sábados e domingos?</summary>
+                <div class="faq-resposta">Não. O rodízio só vale em dias úteis (segunda a sexta) e não é aplicado em feriados municipais, estaduais ou nacionais.</div>
+            </details>
+            <details class="faq-item principal">
+                <summary>Qual o valor da multa do rodízio?</summary>
+                <div class="faq-resposta">A infração é média: R$ 130,16 e 4 pontos na CNH. É possível levar multa de manhã (7h–10h) e outra à tarde (17h–20h), no mesmo dia.</div>
+            </details>
+            <details class="faq-item principal">
+                <summary>Onde vale o rodízio em São Paulo?</summary>
+                <div class="faq-resposta">No Centro Expandido, delimitado pelas Marginais Tietê e Pinheiros, Avenida dos Bandeirantes e Avenida Salim Farah Maluf (Mini-Anel Viário).</div>
+            </details>
+        </div>
+
+        <details class="faq-mais-toggle">
+            <summary>Ver todas as perguntas (+20)</summary>
+            <div class="faq-list">
+                <details class="faq-item">
+                    <summary>Motos pegam rodízio em SP?</summary>
+                    <div class="faq-resposta">Não. Motocicletas estão isentas do rodízio municipal.</div>
+                </details>
+                <details class="faq-item">
+                    <summary>Carros elétricos pegam rodízio?</summary>
+                    <div class="faq-resposta">Não. Veículos elétricos, híbridos e a hidrogênio são isentos até 2030, conforme lei municipal.</div>
+                </details>
+                <details class="faq-item">
+                    <summary>Carro de outra cidade/estado pode ser multado?</summary>
+                    <div class="faq-resposta">Sim. A regra vale para qualquer veículo que circule na área restrita, independentemente da placa.</div>
+                </details>
+                <details class="faq-item">
+                    <summary>Quando o rodízio é suspenso?</summary>
+                    <div class="faq-resposta">Em situações excepcionais, como greves do transporte público (CPTM) ou fortes chuvas, a Prefeitura pode suspender temporariamente.</div>
+                </details>
+                <details class="faq-item">
+                    <summary>Como saber se o rodízio foi suspenso hoje?</summary>
+                    <div class="faq-resposta">Acompanhe o site da CET, o portal da Prefeitura (156) e canais oficiais de notícias; a suspensão é comunicada no dia.</div>
+                </details>
+                <details class="faq-item">
+                    <summary>Táxi e transporte por aplicativo pegam rodízio?</summary>
+                    <div class="faq-resposta">Táxis são isentos; veículos de transporte por aplicativo (particulares) seguem a regra normal, salvo suspensões oficiais.</div>
+                </details>
+                <details class="faq-item">
+                    <summary>Veículos de emergência são isentos?</summary>
+                    <div class="faq-resposta">Sim. Ambulâncias, viaturas policiais, bombeiros e serviços essenciais estão isentos.</div>
+                </details>
+                <details class="faq-item">
+                    <summary>Transporte escolar e vans de fretamento têm isenção?</summary>
+                    <div class="faq-resposta">Transporte escolar é isento; fretados e veículos pesados podem ter regras específicas e zonas de restrição próprias.</div>
+                </details>
+                <details class="faq-item">
+                    <summary>Como consultar multas de rodízio?</summary>
+                    <div class="faq-resposta">Pelo site da CET, na área de multas, ou pelo portal de serviços da Prefeitura (156).</div>
+                </details>
+                <details class="faq-item">
+                    <summary>Dá para recorrer da multa de rodízio?</summary>
+                    <div class="faq-resposta">Sim. É possível apresentar recurso administrativo à CET, sem necessidade de advogado, juntando provas e argumentos.</div>
+                </details>
+                <details class="faq-item">
+                    <summary>Qual a área exata do rodízio (ruas e avenidas)?</summary>
+                    <div class="faq-resposta">Inclui trechos das Marginais Tietê e Pinheiros, Avenida dos Bandeirantes, Avenida Salim Farah Maluf, Complexo Viário Maria Maluf, entre outras vias do perímetro.</div>
+                </details>
+                <details class="faq-item">
+                    <summary>O rodízio vale para caminhões?</summary>
+                    <div class="faq-resposta">Sim, há restrição para caminhões nos mesmos horários, além de regras específicas por tipo e zona de carga.</div>
+                </details>
+                <details class="faq-item">
+                    <summary>Veículos de pessoas com deficiência (PcD) são isentos?</summary>
+                    <div class="faq-resposta">Sim. Veículos que transportam PcD podem obter isenção mediante cadastro no portal 156 da Prefeitura.</div>
+                </details>
+                <details class="faq-item">
+                    <summary>Como cadastrar isenção de rodízio para PcD?</summary>
+                    <div class="faq-resposta">Pelo portal 156 da Prefeitura de São Paulo, seguindo as instruções para veículos de pessoas com deficiência ou mobilidade reduzida.</div>
+                </details>
+                <details class="faq-item">
+                    <summary>Rodízio vale durante férias escolares?</summary>
+                    <div class="faq-resposta">Normalmente vale; eventuais suspensões ocorrem apenas por decisão oficial (ex.: greves, chuvas extremas).</div>
+                </details>
+                <details class="faq-item">
+                    <summary>O rodízio reduz trânsito e poluição?</summary>
+                    <div class="faq-resposta">Sim. Estudos e balanços da CET indicam redução de congestionamentos e emissões nos horários de pico no Centro Expandido.</div>
+                </details>
+                <details class="faq-item">
+                    <summary>Desde quando existe o rodízio em SP?</summary>
+                    <div class="faq-resposta">O rodízio foi implantado em 1996/1997 e completou 30 anos em 2026, mantendo-se como política de mobilidade.</div>
+                </details>
+                <details class="faq-item">
+                    <summary>Posso circular fora dos horários de pico no dia do meu rodízio?</summary>
+                    <div class="faq-resposta">Sim. A restrição só vale das 7h às 10h e das 17h às 20h; fora desses horários a circulação é livre dentro do perímetro.</div>
+                </details>
+                <details class="faq-item">
+                    <summary>Como funciona a fiscalização do rodízio?</summary>
+                    <div class="faq-resposta">A CET utiliza câmeras de monitoramento e agentes de trânsito para autuar veículos que circulam em dias/horários proibidos.</div>
+                </details>
+                <details class="faq-item">
+                    <summary>Onde ver o mapa oficial do rodízio?</summary>
+                    <div class="faq-resposta">No site da CET (cetsp.com.br), na seção "Rodízio Municipal", há mapa e lista de vias do perímetro restrito.</div>
+                </details>
+            </div>
+        </details>
+    </div>
+</section>
+
+<footer>
+    <p>Guia do Rodízio · Carros — consulta de rodízio de veículos e diretório automotivo de São Paulo.</p>
+    <p>Fonte oficial: <a href="https://www.prefeitura.sp.gov.br/cidade/secretarias/transportes/rodizio/" target="_blank" rel="noopener">Prefeitura de São Paulo / CET</a> — confirme sempre em caso de feriado ou exceção.</p>
+</footer>
+
+<script>
+// ── Calculadora de placa ────────────────────────────────────
+// Regra oficial CET-SP: 1/2 seg · 3/4 ter · 5/6 qua · 7/8 qui · 9/0 sex
+const REGRA_RODIZIO = {
+    1: 0, 2: 0,  // segunda (índice 0)
+    3: 1, 4: 1,  // terça
+    5: 2, 6: 2,  // quarta
+    7: 3, 8: 3,  // quinta
+    9: 4, 0: 4,  // sexta
+};
+const NOMES_DIA = ["Segunda-feira","Terça-feira","Quarta-feira","Quinta-feira","Sexta-feira","Sábado","Domingo"];
+
+function checarPlaca() {
+    const val = document.getElementById('calc-placa').value;
+    const resultado = document.getElementById('calc-resultado');
+    if (val === '') { resultado.style.display = 'none'; return; }
+    const digito = parseInt(val, 10);
+    if (isNaN(digito) || digito < 0 || digito > 9) {
+        resultado.className = 'alerta';
+        resultado.textContent = 'Digite só o último número da placa (0 a 9).';
+        return;
+    }
+    const hoje = new Date();
+    const diaSemana = hoje.getDay(); // 0=domingo ... 6=sábado
+    const idxRodizioHoje = diaSemana >= 1 && diaSemana <= 5 ? diaSemana - 1 : null;
+
+    if (idxRodizioHoje === null) {
+        resultado.className = 'ok';
+        resultado.textContent = `Hoje é ${NOMES_DIA[diaSemana === 0 ? 6 : 5]}, não tem rodízio de veículos em São Paulo.`;
+        return;
+    }
+
+    const diaDaPlaca = REGRA_RODIZIO[digito];
+    if (diaDaPlaca === idxRodizioHoje) {
+        resultado.className = 'alerta';
+        resultado.textContent = `⚠️ Hoje (${NOMES_DIA[idxRodizioHoje]}) sua placa final ${digito} está no rodízio, das 7h às 10h e das 17h às 20h.`;
+    } else {
+        resultado.className = 'ok';
+        resultado.textContent = `✅ Hoje (${NOMES_DIA[idxRodizioHoje]}) sua placa final ${digito} pode circular normalmente.`;
+    }
+}
+document.getElementById('calc-placa').addEventListener('input', checarPlaca);
+
+// ── Destaca o card do dia de hoje ───────────────────────────
+(function destacarHoje() {
+    const diaSemana = new Date().getDay();
+    const idx = diaSemana >= 1 && diaSemana <= 5 ? diaSemana - 1 : (diaSemana === 0 ? 6 : 5);
+    const card = document.querySelector(`.dia-card[data-dia="${idx}"]`);
+    if (card) {
+        card.classList.add('hoje');
+        card.querySelector('.badge-hoje').style.display = 'inline-block';
+    }
+})();
+</script>
+
+</body>
+</html>
