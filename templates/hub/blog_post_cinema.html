@@ -304,6 +304,18 @@ footer { background: var(--bg-card); border-top: 1px solid var(--border); paddin
     .post-content-wrap { padding: 24px 20px; }
     .post-hero-title { font-size: 1.4em; }
 }
+
+/* ══ HERO — DESKTOP: foto 1:1 sem corte (mobile não é afetado) ══ */
+@media (min-width: 769px) {
+    .post-hero {
+        max-width: 720px; margin: 0 auto;
+        max-height: none; aspect-ratio: 1 / 1;
+        border-radius: 0 0 14px 14px;
+    }
+    .post-hero img {
+        height: 100%; max-height: none;
+    }
+}
 </style>
 </head>
 <body>
