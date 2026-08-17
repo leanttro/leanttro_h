@@ -150,23 +150,54 @@ _PREFIXO_CATEGORIA_POR_DOMINIO = {
     "lotericapertodemim.com.br": "loterica_",
 }
 
+# Hubs SEM prefixo curado que, mesmo assim, não podem cair no fallback de
+# "todas as categorias do sistema" (ex.: carros.guiadorodizio.com.br via
+# categoria não-curada de outro nicho, tipo academia/açougue/cinema
+# aparecendo no menu de carro). Isolado propositalmente num dicionário à
+# parte — só afeta o(s) domínio(s) listado(s) aqui, NENHUM outro hub muda
+# de comportamento (nem os que já usam prefixo, nem os que dependem do
+# fallback "mostrar tudo" de propósito, ex.: curadoria antes de ter negócio
+# cadastrado).
+_HUBS_CATEGORIA_POR_NEGOCIO_DOMINIO = {
+    "carros.guiadorodizio.com.br",
+}
+
 def _categorias_do_hub(hub):
     prefixo = (
         _PREFIXO_CATEGORIA_POR_HUB.get(hub.get("hub_leanttro"))
         or _PREFIXO_CATEGORIA_POR_DOMINIO.get(hub.get("dominio_proprio"))
     )
-    if not prefixo:
-        return query("SELECT * FROM hub_categorias WHERE ativo = true ORDER BY nome")
-    # escapa os coringas do LIKE (_ e %) que possam existir no prefixo,
-    # pra não virarem wildcard sem querer (ex.: o "_" de "cinema_" é literal aqui).
-    padrao = (
-        prefixo.replace("\\", "\\\\").replace("_", "\\_").replace("%", "\\%")
-        + "%"
-    )
-    return query(
-        "SELECT * FROM hub_categorias WHERE ativo = true AND slug LIKE %s ESCAPE '\\' ORDER BY nome",
-        (padrao,),
-    )
+    if prefixo:
+        # escapa os coringas do LIKE (_ e %) que possam existir no prefixo,
+        # pra não virarem wildcard sem querer (ex.: o "_" de "cinema_" é literal aqui).
+        padrao = (
+            prefixo.replace("\\", "\\\\").replace("_", "\\_").replace("%", "\\%")
+            + "%"
+        )
+        return query(
+            "SELECT * FROM hub_categorias WHERE ativo = true AND slug LIKE %s ESCAPE '\\' ORDER BY nome",
+            (padrao,),
+        )
+    if hub.get("dominio_proprio") in _HUBS_CATEGORIA_POR_NEGOCIO_DOMINIO:
+        # Só entra aqui pro(s) domínio(s) explicitamente listado(s) acima.
+        # Filtra pelas categorias que têm negócio ativo de fato vinculado a
+        # ESTE hub — mesmo critério que _categorias_cidade() já usa nas
+        # páginas de cidade, só que sem recorte de cidade.
+        chave_cache = ("categorias_do_hub_por_negocio", hub["id"])
+        cached = _cache_get(chave_cache)
+        if cached is not None:
+            return cached
+        resultado = query("""
+            SELECT DISTINCT c.*
+            FROM hub_categorias c
+            JOIN hub_negocios n ON n.categoria_id = c.id
+            JOIN hub_negocio_hubs nh ON nh.negocio_id = n.id
+            WHERE nh.hub_id = %s AND n.ativo = true AND c.ativo = true
+            ORDER BY c.nome
+        """, (hub["id"],))
+        return _cache_set(chave_cache, resultado)
+    # Comportamento original, intocado, pra todos os demais hubs.
+    return query("SELECT * FROM hub_categorias WHERE ativo = true ORDER BY nome")
 
 # ── Auth ──────────────────────────────────────────────────────
 
