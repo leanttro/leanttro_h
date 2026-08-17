@@ -6,41 +6,43 @@
 <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-7617881885143728"
      crossorigin="anonymous"></script>
 <!-- ⚠️ Trocar pelo ID de GA4 próprio do carros.guiadorodizio.com.br quando criar a propriedade -->
-<script async src="https://www.googletagmanager.com/gtag/js?id=G-XXXXXXXXXX"></script>
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-T30NM9KXWZ"></script>
 <script>
   window.dataLayer = window.dataLayer || [];
   function gtag(){dataLayer.push(arguments);}
   gtag('js', new Date());
-  gtag('config', 'G-XXXXXXXXXX');
+  gtag('config', 'G-T30NM9KXWZ');
 </script>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
     <!-- SEO -->
-    <title>Rodízio de Carros Hoje em SP — Consulte sua Placa | Guia do Rodízio</title>
-    <meta name="description" content="Saiba na hora se hoje tem rodízio pra sua placa em São Paulo. Consulte o final da placa, veja os 7 dias da semana e encontre concessionária, oficina e autopeças perto de você.">
-    <meta name="keywords" content="rodízio carros hoje, rodízio sp, rodízio de veículos, final de placa hoje, rodízio suspenso, rodízio segunda-feira, rodízio terça-feira, concessionária perto de mim, oficina mecânica perto de mim, autopeças, borracharia, seguro auto">
+    <title>Rodízio de Carros Hoje em SP + Postos de Gasolina Perto de Você | Guia do Rodízio</title>
+    <meta name="description" content="Saiba na hora se hoje tem rodízio pra sua placa em São Paulo e encontre o posto de gasolina mais próximo de você. Consulte o final da placa, veja os 7 dias da semana e o diretório completo de postos de gasolina em SP.">
+    <meta name="keywords" content="posto de gasolina perto de mim, posto de gasolina são paulo, postos de gasolina sp, abastecer antes do rodízio, rodízio carros hoje, rodízio sp, rodízio de veículos, final de placa hoje, rodízio suspenso, rodízio segunda-feira, rodízio terça-feira">
     <meta name="robots" content="index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1">
     <meta name="theme-color" content="#1b0052">
     <meta name="author" content="Guia do Rodízio">
     <link rel="canonical" href="https://{{ request.host }}/">
 
     <!-- Favicon -->
-    <link rel="icon" type="image/png" href="{{ hub.favicon_url or 'https://res.cloudinary.com/dhu1cqvrb/image/upload/v1779207400/leanttro_bohuce.png' }}">
+    <link rel="icon" type="image/png" href="{{ hub.favicon_url or 'https://i.imgur.com/1TWSnRj.png' }}">
+    <link rel="apple-touch-icon" href="{{ hub.favicon_url or 'https://i.imgur.com/1TWSnRj.png' }}">
 
     <!-- Open Graph -->
     <meta property="og:type"        content="website">
     <meta property="og:site_name"   content="Rodízio de Carros — Guia do Rodízio">
     <meta property="og:url"         content="https://{{ request.host }}/">
-    <meta property="og:title"       content="Rodízio de Carros Hoje em SP — Consulte sua Placa">
-    <meta property="og:description" content="Descubra na hora se hoje é dia de rodízio pra sua placa. Calendário completo da semana + diretório automotivo perto de você.">
-    <meta property="og:image"       content="{{ hub.banner_fundo_url or 'https://res.cloudinary.com/dhu1cqvrb/image/upload/v1779207400/leanttro_bohuce.png' }}">
+    <meta property="og:title"       content="Rodízio de Carros Hoje em SP + Postos de Gasolina Perto de Você">
+    <meta property="og:description" content="Descubra na hora se hoje é dia de rodízio pra sua placa e encontre o posto de gasolina mais próximo de você em São Paulo. Calendário completo da semana + diretório de postos de gasolina.">
+    <meta property="og:image"       content="{{ hub.banner_fundo_url or 'https://i.imgur.com/1TWSnRj.png' }}">
     <meta property="og:locale"      content="pt_BR">
 
     <!-- Twitter Card -->
     <meta name="twitter:card"        content="summary_large_image">
-    <meta name="twitter:title"       content="Rodízio de Carros Hoje em SP — Consulte sua Placa">
-    <meta name="twitter:description" content="Descubra na hora se hoje é dia de rodízio pra sua placa em São Paulo.">
+    <meta name="twitter:title"       content="Rodízio de Carros Hoje em SP + Postos de Gasolina Perto de Você">
+    <meta name="twitter:description" content="Descubra na hora se hoje é dia de rodízio pra sua placa e ache o posto de gasolina mais próximo em São Paulo.">
+    <meta name="twitter:image"       content="{{ hub.banner_fundo_url or 'https://i.imgur.com/1TWSnRj.png' }}">
 
     <!-- JSON-LD WebSite -->
     <script type="application/ld+json">
@@ -49,7 +51,7 @@
       "@type": "WebSite",
       "name": "Rodízio de Carros — Guia do Rodízio",
       "url": "https://{{ request.host }}/",
-      "description": "Consulta de rodízio de veículos de São Paulo por placa, calendário da semana e diretório automotivo.",
+      "description": "Consulta de rodízio de veículos de São Paulo por placa, calendário da semana e diretório completo de postos de gasolina em SP.",
       "inLanguage": "pt-BR"
     }
     </script>
@@ -65,6 +67,7 @@
         {"@type":"Question","name":"Quais dias da semana têm rodízio?","acceptedAnswer":{"@type":"Answer","text":"O rodízio vale de segunda a sexta-feira; não há restrição aos sábados, domingos e feriados."}},
         {"@type":"Question","name":"Qual placa não circula em cada dia?","acceptedAnswer":{"@type":"Answer","text":"Segunda: 1 e 2; terça: 3 e 4; quarta: 5 e 6; quinta: 7 e 8; sexta: 9 e 0."}},
         {"@type":"Question","name":"Onde vale o rodízio em São Paulo?","acceptedAnswer":{"@type":"Answer","text":"No Centro Expandido, delimitado pelas Marginais Tietê e Pinheiros, Avenida dos Bandeirantes e Avenida Salim Farah Maluf (Mini-Anel Viário)."}},
+        {"@type":"Question","name":"Onde encontro um posto de gasolina perto de mim em São Paulo?","acceptedAnswer":{"@type":"Answer","text":"Use o diretório de postos de gasolina do Guia do Rodízio: ative sua localização para ver os postos mais próximos primeiro, ou filtre por bairro."}},
         {"@type":"Question","name":"Tem rodízio hoje em SP?","acceptedAnswer":{"@type":"Answer","text":"Depende do dia e da placa: consulte o calendário oficial da CET e verifique suspensões eventuais no site ou app da Prefeitura."}},
         {"@type":"Question","name":"Tem rodízio aos feriados?","acceptedAnswer":{"@type":"Answer","text":"Não. O rodízio não vale em feriados municipais, estaduais ou nacionais."}},
         {"@type":"Question","name":"Tem rodízio no sábado e domingo?","acceptedAnswer":{"@type":"Answer","text":"Não. A restrição só ocorre em dias úteis (segunda a sexta)."}},
@@ -125,8 +128,8 @@
             box-shadow: 0 2px 10px rgba(0,0,0,0.15);
             flex-wrap: wrap;
         }
-        .header-logo a { color: #fff; font-weight: 900; font-size: 1.3em; }
-        .header-logo span { color: var(--accent); }
+        .header-logo a { display:flex; align-items:center; }
+        .header-logo .logo-img { height: 34px; width: auto; display:block; }
         nav.desktop-nav ul { list-style: none; display: flex; gap: 4px; flex-wrap: wrap; }
         nav.desktop-nav ul li a {
             color: #fff; font-weight: 600; font-size: 0.92em;
@@ -203,21 +206,103 @@
 
         /* ══ NEGÓCIOS ══ */
         .negocios-section { padding: 48px 20px; }
-        .negocios-section h2 { text-align:center; font-size:1.8em; color: var(--primary); margin-bottom: 32px; }
-        .negocios-grid {
-            display: grid; grid-template-columns: repeat(auto-fill, minmax(260px,1fr));
-            gap: 18px; max-width: 1200px; margin: 0 auto;
+        .negocios-section h2 { text-align:center; font-size:1.8em; color: var(--primary); margin-bottom: 8px; }
+        .negocios-sub { text-align:center; color:#777; margin: 0 auto 26px; max-width: 620px; }
+
+        .negocios-controls {
+            max-width: 1200px; margin: 0 auto 22px; display:flex; flex-direction:column;
+            align-items:center; gap:16px;
         }
+        .btn-geoloc {
+            background: var(--accent); color:#fff; border:none; font-weight:700; font-size:0.95em;
+            padding: 13px 26px; border-radius: 30px; cursor:pointer; display:inline-flex; align-items:center; gap:8px;
+            transition: background .2s, transform .15s; box-shadow: 0 6px 18px rgba(255,107,53,0.3);
+        }
+        .btn-geoloc:hover { background:#e85a26; transform: translateY(-1px); }
+        .btn-geoloc:disabled { opacity:.65; cursor:default; transform:none; }
+
+        .negocios-filtros {
+            width:100%; display:flex; flex-wrap:wrap; align-items:center; justify-content:space-between; gap:14px;
+        }
+        .filtro-categoria {
+            display:flex; align-items:center; gap:8px; background:var(--white); border:1px solid var(--medium-gray);
+            border-radius: 8px; padding: 10px 16px;
+        }
+        .filtro-categoria i { color: var(--accent); }
+        .filtro-categoria label { font-weight:700; color: var(--primary); font-size:0.9em; white-space:nowrap; }
+        .filtro-categoria select {
+            border:none; background:transparent; font-size:0.9em; color: var(--text-color);
+            cursor:pointer; outline:none; max-width: 220px;
+        }
+
+        .ver-como { display:flex; align-items:center; gap:8px; font-size:0.85em; color:#777; }
+        .view-btn {
+            width:36px; height:36px; border-radius:6px; border:1px solid var(--medium-gray); background:var(--white);
+            color:#999; cursor:pointer; display:flex; align-items:center; justify-content:center; transition:.15s;
+        }
+        .view-btn.active { background: var(--accent); border-color: var(--accent); color:#fff; }
+
+        .negocios-status {
+            max-width:1200px; margin:0 auto 18px; text-align:center; font-size:0.9em; font-weight:600;
+            color: var(--primary); background:#f0ecff; border-radius:8px; padding:10px 16px; display:none;
+        }
+        .negocios-status.erro { color: var(--alerta); background:#fdecea; }
+
+        .negocios-wrap { position:relative; max-width:1200px; margin:0 auto; display:flex; align-items:center; gap:10px; }
+        .carrossel-nav {
+            flex:0 0 auto; width:42px; height:42px; border-radius:50%; border:1px solid var(--medium-gray);
+            background:var(--white); color:var(--primary); cursor:pointer; display:flex; align-items:center; justify-content:center;
+            box-shadow:0 4px 12px rgba(0,0,0,0.08); transition:.15s; font-size:1em;
+        }
+        .carrossel-nav:hover { background: var(--primary); color:#fff; }
+        .carrossel-nav:disabled { opacity:.3; cursor:default; }
+        .carrossel-nav:disabled:hover { background:var(--white); color:var(--primary); }
+
+        .negocios-track {
+            flex:1 1 auto; display:flex; gap:18px; overflow-x:auto; scroll-snap-type:x mandatory;
+            -webkit-overflow-scrolling:touch; scroll-behavior:smooth; padding: 4px 4px 14px; scrollbar-width: thin;
+        }
+        .negocios-track::-webkit-scrollbar { height:6px; }
+        .negocios-track::-webkit-scrollbar-thumb { background: var(--medium-gray); border-radius:10px; }
+
+        .negocios-track .negocio-card { flex: 0 0 auto; width: 260px; scroll-snap-align:start; }
+
+        .negocios-wrap[data-view="grid"] .carrossel-nav { display:none; }
+        .negocios-wrap[data-view="grid"] .negocios-track {
+            display:grid; grid-template-columns: repeat(auto-fill, minmax(240px,1fr));
+            overflow:visible; padding:4px;
+        }
+        .negocios-wrap[data-view="grid"] .negocios-track .negocio-card { width:auto; }
+
+        .carrossel-progress-track {
+            max-width:1200px; margin:14px auto 0; height:4px; background:var(--medium-gray);
+            border-radius:4px; position:relative; overflow:hidden;
+        }
+        .carrossel-progress-bar {
+            position:absolute; top:0; left:0; height:100%; background:var(--accent);
+            border-radius:4px; transition:left .1s linear, width .1s linear;
+        }
+
         .negocio-card {
             background: var(--white); border-radius: 12px; overflow:hidden;
-            border: 1px solid var(--medium-gray); transition: box-shadow .15s;
+            border: 1px solid var(--medium-gray); transition: box-shadow .15s; display:block;
         }
         .negocio-card:hover { box-shadow: 0 8px 24px rgba(0,0,0,0.1); }
-        .negocio-card img { width:100%; height:140px; object-fit:cover; background: var(--light-gray); }
+        .negocio-card img { width:100%; aspect-ratio: 1 / 1; height:auto; object-fit:cover; background: var(--light-gray); display:block; }
+        .negocio-card img.negocio-placeholder { object-fit:contain; padding:24px; background: var(--white); }
         .negocio-card .info { padding: 14px 16px; }
         .negocio-card .cat-tag { font-size:0.72em; font-weight:700; color: var(--accent); text-transform:uppercase; }
         .negocio-card .nome { font-weight:700; color: var(--primary); margin: 4px 0; }
         .negocio-card .local { font-size:0.85em; color:#888; }
+
+        @media (max-width: 720px) {
+            .negocios-filtros { flex-direction:column; align-items:stretch; }
+            .filtro-categoria { width:100%; }
+            .filtro-categoria select { max-width:none; flex:1; }
+            .ver-como { justify-content:center; }
+            .negocios-track .negocio-card { width: 74vw; }
+            .carrossel-nav { width:36px; height:36px; }
+        }
 
         /* ══ FAQ ══ */
         .faq-section { background: var(--white); padding: 48px 20px; }
@@ -267,7 +352,7 @@
 <body>
 
 <header>
-    <div class="header-logo"><a href="/">Guia do <span>Rodízio</span> · Carros</a></div>
+    <div class="header-logo"><a href="/"><img src="{{ hub.logo_url or 'https://i.imgur.com/1TWSnRj.png' }}" alt="Guia do Rodízio · Carros" class="logo-img"></a></div>
     <nav class="desktop-nav">
         <ul>
             <li><a href="/">Início</a></li>
@@ -330,12 +415,13 @@
 
 <section class="cat-section">
     <div class="container">
-        <h2>Diretório Automotivo Perto de Você</h2>
-        <div class="cat-grid">
+        <h2>Postos de Gasolina em São Paulo</h2>
+        <p class="sub" style="text-align:center;color:#777;margin-bottom:24px;">Explore por bairro e encontre o posto mais perto de você.</p>
+        <div class="cat-grid" id="bairros-grid">
             {% for cat in categorias %}
             <a href="/{{ cat.slug }}/" class="cat-card">
                 <div class="cat-nome">{{ cat.nome }}</div>
-                <div class="cat-count">Ver negócios →</div>
+                <div class="cat-count">Ver postos →</div>
             </a>
             {% endfor %}
         </div>
@@ -344,22 +430,61 @@
 
 <section class="negocios-section">
     <div class="container">
-        <h2>Negócios Cadastrados</h2>
-        <div class="negocios-grid">
-            {% for n in negocios %}
-            <a href="/{{ n.categoria_slug }}/{{ n.slug }}/" class="negocio-card">
-                {% if n.mostrar_foto and n.foto_url %}
-                <img src="{{ n.foto_url }}" alt="{{ n.nome }}" loading="lazy">
-                {% else %}
-                <img src="https://res.cloudinary.com/dhu1cqvrb/image/upload/v1779207400/leanttro_bohuce.png" alt="{{ n.nome }}" loading="lazy">
-                {% endif %}
-                <div class="info">
-                    <div class="cat-tag">{{ n.categoria_nome }}</div>
-                    <div class="nome">{{ n.nome }}</div>
-                    <div class="local">{{ n.bairro }}, {{ n.cidade }}</div>
+        <h2>Postos de Gasolina Cadastrados em São Paulo</h2>
+        <p class="negocios-sub">Ative sua localização e veja os postos de gasolina mais próximos de você primeiro</p>
+
+        <div class="negocios-controls">
+            <button id="btn-geoloc" class="btn-geoloc" type="button">
+                <i class="fa-solid fa-location-dot"></i> Usar minha localização
+            </button>
+
+            <div class="negocios-filtros">
+                <div class="filtro-categoria">
+                    <i class="fa-solid fa-filter"></i>
+                    <label for="filtro-bairro-select">Bairro:</label>
+                    <select id="filtro-bairro-select">
+                        <option value="">Todos os bairros</option>
+                    </select>
                 </div>
-            </a>
-            {% endfor %}
+
+                <div class="ver-como">
+                    <span>Ver como:</span>
+                    <button type="button" class="view-btn active" data-view="carousel" aria-label="Ver em carrossel"><i class="fa-solid fa-bars"></i></button>
+                    <button type="button" class="view-btn" data-view="grid" aria-label="Ver em grade"><i class="fa-solid fa-table-cells"></i></button>
+                </div>
+            </div>
+        </div>
+
+        <div id="negocios-status" class="negocios-status"></div>
+
+        <div class="negocios-wrap" id="negocios-wrap" data-view="carousel">
+            <button type="button" class="carrossel-nav prev" aria-label="Anterior"><i class="fa-solid fa-chevron-left"></i></button>
+
+            <div class="negocios-track" id="negocios-track">
+                {% for n in negocios %}
+                <a href="/{{ n.categoria_slug }}/{{ n.slug }}/"
+                   class="negocio-card"
+                   data-categoria="{{ n.categoria_slug }}"
+                   data-bairro="{{ n.bairro }}"
+                   {% if n.lat and n.lng %}data-lat="{{ n.lat }}" data-lng="{{ n.lng }}"{% endif %}>
+                    {% if n.mostrar_foto and n.foto_url %}
+                    <img src="{{ n.foto_url }}" alt="{{ n.nome }}" loading="lazy">
+                    {% else %}
+                    <img src="https://i.imgur.com/1TWSnRj.png" alt="{{ n.nome }}" loading="lazy" class="negocio-placeholder">
+                    {% endif %}
+                    <div class="info">
+                        <div class="cat-tag">{{ n.categoria_nome }}</div>
+                        <div class="nome">{{ n.nome }}</div>
+                        <div class="local">{{ n.bairro }}, {{ n.cidade }}</div>
+                    </div>
+                </a>
+                {% endfor %}
+            </div>
+
+            <button type="button" class="carrossel-nav next" aria-label="Próximo"><i class="fa-solid fa-chevron-right"></i></button>
+        </div>
+        <div class="carrossel-progress-track" id="carrossel-progress">
+            <div class="carrossel-progress-bar" id="carrossel-progress-bar"></div>
         </div>
     </div>
 </section>
@@ -401,6 +526,10 @@
             <details class="faq-item principal">
                 <summary>Onde vale o rodízio em São Paulo?</summary>
                 <div class="faq-resposta">No Centro Expandido, delimitado pelas Marginais Tietê e Pinheiros, Avenida dos Bandeirantes e Avenida Salim Farah Maluf (Mini-Anel Viário).</div>
+            </details>
+            <details class="faq-item principal">
+                <summary>Onde encontro um posto de gasolina perto de mim em São Paulo?</summary>
+                <div class="faq-resposta">Use o diretório de postos de gasolina desta página: ative sua localização para ver os mais próximos primeiro, ou filtre por bairro para encontrar o posto ideal antes do horário de rodízio.</div>
             </details>
         </div>
 
@@ -549,6 +678,193 @@ document.getElementById('calc-placa').addEventListener('input', checarPlaca);
         card.classList.add('hoje');
         card.querySelector('.badge-hoje').style.display = 'inline-block';
     }
+})();
+
+// ── Negócios Cadastrados: carrossel + grade + filtro + geolocalização ──
+(function() {
+    const wrap = document.getElementById('negocios-wrap');
+    const track = document.getElementById('negocios-track');
+    if (!wrap || !track) return;
+
+    const cards = Array.from(track.querySelectorAll('.negocio-card'));
+    const btnPrev = wrap.querySelector('.carrossel-nav.prev');
+    const btnNext = wrap.querySelector('.carrossel-nav.next');
+    const progressWrap = document.getElementById('carrossel-progress');
+    const progressBar = document.getElementById('carrossel-progress-bar');
+    const viewBtns = document.querySelectorAll('.view-btn');
+    const selectBairro = document.getElementById('filtro-bairro-select');
+    const bairrosGrid = document.getElementById('bairros-grid');
+    const btnGeoloc = document.getElementById('btn-geoloc');
+    const statusEl = document.getElementById('negocios-status');
+
+    function mostrarStatus(msg, erro) {
+        statusEl.textContent = msg;
+        statusEl.className = 'negocios-status' + (erro ? ' erro' : '');
+        statusEl.style.display = 'block';
+    }
+    function esconderStatus() { statusEl.style.display = 'none'; }
+
+    function cardWidthWithGap() {
+        if (!cards.length) return 300;
+        const style = getComputedStyle(track);
+        const gap = parseFloat(style.columnGap || style.gap || 18) || 18;
+        return cards[0].getBoundingClientRect().width + gap;
+    }
+
+    function updateProgress() {
+        if (!progressWrap) return;
+        if (wrap.dataset.view !== 'carousel') { progressWrap.style.display = 'none'; return; }
+        const scrollable = track.scrollWidth - track.clientWidth;
+        if (scrollable <= 4) { progressWrap.style.display = 'none'; return; }
+        progressWrap.style.display = 'block';
+        const visibleRatio = Math.min(track.clientWidth / track.scrollWidth, 1);
+        const barWidthPct = Math.max(visibleRatio * 100, 8);
+        const progress = track.scrollLeft / scrollable;
+        const leftPct = progress * (100 - barWidthPct);
+        progressBar.style.width = barWidthPct + '%';
+        progressBar.style.left = leftPct + '%';
+    }
+
+    function updateNavState() {
+        if (wrap.dataset.view !== 'carousel') return;
+        const maxScroll = track.scrollWidth - track.clientWidth - 2;
+        btnPrev.disabled = track.scrollLeft <= 2;
+        btnNext.disabled = track.scrollLeft >= maxScroll;
+        updateProgress();
+    }
+
+    btnPrev.addEventListener('click', function() {
+        track.scrollBy({ left: -cardWidthWithGap() * 2, behavior: 'smooth' });
+    });
+    btnNext.addEventListener('click', function() {
+        track.scrollBy({ left: cardWidthWithGap() * 2, behavior: 'smooth' });
+    });
+    track.addEventListener('scroll', function() {
+        window.requestAnimationFrame(updateNavState);
+    }, { passive: true });
+    window.addEventListener('resize', function() {
+        window.requestAnimationFrame(updateNavState);
+    });
+
+    // ── Alternar carrossel / grade ──
+    viewBtns.forEach(function(btn) {
+        btn.addEventListener('click', function() {
+            viewBtns.forEach(function(b) { b.classList.remove('active'); });
+            btn.classList.add('active');
+            wrap.dataset.view = btn.dataset.view;
+            track.scrollLeft = 0;
+            window.setTimeout(updateNavState, 60);
+        });
+    });
+
+    // ── Bairros: monta a lista única a partir dos cards já renderizados ──
+    const bairrosUnicos = Array.from(new Set(
+        cards.map(function(card) { return (card.dataset.bairro || '').trim(); }).filter(Boolean)
+    )).sort(function(a, b) { return a.localeCompare(b, 'pt-BR'); });
+
+    function aplicarFiltroBairro(bairro) {
+        selectBairro.value = bairro;
+        let visiveis = 0;
+        cards.forEach(function(card) {
+            const mostrar = !bairro || card.dataset.bairro === bairro;
+            card.style.display = mostrar ? '' : 'none';
+            if (mostrar) visiveis++;
+        });
+        if (visiveis === 0) {
+            mostrarStatus('Nenhum posto de gasolina encontrado nesse bairro.', true);
+        } else {
+            esconderStatus();
+        }
+        track.scrollLeft = 0;
+        window.setTimeout(updateNavState, 60);
+    }
+
+    if (selectBairro) {
+        bairrosUnicos.forEach(function(bairro) {
+            const opt = document.createElement('option');
+            opt.value = bairro;
+            opt.textContent = bairro;
+            selectBairro.appendChild(opt);
+        });
+        selectBairro.addEventListener('change', function() {
+            aplicarFiltroBairro(selectBairro.value);
+        });
+    }
+
+    // ── Chips de bairros em destaque (topo da página) ──
+    if (bairrosGrid) {
+        bairrosUnicos.slice(0, 16).forEach(function(bairro) {
+            const chip = document.createElement('a');
+            chip.href = '#negocios-wrap';
+            chip.className = 'cat-card';
+            chip.innerHTML = '<div class="cat-nome">' + bairro + '</div><div class="cat-count">Ver postos →</div>';
+            chip.addEventListener('click', function(e) {
+                e.preventDefault();
+                aplicarFiltroBairro(bairro);
+                wrap.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            });
+            bairrosGrid.appendChild(chip);
+        });
+    }
+
+    // ── Geolocalização: ordena os cards por distância ──
+    function toRad(v) { return v * Math.PI / 180; }
+    function distanciaKm(lat1, lon1, lat2, lon2) {
+        const R = 6371;
+        const dLat = toRad(lat2 - lat1);
+        const dLon = toRad(lon2 - lon1);
+        const a = Math.sin(dLat / 2) ** 2 + Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) * Math.sin(dLon / 2) ** 2;
+        return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+    }
+
+    if (btnGeoloc) {
+        const textoOriginal = btnGeoloc.innerHTML;
+        btnGeoloc.addEventListener('click', function() {
+            if (!navigator.geolocation) {
+                mostrarStatus('Seu navegador não suporta geolocalização.', true);
+                return;
+            }
+            btnGeoloc.disabled = true;
+            btnGeoloc.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Localizando...';
+
+            navigator.geolocation.getCurrentPosition(function(pos) {
+                const userLat = pos.coords.latitude;
+                const userLng = pos.coords.longitude;
+                const comCoord = [];
+                const semCoord = [];
+
+                cards.forEach(function(card) {
+                    const lat = parseFloat(card.dataset.lat);
+                    const lng = parseFloat(card.dataset.lng);
+                    if (!isNaN(lat) && !isNaN(lng)) {
+                        card._distancia = distanciaKm(userLat, userLng, lat, lng);
+                        comCoord.push(card);
+                    } else {
+                        semCoord.push(card);
+                    }
+                });
+                comCoord.sort(function(a, b) { return a._distancia - b._distancia; });
+                comCoord.concat(semCoord).forEach(function(card) { track.appendChild(card); });
+
+                btnGeoloc.disabled = false;
+                btnGeoloc.innerHTML = '<i class="fa-solid fa-circle-check"></i> Localização ativada';
+
+                if (comCoord.length) {
+                    mostrarStatus('Mostrando os negócios mais próximos de você primeiro.', false);
+                } else {
+                    mostrarStatus('Localização ativada. Em breve mostraremos a distância de cada negócio.', false);
+                }
+                track.scrollLeft = 0;
+                window.setTimeout(updateNavState, 60);
+            }, function() {
+                btnGeoloc.disabled = false;
+                btnGeoloc.innerHTML = textoOriginal;
+                mostrarStatus('Não foi possível acessar sua localização. Verifique as permissões do navegador.', true);
+            }, { enableHighAccuracy: true, timeout: 8000 });
+        });
+    }
+
+    window.setTimeout(updateNavState, 100);
 })();
 </script>
 
