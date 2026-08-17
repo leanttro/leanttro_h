@@ -127,13 +127,20 @@
         body > header {
             background: var(--primary);
             padding: 14px 24px;
-            display: flex; align-items: center; justify-content: space-between;
+            display: flex; flex-direction: column; align-items: center; justify-content: center;
+            gap: 10px;
             box-shadow: 0 2px 10px rgba(0,0,0,0.15);
             flex-wrap: wrap;
         }
-        .header-logo a { display:flex; align-items:center; }
-        .header-logo .logo-img { height: 34px; width: auto; display:block; }
-        nav.desktop-nav ul { list-style: none; display: flex; gap: 4px; flex-wrap: wrap; }
+        .header-logo { width: 100%; display:flex; justify-content:center; }
+        .header-logo a { display:flex; align-items:center; justify-content:center; }
+        .header-logo .logo-img { height: 100px; width: auto; display:block; }
+        .menu-toggle {
+            display: none;
+            background: none; border: none; color: #fff;
+            font-size: 1.6em; cursor: pointer; padding: 4px 10px;
+        }
+        nav.desktop-nav ul { list-style: none; display: flex; gap: 4px; flex-wrap: wrap; justify-content: center; }
         nav.desktop-nav ul li a {
             color: #fff; font-weight: 600; font-size: 0.92em;
             padding: 10px 16px; display: block; border-radius: 6px;
@@ -236,7 +243,10 @@
         body > footer a { color: var(--accent); font-weight:600; }
 
         @media (max-width: 720px) {
-            nav.desktop-nav { display:none; }
+            .menu-toggle { display:block; }
+            nav.desktop-nav { display:none; width:100%; }
+            nav.desktop-nav.nav-open { display:block; }
+            nav.desktop-nav ul { flex-direction:column; align-items:center; }
             .negocio-conteudo { grid-template-columns: 1fr; }
             .negocio-hero-inner { flex-direction: column; text-align: center; }
             .negocio-local { justify-content: center; }
@@ -259,7 +269,10 @@
 
 <header>
     <div class="header-logo"><a href="/"><img src="{{ hub.logo_url or 'https://i.imgur.com/1TWSnRj.png' }}" alt="Guia do Rodízio · Carros" class="logo-img"></a></div>
-    <nav class="desktop-nav">
+    <button class="menu-toggle" id="menuToggle" aria-label="Abrir menu" aria-expanded="false">
+        <i class="fas fa-bars"></i>
+    </button>
+    <nav class="desktop-nav" id="desktopNav">
         <ul>
             <li><a href="/">Início</a></li>
             <li><a href="/{{ segmento }}/">{{ negocio.categoria_nome }}</a></li>
@@ -386,6 +399,20 @@
     <p>Guia do Rodízio · Carros — consulta de rodízio de veículos e diretório automotivo de São Paulo.</p>
     <p>Fonte oficial: <a href="https://www.prefeitura.sp.gov.br/cidade/secretarias/transportes/rodizio/" target="_blank" rel="noopener">Prefeitura de São Paulo / CET</a> — confirme sempre em caso de feriado ou exceção.</p>
 </footer>
+
+<script>
+// ── Menu hamburguer (mobile) ─────────────────────────────────
+(function () {
+    const btn = document.getElementById('menuToggle');
+    const nav = document.getElementById('desktopNav');
+    if (!btn || !nav) return;
+    btn.addEventListener('click', function () {
+        const aberto = nav.classList.toggle('nav-open');
+        btn.setAttribute('aria-expanded', aberto ? 'true' : 'false');
+        btn.innerHTML = aberto ? '<i class="fas fa-times"></i>' : '<i class="fas fa-bars"></i>';
+    });
+})();
+</script>
 
 </body>
 </html>
