@@ -1,0 +1,384 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta name="google-adsense-account" content="ca-pub-7617881885143728">
+<!-- Google tag (gtag.js) -->
+<script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-7617881885143728"
+     crossorigin="anonymous"></script>
+<!-- ⚠️ Trocar pelo ID de GA4 próprio do carros.guiadorodizio.com.br quando criar a propriedade -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-XXXXXXXXXX"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+  gtag('config', 'G-XXXXXXXXXX');
+</script>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <!-- SEO -->
+    <title>{{ negocio.nome }} — {{ negocio.categoria_nome }}{% if negocio.bairro %} em {{ negocio.bairro }}{% endif %} | Guia do Rodízio</title>
+    <meta name="description" content="{{ negocio.nome }}, {{ negocio.categoria_nome|lower }}{% if negocio.bairro %} no bairro {{ negocio.bairro }}{% endif %}{% if negocio.cidade %}, {{ negocio.cidade }}{% endif %}.{% if negocio.mostrar_descricao and negocio.descricao %} {{ negocio.descricao[:120] }}{% endif %} Endereço, WhatsApp e horário de funcionamento.">
+    <meta name="robots" content="index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1">
+    <meta name="theme-color" content="#1b0052">
+    <meta name="author" content="Guia do Rodízio">
+    <link rel="canonical" href="https://{{ request.host }}/{{ segmento }}/{{ negocio.slug }}/">
+
+    <!-- Favicon -->
+    <link rel="icon" type="image/png" href="{{ hub.favicon_url or 'https://res.cloudinary.com/dhu1cqvrb/image/upload/v1779207400/leanttro_bohuce.png' }}">
+
+    <!-- Open Graph -->
+    <meta property="og:type"        content="business.business">
+    <meta property="og:site_name"   content="Rodízio de Carros — Guia do Rodízio">
+    <meta property="og:url"         content="https://{{ request.host }}/{{ segmento }}/{{ negocio.slug }}/">
+    <meta property="og:title"       content="{{ negocio.nome }} — {{ negocio.categoria_nome }}">
+    <meta property="og:description" content="{% if negocio.mostrar_descricao and negocio.descricao %}{{ negocio.descricao[:150] }}{% else %}{{ negocio.categoria_nome }}{% if negocio.bairro %} em {{ negocio.bairro }}{% endif %}. Veja endereço, contato e como chegar.{% endif %}">
+    {% if negocio.mostrar_foto and negocio.foto_url %}
+    <meta property="og:image"       content="{{ negocio.foto_url }}">
+    {% else %}
+    <meta property="og:image"       content="{{ hub.banner_fundo_url or 'https://res.cloudinary.com/dhu1cqvrb/image/upload/v1779207400/leanttro_bohuce.png' }}">
+    {% endif %}
+    <meta property="og:locale"      content="pt_BR">
+
+    <!-- Twitter Card -->
+    <meta name="twitter:card"        content="summary_large_image">
+    <meta name="twitter:title"       content="{{ negocio.nome }} — {{ negocio.categoria_nome }}">
+    <meta name="twitter:description" content="{{ negocio.categoria_nome }}{% if negocio.bairro %} em {{ negocio.bairro }}{% endif %}{% if negocio.cidade %}, {{ negocio.cidade }}{% endif %}.">
+
+    <!-- JSON-LD LocalBusiness -->
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "AutomotiveBusiness",
+      "name": {{ negocio.nome|tojson }},
+      "url": "https://{{ request.host }}/{{ segmento }}/{{ negocio.slug }}/",
+      {% if negocio.mostrar_foto and negocio.foto_url %}"image": {{ negocio.foto_url|tojson }},{% endif %}
+      {% if negocio.mostrar_descricao and negocio.descricao %}"description": {{ negocio.descricao|tojson }},{% endif %}
+      {% if negocio.exibir_geo and negocio.mostrar_endereco and negocio.endereco %}
+      "address": {
+        "@type": "PostalAddress",
+        "streetAddress": {{ negocio.endereco|tojson }},
+        "addressLocality": {{ (negocio.cidade or "São Paulo")|tojson }},
+        "addressRegion": "SP",
+        "addressCountry": "BR"
+      },
+      {% endif %}
+      {% if negocio.exibir_geo and negocio.lat and negocio.lng %}
+      "geo": {
+        "@type": "GeoCoordinates",
+        "latitude": {{ negocio.lat }},
+        "longitude": {{ negocio.lng }}
+      },
+      {% endif %}
+      {% if negocio.mostrar_telefone and negocio.telefone %}"telephone": {{ negocio.telefone|tojson }},{% endif %}
+      "inLanguage": "pt-BR"
+    }
+    </script>
+
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700;900&display=swap" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+
+    <style>
+        :root {
+            --primary:       #1b0052;
+            --accent:        #ff6b35;
+            --dark:          #12003a;
+            --light:         #e8e0ff;
+            --light-gray:    #f8f9fa;
+            --medium-gray:   #e0e0e0;
+            --dark-gray:     #343a40;
+            --text-color:    #495057;
+            --white:         #ffffff;
+            --ok:            #1e8e3e;
+            --alerta:        #c0392b;
+        }
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        html { scroll-behavior: smooth; }
+        body { font-family: 'Roboto', sans-serif; background: var(--light-gray); color: var(--text-color); line-height: 1.6; }
+        .container { max-width: 1000px; margin: 0 auto; padding: 0 20px; }
+        a { text-decoration: none; color: inherit; }
+
+        /* ══ FAIXA CADASTRO AUTOMÁTICO ══ */
+        .faixa-auto {
+            background: #c0392b; color: #fff;
+            padding: 12px 20px; display: flex; align-items: center; justify-content: center;
+            gap: 16px; flex-wrap: wrap; text-align: center;
+        }
+        .faixa-auto .faixa-texto {
+            display: flex; align-items: center; gap: 8px;
+            font-weight: 700; font-size: 0.9em;
+        }
+        .faixa-auto .faixa-texto i { font-size: 1em; flex-shrink: 0; }
+        .faixa-auto .btn-remocao {
+            display: inline-flex; align-items: center; gap: 8px;
+            background: #000; color: #fff; font-weight: 700; font-size: 0.85em;
+            padding: 9px 18px; border-radius: 30px; white-space: nowrap;
+            transition: transform .15s;
+        }
+        .faixa-auto .btn-remocao:hover { transform: translateY(-1px); }
+
+        /* ══ HEADER ══ */
+        body > header {
+            background: var(--primary);
+            padding: 14px 24px;
+            display: flex; align-items: center; justify-content: space-between;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.15);
+            flex-wrap: wrap;
+        }
+        .header-logo a { color: #fff; font-weight: 900; font-size: 1.3em; }
+        .header-logo span { color: var(--accent); }
+        nav.desktop-nav ul { list-style: none; display: flex; gap: 4px; flex-wrap: wrap; }
+        nav.desktop-nav ul li a {
+            color: #fff; font-weight: 600; font-size: 0.92em;
+            padding: 10px 16px; display: block; border-radius: 6px;
+            transition: background 0.2s;
+        }
+        nav.desktop-nav ul li a:hover { background: rgba(255,255,255,0.12); }
+
+        /* ══ BREADCRUMB ══ */
+        .breadcrumb {
+            padding: 16px 20px 0; font-size: 0.85em; color: #888;
+        }
+        .breadcrumb a { color: var(--primary); font-weight: 600; }
+        .breadcrumb a:hover { text-decoration: underline; }
+
+        /* ══ HERO DO NEGÓCIO ══ */
+        .negocio-hero {
+            background: linear-gradient(135deg, var(--primary), var(--dark));
+            color: #fff; padding: 40px 20px 48px;
+        }
+        .negocio-hero-inner {
+            max-width: 1000px; margin: 0 auto;
+            display: flex; gap: 28px; align-items: center; flex-wrap: wrap;
+        }
+        .negocio-foto {
+            width: 160px; height: 160px; border-radius: 16px; object-fit: cover;
+            border: 3px solid rgba(255,255,255,0.25); box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+            flex-shrink: 0;
+        }
+        .negocio-foto-placeholder {
+            width: 160px; height: 160px; border-radius: 16px;
+            background: rgba(255,255,255,0.08); border: 3px solid rgba(255,255,255,0.25);
+            display: flex; align-items: center; justify-content: center;
+            font-size: 3em; color: rgba(255,255,255,0.4); flex-shrink: 0;
+        }
+        .negocio-info-topo { flex: 1; min-width: 240px; }
+        .cat-badge {
+            display: inline-block; background: var(--accent); color: #fff;
+            font-size: 0.78em; font-weight: 700; padding: 4px 12px; border-radius: 20px;
+            margin-bottom: 10px; text-transform: uppercase; letter-spacing: 0.3px;
+        }
+        .negocio-hero h1 { font-size: 2em; font-weight: 900; margin-bottom: 8px; }
+        .negocio-local { opacity: 0.85; font-size: 0.98em; display: flex; align-items: center; gap: 6px; }
+        .negocio-local i { color: var(--accent); }
+
+        /* ══ AÇÕES RÁPIDAS ══ */
+        .acoes-rapidas {
+            display: flex; gap: 12px; flex-wrap: wrap; margin-top: 20px;
+        }
+        .btn-acao {
+            display: inline-flex; align-items: center; gap: 8px;
+            padding: 12px 20px; border-radius: 10px; font-weight: 700; font-size: 0.92em;
+            transition: transform .15s, box-shadow .15s;
+        }
+        .btn-whatsapp { background: #25d366; color: #fff; }
+        .btn-telefone { background: var(--accent); color: #fff; }
+        .btn-site     { background: rgba(255,255,255,0.15); color: #fff; border: 1px solid rgba(255,255,255,0.3); }
+        .btn-instagram{ background: rgba(255,255,255,0.15); color: #fff; border: 1px solid rgba(255,255,255,0.3); }
+        .btn-acao:hover { transform: translateY(-2px); box-shadow: 0 6px 18px rgba(0,0,0,0.25); }
+
+        /* ══ CONTEÚDO ══ */
+        .negocio-conteudo {
+            padding: 40px 20px; max-width: 1000px; margin: 0 auto;
+            display: grid; grid-template-columns: 1.4fr 1fr; gap: 32px;
+        }
+        .bloco {
+            background: var(--white); border: 1px solid var(--medium-gray);
+            border-radius: 14px; padding: 24px; margin-bottom: 20px;
+        }
+        .bloco h2 {
+            font-size: 1.15em; color: var(--primary); margin-bottom: 14px;
+            display: flex; align-items: center; gap: 8px;
+        }
+        .bloco h2 i { color: var(--accent); }
+        .bloco p { color: var(--text-color); }
+        .info-linha {
+            display: flex; align-items: flex-start; gap: 10px;
+            padding: 10px 0; border-bottom: 1px solid var(--light-gray);
+        }
+        .info-linha:last-child { border-bottom: none; }
+        .info-linha i { color: var(--accent); width: 18px; text-align: center; margin-top: 3px; }
+
+        /* ══ ALERTA RODÍZIO ══ */
+        .aviso-rodizio {
+            background: #fff8f5; border: 2px solid var(--accent); border-radius: 12px;
+            padding: 16px 20px; display: flex; align-items: center; gap: 12px;
+            font-weight: 700; color: var(--dark-gray); font-size: 0.95em;
+        }
+        .aviso-rodizio i { color: var(--accent); font-size: 1.4em; }
+        .aviso-rodizio a { color: var(--primary); text-decoration: underline; }
+
+        /* ══ MAPA ══ */
+        .mapa-embed { border-radius: 12px; overflow: hidden; border: 1px solid var(--medium-gray); }
+        .mapa-embed iframe { width: 100%; height: 260px; border: 0; display: block; }
+
+        /* ══ FOOTER ══ */
+        body > footer {
+            background: var(--dark); color: #ccc; padding: 32px 20px; text-align:center; font-size: 0.85em;
+        }
+        body > footer a { color: var(--accent); font-weight:600; }
+
+        @media (max-width: 720px) {
+            nav.desktop-nav { display:none; }
+            .negocio-conteudo { grid-template-columns: 1fr; }
+            .negocio-hero-inner { flex-direction: column; text-align: center; }
+            .negocio-local { justify-content: center; }
+            .acoes-rapidas { justify-content: center; }
+            .negocio-hero h1 { font-size: 1.6em; }
+            .faixa-auto { flex-direction: column; gap: 10px; padding: 12px 16px; }
+            .faixa-auto .faixa-texto { font-size: 0.82em; }
+        }
+    </style>
+</head>
+<body>
+
+<div class="faixa-auto">
+    <span class="faixa-texto"><i class="fa-solid fa-file-lines"></i> Cadastro automático, gerado a partir de dados públicos do Google — não somos afiliados a este negócio.</span>
+    <a class="btn-remocao" target="_blank" rel="noopener"
+       href="https://wa.me/5511913324827?text=Olá! Quero solicitar a remoção do cadastro automático de {{ negocio.nome }} no Guia do Rodízio.">
+        <i class="fa-solid fa-trash"></i> Solicitar remoção
+    </a>
+</div>
+
+<header>
+    <div class="header-logo"><a href="/">Guia do <span>Rodízio</span> · Carros</a></div>
+    <nav class="desktop-nav">
+        <ul>
+            <li><a href="/">Início</a></li>
+            <li><a href="/{{ segmento }}/">{{ negocio.categoria_nome }}</a></li>
+            <li><a href="/blog/">Blog</a></li>
+        </ul>
+    </nav>
+</header>
+
+<div class="breadcrumb container">
+    <a href="/">Início</a> ›
+    <a href="/{{ segmento }}/">{{ negocio.categoria_nome }}</a> ›
+    <span>{{ negocio.nome }}</span>
+</div>
+
+<!-- topo AdSense -->
+{% if anuncio_topo %}
+<div class="container" style="text-align:center; padding: 12px 0;">{{ anuncio_topo|safe }}</div>
+{% endif %}
+
+<section class="negocio-hero">
+    <div class="negocio-hero-inner">
+        {% if negocio.mostrar_foto and negocio.foto_url %}
+        <img class="negocio-foto" src="{{ negocio.foto_url }}" alt="{{ negocio.nome }}" loading="lazy">
+        {% else %}
+        <div class="negocio-foto-placeholder"><i class="fa-solid fa-car"></i></div>
+        {% endif %}
+        <div class="negocio-info-topo">
+            <span class="cat-badge">{{ negocio.categoria_nome }}</span>
+            <h1>{{ negocio.nome }}</h1>
+            {% if negocio.exibir_geo and (negocio.bairro or negocio.cidade) %}
+            <div class="negocio-local">
+                <i class="fa-solid fa-location-dot"></i>
+                {{ negocio.bairro }}{% if negocio.bairro and negocio.cidade %}, {% endif %}{{ negocio.cidade }}
+            </div>
+            {% endif %}
+
+            <div class="acoes-rapidas">
+                {% if negocio.mostrar_whatsapp and negocio.whatsapp %}
+                <a class="btn-acao btn-whatsapp" target="_blank" rel="noopener"
+                   href="https://wa.me/55{{ negocio.whatsapp|replace('(','')|replace(')','')|replace('-','')|replace(' ','') }}?text=Olá! Vi vocês no Guia do Rodízio e queria falar sobre {{ negocio.categoria_nome|lower }}.">
+                    <i class="fa-brands fa-whatsapp"></i> WhatsApp
+                </a>
+                {% endif %}
+                {% if negocio.mostrar_telefone and negocio.telefone %}
+                <a class="btn-acao btn-telefone" href="tel:{{ negocio.telefone }}">
+                    <i class="fa-solid fa-phone"></i> Ligar
+                </a>
+                {% endif %}
+                {% if negocio.mostrar_site and negocio.site_url %}
+                <a class="btn-acao btn-site" target="_blank" rel="noopener" href="{{ negocio.site_url }}">
+                    <i class="fa-solid fa-globe"></i> Site
+                </a>
+                {% endif %}
+                {% if negocio.mostrar_instagram and negocio.instagram %}
+                <a class="btn-acao btn-instagram" target="_blank" rel="noopener"
+                   href="https://instagram.com/{{ negocio.instagram|replace('@','') }}">
+                    <i class="fa-brands fa-instagram"></i> Instagram
+                </a>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</section>
+
+<div class="negocio-conteudo">
+    <div class="coluna-principal">
+
+        <div class="bloco aviso-rodizio">
+            <i class="fa-solid fa-triangle-exclamation"></i>
+            <span>Vindo de carro? Confira antes se hoje tem <a href="/">rodízio pra sua placa</a> — o horário restrito é das 7h às 10h e das 17h às 20h.</span>
+        </div>
+
+        {% if negocio.mostrar_descricao and negocio.descricao %}
+        <div class="bloco">
+            <h2><i class="fa-solid fa-circle-info"></i> Sobre</h2>
+            <p>{{ negocio.descricao }}</p>
+        </div>
+        {% endif %}
+
+        {% if negocio.exibir_geo and negocio.mostrar_mapa and negocio.lat and negocio.lng %}
+        <div class="bloco">
+            <h2><i class="fa-solid fa-map-location-dot"></i> Como chegar</h2>
+            <div class="mapa-embed">
+                <iframe
+                    src="https://maps.google.com/maps?q={{ negocio.lat }},{{ negocio.lng }}&z=15&output=embed"
+                    loading="lazy" referrerpolicy="no-referrer-when-downgrade"></iframe>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+
+    <div class="coluna-lateral">
+        {% if negocio.exibir_geo and negocio.mostrar_endereco and negocio.endereco %}
+        <div class="bloco">
+            <h2><i class="fa-solid fa-address-card"></i> Contato</h2>
+            <div class="info-linha">
+                <i class="fa-solid fa-location-dot"></i>
+                <span>{{ negocio.endereco }}{% if negocio.bairro %}, {{ negocio.bairro }}{% endif %}{% if negocio.cidade %} — {{ negocio.cidade }}{% endif %}</span>
+            </div>
+            {% if negocio.mostrar_telefone and negocio.telefone %}
+            <div class="info-linha">
+                <i class="fa-solid fa-phone"></i>
+                <span>{{ negocio.telefone }}</span>
+            </div>
+            {% endif %}
+        </div>
+        {% endif %}
+
+        {% if anuncio_meio %}
+        <div class="bloco" style="text-align:center; padding: 12px;">{{ anuncio_meio|safe }}</div>
+        {% endif %}
+
+        <div class="bloco" style="text-align:center;">
+            <h2 style="justify-content:center;"><i class="fa-solid fa-magnifying-glass"></i> Veja mais</h2>
+            <p style="margin-bottom:14px;">Outros negócios de {{ negocio.categoria_nome|lower }} perto de você.</p>
+            <a class="btn-acao btn-telefone" style="justify-content:center; width:100%;" href="/{{ segmento }}/">
+                Ver diretório completo →
+            </a>
+        </div>
+    </div>
+</div>
+
+<footer>
+    <p>Guia do Rodízio · Carros — consulta de rodízio de veículos e diretório automotivo de São Paulo.</p>
+    <p>Fonte oficial: <a href="https://www.prefeitura.sp.gov.br/cidade/secretarias/transportes/rodizio/" target="_blank" rel="noopener">Prefeitura de São Paulo / CET</a> — confirme sempre em caso de feriado ou exceção.</p>
+</footer>
+
+</body>
+</html>
