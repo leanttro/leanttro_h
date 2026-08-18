@@ -116,6 +116,7 @@
         }
         * { box-sizing: border-box; margin: 0; padding: 0; }
         html { scroll-behavior: smooth; }
+        html, body { max-width: 100%; overflow-x: hidden; }
         body { font-family: 'Roboto', sans-serif; background: var(--light-gray); color: var(--text-color); line-height: 1.6; }
         .container { max-width: 1200px; margin: 0 auto; padding: 0 20px; }
         a { text-decoration: none; color: inherit; }
@@ -204,7 +205,7 @@
         /* ══ CATEGORIAS ══ */
         .cat-section { background: var(--white); padding: 48px 20px; }
         .cat-section h2 { text-align:center; font-size:1.8em; color: var(--primary); margin-bottom: 32px; }
-        .cat-grid { display:flex; gap:14px; overflow-x:auto; max-width: 1200px; margin: 0 auto; padding-bottom: 8px; }
+        .cat-grid { display:flex; gap:14px; overflow-x:auto; -webkit-overflow-scrolling:touch; width:100%; max-width: 1200px; margin: 0 auto; padding-bottom: 8px; }
         .cat-card {
             flex: 0 0 auto; min-width: 180px; background: var(--light-gray);
             border-radius: 12px; padding: 18px; text-align:center;
