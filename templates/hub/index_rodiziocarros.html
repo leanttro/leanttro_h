@@ -433,7 +433,12 @@
         <h2>Postos de Gasolina em São Paulo</h2>
         <p class="sub" style="text-align:center;color:#777;margin-bottom:24px;">Explore por bairro e encontre o posto mais perto de você.</p>
         <div class="cat-grid" id="bairros-grid">
-            <!-- preenchido dinamicamente com os bairros reais dos postos cadastrados (ver script no fim da página) -->
+            {% for b in bairros_disponiveis %}
+            <a href="/cidade/{{ 'São Paulo' | slugify }}/{{ b | slugify }}/" class="cat-card">
+                <div class="cat-nome">{{ b }}</div>
+                <div class="cat-count">Ver postos →</div>
+            </a>
+            {% endfor %}
         </div>
     </div>
 </section>
@@ -715,7 +720,6 @@ document.getElementById('calc-placa').addEventListener('input', checarPlaca);
     const progressBar = document.getElementById('carrossel-progress-bar');
     const viewBtns = document.querySelectorAll('.view-btn');
     const selectBairro = document.getElementById('filtro-bairro-select');
-    const bairrosGrid = document.getElementById('bairros-grid');
     const btnGeoloc = document.getElementById('btn-geoloc');
     const statusEl = document.getElementById('negocios-status');
 
@@ -810,22 +814,6 @@ document.getElementById('calc-placa').addEventListener('input', checarPlaca);
         });
         selectBairro.addEventListener('change', function() {
             aplicarFiltroBairro(selectBairro.value);
-        });
-    }
-
-    // ── Chips de bairros em destaque (topo da página) ──
-    if (bairrosGrid) {
-        bairrosUnicos.slice(0, 16).forEach(function(bairro) {
-            const chip = document.createElement('a');
-            chip.href = '#negocios-wrap';
-            chip.className = 'cat-card';
-            chip.innerHTML = '<div class="cat-nome">' + bairro + '</div><div class="cat-count">Ver postos →</div>';
-            chip.addEventListener('click', function(e) {
-                e.preventDefault();
-                aplicarFiltroBairro(bairro);
-                wrap.scrollIntoView({ behavior: 'smooth', block: 'start' });
-            });
-            bairrosGrid.appendChild(chip);
         });
     }
 
