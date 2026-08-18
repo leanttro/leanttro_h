@@ -162,17 +162,39 @@
         }
         .btn-hero-outline:hover { background: rgba(255,255,255,0.12); }
 
-        /* ══ BAIRROS (grid de chips pra navegar entre bairros) ══ */
+        /* ══ BAIRROS (dropdown com busca, no lugar da grade de chips) ══ */
         .bairros-section { background: var(--white); padding: 40px 20px; }
         .bairros-section h2 { text-align:center; font-size:1.6em; color: var(--primary); margin-bottom:6px; }
         .bairros-section p.sub { text-align:center; color:#777; margin-bottom:24px; }
-        .bairros-grid { display:flex; flex-wrap:wrap; gap:12px; justify-content:center; max-width:1200px; margin:0 auto; }
-        .bairro-chip {
-            background: var(--light-gray); border: 2px solid var(--medium-gray); border-radius: 30px;
-            padding: 10px 20px; font-weight:700; font-size:0.9em; color: var(--dark-gray); transition: all .2s;
+
+        .bairros-selector { max-width: 480px; margin: 0 auto; position: relative; }
+        .bairros-toggle {
+            width:100%; display:flex; align-items:center; justify-content:space-between; gap:10px;
+            background: var(--light-gray); border: 2px solid var(--medium-gray); border-radius: 12px;
+            padding: 14px 18px; font-weight:700; font-size:1em; color: var(--primary); cursor:pointer;
+            transition: border-color .2s; font-family: inherit;
         }
-        .bairro-chip:hover { border-color: var(--primary); color: var(--primary); background: var(--light); }
-        .bairro-chip.ativo { background: var(--primary); border-color: var(--primary); color:#fff; }
+        .bairros-toggle:hover { border-color: var(--primary); }
+        .bairros-toggle i { color:#888; transition: transform .2s; flex-shrink:0; }
+        .bairros-toggle.aberto i { transform: rotate(180deg); }
+
+        .bairros-painel {
+            display:none; flex-direction:column; position:absolute; top: calc(100% + 8px); left:0; right:0; z-index:20;
+            background:#fff; border:1px solid var(--medium-gray); border-radius:12px;
+            box-shadow: 0 12px 32px rgba(0,0,0,0.14); padding:12px; max-height:380px;
+        }
+        .bairros-painel.aberto { display:flex; }
+
+        .bairros-busca { display:flex; align-items:center; gap:8px; border:1px solid var(--medium-gray); border-radius:8px; padding:9px 12px; margin-bottom:8px; flex-shrink:0; }
+        .bairros-busca i { color:#999; }
+        .bairros-busca input { border:none; outline:none; flex:1; font-size:0.95em; font-family:inherit; color: var(--text-color); }
+
+        .bairros-lista { overflow-y:auto; display:flex; flex-direction:column; gap:2px; }
+        .bairro-item { padding:10px 12px; border-radius:8px; font-weight:600; font-size:0.92em; color: var(--dark-gray); }
+        .bairro-item:hover { background: var(--light); color: var(--primary); }
+        .bairro-item.ativo { background: var(--primary); color:#fff; }
+
+        .bairros-vazio { text-align:center; color:#999; padding:16px 0; font-size:0.9em; }
 
         /* ══ NEGÓCIOS ══ */
         .negocios-section { padding: 44px 20px; }
@@ -292,16 +314,31 @@
     </div>
 </section>
 
-<!-- BAIRROS: navegação — sempre mostra a lista, destacando o bairro atual -->
+<!-- BAIRROS: dropdown com busca — sempre mostra, destacando o bairro atual -->
 {% if bairros_disponiveis %}
 <section class="bairros-section" id="bairros">
     <div class="container">
         <h2>{% if bairro %}Outros bairros{% else %}Bairros com postos de gasolina{% endif %}</h2>
-        <p class="sub">Clique em um bairro para ver só os postos de lá.</p>
-        <div class="bairros-grid">
-            {% for b in bairros_disponiveis %}
-            <a href="/cidade/{{ cidade | slugify }}/{{ b | slugify }}/" class="bairro-chip{% if bairro and b == bairro %} ativo{% endif %}">{{ b }}</a>
-            {% endfor %}
+        <p class="sub">Escolha um bairro pra ver só os postos de lá.</p>
+
+        <div class="bairros-selector">
+            <button type="button" class="bairros-toggle" id="bairrosToggle" aria-expanded="false" aria-controls="bairrosPainel">
+                <span id="bairrosToggleLabel">{{ bairro or ('Escolher bairro (' ~ bairros_disponiveis|length ~ ')') }}</span>
+                <i class="fa-solid fa-chevron-down"></i>
+            </button>
+
+            <div class="bairros-painel" id="bairrosPainel">
+                <div class="bairros-busca">
+                    <i class="fa-solid fa-magnifying-glass"></i>
+                    <input type="text" id="bairrosBusca" placeholder="Buscar bairro..." autocomplete="off">
+                </div>
+                <div class="bairros-lista" id="bairrosLista">
+                    {% for b in bairros_disponiveis %}
+                    <a href="/cidade/{{ cidade | slugify }}/{{ b | slugify }}/" class="bairro-item{% if bairro and b == bairro %} ativo{% endif %}">{{ b }}</a>
+                    {% endfor %}
+                </div>
+                <p class="bairros-vazio" id="bairrosVazio" style="display:none;">Nenhum bairro encontrado.</p>
+            </div>
         </div>
     </div>
 </section>
@@ -380,6 +417,55 @@
         const aberto = nav.classList.toggle('nav-open');
         btn.setAttribute('aria-expanded', aberto ? 'true' : 'false');
         btn.innerHTML = aberto ? '<i class="fas fa-times"></i>' : '<i class="fas fa-bars"></i>';
+    });
+})();
+
+// ── Bairros: dropdown com busca (abre/fecha + filtra a lista) ──
+(function () {
+    const toggleBtn = document.getElementById('bairrosToggle');
+    const painel = document.getElementById('bairrosPainel');
+    const busca = document.getElementById('bairrosBusca');
+    const lista = document.getElementById('bairrosLista');
+    const vazio = document.getElementById('bairrosVazio');
+    if (!toggleBtn || !painel || !busca || !lista) return;
+
+    const itens = Array.from(lista.querySelectorAll('.bairro-item'));
+
+    function abrirPainel() {
+        painel.classList.add('aberto');
+        toggleBtn.classList.add('aberto');
+        toggleBtn.setAttribute('aria-expanded', 'true');
+        window.setTimeout(function () { busca.focus(); }, 50);
+    }
+    function fecharPainel() {
+        painel.classList.remove('aberto');
+        toggleBtn.classList.remove('aberto');
+        toggleBtn.setAttribute('aria-expanded', 'false');
+    }
+
+    toggleBtn.addEventListener('click', function (e) {
+        e.stopPropagation();
+        if (painel.classList.contains('aberto')) fecharPainel();
+        else abrirPainel();
+    });
+
+    document.addEventListener('click', function (e) {
+        if (!painel.contains(e.target) && e.target !== toggleBtn) fecharPainel();
+    });
+    document.addEventListener('keydown', function (e) {
+        if (e.key === 'Escape') fecharPainel();
+    });
+
+    busca.addEventListener('input', function () {
+        const termo = busca.value.trim().toLowerCase();
+        let visiveis = 0;
+        itens.forEach(function (item) {
+            const nome = item.textContent.trim().toLowerCase();
+            const mostrar = !termo || nome.indexOf(termo) !== -1;
+            item.style.display = mostrar ? '' : 'none';
+            if (mostrar) visiveis++;
+        });
+        vazio.style.display = visiveis === 0 ? 'block' : 'none';
     });
 })();
 
