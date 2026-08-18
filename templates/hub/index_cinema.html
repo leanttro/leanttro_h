@@ -722,7 +722,7 @@ window.addEventListener('scroll', function(){ closeNavCinemas(); }, { passive: t
       <div class="carousel-track" id="tipos-track">
         {% for cat in categorias %}
           <a class="cat-card" href="/{{ cat.slug }}/" data-cat-slug="{{ cat.slug }}">
-            <img class="cat-card-img" src="{{ cat.icone_url or 'https://placehold.co/400x300/17171b/f5c518?text=%F0%9F%8E%9E' }}" alt="{{ cat_label(cat) }}" loading="lazy">
+            <img class="cat-card-img" src="{{ cat.icone_url or 'https://i.imgur.com/TTGgb7C.png' }}" alt="{{ cat_label(cat) }}" loading="lazy">
             <div class="cat-card-overlay"></div>
             <span>{{ cat_label(cat) }}</span>
           </a>
@@ -739,7 +739,7 @@ window.addEventListener('scroll', function(){ closeNavCinemas(); }, { passive: t
   <div class="cat-grid" id="tipos-grade" style="display:none;">
     {% for cat in categorias %}
       <a class="cat-card" href="/{{ cat.slug }}/" data-cat-slug="{{ cat.slug }}">
-        <img class="cat-card-img" src="{{ cat.icone_url or 'https://placehold.co/400x300/17171b/f5c518?text=%F0%9F%8E%9E' }}" alt="{{ cat_label(cat) }}" loading="lazy">
+        <img class="cat-card-img" src="{{ cat.icone_url or 'https://i.imgur.com/TTGgb7C.png' }}" alt="{{ cat_label(cat) }}" loading="lazy">
         <div class="cat-card-overlay"></div>
         <span>{{ cat_label(cat) }}</span>
       </a>
@@ -1851,7 +1851,7 @@ function filtrarCategoria(slug, btn){
 
 function cardHTMLCinema(n){
   var dist = (n._dist && n._dist < 9999) ? '<span class="card-dist"><i class="fas fa-map-marker-alt"></i> ' + n._dist.toFixed(1) + ' km de você</span>' : '';
-  var foto = n.foto_url || 'https://placehold.co/400x260/17171b/f5c518?text=%F0%9F%8E%9E';
+  var foto = n.foto_url || 'https://i.imgur.com/TTGgb7C.png';
   var local = [n.bairro, n.cidade].filter(Boolean).join(', ');
   var catNome = _cinemaLabel(n.categoria_nome || '');
   return '<a href="/' + n.categoria_slug + '/' + n.slug + '/" class="negocio-card">' +
