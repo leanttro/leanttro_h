@@ -303,6 +303,8 @@
         .negocio-card .cat-tag { font-size:0.72em; font-weight:700; color: var(--accent); text-transform:uppercase; }
         .negocio-card .nome { font-weight:700; color: var(--primary); margin: 4px 0; }
         .negocio-card .local { font-size:0.85em; color:#888; }
+        .negocio-card .dist { font-size:0.85em; color: var(--primary); font-weight:700; margin-top:4px; display:none; }
+        .negocio-card .dist.visivel { display:block; }
 
         @media (max-width: 720px) {
             .negocios-filtros { flex-direction:column; align-items:stretch; }
@@ -433,13 +435,15 @@
         <h2>Postos de Gasolina em São Paulo</h2>
         <p class="sub" style="text-align:center;color:#777;margin-bottom:24px;">Explore por bairro e encontre o posto mais perto de você.</p>
         <div class="cat-grid" id="bairros-grid">
-            {% for b in bairros_disponiveis %}
-            <a href="/cidade/{{ 'São Paulo' | slugify }}/{{ b | slugify }}/" class="cat-card">
-                <div class="cat-nome">{{ b }}</div>
+            {% set bairros_unicos = negocios | selectattr('bairro') | unique(attribute='bairro') | sort(attribute='bairro') | list %}
+            {% for n in bairros_unicos[:16] %}
+            <a href="/cidade/{{ (n.cidade or 'São Paulo') | slugify }}/{{ n.bairro | slugify }}/" class="cat-card">
+                <div class="cat-nome">{{ n.bairro }}</div>
                 <div class="cat-count">Ver postos →</div>
             </a>
             {% endfor %}
         </div>
+
     </div>
 </section>
 
@@ -491,12 +495,16 @@
                         <div class="cat-tag">{{ n.categoria_nome }}</div>
                         <div class="nome">{{ n.nome }}</div>
                         <div class="local">{{ n.bairro }}, {{ n.cidade }}</div>
+                        <div class="dist"><i class="fa-solid fa-location-dot"></i> <span class="dist-valor"></span></div>
                     </div>
                 </a>
                 {% endfor %}
             </div>
 
             <button type="button" class="carrossel-nav next" aria-label="Próximo"><i class="fa-solid fa-chevron-right"></i></button>
+        </div>
+        <div class="negocios-lazy-status" id="negocios-lazy-status" style="display:none; text-align:center; color:#888; font-size:0.85em; padding:10px 0;">
+            <i class="fa-solid fa-spinner fa-spin"></i> Carregando mais postos...
         </div>
         <div class="carrossel-progress-track" id="carrossel-progress">
             <div class="carrossel-progress-bar" id="carrossel-progress-bar"></div>
@@ -707,13 +715,13 @@ document.getElementById('calc-placa').addEventListener('input', checarPlaca);
     }
 })();
 
-// ── Negócios Cadastrados: carrossel + grade + filtro + geolocalização ──
+// ── Negócios Cadastrados: carrossel + grade + filtro + geolocalização + carregar tudo ──
 (function() {
     const wrap = document.getElementById('negocios-wrap');
     const track = document.getElementById('negocios-track');
     if (!wrap || !track) return;
 
-    const cards = Array.from(track.querySelectorAll('.negocio-card'));
+    let cards = Array.from(track.querySelectorAll('.negocio-card'));
     const btnPrev = wrap.querySelector('.carrossel-nav.prev');
     const btnNext = wrap.querySelector('.carrossel-nav.next');
     const progressWrap = document.getElementById('carrossel-progress');
@@ -722,6 +730,12 @@ document.getElementById('calc-placa').addEventListener('input', checarPlaca);
     const selectBairro = document.getElementById('filtro-bairro-select');
     const btnGeoloc = document.getElementById('btn-geoloc');
     const statusEl = document.getElementById('negocios-status');
+    const lazyStatusEl = document.getElementById('negocios-lazy-status');
+
+    let geoAtivo = false;
+    let userLat = null;
+    let userLng = null;
+    let filtroBairroAtivo = '';
 
     function mostrarStatus(msg, erro) {
         statusEl.textContent = msg;
@@ -784,15 +798,30 @@ document.getElementById('calc-placa').addEventListener('input', checarPlaca);
     });
 
     // ── Bairros: monta a lista única a partir dos cards já renderizados ──
-    const bairrosUnicos = Array.from(new Set(
-        cards.map(function(card) { return (card.dataset.bairro || '').trim(); }).filter(Boolean)
-    )).sort(function(a, b) { return a.localeCompare(b, 'pt-BR'); });
+    function bairrosUnicosAtuais() {
+        return Array.from(new Set(
+            cards.map(function(card) { return (card.dataset.bairro || '').trim(); }).filter(Boolean)
+        )).sort(function(a, b) { return a.localeCompare(b, 'pt-BR'); });
+    }
+
+    function atualizarOpcoesBairro() {
+        if (!selectBairro) return;
+        const existentes = new Set(Array.from(selectBairro.options).map(function(o) { return o.value; }));
+        bairrosUnicosAtuais().forEach(function(bairro) {
+            if (existentes.has(bairro)) return;
+            const opt = document.createElement('option');
+            opt.value = bairro;
+            opt.textContent = bairro;
+            selectBairro.appendChild(opt);
+        });
+    }
 
     function aplicarFiltroBairro(bairro) {
-        selectBairro.value = bairro;
+        filtroBairroAtivo = bairro || '';
+        if (selectBairro) selectBairro.value = filtroBairroAtivo;
         let visiveis = 0;
         cards.forEach(function(card) {
-            const mostrar = !bairro || card.dataset.bairro === bairro;
+            const mostrar = !filtroBairroAtivo || card.dataset.bairro === filtroBairroAtivo;
             card.style.display = mostrar ? '' : 'none';
             if (mostrar) visiveis++;
         });
@@ -805,19 +834,14 @@ document.getElementById('calc-placa').addEventListener('input', checarPlaca);
         window.setTimeout(updateNavState, 60);
     }
 
+    atualizarOpcoesBairro();
     if (selectBairro) {
-        bairrosUnicos.forEach(function(bairro) {
-            const opt = document.createElement('option');
-            opt.value = bairro;
-            opt.textContent = bairro;
-            selectBairro.appendChild(opt);
-        });
         selectBairro.addEventListener('change', function() {
             aplicarFiltroBairro(selectBairro.value);
         });
     }
 
-    // ── Geolocalização: ordena os cards por distância ──
+    // ── Geolocalização: calcula e exibe a distância em cada card ──
     function toRad(v) { return v * Math.PI / 180; }
     function distanciaKm(lat1, lon1, lat2, lon2) {
         const R = 6371;
@@ -825,6 +849,33 @@ document.getElementById('calc-placa').addEventListener('input', checarPlaca);
         const dLon = toRad(lon2 - lon1);
         const a = Math.sin(dLat / 2) ** 2 + Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) * Math.sin(dLon / 2) ** 2;
         return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+    }
+
+    function exibirDistanciaNoCard(card, km) {
+        const distEl = card.querySelector('.dist');
+        const distValor = card.querySelector('.dist-valor');
+        if (!distEl || !distValor) return;
+        distValor.textContent = km.toFixed(1) + ' km de você';
+        distEl.classList.add('visivel');
+    }
+
+    function ordenarPorDistancia() {
+        const comCoord = [];
+        const semCoord = [];
+        cards.forEach(function(card) {
+            const lat = parseFloat(card.dataset.lat);
+            const lng = parseFloat(card.dataset.lng);
+            if (!isNaN(lat) && !isNaN(lng)) {
+                card._distancia = distanciaKm(userLat, userLng, lat, lng);
+                exibirDistanciaNoCard(card, card._distancia);
+                comCoord.push(card);
+            } else {
+                semCoord.push(card);
+            }
+        });
+        comCoord.sort(function(a, b) { return a._distancia - b._distancia; });
+        comCoord.concat(semCoord).forEach(function(card) { track.appendChild(card); });
+        return comCoord.length;
     }
 
     if (btnGeoloc) {
@@ -838,31 +889,19 @@ document.getElementById('calc-placa').addEventListener('input', checarPlaca);
             btnGeoloc.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Localizando...';
 
             navigator.geolocation.getCurrentPosition(function(pos) {
-                const userLat = pos.coords.latitude;
-                const userLng = pos.coords.longitude;
-                const comCoord = [];
-                const semCoord = [];
+                userLat = pos.coords.latitude;
+                userLng = pos.coords.longitude;
+                geoAtivo = true;
 
-                cards.forEach(function(card) {
-                    const lat = parseFloat(card.dataset.lat);
-                    const lng = parseFloat(card.dataset.lng);
-                    if (!isNaN(lat) && !isNaN(lng)) {
-                        card._distancia = distanciaKm(userLat, userLng, lat, lng);
-                        comCoord.push(card);
-                    } else {
-                        semCoord.push(card);
-                    }
-                });
-                comCoord.sort(function(a, b) { return a._distancia - b._distancia; });
-                comCoord.concat(semCoord).forEach(function(card) { track.appendChild(card); });
+                const comCoordCount = ordenarPorDistancia();
 
                 btnGeoloc.disabled = false;
                 btnGeoloc.innerHTML = '<i class="fa-solid fa-circle-check"></i> Localização ativada';
 
-                if (comCoord.length) {
-                    mostrarStatus('Mostrando os negócios mais próximos de você primeiro.', false);
+                if (comCoordCount) {
+                    mostrarStatus('Mostrando os postos mais próximos de você primeiro.', false);
                 } else {
-                    mostrarStatus('Localização ativada. Em breve mostraremos a distância de cada negócio.', false);
+                    mostrarStatus('Localização ativada. Em breve mostraremos a distância de cada posto.', false);
                 }
                 track.scrollLeft = 0;
                 window.setTimeout(updateNavState, 60);
@@ -873,6 +912,67 @@ document.getElementById('calc-placa').addEventListener('input', checarPlaca);
             }, { enableHighAccuracy: true, timeout: 8000 });
         });
     }
+
+    // ── Carrega TODOS os postos em segundo plano (a página só vem com a 1ª leva) ──
+    function montarCard(n) {
+        const a = document.createElement('a');
+        a.href = '/' + n.categoria_slug + '/' + n.slug + '/';
+        a.className = 'negocio-card';
+        a.dataset.categoria = n.categoria_slug || '';
+        a.dataset.bairro = n.bairro || '';
+        if (n.lat && n.lng) {
+            a.dataset.lat = n.lat;
+            a.dataset.lng = n.lng;
+        }
+        const foto = (n.mostrar_foto && n.foto_url) ? n.foto_url : 'https://i.imgur.com/1TWSnRj.png';
+        a.innerHTML =
+            '<img src="' + foto + '" alt="' + n.nome + '" loading="lazy"' + (n.mostrar_foto && n.foto_url ? '' : ' class="negocio-placeholder"') + '>' +
+            '<div class="info">' +
+                '<div class="cat-tag">' + (n.categoria_nome || '') + '</div>' +
+                '<div class="nome">' + n.nome + '</div>' +
+                '<div class="local">' + n.bairro + ', ' + n.cidade + '</div>' +
+                '<div class="dist"><i class="fa-solid fa-location-dot"></i> <span class="dist-valor"></span></div>' +
+            '</div>';
+        return a;
+    }
+
+    function carregarTodosEmSegundoPlano() {
+        const LOTE = 200;
+        let offset = cards.length;
+        if (lazyStatusEl) lazyStatusEl.style.display = 'block';
+
+        function proximoLote() {
+            fetch('/api/hub/negocios?limit=' + LOTE + '&offset=' + offset)
+                .then(function(r) { return r.json(); })
+                .then(function(data) {
+                    if (!Array.isArray(data) || !data.length) {
+                        if (lazyStatusEl) lazyStatusEl.style.display = 'none';
+                        return;
+                    }
+                    data.forEach(function(n) {
+                        const card = montarCard(n);
+                        track.appendChild(card);
+                        cards.push(card);
+                    });
+                    offset += data.length;
+                    atualizarOpcoesBairro();
+                    if (filtroBairroAtivo) aplicarFiltroBairro(filtroBairroAtivo);
+                    if (geoAtivo) ordenarPorDistancia();
+                    window.setTimeout(updateNavState, 60);
+
+                    if (data.length === LOTE) {
+                        proximoLote();
+                    } else if (lazyStatusEl) {
+                        lazyStatusEl.style.display = 'none';
+                    }
+                })
+                .catch(function() {
+                    if (lazyStatusEl) lazyStatusEl.style.display = 'none';
+                });
+        }
+        proximoLote();
+    }
+    carregarTodosEmSegundoPlano();
 
     window.setTimeout(updateNavState, 100);
 })();
