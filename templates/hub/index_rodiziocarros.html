@@ -122,7 +122,7 @@
 
         /* ══ HEADER ══ */
         body > header {
-            background: var(--primary);
+            background: #3a0f8f;
             padding: 14px 24px;
             display: flex; flex-direction: column; align-items: center; justify-content: center;
             gap: 10px;
@@ -147,7 +147,9 @@
 
         /* ══ HERO + CALCULADORA ══ */
         .hero-section {
-            background: linear-gradient(135deg, var(--primary), var(--dark));
+            background:
+                linear-gradient(135deg, rgba(27,0,82,0.88), rgba(18,0,58,0.92)),
+                url('{{ hub.banner_fundo_url or "https://i.imgur.com/1TWSnRj.png" }}') center/cover no-repeat;
             color: #fff; text-align: center; padding: 56px 20px 64px;
         }
         .hero-section h1 { font-size: 2.4em; font-weight: 900; margin-bottom: 12px; }
@@ -431,12 +433,7 @@
         <h2>Postos de Gasolina em São Paulo</h2>
         <p class="sub" style="text-align:center;color:#777;margin-bottom:24px;">Explore por bairro e encontre o posto mais perto de você.</p>
         <div class="cat-grid" id="bairros-grid">
-            {% for cat in categorias %}
-            <a href="/{{ cat.slug }}/" class="cat-card">
-                <div class="cat-nome">{{ cat.nome }}</div>
-                <div class="cat-count">Ver postos →</div>
-            </a>
-            {% endfor %}
+            <!-- preenchido dinamicamente com os bairros reais dos postos cadastrados (ver script no fim da página) -->
         </div>
     </div>
 </section>
