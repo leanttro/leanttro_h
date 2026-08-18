@@ -17,15 +17,15 @@
 
     {# ══ SEO dinâmico — hub é sempre São Paulo, então o texto nunca fala "cidade", só bairro ══ #}
     {% if bairro %}
-      {% set seo_title = "Posto de Gasolina no " ~ bairro ~ " — São Paulo | Guia do Rodízio" %}
-      {% set seo_desc  = "Encontre posto de gasolina no bairro " ~ bairro ~ " em São Paulo. Endereços, telefones e localização de cada posto perto de você." %}
+      {% set seo_title = "Posto de Gasolina Perto de Mim em " ~ bairro ~ " — São Paulo | Guia do Rodízio" %}
+      {% set seo_desc  = "Procurando posto de gasolina perto de mim no " ~ bairro ~ ", São Paulo? Veja endereços, telefones e localização de cada posto cadastrado no bairro." %}
       {% set seo_url   = "https://" ~ request.host ~ "/cidade/" ~ (cidade | slugify) ~ "/" ~ (bairro | slugify) ~ "/" %}
-      {% set h1_texto  = "Posto de Gasolina no " ~ bairro %}
+      {% set h1_texto  = "Posto de Gasolina Perto de Mim no " ~ bairro %}
     {% else %}
-      {% set seo_title = "Postos de Gasolina em São Paulo por Bairro | Guia do Rodízio" %}
-      {% set seo_desc  = "Encontre o posto de gasolina mais próximo de você em São Paulo. Navegue por bairro e veja endereço, telefone e localização de cada posto." %}
+      {% set seo_title = "Posto de Gasolina Perto de Mim em São Paulo por Bairro | Guia do Rodízio" %}
+      {% set seo_desc  = "Procurando posto de gasolina perto de mim em São Paulo? Navegue por bairro e veja endereço, telefone e localização de cada posto cadastrado." %}
       {% set seo_url   = "https://" ~ request.host ~ "/cidade/" ~ (cidade | slugify) ~ "/" %}
-      {% set h1_texto  = "Postos de Gasolina em São Paulo" %}
+      {% set h1_texto  = "Posto de Gasolina Perto de Mim em São Paulo" %}
     {% endif %}
 
     <title>{{ seo_title }}</title>
@@ -304,9 +304,9 @@
         <p class="hero-label"><i class="fas fa-map-marker-alt"></i> São Paulo</p>
         <h1>{{ h1_texto }}</h1>
         {% if bairro %}
-        <p class="subtitle">{{ total_negocios }} posto{{ 's' if total_negocios != 1 else '' }} de gasolina encontrado{{ 's' if total_negocios != 1 else '' }} no bairro {{ bairro }}. Veja endereço, telefone e localização de cada um.</p>
+        <p class="subtitle">{{ total_negocios }} posto{{ 's' if total_negocios != 1 else '' }} de gasolina encontrado{{ 's' if total_negocios != 1 else '' }} no bairro {{ bairro }} — ideal pra quem busca um posto de gasolina perto de mim nessa região. Veja endereço, telefone e localização de cada um.</p>
         {% else %}
-        <p class="subtitle">Explore os postos de gasolina de São Paulo organizados por bairro e encontre o mais perto de você.</p>
+        <p class="subtitle">Buscando um posto de gasolina perto de mim? Explore os postos de gasolina de São Paulo organizados por bairro e encontre o mais perto de você.</p>
         {% endif %}
         <div class="hero-btns">
             <button class="btn-hero" onclick="toggleLocalizacao()"><i class="fa-solid fa-location-dot"></i> Usar minha localização</button>
