@@ -78,6 +78,46 @@
           "description": "{{ seo_desc }}",
           "inLanguage": "pt-BR",
           "isPartOf": {"@id": "https://{{ request.host }}/#website"}
+        },
+        {
+          "@type": "FAQPage",
+          "mainEntity": [
+            {
+              "@type": "Question",
+              "name": "Quantos {% if categoria %}{{ categoria.nome | lower }}{% else %}estabelecimentos{% endif %} tem em {% if bairro %}{{ bairro }}{% else %}{{ cidade }}{% endif %}?",
+              "acceptedAnswer": {
+                "@type": "Answer",
+                "text": "{% if total_negocios == 0 %}No momento não há nenhum estabelecimento cadastrado nesta busca.{% elif total_negocios == 1 %}Há 1 estabelecimento cadastrado {% if bairro %}no bairro {{ bairro }}{% else %}em {{ cidade }}{% endif %}.{% else %}Há {{ total_negocios }} estabelecimentos cadastrados {% if bairro %}no bairro {{ bairro }}{% else %}em {{ cidade }}{% endif %}.{% endif %}"
+              }
+            },
+            {
+              "@type": "Question",
+              "name": "Como encontrar {% if categoria %}{{ categoria.nome | lower }}{% else %}cartório e correio{% endif %} perto de mim em {{ cidade }}?",
+              "acceptedAnswer": {
+                "@type": "Answer",
+                "text": "Use o botão de localização nesta página para ativar o seu GPS e ver as opções em {{ cidade }} ordenadas pela distância até você."
+              }
+            }
+            {% if bairro %}
+            ,{
+              "@type": "Question",
+              "name": "Existe {% if categoria %}{{ categoria.nome | lower }}{% else %}cartório ou correio{% endif %} no bairro {{ bairro }}?",
+              "acceptedAnswer": {
+                "@type": "Answer",
+                "text": "{% if total_negocios == 0 %}Ainda não há nenhum estabelecimento cadastrado no bairro {{ bairro }}, em {{ cidade }}.{% elif total_negocios == 1 %}Sim, há 1 estabelecimento cadastrado no bairro {{ bairro }}, em {{ cidade }}.{% else %}Sim, há {{ total_negocios }} estabelecimentos cadastrados no bairro {{ bairro }}, em {{ cidade }}.{% endif %}"
+              }
+            }
+            {% elif bairros_disponiveis %}
+            ,{
+              "@type": "Question",
+              "name": "Em quais bairros de {{ cidade }} é possível encontrar {% if categoria %}{{ categoria.nome | lower }}{% else %}cartório e correio{% endif %}?",
+              "acceptedAnswer": {
+                "@type": "Answer",
+                "text": "{{ cidade }} tem opções em {{ bairros_disponiveis | length }} bairro{% if bairros_disponiveis | length != 1 %}s{% endif %}, incluindo {{ bairros_disponiveis[:5] | join(', ') }}{% if bairros_disponiveis | length > 5 %} e outros{% endif %}."
+              }
+            }
+            {% endif %}
+          ]
         }
       ]
     }
@@ -422,9 +462,9 @@
             {% else %}Cartório e correio em <em>{{ cidade }}</em>{% endif %}
         </h1>
         {% if bairro or categoria %}
-        <p class="hero-sub-filtro">Mostrando {% if categoria %}{{ categoria.nome | lower }}{% else %}todos os cartórios e correios{% endif %}{% if bairro %} no bairro {{ bairro }}{% endif %} em {{ cidade }}.</p>
+        <p class="hero-sub-filtro">{% if total_negocios == 0 %}Nenhum resultado cadastrado{% elif total_negocios == 1 %}1 opção cadastrada{% else %}{{ total_negocios }} opções cadastradas{% endif %} — mostrando {% if categoria %}{{ categoria.nome | lower }}{% else %}todos os cartórios e correios{% endif %}{% if bairro %} no bairro {{ bairro }}{% endif %} em {{ cidade }}.</p>
         {% else %}
-        <p class="hero-sub-filtro">Explore cartórios, correios, freelancers de tecnologia e ferramentas de IA em {{ cidade }}.</p>
+        <p class="hero-sub-filtro">{% if total_negocios == 0 %}Nenhum resultado cadastrado{% elif total_negocios == 1 %}1 opção cadastrada{% else %}{{ total_negocios }} opções cadastradas{% endif %} em {{ cidade }}. Explore cartórios, correios, freelancers de tecnologia e ferramentas de IA na cidade.</p>
         {% endif %}
         <div class="hero-btns">
             <button class="btn-hero" onclick="toggleLocalizacao()"><i class="fas fa-location-arrow"></i> Ver o que tem perto de mim</button>
