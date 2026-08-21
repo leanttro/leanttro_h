@@ -88,6 +88,58 @@ nav.desktop-nav ul li a {
     border-bottom: 3px solid transparent; transition: border-color 0.2s, background 0.2s;
 }
 nav.desktop-nav ul li a:hover { border-bottom-color: #fff; background: rgba(0,0,0,0.08); }
+nav.desktop-nav .categoria-slicer { position: relative; }
+nav.desktop-nav .slicer-toggle {
+    background: transparent !important;
+    border: none !important;
+    color: #fff !important;
+    padding: 12px 20px !important;
+    font-weight: 600 !important;
+    font-size: 0.95em !important;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+}
+nav.desktop-nav .slicer-toggle:hover { background: rgba(0,0,0,0.08) !important; }
+nav.desktop-nav #panel-categorias-nav,
+nav.desktop-nav #panel-cidades-nav {
+    position: absolute;
+    top: calc(100% + 8px);
+    left: 0;
+    right: auto;
+    min-width: 200px;
+    background: var(--white) !important;
+    border: 1px solid var(--medium-gray) !important;
+    border-radius: 12px;
+    box-shadow: 0 14px 38px var(--shadow-medium);
+    max-height: 400px;
+    overflow-y: auto;
+    z-index: 30;
+    display: none;
+}
+nav.desktop-nav #panel-categorias-nav.open,
+nav.desktop-nav #panel-cidades-nav.open {
+    display: flex !important;
+    flex-direction: column !important;
+}
+nav.desktop-nav #panel-categorias-nav a,
+nav.desktop-nav #panel-cidades-nav a {
+    padding: 10px 20px !important;
+    color: var(--text-color) !important;
+    font-weight: 500 !important;
+    transition: background 0.2s;
+    border-bottom: 1px solid var(--medium-gray);
+}
+nav.desktop-nav #panel-categorias-nav a:last-child,
+nav.desktop-nav #panel-cidades-nav a:last-child {
+    border-bottom: none;
+}
+nav.desktop-nav #panel-categorias-nav a:hover,
+nav.desktop-nav #panel-cidades-nav a:hover {
+    background: var(--light) !important;
+    color: var(--primary) !important;
+}
 
 /* ══ BANNER TOPO ══ */
 .banner-topo { background: var(--white); border-bottom: 1px solid var(--medium-gray); padding: 10px 20px; text-align: center; min-height: 110px; display: flex; align-items: center; justify-content: center; }
@@ -282,15 +334,42 @@ footer a:hover { text-decoration: underline; }
   <nav class="desktop-nav">
     <ul>
       <li><a href="/">Início</a></li>
-      {% set cats_ativas_nav = [] %}
-      {% for cat in categorias %}
-        {% if (negocios | selectattr('categoria_slug', 'equalto', cat.slug) | list | length) > 0 %}
-          {% set _ = cats_ativas_nav.append(cat) %}
-        {% endif %}
-      {% endfor %}
-      {% for cat in cats_ativas_nav[:5] %}
-      <li><a href="/{{ cat.slug }}/">{{ cat.nome }}</a></li>
-      {% endfor %}
+      <li>
+        <div class="categoria-slicer" style="margin: 0; max-width: none;">
+          <button class="slicer-toggle" onclick="toggleCategoriaNav(event)" style="background: transparent; border: none; color: #fff; padding: 12px 20px;">
+            Categoria
+            <span class="slicer-chevron">▼</span>
+          </button>
+          <div class="slicer-panel" id="panel-categorias-nav" style="position: static; box-shadow: none; border: none; background: transparent; max-height: none;">
+            {% for cat in categorias %}
+            <a href="/{{ cat.slug }}/" style="display: block; padding: 10px 20px; color: #fff; text-decoration: none; transition: background 0.2s;" onmouseover="this.style.background='rgba(0,0,0,0.1)'" onmouseout="this.style.background='transparent'">
+              {{ cat.nome }}
+            </a>
+            {% endfor %}
+          </div>
+        </div>
+      </li>
+      <li>
+        <div class="categoria-slicer" style="margin: 0; max-width: none;">
+          <button class="slicer-toggle" onclick="toggleCidadesNav(event)" style="background: transparent; border: none; color: #fff; padding: 12px 20px;">
+            Cidades
+            <span class="slicer-chevron">▼</span>
+          </button>
+          <div class="slicer-panel" id="panel-cidades-nav" style="position: static; box-shadow: none; border: none; background: transparent; max-height: none;">
+            {% set cidades_unicas = [] %}
+            {% for neg in negocios %}
+              {% if neg.cidade and neg.cidade not in cidades_unicas %}
+                {% set _ = cidades_unicas.append(neg.cidade) %}
+              {% endif %}
+            {% endfor %}
+            {% for cidade in cidades_unicas | sort %}
+            <a href="/?cidade={{ cidade }}" style="display: block; padding: 10px 20px; color: #fff; text-decoration: none; transition: background 0.2s;" onmouseover="this.style.background='rgba(0,0,0,0.1)'" onmouseout="this.style.background='transparent'">
+              {{ cidade }}
+            </a>
+            {% endfor %}
+          </div>
+        </div>
+      </li>
       <li><a href="/blog/">Blog</a></li>
     </ul>
   </nav>
@@ -1150,6 +1229,28 @@ async function enviarCadastroNegocio(e) {
   } finally {
     btn.disabled = false;
     btn.textContent = 'Enviar cadastro';
+  }
+}
+
+function toggleCategoriaNav(e) {
+  e.preventDefault();
+  const panel = document.getElementById('panel-categorias-nav');
+  const toggle = e.currentTarget;
+  toggle.classList.toggle('open');
+  if (panel) {
+    panel.classList.toggle('open');
+    panel.style.display = panel.classList.contains('open') ? 'flex' : 'none';
+  }
+}
+
+function toggleCidadesNav(e) {
+  e.preventDefault();
+  const panel = document.getElementById('panel-cidades-nav');
+  const toggle = e.currentTarget;
+  toggle.classList.toggle('open');
+  if (panel) {
+    panel.classList.toggle('open');
+    panel.style.display = panel.classList.contains('open') ? 'flex' : 'none';
   }
 }
 </script>
