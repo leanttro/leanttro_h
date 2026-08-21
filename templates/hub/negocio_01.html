@@ -6,7 +6,7 @@
 <title>{{ negocio.nome }} — {{ hub.nome }}</title>
 <meta name="description" content="{{ negocio.descricao or negocio.nome + ' — ' + hub.nome + '. Endereço, contato e informações.' }}">
 <meta name="robots" content="index, follow">
-<meta name="theme-color" content="#ffffff">
+<meta name="theme-color" content="{{ hub.cor_primaria or '#0071e3' }}">
 <link rel="canonical" href="https://{{ request.host }}/{{ segmento }}/{{ negocio.slug }}/">
 {% if hub.logo_url %}<link rel="icon" type="image/png" href="{{ hub.logo_url }}">{% endif %}
 <meta property="og:type" content="business.business">
@@ -114,12 +114,18 @@ nav.desktop-nav{display:flex;align-items:center;flex-shrink:0;margin-left:12px}
 .cat-chip:hover{border-color:var(--primary);color:var(--primary)}
 .cat-chip.active{background:var(--primary);border-color:var(--primary);color:#fff}
 /* banners */
-.banners-section{padding:32px 0;background:var(--bg)}
-.banners-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px}
-.banner-link{display:block;border-radius:var(--radius-lg);overflow:hidden;box-shadow:var(--shadow);transition:all .25s}
-.banner-link:hover{transform:scale(1.01);box-shadow:var(--shadow-md)}
-.banner-link img{width:100%;height:160px;object-fit:cover;display:block}
-@media(max-width:600px){.banners-grid{grid-template-columns:1fr}.banner-link img{height:auto;object-fit:contain}}
+/* ── BANNERS DE ANÚNCIO (topo/meio) ── */
+.banner-ad{padding:14px 24px;text-align:center;background:var(--bg2);border-bottom:1px solid var(--border-light)}
+.banner-ad.banner-ad-meio{border-bottom:none;border-top:1px solid var(--border-light);background:var(--bg);margin-top:8px}
+.banner-ad img{display:inline-block;max-height:90px;width:auto;max-width:100%;border-radius:10px;margin:0 auto}
+.banner-ad-meio img{max-height:120px}
+.banner-placeholder{display:inline-flex;align-items:center;gap:8px;background:#fff;border:1.5px dashed var(--border);border-radius:10px;padding:12px 26px;color:var(--muted);font-size:.82rem;font-weight:600;transition:all .2s}
+.banner-placeholder:hover{border-color:var(--primary);color:var(--primary)}
+
+/* ── BOTÃO "COMO CHEGAR" ── */
+.btn-maps{display:flex;align-items:center;justify-content:center;gap:8px;width:100%;margin-top:14px;padding:12px 16px;border-radius:10px;border:none;background:var(--primary);color:#fff;font-family:var(--sans);font-size:.85rem;font-weight:600;cursor:pointer;transition:all .2s}
+.btn-maps:hover{opacity:.9;transform:translateY(-1px)}
+.btn-maps svg{width:15px;height:15px;stroke:currentColor;fill:none;stroke-width:2;flex-shrink:0}
 
 /* ── HERO NEGÓCIO ── */
 .negocio-hero{
@@ -310,14 +316,9 @@ footer{background:var(--bg2);border-top:1px solid var(--border-light);padding:40
           <svg viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"/></svg>
         </button>
         <div class="cat-slicer-panel" id="headerSlicerPanel" role="listbox">
-          <div class="cat-slicer-inner">
+          <div class="cat-slicer-inner" id="headerSlicerInner">
             <a href="/" class="cat-chip">🔍 Todas</a>
-            {% for cat in categorias %}
-            {% set total = negocios | selectattr('categoria_slug','equalto',cat.slug) | list | length %}
-            {% if total > 0 %}
-            <a href="/{{ cat.slug }}/" class="cat-chip{% if cat.slug == segmento %} active{% endif %}">{{ cat.nome }}</a>
-            {% endif %}
-            {% endfor %}
+            <!-- categorias inseridas via JS (fetch /api/hub/categorias) -->
           </div>
         </div>
       </div>
@@ -346,16 +347,26 @@ footer{background:var(--bg2);border-top:1px solid var(--border-light);padding:40
 <!-- MOBILE NAV -->
 <div class="mobile-nav-overlay" id="mobileNav">
   <button class="mobile-nav-close" id="navClose">✕</button>
-  <ul>
+  <ul id="mobileNavList">
     <li><a href="/" onclick="closeNav()">Início</a></li>
-    {% for cat in categorias %}
-    {% set total = negocios | selectattr('categoria_slug','equalto',cat.slug) | list | length %}
-    {% if total > 0 %}
-    <li><a href="/{{ cat.slug }}/" onclick="closeNav()">{{ cat.nome }}</a></li>
-    {% endif %}
-    {% endfor %}
+    <!-- categorias inseridas via JS (fetch /api/hub/categorias) -->
     {% if hub.whatsapp %}<li><a href="https://wa.me/55{{ hub.whatsapp | replace(' ','') | replace('-','') | replace('(','') | replace(')','') }}" onclick="closeNav()">WhatsApp</a></li>{% endif %}
   </ul>
+</div>
+
+<!-- BANNER TOPO -->
+<div class="banner-ad">
+  {% if anuncio_topo %}
+  <a href="{{ anuncio_topo.link }}" target="_blank" rel="noopener sponsored">
+    <img src="{{ anuncio_topo.foto_url }}" alt="{{ anuncio_topo.titulo or 'Publicidade' }}">
+  </a>
+  {% elif hub.banner1_foto_url %}
+  <a href="{{ hub.banner1_link or '#' }}" target="_blank" rel="noopener sponsored">
+    <img src="{{ hub.banner1_foto_url }}" alt="Publicidade">
+  </a>
+  {% else %}
+  <a class="banner-placeholder" href="https://wa.me/55{{ hub.whatsapp | replace(' ','') | replace('-','') | replace('(','') | replace(')','') if hub.whatsapp else '' }}?text=Quero+anunciar+no+{{ hub.nome | urlencode }}" target="_blank" rel="noopener">📣 Anuncie aqui — espaço disponível</a>
+  {% endif %}
 </div>
 
 <!-- HERO -->
@@ -403,26 +414,6 @@ footer{background:var(--bg2);border-top:1px solid var(--border-light);padding:40
     </svg>
   </div>
 </section>
-
-<!-- BANNERS -->
-{% if hub.banner1_foto_url or hub.banner2_foto_url %}
-<section class="banners-section" aria-label="Banners">
-  <div class="container">
-    <div class="banners-grid">
-      {% if hub.banner1_foto_url %}
-      <a href="{{ hub.banner1_link or '#' }}" class="banner-link" {% if hub.banner1_link %}target="_blank" rel="noopener"{% endif %}>
-        <img src="{{ hub.banner1_foto_url }}" alt="Banner 1" loading="lazy">
-      </a>
-      {% endif %}
-      {% if hub.banner2_foto_url %}
-      <a href="{{ hub.banner2_link or '#' }}" class="banner-link" {% if hub.banner2_link %}target="_blank" rel="noopener"{% endif %}>
-        <img src="{{ hub.banner2_foto_url }}" alt="Banner 2" loading="lazy">
-      </a>
-      {% endif %}
-    </div>
-  </div>
-</section>
-{% endif %}
 
 <!-- CONTEÚDO PRINCIPAL -->
 <section class="negocio-layout">
@@ -482,6 +473,12 @@ footer{background:var(--bg2);border-top:1px solid var(--border-light);padding:40
                 allowfullscreen>
               </iframe>
             </div>
+            {% endif %}
+            {% if negocio.mostrar_mapa and ((negocio.lat and negocio.lng) or negocio.endereco) %}
+            <button class="btn-maps" onclick="abrirMaps()" type="button">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
+              Como chegar — Abrir no Google Maps
+            </button>
             {% endif %}
           </div>
         </div>
@@ -574,6 +571,20 @@ footer{background:var(--bg2);border-top:1px solid var(--border-light);padding:40
                 <span>{{ negocio.bairro }}</span>
               </div>
               {% endif %}
+              {% if negocio.cep %}
+              <div class="info-item">
+                <svg viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+                <span style="color:var(--text);font-size:.83rem">CEP</span>
+                <span>{{ negocio.cep }}</span>
+              </div>
+              {% endif %}
+              {% if negocio.horario_funcionamento %}
+              <div class="info-item">
+                <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+                <span style="color:var(--text);font-size:.83rem">Horário</span>
+                <span>{{ negocio.horario_funcionamento }}</span>
+              </div>
+              {% endif %}
             </div>
           </div>
         </div>
@@ -588,6 +599,21 @@ footer{background:var(--bg2);border-top:1px solid var(--border-light);padding:40
     </div><!-- /negocio-grid -->
   </div>
 </section>
+
+<!-- BANNER MEIO -->
+<div class="banner-ad banner-ad-meio">
+  {% if anuncio_meio %}
+  <a href="{{ anuncio_meio.link }}" target="_blank" rel="noopener sponsored">
+    <img src="{{ anuncio_meio.foto_url }}" alt="{{ anuncio_meio.titulo or 'Publicidade' }}">
+  </a>
+  {% elif hub.banner2_foto_url %}
+  <a href="{{ hub.banner2_link or '#' }}" target="_blank" rel="noopener sponsored">
+    <img src="{{ hub.banner2_foto_url }}" alt="Publicidade">
+  </a>
+  {% else %}
+  <a class="banner-placeholder" href="https://wa.me/55{{ hub.whatsapp | replace(' ','') | replace('-','') | replace('(','') | replace(')','') if hub.whatsapp else '' }}?text=Quero+anunciar+no+{{ hub.nome | urlencode }}" target="_blank" rel="noopener">📣 Anuncie aqui — espaço disponível</a>
+  {% endif %}
+</div>
 
 <!-- FOOTER -->
 <footer itemscope itemtype="https://schema.org/WPFooter">
@@ -675,6 +701,72 @@ footer{background:var(--bg2);border-top:1px solid var(--border-light);padding:40
 document.getElementById('hamburger').addEventListener('click',()=>document.getElementById('mobileNav').classList.add('active'));
 document.getElementById('navClose').addEventListener('click',()=>closeNav());
 function closeNav(){document.getElementById('mobileNav').classList.remove('active')}
+
+// ── Popula o menu de categorias (desktop + mobile) via API genérica do hub ──
+(function popularCategorias(){
+  var categoriaAtual = {{ (negocio.categoria_slug or '') | tojson }};
+  fetch('/api/hub/categorias')
+    .then(function(r){ return r.ok ? r.json() : []; })
+    .then(function(cats){
+      if (!Array.isArray(cats) || !cats.length) return;
+      cats.sort(function(a,b){ return (a.nome||'').localeCompare(b.nome||'', 'pt-BR'); });
+
+      var inner = document.getElementById('headerSlicerInner');
+      var mobileList = document.getElementById('mobileNavList');
+      var mobileInicio = mobileList ? mobileList.querySelector('li') : null;
+
+      cats.forEach(function(cat){
+        if (!cat.slug) return;
+        var ativo = cat.slug === categoriaAtual;
+
+        if (inner) {
+          var a = document.createElement('a');
+          a.href = '/' + cat.slug + '/';
+          a.className = 'cat-chip' + (ativo ? ' active' : '');
+          a.textContent = cat.nome;
+          inner.appendChild(a);
+        }
+        if (mobileList) {
+          var li = document.createElement('li');
+          var a2 = document.createElement('a');
+          a2.href = '/' + cat.slug + '/';
+          a2.textContent = cat.nome;
+          a2.setAttribute('onclick', 'closeNav()');
+          li.appendChild(a2);
+          if (mobileInicio && mobileInicio.nextSibling) {
+            mobileList.insertBefore(li, mobileInicio.nextSibling);
+          } else {
+            mobileList.appendChild(li);
+          }
+        }
+      });
+    })
+    .catch(function(){ /* API fora do ar: menu de categorias fica só com "Início" */ });
+})();
+</script>
+
+<script>
+// ── "Como chegar": abre o Google Maps com rota da localização do usuário até o negócio ──
+var DEST_LAT = {{ negocio.lat | tojson if negocio.lat else 'null' }};
+var DEST_LNG = {{ negocio.lng | tojson if negocio.lng else 'null' }};
+var DEST_END = encodeURIComponent({{ ((negocio.endereco or '') ~ (', ' ~ negocio.cidade if negocio.cidade else '')) | tojson }});
+
+function abrirMaps(){
+  var destino = DEST_END ? DEST_END : (DEST_LAT && DEST_LNG ? DEST_LAT + ',' + DEST_LNG : '');
+  if (!destino) return;
+  if (navigator.geolocation) {
+    navigator.geolocation.getCurrentPosition(
+      function(pos){
+        var origem = pos.coords.latitude + ',' + pos.coords.longitude;
+        window.open('https://www.google.com/maps/dir/?api=1&origin=' + origem + '&destination=' + destino + '&travelmode=driving', '_blank');
+      },
+      function(){ window.open('https://www.google.com/maps/search/?api=1&query=' + destino, '_blank'); },
+      { timeout: 5000 }
+    );
+  } else {
+    window.open('https://www.google.com/maps/search/?api=1&query=' + destino, '_blank');
+  }
+}
 </script>
 </body>
 </html>
