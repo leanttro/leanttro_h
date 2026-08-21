@@ -97,6 +97,13 @@ def listar_templates(tipo):
     arquivos = glob.glob(os.path.join(pasta, f"{tipo}_*.html"))
     return [os.path.basename(f).replace(".html", "") for f in sorted(arquivos)]
 
+# ── Context Processors ────────────────────────────────────────
+
+@app.context_processor
+def inject_now():
+    """Injeta variável 'now' em todos os templates Jinja2"""
+    return {'now': datetime.now()}
+
 # ── Banco ─────────────────────────────────────────────────────
 
 def get_db():
