@@ -428,6 +428,10 @@ footer a:hover { text-decoration: underline; }
 
 <!-- ══ BAIRROS (botão com dropdown, igual ao slicer de categoria) ══ -->
 {% if not bairro and not categoria and bairros_disponiveis %}
+{% set _bairro_counts = {} %}
+{% for _nome_b, _itens_b in negocios | groupby('bairro') %}
+  {% set _ = _bairro_counts.update({_nome_b: _itens_b | list | length}) %}
+{% endfor %}
 <section class="bairros-section">
   <div class="container">
     <h2 class="bairros-titulo">Explore por bairro</h2>
@@ -441,10 +445,7 @@ footer a:hover { text-decoration: underline; }
         {% for b in bairros_disponiveis %}
         <a href="/cidade/{{ cidade | slugify }}/{{ b | slugify }}/" class="chip-cat">
           {{ b }}
-          <span class="bairro-link-count">
-            {% set count = negocios | selectattr('bairro', 'equalto', b) | list | length %}
-            {{ count }}
-          </span>
+          <span class="bairro-link-count">{{ _bairro_counts.get(b, 0) }}</span>
         </a>
         {% endfor %}
       </div>
