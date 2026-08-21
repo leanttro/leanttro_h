@@ -20,30 +20,54 @@ app.url_map.strict_slashes = False
 
 DOMINIO_BASE = os.getenv("DOMINIO_BASE", "leanttro.com")
 
-# ── Canonicalização de host: NÃO força www em ninguém ──────────
-# Subdomínio do leanttro (ex.: cinema.leanttro.com) nunca teve www e
-# continua sem redirect nenhum, como sempre foi.
+# ── Canonicalização de host ──────────────────────────────────
+# Regra: quem decide se o domínio usa www ou não é o próprio admin, no
+# campo "dominio_proprio" de cada hub — do jeito que ele foi digitado lá.
 #
-# Domínio próprio (ex.: soscorporativa.com.br / indica.soscorporativa.com.br):
-# antes a gente forçava redirect 301 pra "www.<dominio>" achando que isso
-# deixava as URLs do sitemap mais "bonitas" e consistentes. O problema é
-# que a gente NÃO controla o DNS do cliente — muita gente só cadastra o
-# registro sem www (ou só com www), e forçar a outra forma faz o navegador
-# tentar resolver um host que nem existe no DNS, derrubando o site inteiro
-# pro visitante (nem chega a dar erro 301, dá erro de DNS antes disso).
+#   • Admin cadastrou "www.cestadepresentes.com.br" (COM www)
+#     -> todo acesso sem www é redirecionado (301) pra versão com www,
+#        e a tag canônica das páginas sai sempre com www.
 #
-# Por isso agora NÃO redirecionamos entre www <-> sem-www em hipótese
-# nenhuma: o site responde do jeito que o visitante digitou/o DNS resolveu.
-# get_hub_by_host() já ignora www ao buscar o hub no banco, então tanto faz
-# a forma que o request chegar — funciona igual. As URLs do sitemap saem
-# consistentes com request.host de cada domínio próprio (com ou sem www,
-# conforme o cliente configurou), o que é o comportamento correto aqui.
+#   • Admin cadastrou "cestadepresentes.com.br" (SEM www)
+#     -> nenhum redirect é feito. Site responde do jeito que o DNS
+#        resolveu, sem forçar nada (evita derrubar site de cliente cujo
+#        DNS só tem uma das duas formas configurada).
+#
+#   • Subdomínio do leanttro (ex.: cinema.leanttro.com, via campo
+#     "hub_leanttro") nunca teve www e continua sem redirect nenhum,
+#     como sempre foi.
+#
+# get_hub_by_host() já ignora www dos dois lados ao buscar o hub no
+# banco, então a busca funciona igual não importa a forma que o
+# request chegar — só o redirect abaixo decide se canonicaliza ou não.
 @app.before_request
 def _canonicalizar_host():
-    # Sem redirect de www: mantido só como hook central caso surja outra
-    # regra de canonicalização de host no futuro (ex.: http->https, se o
-    # proxy na frente não cuidar disso).
-    return
+    partes = request.path.strip("/").split("/", 1)
+    primeiro_segmento = partes[0] if partes else ""
+    if primeiro_segmento in ROTAS_RESERVADAS or request.path.startswith("/admin"):
+        return
+
+    host_atual = request.host.split(":")[0].lower()
+    hub = get_hub_by_host()
+    if not hub:
+        return
+
+    dominio_admin = (hub.get("dominio_proprio") or "").strip().lower()
+    if not dominio_admin.startswith("www."):
+        # Sem www configurado (ou é subdomínio via hub_leanttro): não mexe.
+        return
+
+    if host_atual == dominio_admin:
+        # Já está na forma canônica com www — segue o jogo.
+        return
+
+    # Domínio próprio configurado com www, mas o visitante chegou sem www
+    # (ou com alguma variação de host) — redireciona pra forma canônica.
+    caminho = request.full_path
+    if caminho.endswith("?"):
+        caminho = caminho[:-1]
+    destino = f"https://{dominio_admin}{caminho}"
+    return redirect(destino, code=301)
 
 
 # campos de texto livre que sofrem de grafias inconsistentes (maiúscula/minúscula, acento, espaços)
@@ -216,7 +240,10 @@ def is_ajax():
 
 def get_hub_by_host():
     host = request.host.split(":")[0].lower().replace("www.", "")
-    hub = query("SELECT * FROM hub_clientes WHERE dominio_proprio = %s AND ativo = true", (host,), one=True)
+    hub = query(
+        "SELECT * FROM hub_clientes WHERE regexp_replace(dominio_proprio, '^www\\.', '') = %s AND ativo = true",
+        (host,), one=True
+    )
     if hub:
         return hub
     if host.endswith(f".{DOMINIO_BASE}"):
