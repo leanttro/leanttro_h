@@ -7,6 +7,7 @@ import psycopg2
 import psycopg2.extras
 import os
 import glob
+import re
 import unicodedata as _uc
 import time
 from dotenv import load_dotenv
@@ -297,6 +298,27 @@ def _parse_coord(valor):
 @app.template_filter("slugify")
 def _jinja_slugify(texto):
     return _slugify(texto) if texto else ""
+
+
+_RE_TELEFONE_BR = re.compile(r'(?:\+?55\s*)?\(?\d{2}\)?[\s.\-]?9?\d{4}[\s.\-]?\d{4}')
+
+@app.template_filter("extrair_telefone")
+def _jinja_extrair_telefone(texto):
+    """Acha um número de telefone/WhatsApp dentro de um texto livre (ex: descrição
+    do negócio) e retorna só os dígitos com DDD, prontos pra usar em wa.me/55{numero}.
+    Retorna None se não achar nada plausível — nunca lança exceção."""
+    if not texto:
+        return None
+    try:
+        for match in _RE_TELEFONE_BR.finditer(str(texto)):
+            digitos = re.sub(r'\D', '', match.group())
+            if digitos.startswith('55') and len(digitos) in (12, 13):
+                digitos = digitos[2:]
+            if len(digitos) in (10, 11):  # DDD (2) + 8 ou 9 dígitos
+                return digitos
+    except Exception:
+        return None
+    return None
 
 
 # ════════════════════════════════════════════════════════════
