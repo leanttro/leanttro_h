@@ -6,155 +6,37 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-{# ══ SEO dinâmico por contexto ══ #}
-{% if categoria and bairro %}
-  {% set seo_title = categoria.nome ~ " no " ~ bairro ~ " — " ~ cidade ~ " | " ~ (hub.nome or 'Hub') %}
-  {% set seo_desc  = "Encontre " ~ categoria.nome ~ " no bairro " ~ bairro ~ " em " ~ cidade ~ ". Endereços, telefones e localização perto de você." %}
-{% elif categoria %}
-  {% set seo_title = categoria.nome ~ " em " ~ cidade ~ " | " ~ (hub.nome or 'Hub') %}
-  {% set seo_desc  = "Encontre " ~ categoria.nome ~ " em " ~ cidade ~ ". Lista completa com endereços, telefones e localização." %}
-{% elif bairro %}
-  {% set seo_title = "Negócios no " ~ bairro ~ " — " ~ cidade ~ " | " ~ (hub.nome or 'Hub') %}
-  {% set seo_desc  = "Descubra negócios no bairro " ~ bairro ~ " em " ~ cidade ~ ". Encontre tudo perto de você." %}
-{% else %}
-  {% set seo_title = "Negócios em " ~ cidade ~ " | " ~ (hub.nome or 'Hub') %}
-  {% set seo_desc  = "Encontre os melhores negócios em " ~ cidade ~ ". O guia completo perto de você." %}
-{% endif %}
+{# ══ SEO dinâmico por hub ══ #}
+{% set total_negs = negocios | length if negocios else 0 %}
+{% set total_cats = categorias | length if categorias else 0 %}
+{% set total_bairros = (negocios | map(attribute='bairro') | unique | list) | length if negocios else 0 %}
+{% set seo_title = hub.titulo or (hub.nome ~ " — Encontre " ~ total_negs ~ " negócio(s)") %}
+{% set seo_desc = hub.descricao or ("Descubra os melhores negócios em " ~ total_cats ~ " categoria(s) diferentes. Endereços, telefones e localização perto de você.") %}
 
 <title>{{ seo_title }}</title>
 <meta name="description" content="{{ seo_desc }}">
 <meta name="robots" content="index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1">
 <meta name="theme-color" content="{{ hub.cor_primaria or '#f6972b' }}">
-<link rel="canonical" href="https://{{ request.host }}/cidade/{{ cidade | slugify }}/{% if bairro %}{{ bairro | slugify }}/{% endif %}{% if categoria %}{{ categoria.slug }}/{% endif %}">
+<link rel="canonical" href="https://{{ request.host }}/">
 {% if hub.logo_url %}<link rel="icon" type="image/png" href="{{ hub.logo_url }}">{% endif %}
+<link rel="apple-touch-icon" href="{{ hub.logo_url or 'https://via.placeholder.com/180x180' }}">
 
 <meta property="og:type" content="website">
 <meta property="og:site_name" content="{{ hub.nome or 'Hub' }}">
+<meta property="og:url" content="https://{{ request.host }}/">
 <meta property="og:title" content="{{ seo_title }}">
 <meta property="og:description" content="{{ seo_desc }}">
-
-{# ══ FAQPage: JSON-LD com perguntas dinâmicas ══ #}
-{% set faq_items = [] %}
-{% if categoria and bairro %}
-  {% set _ = faq_items.append({
-    "@type": "Question",
-    "name": "Quantos " ~ categoria.nome | lower ~ " têm no bairro " ~ bairro ~ " em " ~ cidade ~ "?",
-    "acceptedAnswer": {
-      "@type": "Answer",
-      "text": total_negocios ~ " opção(ões) estão cadastradas."
-    }
-  }) %}
-  {% set _ = faq_items.append({
-    "@type": "Question",
-    "name": "Como encontrar " ~ categoria.nome | lower ~ " perto de mim no " ~ bairro ~ "?",
-    "acceptedAnswer": {
-      "@type": "Answer",
-      "text": "Use os filtros de bairro e tipo na página para ver as opções mais próximas."
-    }
-  }) %}
-  {% set _ = faq_items.append({
-    "@type": "Question",
-    "name": "Existem outros bairros com " ~ categoria.nome | lower ~ " em " ~ cidade ~ "?",
-    "acceptedAnswer": {
-      "@type": "Answer",
-      "text": "Use o filtro de bairro para explorar outras regiões de " ~ cidade ~ "."
-    }
-  }) %}
-{% elif categoria %}
-  {% set _ = faq_items.append({
-    "@type": "Question",
-    "name": "Quantos " ~ categoria.nome | lower ~ " têm em " ~ cidade ~ "?",
-    "acceptedAnswer": {
-      "@type": "Answer",
-      "text": total_negocios ~ " opção(ões) estão cadastradas."
-    }
-  }) %}
-  {% set _ = faq_items.append({
-    "@type": "Question",
-    "name": "Em quais bairros de " ~ cidade ~ " tem " ~ categoria.nome | lower ~ "?",
-    "acceptedAnswer": {
-      "@type": "Answer",
-      "text": (bairros_disponiveis | length | string) ~ " bairro(s) têm " ~ categoria.nome | lower ~ " cadastrados." if bairros_disponiveis else "Use o filtro de bairro para explorar."
-    }
-  }) %}
-  {% set _ = faq_items.append({
-    "@type": "Question",
-    "name": "Como encontrar " ~ categoria.nome | lower ~ " perto de mim em " ~ cidade ~ "?",
-    "acceptedAnswer": {
-      "@type": "Answer",
-      "text": "Use o filtro de bairro para localizar a opção mais próxima de você."
-    }
-  }) %}
-{% elif bairro %}
-  {% set _ = faq_items.append({
-    "@type": "Question",
-    "name": "Quantos negócios têm no bairro " ~ bairro ~ " em " ~ cidade ~ "?",
-    "acceptedAnswer": {
-      "@type": "Answer",
-      "text": total_negocios ~ " negócio(s) estão cadastrado(s)."
-    }
-  }) %}
-  {% set _ = faq_items.append({
-    "@type": "Question",
-    "name": "Quais tipos de negócios estão disponíveis no bairro " ~ bairro ~ "?",
-    "acceptedAnswer": {
-      "@type": "Answer",
-      "text": (categorias_disponiveis | length | string) ~ " tipo(s) estão cadastrados." if categorias_disponiveis else "Use o filtro de tipo para explorar."
-    }
-  }) %}
-  {% set _ = faq_items.append({
-    "@type": "Question",
-    "name": "Existem negócios em outros bairros de " ~ cidade ~ "?",
-    "acceptedAnswer": {
-      "@type": "Answer",
-      "text": (bairros_disponiveis | length | string) ~ " bairro(s) têm negócios cadastrados." if bairros_disponiveis else "Use o filtro de bairro para explorar."
-    }
-  }) %}
-{% else %}
-  {% set _ = faq_items.append({
-    "@type": "Question",
-    "name": "Quantos negócios têm em " ~ cidade ~ "?",
-    "acceptedAnswer": {
-      "@type": "Answer",
-      "text": total_negocios ~ " negócio(s) estão cadastrado(s)."
-    }
-  }) %}
-  {% set _ = faq_items.append({
-    "@type": "Question",
-    "name": "Em quantos bairros de " ~ cidade ~ " têm negócios?",
-    "acceptedAnswer": {
-      "@type": "Answer",
-      "text": (bairros_disponiveis | length | string) ~ " bairro(s) têm negócios cadastrados." if bairros_disponiveis else "Use o filtro de bairro para explorar."
-    }
-  }) %}
-  {% set _ = faq_items.append({
-    "@type": "Question",
-    "name": "Quantos tipos de negócios estão disponíveis em " ~ cidade ~ "?",
-    "acceptedAnswer": {
-      "@type": "Answer",
-      "text": (categorias_disponiveis | length | string) ~ " tipo(s) estão cadastrados." if categorias_disponiveis else "Use o filtro de tipo para explorar."
-    }
-  }) %}
-{% endif %}
+{% if hub.logo_url %}<meta property="og:image" content="{{ hub.logo_url }}">{% endif %}
+<meta name="twitter:card" content="summary_large_image">
 
 <script type="application/ld+json">
 {
   "@context": "https://schema.org",
-  "@type": "BreadcrumbList",
-  "itemListElement": [
-    {"@type":"ListItem","position":1,"item":{"@id":"https://{{ request.host }}/","name":"Início"}},
-    {"@type":"ListItem","position":2,"item":{"@id":"https://{{ request.host }}/cidade/{{ cidade | slugify }}/","name":"{{ cidade }}"}}
-    {% if bairro %},{"@type":"ListItem","position":3,"item":{"@id":"https://{{ request.host }}/cidade/{{ cidade | slugify }}/{{ bairro | slugify }}/","name":"{{ bairro }}"}}{% endif %}
-    {% if categoria %},{"@type":"ListItem","position":{{ 4 if bairro else 3 }},"item":{"@id":"https://{{ request.host }}/cidade/{{ cidade | slugify }}/{{ categoria.slug }}/","name":"{{ categoria.nome }}"}}{% endif %}
-  ]
-}
-</script>
-
-<script type="application/ld+json">
-{
-  "@context": "https://schema.org",
-  "@type": "FAQPage",
-  "mainEntity": {{ faq_items | tojson }}
+  "@type": "WebSite",
+  "name": "{{ hub.nome or 'Hub' }}",
+  "url": "https://{{ request.host }}/",
+  "description": "{{ seo_desc }}",
+  "inLanguage": "pt-BR"
 }
 </script>
 
@@ -213,74 +95,147 @@ nav.desktop-nav ul li a:hover { border-bottom-color: #fff; background: rgba(0,0,
 .banner-rotativo img { max-height: 90px; width: auto; max-width: 100%; border-radius: 8px; }
 .banner-placeholder { display: inline-block; background: var(--light-gray); border: 2px dashed var(--medium-gray); border-radius: 8px; padding: 12px 36px; color: #aaa; font-size: 0.9em; }
 
-/* ══ BREADCRUMB ══ */
-.breadcrumb { background: var(--white); border-bottom: 1px solid var(--medium-gray); padding: 12px 0; }
-.breadcrumb nav { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; font-size: 0.85em; color: #6c757d; }
-.breadcrumb nav a { color: var(--primary); font-weight: 500; }
-.breadcrumb nav a:hover { text-decoration: underline; }
-.breadcrumb nav span.sep { color: #adb5bd; }
-.breadcrumb nav span.atual { color: var(--text-color); font-weight: 600; }
-
-/* ══ HERO CIDADE ══ */
-.cidade-hero {
-    color: #fff; text-align: center; min-height: 380px;
+/* ══ HERO ══ */
+.hero-section {
+    color: #fff; text-align: center; min-height: 540px;
     display: flex; align-items: center; justify-content: center;
     background:
         linear-gradient(rgba(0,0,0,0.55), rgba(0,0,0,0.55)),
         url('{{ hub.banner_fundo_url or "https://via.placeholder.com/1920x540" }}') center/cover no-repeat;
-    padding: 48px 20px;
 }
-.cidade-hero h1 { font-size: 2.6em; font-weight: 900; line-height: 1.2; text-shadow: 2px 2px 8px rgba(0,0,0,0.6); margin-bottom: 14px; }
-.cidade-hero p { font-size: 1.1em; color: rgba(255,255,255,.88); text-shadow: 1px 1px 4px rgba(0,0,0,0.5); margin-bottom: 28px; }
+.hero-inner { padding: 48px 20px; }
+.hero-section h1 { font-size: 3em; font-weight: 900; line-height: 1.2; text-shadow: 2px 2px 8px rgba(0,0,0,0.6); margin-bottom: 16px; }
+.hero-section h1 em { color: var(--primary); font-style: normal; }
+.hero-section .hero-sub { font-size: 1.25em; max-width: 660px; margin: 0 auto 32px; text-shadow: 1px 1px 4px rgba(0,0,0,0.5); opacity: 0.92; }
+.hero-btns { display: flex; gap: 14px; justify-content: center; flex-wrap: wrap; }
+.btn-hero { display: inline-flex; align-items: center; gap: 8px; background: var(--primary); color: #fff; padding: 15px 34px; border-radius: 8px; font-size: 1.1em; font-weight: 700; border: none; cursor: pointer; transition: background 0.3s, transform 0.2s; }
+.btn-hero:hover { background: var(--dark); transform: translateY(-2px); }
 
-.hero-stats { display: flex; align-items: center; justify-content: center; gap: 0; flex-wrap: wrap; }
-.hero-stat { display: flex; flex-direction: column; align-items: center; padding: 0 28px; }
-.hero-stat-num { font-size: 1.8em; font-weight: 900; color: var(--primary); line-height: 1; letter-spacing: -0.5px; text-shadow: 0 2px 8px rgba(0,0,0,0.4); }
-.hero-stat-label { font-size: 0.82em; font-weight: 500; color: rgba(255,255,255,0.85); margin-top: 4px; text-transform: uppercase; letter-spacing: 0.5px; }
-.hero-stat-divider { width: 1px; height: 36px; background: rgba(255,255,255,0.3); }
-
-/* ══ FILTROS STICKY ══ */
-.filtros-sticky {
-    background: var(--white);
-    border-bottom: 1px solid var(--medium-gray);
-    padding: 18px 0;
-    position: sticky;
-    top: 0;
-    z-index: 50;
+/* ══ HERO STATS ══ */
+.hero-stats {
+    display: flex; align-items: center; justify-content: center;
+    gap: 0; margin-top: 36px; flex-wrap: wrap;
 }
-.filtros-grupo { margin-bottom: 12px; }
-.filtros-grupo:last-child { margin-bottom: 0; }
-.filtros-grupo-label { font-size: 0.72em; font-weight: 700; color: #adb5bd; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 8px; text-align: center; }
-.filtros-inner { display: flex; gap: 10px; flex-wrap: wrap; justify-content: center; }
-.chip-filtro { padding: 8px 16px; border-radius: 20px; border: 2px solid var(--medium-gray); background: #fff; color: var(--text-color); font-size: 0.85em; font-weight: 600; cursor: pointer; transition: all 0.2s; display: inline-flex; align-items: center; gap: 6px; }
-.chip-filtro:hover { border-color: var(--primary); color: var(--primary); }
-.chip-filtro.ativo { background: var(--primary); border-color: var(--primary); color: #fff; }
+.hero-stat {
+    display: flex; flex-direction: column; align-items: center;
+    padding: 0 28px;
+}
+.hero-stat-num {
+    font-size: 1.8em; font-weight: 900; color: var(--primary);
+    line-height: 1; letter-spacing: -0.5px;
+    text-shadow: 0 2px 8px rgba(0,0,0,0.4);
+}
+.hero-stat-label {
+    font-size: 0.82em; font-weight: 500; color: rgba(255,255,255,0.85);
+    margin-top: 4px; text-transform: uppercase; letter-spacing: 0.5px;
+}
+.hero-stat-divider {
+    width: 1px; height: 36px; background: rgba(255,255,255,0.3);
+}
 
-/* ══ GRID DE NEGÓCIOS ══ */
-.section { padding: 56px 0; }
-.section-title { text-align: center; font-size: 1.8em; font-weight: 800; color: var(--dark-gray); margin-bottom: 32px; }
+/* ══ BUSCA ══ */
+.busca-section { background: var(--white); padding: 52px 0; }
+.busca-topo { text-align: center; margin-bottom: 32px; }
+.busca-topo h2 { font-size: 2em; font-weight: 800; color: var(--dark-gray); margin-bottom: 8px; }
+.busca-topo p { color: #6c757d; margin-bottom: 20px; font-size: 1.05em; }
+.chip-cat { padding: 7px 20px; border-radius: 20px; border: 2px solid var(--medium-gray); background: var(--white); color: var(--text-color); font-family: inherit; font-size: 0.9em; font-weight: 600; cursor: pointer; transition: all 0.2s; }
+.chip-cat:hover { border-color: var(--primary); color: var(--primary); }
+.chip-cat.active { background: var(--primary); border-color: var(--primary); color: #fff; }
+
+.categoria-slicer { position: relative; max-width: 480px; margin: 0 auto 28px; z-index: 20; }
+.slicer-toggle {
+    width: 100%; display: flex; align-items: center; justify-content: space-between; gap: 12px;
+    background: var(--white); border: 2px solid var(--medium-gray); border-radius: 10px;
+    padding: 13px 18px; font-family: inherit; font-size: 0.98em; font-weight: 600;
+    color: var(--text-color); cursor: pointer; transition: all 0.2s;
+}
+.slicer-toggle:hover { border-color: var(--primary); }
+.slicer-toggle.open { border-color: var(--primary); }
+.slicer-chevron { transition: transform 0.25s; color: #adb5bd; flex-shrink: 0; }
+.slicer-toggle.open .slicer-chevron { transform: rotate(180deg); color: var(--primary); }
+
+.slicer-panel {
+    display: none; flex-direction: column; gap: 3px;
+    position: absolute; top: calc(100% + 8px); left: 0; right: 0;
+    background: var(--white); border: 1px solid var(--medium-gray); border-radius: 12px;
+    box-shadow: 0 14px 38px var(--shadow-medium);
+    max-height: 340px; overflow-y: auto; z-index: 21; padding: 8px;
+}
+.slicer-panel.open { display: flex; }
+.slicer-backdrop { display: none; position: fixed; inset: 0; background: transparent; z-index: 15; }
+.slicer-backdrop.open { display: block; }
+
+/* ══ NEGÓCIOS ══ */
 .negocios-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 22px; }
-.negocio-card {
-    background: var(--white); border-radius: 14px; overflow: hidden;
-    box-shadow: 0 4px 14px var(--shadow-light); transition: transform 0.3s, box-shadow 0.3s;
-    display: flex; flex-direction: column; cursor: pointer; text-decoration: none; color: inherit;
-}
+.negocio-card { background: var(--white); border-radius: 14px; overflow: hidden; box-shadow: 0 4px 14px var(--shadow-light); transition: transform 0.3s, box-shadow 0.3s; display: flex; flex-direction: column; cursor: pointer; text-decoration: none; color: inherit; }
 .negocio-card:hover { transform: translateY(-5px); box-shadow: 0 10px 28px var(--shadow-medium); }
 .card-foto { width: 100%; height: 160px; overflow: hidden; position: relative; background: #f5f5f5; }
 .card-foto img { width: 100%; height: 100%; object-fit: cover; transition: transform 0.4s; }
 .negocio-card:hover .card-foto img { transform: scale(1.06); }
+.card-foto-fallback { width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; background: var(--light); }
+.card-foto-fallback img { width: auto; height: auto; max-width: 62%; max-height: 62%; object-fit: contain; transition: transform 0.4s; }
+.card-foto-fallback i { font-size: 2.4em; color: var(--primary); opacity: 0.35; }
 .badge-cat { position: absolute; top: 10px; left: 10px; background: var(--primary); color: #fff; font-size: 0.72em; font-weight: 700; padding: 3px 10px; border-radius: 20px; }
 .card-body { padding: 16px; flex: 1; display: flex; flex-direction: column; gap: 4px; }
 .card-body h3 { font-size: 1.05em; font-weight: 700; color: var(--dark-gray); }
 .card-bairro { font-size: 0.88em; color: #6c757d; display: flex; align-items: center; gap: 5px; }
 .btn-ver { margin-top: auto; padding-top: 12px; display: inline-block; background: var(--primary); color: #fff; padding: 9px 18px; border-radius: 6px; font-size: 0.88em; font-weight: 700; text-align: center; transition: background 0.2s; }
 .negocio-card:hover .btn-ver { background: var(--dark); }
-.info-vazio { text-align: center; color: #6c757d; padding: 60px 20px; font-size: 1.05em; }
-.info-vazio i { display: block; margin-bottom: 16px; opacity: 0.3; }
+.info-vazio { text-align: center; color: #6c757d; padding: 50px 0; font-size: 1.05em; }
+
+.negocios-grid.modo-carrossel { display: flex; grid-template-columns: none; overflow-x: auto; scroll-snap-type: x mandatory; gap: 18px; padding-bottom: 10px; -webkit-overflow-scrolling: touch; scrollbar-width: thin; }
+.negocios-grid.modo-carrossel .negocio-card { flex: 0 0 260px; scroll-snap-align: start; }
+.negocios-grid.modo-carrossel::-webkit-scrollbar { height: 6px; }
+.negocios-grid.modo-carrossel::-webkit-scrollbar-thumb { background: var(--primary); border-radius: 10px; }
+.card-distancia { font-size: 0.82em; color: var(--primary); font-weight: 700; display: flex; align-items: center; gap: 5px; }
+
+/* ══ BUSCA DE NEGÓCIO + GEOLOCALIZAÇÃO ══ */
+.negocios-controls-row { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; max-width: 720px; margin: 0 auto 28px; }
+.busca-negocio-wrapper { position: relative; flex: 1 1 260px; min-width: 220px; }
+.busca-negocio-wrapper > i { position: absolute; left: 14px; top: 50%; transform: translateY(-50%); color: #adb5bd; }
+.busca-negocio-input { width: 100%; padding: 12px 14px 12px 38px; border: 2px solid var(--medium-gray); border-radius: 10px; font-family: inherit; font-size: 0.95em; outline: none; transition: border-color 0.2s; }
+.busca-negocio-input:focus { border-color: var(--primary); }
+.busca-negocio-resultados { display: none; position: absolute; top: calc(100% + 8px); left: 0; right: 0; background: var(--white); border: 1px solid var(--medium-gray); border-radius: 12px; box-shadow: 0 14px 38px var(--shadow-medium); max-height: 320px; overflow-y: auto; z-index: 25; }
+.busca-negocio-resultados.open { display: block; }
+.busca-negocio-item { display: flex; align-items: center; gap: 10px; padding: 10px 14px; cursor: pointer; text-decoration: none; color: inherit; border-bottom: 1px solid var(--light-gray); }
+.busca-negocio-item:last-child { border-bottom: none; }
+.busca-negocio-item:hover { background: var(--light); }
+.busca-negocio-item img { width: 36px; height: 36px; border-radius: 6px; object-fit: cover; flex-shrink: 0; background: var(--light-gray); }
+.busca-negocio-item strong { font-size: 0.9em; color: var(--dark-gray); display: block; }
+.busca-negocio-item span { font-size: 0.78em; color: #6c757d; }
+.busca-negocio-vazio, .busca-negocio-loading { padding: 14px; text-align: center; color: #adb5bd; font-size: 0.85em; }
+.btn-geoloc { display: inline-flex; align-items: center; gap: 8px; background: var(--white); border: 2px solid var(--medium-gray); color: var(--text-color); padding: 11px 18px; border-radius: 10px; font-family: inherit; font-size: 0.9em; font-weight: 600; cursor: pointer; transition: all 0.2s; white-space: nowrap; flex-shrink: 0; }
+.btn-geoloc:hover { border-color: var(--primary); color: var(--primary); }
+.btn-geoloc.ativo { background: var(--primary); border-color: var(--primary); color: #fff; }
+.btn-geoloc.carregando { opacity: 0.7; cursor: wait; }
 
 /* ══ BANNER MEIO ══ */
 .banner-meio { background: var(--light); padding: 28px 20px; text-align: center; border-top: 1px solid #ffe0b2; border-bottom: 1px solid #ffe0b2; min-height: 150px; display: flex; align-items: center; justify-content: center; }
 .banner-meio .banner-rotativo img { max-height: 120px; }
+
+/* ══ CATEGORIAS ══ */
+.section { padding: 62px 0; }
+.section-title { text-align: center; font-size: 2em; font-weight: 800; color: var(--dark-gray); margin-bottom: 10px; }
+.section-subtitle { text-align: center; color: #6c757d; margin-bottom: 40px; font-size: 1.05em; }
+.cats-header-row { display: flex; align-items: center; justify-content: space-between; gap: 16px; flex-wrap: wrap; }
+.cats-view-toggle { display: flex; gap: 6px; background: #f0f0f0; padding: 4px; border-radius: 10px; flex-shrink: 0; }
+.cats-view-toggle button { border: none; background: transparent; width: 38px; height: 34px; border-radius: 7px; display: flex; align-items: center; justify-content: center; cursor: pointer; color: var(--dark-gray); font-size: 15px; transition: background 0.2s, color 0.2s; }
+.cats-view-toggle button.ativo { background: var(--primary); color: #fff; }
+
+.categorias-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 20px; }
+.categorias-grid.modo-carrossel { display: flex; grid-template-columns: none; overflow-x: auto; scroll-snap-type: x mandatory; gap: 16px; padding-bottom: 10px; -webkit-overflow-scrolling: touch; scrollbar-width: thin; }
+.categorias-grid.modo-carrossel .categoria-card { flex: 0 0 150px; scroll-snap-align: start; }
+.categorias-grid.modo-carrossel::-webkit-scrollbar { height: 6px; }
+.categorias-grid.modo-carrossel::-webkit-scrollbar-thumb { background: var(--primary); border-radius: 10px; }
+
+.categoria-card { background: var(--white); border-radius: 14px; overflow: hidden; box-shadow: 0 4px 12px var(--shadow-light); transition: transform 0.3s, box-shadow 0.3s; display: flex; flex-direction: column; align-items: center; padding-bottom: 20px; text-align: center; cursor: pointer; text-decoration: none; color: inherit; }
+.categoria-card:hover { transform: translateY(-6px); box-shadow: 0 10px 26px var(--shadow-medium); }
+.cat-photo { width: 100%; aspect-ratio: 1/1; overflow: hidden; background: #eee; }
+.cat-photo img { width: 100%; height: 100%; object-fit: cover; transition: transform 0.4s; }
+.categoria-card:hover .cat-photo img { transform: scale(1.07); }
+.categoria-card h3 { font-size: 1.05em; font-weight: 700; color: var(--dark-gray); margin: 14px 12px 4px; }
+.categoria-card .btn-ver { margin-top: 10px; background: var(--primary); color: #fff; padding: 8px 18px; border-radius: 6px; font-weight: 600; font-size: 0.88em; transition: background 0.3s; display: inline-block; }
+.categoria-card:hover .btn-ver { background: var(--dark); }
 
 /* ══ FOOTER ══ */
 footer { background: #111; color: #999; text-align: center; padding: 32px 20px; font-size: 0.88em; }
@@ -295,13 +250,12 @@ footer a:hover { text-decoration: underline; }
     .header-logo img { height: 96px; }
     nav.desktop-nav { display: none; }
     .hamburger-btn { display: block; top: 50%; transform: translateY(-50%); }
-    .cidade-hero { min-height: 320px; }
-    .cidade-hero h1 { font-size: 1.7em; }
-    .cidade-hero p { font-size: 1em; }
-    .hero-stats { gap: 0; }
-    .hero-stat { padding: 0 16px; }
-    .section { padding: 40px 0; }
-    .section-title { font-size: 1.5em; }
+    .hero-section { min-height: 440px; }
+    .hero-section h1 { font-size: 2.1em; }
+    .hero-section .hero-sub { font-size: 1em; }
+    .section { padding: 44px 0; }
+    .section-title { font-size: 1.6em; }
+    .busca-section { padding: 36px 0; }
     .banner-rotativo img { max-height: 120px !important; }
     .banner-meio .banner-rotativo img { max-height: 120px !important; }
 }
@@ -320,9 +274,16 @@ footer a:hover { text-decoration: underline; }
   <nav class="desktop-nav">
     <ul>
       <li><a href="/">Início</a></li>
-      {% for cat in categorias_disponiveis[:5] %}
+      {% set cats_ativas_nav = [] %}
+      {% for cat in categorias %}
+        {% if (negocios | selectattr('categoria_slug', 'equalto', cat.slug) | list | length) > 0 %}
+          {% set _ = cats_ativas_nav.append(cat) %}
+        {% endif %}
+      {% endfor %}
+      {% for cat in cats_ativas_nav[:5] %}
       <li><a href="/{{ cat.slug }}/">{{ cat.nome }}</a></li>
       {% endfor %}
+      <li><a href="/blog/">Blog</a></li>
     </ul>
   </nav>
 </header>
@@ -340,120 +301,113 @@ footer a:hover { text-decoration: underline; }
 </div>
 {% endif %}
 
-<!-- ══ BREADCRUMB ══ -->
-<div class="breadcrumb">
-  <div class="container">
-    <nav aria-label="Breadcrumb">
-      <a href="/">Início</a>
-      <span class="sep">›</span>
-      {% if bairro or categoria %}
-      <a href="/cidade/{{ cidade | slugify }}/">{{ cidade }}</a>
-      {% else %}
-      <span class="atual">{{ cidade }}</span>
-      {% endif %}
-      {% if bairro %}
-      <span class="sep">›</span>
-      {% if categoria %}
-      <a href="/cidade/{{ cidade | slugify }}/{{ bairro | slugify }}/">{{ bairro }}</a>
-      {% else %}
-      <span class="atual">{{ bairro }}</span>
-      {% endif %}
-      {% endif %}
-      {% if categoria %}
-      <span class="sep">›</span>
-      <span class="atual">{{ categoria.nome }}</span>
-      {% endif %}
-    </nav>
-  </div>
-</div>
-
-<!-- ══ HERO CIDADE ══ -->
-<section class="cidade-hero">
-  <div>
-    <h1>
-      {% if categoria and bairro %}{{ categoria.nome }} em {{ bairro }}
-      {% elif categoria %}{{ categoria.nome }} em {{ cidade }}
-      {% elif bairro %}Negócios em {{ bairro }}
-      {% else %}Negócios em {{ cidade }}{% endif %}
-    </h1>
-    <p>{{ total_negocios }} resultado{{ 's' if total_negocios != 1 else '' }} encontrado{{ 's' if total_negocios != 1 else '' }}</p>
+<!-- ══ HERO ══ -->
+<section class="hero-section">
+  <div class="hero-inner">
+    <h1>{{ hub.nome or 'Bem-vindo' }} <em>Perto de Você</em></h1>
+    <p class="hero-sub">{{ hub.descricao or 'Descubra os melhores negócios perto de você' }}</p>
+    <div class="hero-btns">
+      <button class="btn-hero" onclick="document.querySelector('.slicer-toggle').click()">
+        <i class="fas fa-search"></i> Explorar
+      </button>
+    </div>
     <div class="hero-stats">
       <div class="hero-stat">
-        <div class="hero-stat-num">{{ total_negocios }}</div>
-        <div class="hero-stat-label">Negócio(s)</div>
+        <div class="hero-stat-num">{{ total_negocios if total_negocios is not none else (negocios|length) }}</div>
+        <div class="hero-stat-label">Negócios</div>
       </div>
-      {% if bairros_disponiveis %}
       <div class="hero-stat-divider"></div>
       <div class="hero-stat">
-        <div class="hero-stat-num">{{ bairros_disponiveis | length }}</div>
-        <div class="hero-stat-label">Bairro(s)</div>
+        <div class="hero-stat-num">{{ total_cats }}</div>
+        <div class="hero-stat-label">Categorias</div>
       </div>
-      {% endif %}
-      {% if categorias_disponiveis %}
+      {% if total_cidades and total_cidades > 1 %}
       <div class="hero-stat-divider"></div>
       <div class="hero-stat">
-        <div class="hero-stat-num">{{ categorias_disponiveis | length }}</div>
-        <div class="hero-stat-label">Tipo(s)</div>
+        <div class="hero-stat-num">{{ total_cidades }}</div>
+        <div class="hero-stat-label">Cidades</div>
       </div>
       {% endif %}
+      <div class="hero-stat-divider"></div>
+      <div class="hero-stat">
+        <div class="hero-stat-num">{{ total_bairros }}</div>
+        <div class="hero-stat-label">Bairros</div>
+      </div>
     </div>
   </div>
 </section>
 
-<!-- ══ FILTROS STICKY ══ -->
-{% if bairros_disponiveis or categorias_disponiveis %}
-<div class="filtros-sticky">
+<!-- ══ BUSCA ══ -->
+<section class="busca-section">
   <div class="container">
-    {% if bairros_disponiveis %}
-    <div class="filtros-grupo">
-      <div class="filtros-grupo-label">Bairros</div>
-      <div class="filtros-inner">
-        <a class="chip-filtro {% if not bairro %}ativo{% endif %}" href="/cidade/{{ cidade | slugify }}/{% if categoria %}{{ categoria.slug }}/{% endif %}">Todos</a>
-        {% for b in bairros_disponiveis %}
-        <a class="chip-filtro {% if bairro == b %}ativo{% endif %}" href="/cidade/{{ cidade | slugify }}/{{ b | slugify }}/{% if categoria %}{{ categoria.slug }}/{% endif %}">{{ b }}</a>
-        {% endfor %}
-      </div>
+    <div class="busca-topo">
+      <h2>Explorar Categorias</h2>
+      <p>Escolha uma categoria para ver os negócios disponíveis</p>
     </div>
-    {% endif %}
-    {% if categorias_disponiveis %}
-    <div class="filtros-grupo">
-      <div class="filtros-grupo-label">Categorias</div>
-      <div class="filtros-inner">
-        <a class="chip-filtro {% if not categoria %}ativo{% endif %}" href="/cidade/{{ cidade | slugify }}/{% if bairro %}{{ bairro | slugify }}/{% endif %}">Todas</a>
-        {% for cat in categorias_disponiveis %}
-        <a class="chip-filtro {% if categoria and categoria.slug == cat.slug %}ativo{% endif %}" href="/cidade/{{ cidade | slugify }}/{% if bairro %}{{ bairro | slugify }}/{% endif %}{{ cat.slug }}/">{{ cat.nome }}</a>
-        {% endfor %}
-      </div>
-    </div>
-    {% endif %}
-  </div>
-</div>
-{% endif %}
 
-<!-- ══ NEGÓCIOS ══ -->
-<section class="section container">
-  {% if negocios %}
-  <div class="negocios-grid">
-    {% for n in negocios %}
-    <a href="/{{ n.categoria_slug }}/{{ n.slug }}/" class="negocio-card">
-      <div class="card-foto">
-        <img src="{{ n.foto_url or 'https://via.placeholder.com/260x160?text=' ~ n.nome }}" alt="{{ n.nome }}">
-        <div class="badge-cat">{{ n.categoria_nome }}</div>
+    <div class="negocios-controls-row">
+      <div class="busca-negocio-wrapper">
+        <i class="fas fa-search"></i>
+        <input type="text" id="busca-negocio-input" class="busca-negocio-input"
+               placeholder="Buscar negócio pelo nome..." autocomplete="off">
+        <div id="busca-negocio-resultados" class="busca-negocio-resultados"></div>
       </div>
-      <div class="card-body">
-        <h3>{{ n.nome }}</h3>
-        {% if n.bairro %}<div class="card-bairro"><i class="fas fa-map-marker-alt"></i> {{ n.bairro }}</div>{% endif %}
-        <a href="/{{ n.categoria_slug }}/{{ n.slug }}/" class="btn-ver">Ver detalhes</a>
+      <button type="button" id="btn-geoloc" class="btn-geoloc" onclick="ativarGeolocalizacao()">
+        <i class="fas fa-location-crosshairs"></i> <span>Perto de mim</span>
+      </button>
+      <div class="cats-view-toggle" id="negToggleWrap">
+        <button type="button" id="btnCarrosselNeg" class="ativo" onclick="setNegsView('carrossel')" aria-label="Ver negócios em carrossel">
+          <i class="fas fa-arrows-left-right"></i>
+        </button>
+        <button type="button" id="btnGradeNeg" onclick="setNegsView('grade')" aria-label="Ver negócios em grade">
+          <i class="fas fa-table-cells"></i>
+        </button>
       </div>
-    </a>
-    {% endfor %}
+    </div>
+
+    <div class="categoria-slicer">
+      <button class="slicer-toggle" onclick="toggleSlicer()">
+        <span class="slicer-label"><i class="fas fa-filter"></i> <strong>Selecione uma categoria</strong></span>
+        <i class="fas fa-chevron-down slicer-chevron"></i>
+      </button>
+      <div class="slicer-backdrop" onclick="closeSlicer()"></div>
+      <div class="slicer-panel" id="slicerPanel">
+        {% for cat in categorias %}
+        {% if (negocios | selectattr('categoria_slug', 'equalto', cat.slug) | list | length) > 0 %}
+        <a href="/{{ cat.slug }}/" class="chip-cat">{{ cat.nome }}</a>
+        {% endif %}
+        {% endfor %}
+      </div>
+    </div>
+
+    {% if negocios %}
+    <div class="negocios-grid modo-carrossel" id="negsContainer">
+      {% for n in negocios[:12] %}
+      <a href="/{{ n.categoria_slug }}/{{ n.slug }}/" class="negocio-card"
+         {% if n.lat and n.lng %}data-lat="{{ n.lat }}" data-lng="{{ n.lng }}"{% endif %}>
+        <div class="card-foto">
+          {% if n.foto_url %}
+          <img src="{{ n.foto_url }}" alt="{{ n.nome }}">
+          {% elif hub.logo_url %}
+          <div class="card-foto-fallback"><img src="{{ hub.logo_url }}" alt="{{ hub.nome or 'Hub' }}"></div>
+          {% else %}
+          <div class="card-foto-fallback"><i class="fas fa-store"></i></div>
+          {% endif %}
+          <div class="badge-cat">{{ n.categoria_nome }}</div>
+        </div>
+        <div class="card-body">
+          <h3>{{ n.nome }}</h3>
+          {% if n.bairro %}<div class="card-bairro"><i class="fas fa-map-marker-alt"></i> {{ n.bairro }}{% if n.cidade %} — {{ n.cidade }}{% endif %}</div>{% endif %}
+          <div class="card-distancia" style="display:none;"><i class="fas fa-location-arrow"></i> <span class="dist-valor"></span></div>
+          <a href="/{{ n.categoria_slug }}/{{ n.slug }}/" class="btn-ver">Ver detalhes</a>
+        </div>
+      </a>
+      {% endfor %}
+    </div>
+    {% else %}
+    <div class="info-vazio">Nenhum negócio cadastrado ainda</div>
+    {% endif %}
   </div>
-  {% else %}
-  <div class="info-vazio">
-    <i class="fas fa-inbox" style="font-size: 3em;"></i>
-    <p>Nenhum resultado encontrado.</p>
-  </div>
-  {% endif %}
 </section>
 
 <!-- ══ BANNER MEIO ══ -->
@@ -467,6 +421,87 @@ footer a:hover { text-decoration: underline; }
 </div>
 {% endif %}
 
+<!-- ══ CATEGORIAS ══ -->
+<section class="section container">
+  <div class="cats-header-row">
+    <div>
+      <h2 class="section-title">Categorias Disponíveis</h2>
+      <p class="section-subtitle">Encontre tudo que você precisa</p>
+    </div>
+    <div class="cats-view-toggle">
+      <button type="button" id="btnCarrossel" class="ativo" onclick="setCatsView('carrossel')" aria-label="Ver em carrossel">
+        <i class="fas fa-arrows-left-right"></i>
+      </button>
+      <button type="button" id="btnGrade" onclick="setCatsView('grade')" aria-label="Ver em grade">
+        <i class="fas fa-table-cells"></i>
+      </button>
+    </div>
+  </div>
+
+  {% if categorias %}
+  <div class="categorias-grid modo-carrossel" id="catsContainer">
+    {% for cat in categorias %}
+    {% set total = negocios | selectattr('categoria_slug', 'equalto', cat.slug) | list | length %}
+    {% if total > 0 %}
+    <a href="/{{ cat.slug }}/" class="categoria-card">
+      <div class="cat-photo">
+        <i class="fas fa-location-dot" style="font-size: 3em; color: var(--primary); display: flex; align-items: center; justify-content: center; width: 100%; height: 100%;"></i>
+      </div>
+      <h3>{{ cat.nome }}</h3>
+      <span class="btn-ver">Explorar</span>
+    </a>
+    {% endif %}
+    {% endfor %}
+  </div>
+  {% else %}
+  <div class="info-vazio">Nenhuma categoria disponível</div>
+  {% endif %}
+</section>
+
+<script>
+function setCatsView(modo) {
+  const container = document.getElementById('catsContainer');
+  const btnCarrossel = document.getElementById('btnCarrossel');
+  const btnGrade = document.getElementById('btnGrade');
+  if (!container) return;
+  if (modo === 'grade') {
+    container.classList.remove('modo-carrossel');
+    btnGrade.classList.add('ativo');
+    btnCarrossel.classList.remove('ativo');
+  } else {
+    container.classList.add('modo-carrossel');
+    btnCarrossel.classList.add('ativo');
+    btnGrade.classList.remove('ativo');
+  }
+  localStorage.setItem('catsView', modo);
+}
+(function() {
+  const saved = localStorage.getItem('catsView');
+  if (saved === 'grade') setCatsView('grade');
+})();
+
+function setNegsView(modo) {
+  const container = document.getElementById('negsContainer');
+  const btnCarrossel = document.getElementById('btnCarrosselNeg');
+  const btnGrade = document.getElementById('btnGradeNeg');
+  if (!container) return;
+  if (modo === 'grade') {
+    container.classList.remove('modo-carrossel');
+    btnGrade.classList.add('ativo');
+    btnCarrossel.classList.remove('ativo');
+  } else {
+    container.classList.add('modo-carrossel');
+    btnCarrossel.classList.add('ativo');
+    btnGrade.classList.remove('ativo');
+  }
+  localStorage.setItem('negsView', modo);
+}
+(function() {
+  const saved = localStorage.getItem('negsView');
+  if (saved === 'grade') setNegsView('grade');
+})();
+</script>
+
 <!-- ══ FOOTER ══ -->
 <footer>
   <div class="footer-logo">
@@ -476,7 +511,7 @@ footer a:hover { text-decoration: underline; }
 </footer>
 
 <!-- ══ WIDGET TRADUÇÃO ══ -->
-<button id="translate-btn" style="position:fixed;bottom:24px;right:24px;background:var(--primary);color:#fff;border:none;border-radius:50%;width:52px;height:52px;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:18px;box-shadow:0 4px 20px rgba(0,0,0,0.2);z-index:999;transition:transform 0.2s">
+<button id="translate-btn" title="Traduzir página" style="position:fixed;bottom:24px;right:24px;background:var(--primary);color:#fff;border:none;border-radius:50%;width:52px;height:52px;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:20px;box-shadow:0 4px 20px rgba(0,0,0,0.2);z-index:999;transition:transform 0.2s">
   <i class="fas fa-language"></i>
 </button>
 
@@ -535,13 +570,18 @@ function selectLang(code, name) {
   currentLang = code;
   drawerOpen = false;
   document.getElementById('translate-drawer').classList.remove('open');
-  document.getElementById('translate-btn').innerHTML = `<i class="fas fa-language"></i> ${LANGS.find(l => l.code === code)?.flag || ''} ${name}`;
+  const btn = document.getElementById('translate-btn');
 
   if (code === 'pt') {
+    btn.innerHTML = '<i class="fas fa-language"></i>';
+    btn.title = 'Traduzir página';
     const sel = document.querySelector('.goog-te-combo');
     if (sel) { sel.value = ''; sel.dispatchEvent(new Event('change')); }
     return;
   }
+
+  btn.innerHTML = `<span style="font-size:22px;line-height:1">${LANGS.find(l => l.code === code)?.flag || ''}</span>`;
+  btn.title = 'Traduzido para ' + name;
 
   const tryTranslate = (attempts) => {
     const sel = document.querySelector('.goog-te-combo');
@@ -574,11 +614,166 @@ document.addEventListener('click', (e) => {
 </script>
 
 <script>
+function toggleSlicer() {
+  const toggle = document.querySelector('.slicer-toggle');
+  const panel = document.querySelector('.slicer-panel');
+  const backdrop = document.querySelector('.slicer-backdrop');
+  toggle.classList.toggle('open');
+  panel.classList.toggle('open');
+  backdrop.classList.toggle('open');
+}
+
+function closeSlicer() {
+  document.querySelector('.slicer-toggle').classList.remove('open');
+  document.querySelector('.slicer-panel').classList.remove('open');
+  document.querySelector('.slicer-backdrop').classList.remove('open');
+}
+
 function toggleMobileNav() {
   console.log('Mobile nav not implemented yet');
 }
+
+document.querySelector('.slicer-backdrop').addEventListener('click', closeSlicer);
+document.addEventListener('click', function(e) {
+  if (!e.target.closest('.categoria-slicer')) {
+    closeSlicer();
+  }
+});
 </script>
 
+<!-- ══ BUSCA DE NEGÓCIO (qualquer negócio do hub) ══ -->
+<script>
+const HUB_LOGO_URL = {{ (hub.logo_url or '') | tojson }};
+let buscaNegocioTimeout = null;
+
+function fecharBuscaNegocio() {
+  const box = document.getElementById('busca-negocio-resultados');
+  box.classList.remove('open');
+  box.innerHTML = '';
+}
+
+function renderBuscaNegocio(lista, termo) {
+  const box = document.getElementById('busca-negocio-resultados');
+  if (!lista.length) {
+    box.innerHTML = '<div class="busca-negocio-vazio">Nenhum negócio encontrado para "' + termo + '"</div>';
+    box.classList.add('open');
+    return;
+  }
+  box.innerHTML = lista.slice(0, 8).map(n => `
+    <a class="busca-negocio-item" href="/${n.categoria_slug}/${n.slug}/">
+      <img src="${n.foto_url || HUB_LOGO_URL}" alt="" style="${n.foto_url ? '' : 'object-fit:contain;padding:4px;background:var(--light);'}">
+      <div>
+        <strong>${n.nome}</strong>
+        <span>${[n.bairro, n.cidade].filter(Boolean).join(' — ') || (n.categoria_nome || '')}</span>
+      </div>
+    </a>
+  `).join('');
+  box.classList.add('open');
+}
+
+async function buscarNegocioHub(termo) {
+  const box = document.getElementById('busca-negocio-resultados');
+  if (!termo || termo.trim().length < 2) {
+    fecharBuscaNegocio();
+    return;
+  }
+  box.innerHTML = '<div class="busca-negocio-loading">Buscando...</div>';
+  box.classList.add('open');
+  try {
+    const res = await fetch('/api/hub/negocios?q=' + encodeURIComponent(termo.trim()) + '&limit=8');
+    const data = await res.json();
+    renderBuscaNegocio(Array.isArray(data) ? data : [], termo.trim());
+  } catch (err) {
+    box.innerHTML = '<div class="busca-negocio-vazio">Erro ao buscar. Tente novamente.</div>';
+  }
+}
+
+const buscaNegocioInput = document.getElementById('busca-negocio-input');
+if (buscaNegocioInput) {
+  buscaNegocioInput.addEventListener('input', function() {
+    clearTimeout(buscaNegocioTimeout);
+    const val = this.value;
+    buscaNegocioTimeout = setTimeout(() => buscarNegocioHub(val), 320);
+  });
+  buscaNegocioInput.addEventListener('focus', function() {
+    if (this.value.trim().length >= 2) buscarNegocioHub(this.value);
+  });
+}
+
+document.addEventListener('click', function(e) {
+  if (!e.target.closest('.busca-negocio-wrapper')) fecharBuscaNegocio();
+});
+document.addEventListener('keydown', function(e) {
+  if (e.key === 'Escape') fecharBuscaNegocio();
+});
+</script>
+
+<!-- ══ GEOLOCALIZAÇÃO + DISTÂNCIA NOS CARDS ══ -->
+<script>
+let posicaoUsuario = null;
+
+function distanciaKm(lat1, lng1, lat2, lng2) {
+  const R = 6371;
+  const dLat = (lat2 - lat1) * Math.PI / 180;
+  const dLng = (lng2 - lng1) * Math.PI / 180;
+  const a = Math.sin(dLat / 2) ** 2 +
+            Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+            Math.sin(dLng / 2) ** 2;
+  return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+}
+
+function formatarDistancia(km) {
+  return km < 1 ? Math.round(km * 1000) + ' m' : km.toFixed(1).replace('.', ',') + ' km';
+}
+
+function atualizarDistanciasNosCards() {
+  if (!posicaoUsuario) return;
+  const cards = Array.from(document.querySelectorAll('#negsContainer .negocio-card[data-lat][data-lng]'));
+  cards.forEach(card => {
+    const lat = parseFloat(card.dataset.lat);
+    const lng = parseFloat(card.dataset.lng);
+    if (isNaN(lat) || isNaN(lng)) return;
+    const km = distanciaKm(posicaoUsuario.lat, posicaoUsuario.lng, lat, lng);
+    card.dataset.distKm = km;
+    const el = card.querySelector('.card-distancia');
+    if (el) {
+      el.querySelector('.dist-valor').textContent = formatarDistancia(km) + ' de você';
+      el.style.display = 'flex';
+    }
+  });
+  // Reordena o carrossel/grade pelos mais próximos primeiro
+  const container = document.getElementById('negsContainer');
+  if (container) {
+    cards
+      .filter(c => c.dataset.distKm !== undefined)
+      .sort((a, b) => parseFloat(a.dataset.distKm) - parseFloat(b.dataset.distKm))
+      .forEach(c => container.appendChild(c));
+  }
+}
+
+function ativarGeolocalizacao() {
+  const btn = document.getElementById('btn-geoloc');
+  if (!navigator.geolocation) {
+    alert('Seu navegador não suporta geolocalização.');
+    return;
+  }
+  btn.classList.add('carregando');
+  navigator.geolocation.getCurrentPosition(
+    (pos) => {
+      posicaoUsuario = { lat: pos.coords.latitude, lng: pos.coords.longitude };
+      btn.classList.remove('carregando');
+      btn.classList.add('ativo');
+      btn.querySelector('span').textContent = 'Perto de você';
+      atualizarDistanciasNosCards();
+    },
+    (err) => {
+      btn.classList.remove('carregando');
+      alert('Não foi possível obter sua localização. Verifique as permissões do navegador.');
+    },
+    { enableHighAccuracy: true, timeout: 10000, maximumAge: 300000 }
+  );
+}
+</script>
 
 <!-- ════════════════════════════════════════════
      MODAL CADASTRO DE NEGÓCIO — botão flutuante
@@ -658,8 +853,10 @@ function toggleMobileNav() {
         <label style="font-size:13px; font-weight:600; color:#333; display:block; margin-bottom:5px;">Categoria</label>
         <select name="categoria_slug" class="cad-input">
           <option value="">Selecione uma categoria</option>
-          {% for cat in categorias_disponiveis %}
+          {% for cat in categorias %}
+          {% if (negocios | selectattr('categoria_slug', 'equalto', cat.slug) | list | length) > 0 %}
           <option value="{{ cat.slug }}">{{ cat.nome }}</option>
+          {% endif %}
           {% endfor %}
         </select>
       </div>
