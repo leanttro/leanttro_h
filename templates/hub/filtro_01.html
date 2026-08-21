@@ -1,6 +1,8 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
+<script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-7617881885143728"
+     crossorigin="anonymous"></script>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
@@ -84,6 +86,11 @@ nav.desktop-nav ul li a {
     border-bottom: 3px solid transparent; transition: border-color 0.2s, background 0.2s;
 }
 nav.desktop-nav ul li a:hover { border-bottom-color: #fff; background: rgba(0,0,0,0.08); }
+nav.mobile-nav { display: none; width: 100%; }
+nav.mobile-nav.open { display: block; }
+nav.mobile-nav ul { list-style: none; display: flex; flex-direction: column; width: 100%; padding: 4px 0 14px; }
+nav.mobile-nav ul li a { color: #fff; font-weight: 600; font-size: 0.98em; padding: 12px 20px; display: block; border-radius: 8px; }
+nav.mobile-nav ul li a:hover, nav.mobile-nav ul li a:active { background: rgba(0,0,0,0.12); }
 
 /* ══ BANNER TOPO ══ */
 .banner-topo { background: var(--white); border-bottom: 1px solid var(--medium-gray); padding: 10px 20px; text-align: center; min-height: 110px; display: flex; align-items: center; justify-content: center; }
@@ -238,6 +245,14 @@ footer a:hover { text-decoration: underline; }
       {% endfor %}
       {% for cat in cats_ativas_nav[:5] %}
       <li><a href="/{{ cat.slug }}/">{{ cat.nome }}</a></li>
+      {% endfor %}
+    </ul>
+  </nav>
+  <nav class="mobile-nav" id="mobileNav">
+    <ul>
+      <li><a href="/" onclick="closeMobileNav()">Início</a></li>
+      {% for cat in cats_ativas_nav[:8] %}
+      <li><a href="/{{ cat.slug }}/" onclick="closeMobileNav()">{{ cat.nome }}</a></li>
       {% endfor %}
     </ul>
   </nav>
@@ -499,8 +514,18 @@ document.addEventListener('click', (e) => {
 
 <script>
 function toggleMobileNav() {
-  console.log('Mobile nav not implemented yet');
+  document.getElementById('mobileNav').classList.toggle('open');
 }
+function closeMobileNav() {
+  document.getElementById('mobileNav').classList.remove('open');
+}
+document.addEventListener('click', function(e) {
+  const nav = document.getElementById('mobileNav');
+  const btn = document.querySelector('.hamburger-btn');
+  if (nav && nav.classList.contains('open') && !nav.contains(e.target) && e.target !== btn) {
+    closeMobileNav();
+  }
+});
 </script>
 
 <script>
