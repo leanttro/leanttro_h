@@ -57,10 +57,109 @@
     <meta name="twitter:description" content="{{ seo_desc }}">
     <meta name="twitter:image"       content="{{ hub.banner_fundo_url or 'https://placehold.co/260x74/035105/def8c3?text=Loterica+Perto+de+Mim' }}">
 
-    <script type="application/ld+json">
-    {
-      "@context": "https://schema.org",
-      "@graph": [
+    {# ══ FAQPage: JSON-LD com perguntas dinâmicas conforme contexto ══ #}
+    {% set faq_items = [] %}
+    {% if categoria and bairro %}
+      {% set _ = faq_items.append({
+        "@type": "Question",
+        "name": "Quantas " ~ categoria.nome ~ " têm no bairro " ~ bairro ~ " em " ~ cidade ~ "?",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": total_negocios ~ " " ~ categoria.nome | lower ~ " estão cadastradas no bairro " ~ bairro ~ " em " ~ cidade ~ "."
+        }
+      }) %}
+      {% set _ = faq_items.append({
+        "@type": "Question",
+        "name": "Como encontrar " ~ categoria.nome | lower ~ " perto do bairro " ~ bairro ~ "?",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": "Use os filtros de bairro e tipo na página para ver as opções de " ~ categoria.nome | lower ~ " mais próximas do bairro " ~ bairro ~ "."
+        }
+      }) %}
+      {% set _ = faq_items.append({
+        "@type": "Question",
+        "name": "Existem outros bairros de " ~ cidade ~ " com " ~ categoria.nome | lower ~ "?",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": (bairros_disponiveis | length | string) ~ " bairro(s) de " ~ cidade ~ " têm " ~ categoria.nome | lower ~ " cadastrados. Use o filtro de bairro para ver cada um." if bairros_disponiveis else ("Use o filtro de bairro na página para ver outras regiões de " ~ cidade ~ " com " ~ categoria.nome | lower ~ ".")
+        }
+      }) %}
+    {% elif categoria %}
+      {% set _ = faq_items.append({
+        "@type": "Question",
+        "name": "Quantas " ~ categoria.nome ~ " têm em " ~ cidade ~ "?",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": total_negocios ~ " " ~ categoria.nome | lower ~ " estão cadastradas em " ~ cidade ~ "."
+        }
+      }) %}
+      {% set _ = faq_items.append({
+        "@type": "Question",
+        "name": "Em quais bairros de " ~ cidade ~ " têm " ~ categoria.nome | lower ~ "?",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": (bairros_disponiveis | length | string) ~ " bairro(s) de " ~ cidade ~ " têm " ~ categoria.nome | lower ~ " cadastradas. Use o filtro de bairro para ver a disponibilidade em cada região." if bairros_disponiveis else ("Use o filtro de bairro na página para ver onde " ~ categoria.nome | lower ~ " está disponível em " ~ cidade ~ ".")
+        }
+      }) %}
+      {% set _ = faq_items.append({
+        "@type": "Question",
+        "name": "Quantos tipos de " ~ categoria.nome | lower ~ " têm em " ~ cidade ~ "?",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": (categorias_disponiveis | length | string) ~ " tipo(s) estão cadastrados em " ~ cidade ~ "." if categorias_disponiveis else ("Confira os tipos disponíveis nos filtros da página de " ~ cidade ~ ".")
+        }
+      }) %}
+    {% elif bairro %}
+      {% set _ = faq_items.append({
+        "@type": "Question",
+        "name": "Quantas lotéricas têm no bairro " ~ bairro ~ " em " ~ cidade ~ "?",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": total_negocios ~ " lotérica(s) estão cadastrada(s) no bairro " ~ bairro ~ " em " ~ cidade ~ "."
+        }
+      }) %}
+      {% set _ = faq_items.append({
+        "@type": "Question",
+        "name": "Quais tipos de estabelecimento têm no bairro " ~ bairro ~ "?",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": (categorias_disponiveis | length | string) ~ " tipo(s) de estabelecimento estão cadastrados no bairro " ~ bairro ~ "." if categorias_disponiveis else ("Use o filtro de tipo na página para ver as opções disponíveis no bairro " ~ bairro ~ ".")
+        }
+      }) %}
+      {% set _ = faq_items.append({
+        "@type": "Question",
+        "name": "Existem lotéricas em outros bairros de " ~ cidade ~ "?",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": (bairros_disponiveis | length | string) ~ " bairro(s) de " ~ cidade ~ " têm lotéricas cadastradas. Use o filtro de bairro para ver cada um." if bairros_disponiveis else ("Use o filtro de bairro na página para ver outras regiões de " ~ cidade ~ ".")
+        }
+      }) %}
+    {% else %}
+      {% set _ = faq_items.append({
+        "@type": "Question",
+        "name": "Quantas lotéricas têm em " ~ cidade ~ "?",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": total_negocios ~ " lotérica(s) estão cadastrada(s) em " ~ cidade ~ "."
+        }
+      }) %}
+      {% set _ = faq_items.append({
+        "@type": "Question",
+        "name": "Em quantos bairros de " ~ cidade ~ " têm lotérica?",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": (bairros_disponiveis | length | string) ~ " bairro(s) de " ~ cidade ~ " têm lotéricas cadastradas." if bairros_disponiveis else ("Use o filtro de bairro na página para ver a distribuição por região em " ~ cidade ~ ".")
+        }
+      }) %}
+      {% set _ = faq_items.append({
+        "@type": "Question",
+        "name": "Como encontrar a lotérica mais perto de mim em " ~ cidade ~ "?",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": "Use o botão de geolocalização no topo da página para encontrar as lotéricas mais próximas de sua localização atual em " ~ cidade ~ "."
+        }
+      }) %}
+    {% endif %}
         {
           "@type": "BreadcrumbList",
           "itemListElement": [
@@ -78,6 +177,10 @@
           "description": "{{ seo_desc }}",
           "inLanguage": "pt-BR",
           "isPartOf": {"@id": "https://{{ request.host }}/#website"}
+        },
+        {
+          "@type": "FAQPage",
+          "mainEntity": {{ faq_items | tojson }}
         }
       ]
     }
@@ -414,9 +517,9 @@
             {% else %}Lotéricas em <em>{{ cidade }}</em>{% endif %}
         </h1>
         {% if bairro or categoria %}
-        <p class="hero-sub-filtro">Mostrando {% if categoria %}{{ categoria.nome | lower }}{% else %}todas as lotéricas{% endif %}{% if bairro %} no bairro {{ bairro }}{% endif %} em {{ cidade }}.</p>
+        <p class="hero-sub-filtro">{{ total_negocios }} resultado{{ 's' if total_negocios != 1 else '' }} — mostrando {% if categoria %}{{ categoria.nome | lower }}{% else %}todas as lotéricas{% endif %}{% if bairro %} no bairro {{ bairro }}{% endif %} em {{ cidade }}.</p>
         {% else %}
-        <p class="hero-sub-filtro">Encontre a lotérica mais perto de você e confira os resultados mais recentes em {{ cidade }}.</p>
+        <p class="hero-sub-filtro">{{ total_negocios }} lotérica{{ 's' if total_negocios != 1 else '' }} em {{ cidade }}. Encontre a mais perto de você.</p>
         {% endif %}
         <div class="hero-btns">
             <button class="btn-hero" onclick="toggleLocalizacao()"><i class="fas fa-location-arrow"></i> Ver lotérica perto de mim</button>
