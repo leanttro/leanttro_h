@@ -82,12 +82,31 @@ body > header {
 }
 nav.desktop-nav { width: 100%; }
 nav.desktop-nav ul { list-style: none; display: flex; align-items: center; justify-content: center; flex-wrap: wrap; }
+nav.desktop-nav ul li { position: relative; }
 nav.desktop-nav ul li a {
     color: #fff; font-weight: 600; font-size: 0.95em;
     padding: 12px 20px; display: block;
     border-bottom: 3px solid transparent; transition: border-color 0.2s, background 0.2s;
 }
 nav.desktop-nav ul li a:hover { border-bottom-color: #fff; background: rgba(0,0,0,0.08); }
+.nav-dropdown { 
+    display: none; position: absolute; top: 100%; left: 50%; transform: translateX(-50%); 
+    background: #fff; border-radius: 12px; box-shadow: 0 8px 32px rgba(0,0,0,0.15); 
+    min-width: 220px; max-height: 360px; overflow-y: auto; z-index: 999; padding: 8px 0; 
+}
+nav.desktop-nav ul li:hover .nav-dropdown { display: block; }
+.nav-dropdown a { 
+    display: block; padding: 10px 20px; color: var(--dark-gray) !important; 
+    font-size: 0.9em; font-weight: 500; border-bottom: none !important; 
+    background: none !important; transition: background 0.15s; white-space: nowrap; 
+}
+.nav-dropdown a:hover { background: var(--light) !important; color: var(--primary) !important; }
+
+nav.mobile-nav { display: none; width: 100%; }
+nav.mobile-nav.open { display: block; }
+nav.mobile-nav ul { list-style: none; display: flex; flex-direction: column; width: 100%; padding: 4px 0 14px; }
+nav.mobile-nav ul li a { color: #fff; font-weight: 600; font-size: 0.98em; padding: 12px 20px; display: block; border-radius: 8px; }
+nav.mobile-nav ul li a:hover, nav.mobile-nav ul li a:active { background: rgba(0,0,0,0.12); }
 
 /* ══ BANNER TOPO ══ */
 .banner-topo { background: var(--white); border-bottom: 1px solid var(--medium-gray); padding: 10px 20px; text-align: center; min-height: 110px; display: flex; align-items: center; justify-content: center; }
@@ -182,61 +201,7 @@ nav.desktop-nav ul li a:hover { border-bottom-color: #fff; background: rgba(0,0,
 .card-bairro { font-size: 0.88em; color: #6c757d; display: flex; align-items: center; gap: 5px; }
 .btn-ver { margin-top: auto; padding-top: 12px; display: inline-block; background: var(--primary); color: #fff; padding: 9px 18px; border-radius: 6px; font-size: 0.88em; font-weight: 700; text-align: center; transition: background 0.2s; }
 .negocio-card:hover .btn-ver { background: var(--dark); }
-.info-vazio { text-align: center; color: #6c757d; padding: 50px 0; font-size: 1.05em; }
-
-.negocios-grid.modo-carrossel { display: flex; grid-template-columns: none; overflow-x: auto; scroll-snap-type: x mandatory; gap: 18px; padding-bottom: 10px; -webkit-overflow-scrolling: touch; scrollbar-width: thin; }
-.negocios-grid.modo-carrossel .negocio-card { flex: 0 0 260px; scroll-snap-align: start; }
-.negocios-grid.modo-carrossel::-webkit-scrollbar { height: 6px; }
-.negocios-grid.modo-carrossel::-webkit-scrollbar-thumb { background: var(--primary); border-radius: 10px; }
-.card-distancia { font-size: 0.82em; color: var(--primary); font-weight: 700; display: flex; align-items: center; gap: 5px; }
-
-/* ══ BUSCA DE NEGÓCIO + GEOLOCALIZAÇÃO ══ */
-.negocios-controls-row { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; max-width: 720px; margin: 0 auto 28px; }
-.busca-negocio-wrapper { position: relative; flex: 1 1 260px; min-width: 220px; }
-.busca-negocio-wrapper > i { position: absolute; left: 14px; top: 50%; transform: translateY(-50%); color: #adb5bd; }
-.busca-negocio-input { width: 100%; padding: 12px 14px 12px 38px; border: 2px solid var(--medium-gray); border-radius: 10px; font-family: inherit; font-size: 0.95em; outline: none; transition: border-color 0.2s; }
-.busca-negocio-input:focus { border-color: var(--primary); }
-.busca-negocio-resultados { display: none; position: absolute; top: calc(100% + 8px); left: 0; right: 0; background: var(--white); border: 1px solid var(--medium-gray); border-radius: 12px; box-shadow: 0 14px 38px var(--shadow-medium); max-height: 320px; overflow-y: auto; z-index: 25; }
-.busca-negocio-resultados.open { display: block; }
-.busca-negocio-item { display: flex; align-items: center; gap: 10px; padding: 10px 14px; cursor: pointer; text-decoration: none; color: inherit; border-bottom: 1px solid var(--light-gray); }
-.busca-negocio-item:last-child { border-bottom: none; }
-.busca-negocio-item:hover { background: var(--light); }
-.busca-negocio-item img { width: 36px; height: 36px; border-radius: 6px; object-fit: cover; flex-shrink: 0; background: var(--light-gray); }
-.busca-negocio-item strong { font-size: 0.9em; color: var(--dark-gray); display: block; }
-.busca-negocio-item span { font-size: 0.78em; color: #6c757d; }
-.busca-negocio-vazio, .busca-negocio-loading { padding: 14px; text-align: center; color: #adb5bd; font-size: 0.85em; }
-.btn-geoloc { display: inline-flex; align-items: center; gap: 8px; background: var(--white); border: 2px solid var(--medium-gray); color: var(--text-color); padding: 11px 18px; border-radius: 10px; font-family: inherit; font-size: 0.9em; font-weight: 600; cursor: pointer; transition: all 0.2s; white-space: nowrap; flex-shrink: 0; }
-.btn-geoloc:hover { border-color: var(--primary); color: var(--primary); }
-.btn-geoloc.ativo { background: var(--primary); border-color: var(--primary); color: #fff; }
-.btn-geoloc.carregando { opacity: 0.7; cursor: wait; }
-
-/* ══ BANNER MEIO ══ */
-.banner-meio { background: var(--light); padding: 28px 20px; text-align: center; border-top: 1px solid #ffe0b2; border-bottom: 1px solid #ffe0b2; min-height: 150px; display: flex; align-items: center; justify-content: center; }
-.banner-meio .banner-rotativo img { max-height: 120px; }
-
-/* ══ CATEGORIAS ══ */
-.section { padding: 62px 0; }
-.section-title { text-align: center; font-size: 2em; font-weight: 800; color: var(--dark-gray); margin-bottom: 10px; }
-.section-subtitle { text-align: center; color: #6c757d; margin-bottom: 40px; font-size: 1.05em; }
-.cats-header-row { display: flex; align-items: center; justify-content: space-between; gap: 16px; flex-wrap: wrap; }
-.cats-view-toggle { display: flex; gap: 6px; background: #f0f0f0; padding: 4px; border-radius: 10px; flex-shrink: 0; }
-.cats-view-toggle button { border: none; background: transparent; width: 38px; height: 34px; border-radius: 7px; display: flex; align-items: center; justify-content: center; cursor: pointer; color: var(--dark-gray); font-size: 15px; transition: background 0.2s, color 0.2s; }
-.cats-view-toggle button.ativo { background: var(--primary); color: #fff; }
-
-.categorias-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 20px; }
-.categorias-grid.modo-carrossel { display: flex; grid-template-columns: none; overflow-x: auto; scroll-snap-type: x mandatory; gap: 16px; padding-bottom: 10px; -webkit-overflow-scrolling: touch; scrollbar-width: thin; }
-.categorias-grid.modo-carrossel .categoria-card { flex: 0 0 150px; scroll-snap-align: start; }
-.categorias-grid.modo-carrossel::-webkit-scrollbar { height: 6px; }
-.categorias-grid.modo-carrossel::-webkit-scrollbar-thumb { background: var(--primary); border-radius: 10px; }
-
-.categoria-card { background: var(--white); border-radius: 14px; overflow: hidden; box-shadow: 0 4px 12px var(--shadow-light); transition: transform 0.3s, box-shadow 0.3s; display: flex; flex-direction: column; align-items: center; padding-bottom: 20px; text-align: center; cursor: pointer; text-decoration: none; color: inherit; }
-.categoria-card:hover { transform: translateY(-6px); box-shadow: 0 10px 26px var(--shadow-medium); }
-.cat-photo { width: 100%; aspect-ratio: 1/1; overflow: hidden; background: #eee; }
-.cat-photo img { width: 100%; height: 100%; object-fit: cover; transition: transform 0.4s; }
-.categoria-card:hover .cat-photo img { transform: scale(1.07); }
-.categoria-card h3 { font-size: 1.05em; font-weight: 700; color: var(--dark-gray); margin: 14px 12px 4px; }
-.categoria-card .btn-ver { margin-top: 10px; background: var(--primary); color: #fff; padding: 8px 18px; border-radius: 6px; font-weight: 600; font-size: 0.88em; transition: background 0.3s; display: inline-block; }
-.categoria-card:hover .btn-ver { background: var(--dark); }
+.info-vazio { text-align: center; color: #6c757d; padding: 60px 20px; font-size: 1.05em; }
 
 /* ══ FOOTER ══ */
 footer { background: #111; color: #999; text-align: center; padding: 32px 20px; font-size: 0.88em; }
@@ -250,22 +215,12 @@ footer a:hover { text-decoration: underline; }
     body > header { padding: 16px 60px 16px 20px; flex-direction: row; justify-content: center; }
     .header-logo img { height: 96px; }
     nav.desktop-nav { display: none; }
-    nav.desktop-nav.mobile-aberto {
-        display: block; position: absolute; top: 100%; left: 0; right: 0;
-        background: var(--primary); box-shadow: 0 8px 20px rgba(0,0,0,0.2);
-        z-index: 60;
-    }
-    nav.desktop-nav.mobile-aberto ul { flex-direction: column; align-items: stretch; }
-    nav.desktop-nav.mobile-aberto ul li a { text-align: center; border-bottom: 1px solid rgba(255,255,255,0.15); }
     .hamburger-btn { display: block; top: 50%; transform: translateY(-50%); }
     .hero-section { min-height: 440px; }
     .hero-section h1 { font-size: 2.1em; }
     .hero-section .hero-sub { font-size: 1em; }
-    .section { padding: 44px 0; }
-    .section-title { font-size: 1.6em; }
     .busca-section { padding: 36px 0; }
     .banner-rotativo img { max-height: 120px !important; }
-    .banner-meio .banner-rotativo img { max-height: 120px !important; }
 }
 </style>
 </head>
@@ -282,16 +237,39 @@ footer a:hover { text-decoration: underline; }
   <nav class="desktop-nav">
     <ul>
       <li><a href="/">Início</a></li>
-      {% set cats_ativas_nav = [] %}
-      {% for cat in categorias %}
-        {% if (negocios | selectattr('categoria_slug', 'equalto', cat.slug) | list | length) > 0 %}
-          {% set _ = cats_ativas_nav.append(cat) %}
-        {% endif %}
-      {% endfor %}
-      {% for cat in cats_ativas_nav[:5] %}
-      <li><a href="/{{ cat.slug }}/">{{ cat.nome }}</a></li>
-      {% endfor %}
-      <li><a href="/blog/">Blog</a></li>
+      <li>
+        <a href="#categorias">Categorias ▾</a>
+        <div class="nav-dropdown">
+          {% set cats_ativas_nav = [] %}
+          {% for cat in categorias %}
+            {% if (negocios | selectattr('categoria_slug', 'equalto', cat.slug) | list | length) > 0 %}
+              {% set _ = cats_ativas_nav.append(cat) %}
+            {% endif %}
+          {% endfor %}
+          {% for cat in cats_ativas_nav %}
+          <a href="/{{ cat.slug }}/">{{ cat.nome }}</a>
+          {% endfor %}
+        </div>
+      </li>
+      <li>
+        <a href="#cidades">Cidades ▾</a>
+        <div class="nav-dropdown">
+          {% set cidades_unicas = negocios | map(attribute='cidade') | unique | list | sort %}
+          {% for c in cidades_unicas[:10] %}
+          <a href="/cidade/{{ c | slugify }}/">{{ c }}</a>
+          {% endfor %}
+          {% if cidades_unicas | length > 10 %}
+          <a href="/cidades/">Ver todas as cidades</a>
+          {% endif %}
+        </div>
+      </li>
+    </ul>
+  </nav>
+  <nav class="mobile-nav" id="mobileNav">
+    <ul>
+      <li><a href="/" onclick="closeMobileNav()">Início</a></li>
+      <li><a href="#categorias" onclick="closeMobileNav()">Categorias</a></li>
+      <li><a href="#cidades" onclick="closeMobileNav()">Cidades</a></li>
     </ul>
   </nav>
 </header>
@@ -311,35 +289,23 @@ footer a:hover { text-decoration: underline; }
 
 <!-- ══ HERO ══ -->
 <section class="hero-section">
-  <div class="hero-inner">
-    <h1>{{ hub.nome or 'Bem-vindo' }} <em>Perto de Você</em></h1>
-    <p class="hero-sub">{{ hub.descricao or 'Descubra os melhores negócios perto de você' }}</p>
-    <div class="hero-btns">
-      <button class="btn-hero" onclick="document.getElementById('btn-geoloc').click()">
-        <i class="fas fa-location-crosshairs"></i> Ativar localização
-      </button>
-    </div>
+  <div class="hero-inner container">
+    <h1>{{ hub.nome or 'Hub' }}</h1>
+    <p class="hero-sub">Encontre os melhores negócios perto de você</p>
     <div class="hero-stats">
       <div class="hero-stat">
-        <div class="hero-stat-num">{{ total_negocios if total_negocios is not none else (negocios|length) }}</div>
-        <div class="hero-stat-label">Negócios</div>
+        <span class="hero-stat-num">{{ total_negs }}</span>
+        <span class="hero-stat-label">negócios</span>
       </div>
       <div class="hero-stat-divider"></div>
       <div class="hero-stat">
-        <div class="hero-stat-num">{{ total_cats }}</div>
-        <div class="hero-stat-label">Categorias</div>
+        <span class="hero-stat-num">{{ (negocios | map(attribute='cidade') | unique | list) | length }}</span>
+        <span class="hero-stat-label">cidades</span>
       </div>
-      {% if total_cidades and total_cidades > 1 %}
       <div class="hero-stat-divider"></div>
       <div class="hero-stat">
-        <div class="hero-stat-num">{{ total_cidades }}</div>
-        <div class="hero-stat-label">Cidades</div>
-      </div>
-      {% endif %}
-      <div class="hero-stat-divider"></div>
-      <div class="hero-stat">
-        <div class="hero-stat-num">{{ total_bairros }}</div>
-        <div class="hero-stat-label">Bairros</div>
+        <span class="hero-stat-num">{{ total_cats }}</span>
+        <span class="hero-stat-label">categorias</span>
       </div>
     </div>
   </div>
@@ -349,809 +315,72 @@ footer a:hover { text-decoration: underline; }
 <section class="busca-section">
   <div class="container">
     <div class="busca-topo">
-      <h2>Explorar Categorias</h2>
-      <p>Escolha uma categoria para ver os negócios disponíveis</p>
+      <h2>Encontre por categoria</h2>
+      <p>Escolha uma categoria para explorar</p>
     </div>
-
-    <div class="negocios-controls-row">
-      <div class="busca-negocio-wrapper">
-        <i class="fas fa-search"></i>
-        <input type="text" id="busca-negocio-input" class="busca-negocio-input"
-               placeholder="Buscar negócio pelo nome..." autocomplete="off">
-        <div id="busca-negocio-resultados" class="busca-negocio-resultados"></div>
-      </div>
-      <button type="button" id="btn-geoloc" class="btn-geoloc" onclick="ativarGeolocalizacao()">
-        <i class="fas fa-location-crosshairs"></i> <span>Perto de mim</span>
+    <div class="categoria-slicer" id="categoria-slicer">
+      <button type="button" class="slicer-toggle" id="slicer-toggle" onclick="toggleCategoriaSlicer()" aria-haspopup="listbox" aria-expanded="false" aria-controls="filtros-categoria">
+        <span class="slicer-label"><i class="fas fa-filter"></i> <strong id="slicer-label-text">Selecione uma categoria</strong></span>
+        <i class="fas fa-chevron-down slicer-chevron" aria-hidden="true"></i>
       </button>
-      <div class="cats-view-toggle" id="negToggleWrap">
-        <button type="button" id="btnCarrosselNeg" class="ativo" onclick="setNegsView('carrossel')" aria-label="Ver negócios em carrossel">
-          <i class="fas fa-arrows-left-right"></i>
-        </button>
-        <button type="button" id="btnGradeNeg" onclick="setNegsView('grade')" aria-label="Ver negócios em grade">
-          <i class="fas fa-table-cells"></i>
-        </button>
-      </div>
+      <div class="slicer-panel" id="filtros-categoria" role="listbox"></div>
+      <div class="slicer-backdrop" id="slicer-backdrop" onclick="fecharCategoriaSlicer()"></div>
     </div>
-
-    <div class="categoria-slicer">
-      <button class="slicer-toggle" onclick="toggleSlicer()">
-        <span class="slicer-label"><i class="fas fa-filter"></i> <strong>Selecione uma categoria</strong></span>
-        <i class="fas fa-chevron-down slicer-chevron"></i>
-      </button>
-      <div class="slicer-backdrop" onclick="closeSlicer()"></div>
-      <div class="slicer-panel" id="slicerPanel">
-        {% for cat in categorias %}
-        {% if (negocios | selectattr('categoria_slug', 'equalto', cat.slug) | list | length) > 0 %}
-        <a href="/{{ cat.slug }}/" class="chip-cat">{{ cat.nome }}</a>
-        {% endif %}
-        {% endfor %}
-      </div>
-    </div>
-
-    {% if negocios %}
-    <div class="negocios-grid modo-carrossel" id="negsContainer">
-      {% for n in negocios[:12] %}
-      <a href="/{{ n.categoria_slug }}/{{ n.slug }}/" class="negocio-card"
-         {% if n.lat and n.lng %}data-lat="{{ n.lat }}" data-lng="{{ n.lng }}"{% endif %}>
-        <div class="card-foto">
-          {% if n.foto_url %}
-          <img src="{{ n.foto_url }}" alt="{{ n.nome }}" loading="lazy" decoding="async">
-          {% elif hub.logo_url %}
-          <div class="card-foto-fallback tem-logo"></div>
-          {% else %}
-          <div class="card-foto-fallback"><i class="fas fa-store"></i></div>
-          {% endif %}
-          <div class="badge-cat">{{ n.categoria_nome }}</div>
-        </div>
-        <div class="card-body">
-          <h3>{{ n.nome }}</h3>
-          {% if n.bairro %}<div class="card-bairro"><i class="fas fa-map-marker-alt"></i> {{ n.bairro }}{% if n.cidade %} — {{ n.cidade }}{% endif %}</div>{% endif %}
-          <div class="card-distancia" style="display:none;"><i class="fas fa-location-arrow"></i> <span class="dist-valor"></span></div>
-          <span class="btn-ver">Ver detalhes</span>
-        </div>
-      </a>
-      {% endfor %}
-    </div>
-    {% else %}
-    <div class="info-vazio">Nenhum negócio cadastrado ainda</div>
-    {% endif %}
   </div>
 </section>
-
-<!-- ══ BANNER MEIO ══ -->
-{% if anuncio_meio %}
-<div class="banner-meio">
-  {% if anuncio_meio.url %}
-    <a href="{{ anuncio_meio.url }}" target="_blank">
-      <img class="banner-rotativo ativo" src="{{ anuncio_meio.imagem_url }}" alt="Anúncio">
-    </a>
-  {% endif %}
-</div>
-{% endif %}
-
-<!-- ══ CATEGORIAS ══ -->
-<section class="section container">
-  <div class="cats-header-row">
-    <div>
-      <h2 class="section-title">Categorias Disponíveis</h2>
-      <p class="section-subtitle">Encontre tudo que você precisa</p>
-    </div>
-    <div class="cats-view-toggle">
-      <button type="button" id="btnCarrossel" class="ativo" onclick="setCatsView('carrossel')" aria-label="Ver em carrossel">
-        <i class="fas fa-arrows-left-right"></i>
-      </button>
-      <button type="button" id="btnGrade" onclick="setCatsView('grade')" aria-label="Ver em grade">
-        <i class="fas fa-table-cells"></i>
-      </button>
-    </div>
-  </div>
-
-  {% if categorias %}
-  <div class="categorias-grid modo-carrossel" id="catsContainer">
-    {% for cat in categorias %}
-    {% set total = negocios | selectattr('categoria_slug', 'equalto', cat.slug) | list | length %}
-    {% if total > 0 %}
-    <a href="/{{ cat.slug }}/" class="categoria-card">
-      <div class="cat-photo">
-        <i class="fas fa-location-dot" style="font-size: 3em; color: var(--primary); display: flex; align-items: center; justify-content: center; width: 100%; height: 100%;"></i>
-      </div>
-      <h3>{{ cat.nome }}</h3>
-      <span class="btn-ver">Explorar</span>
-    </a>
-    {% endif %}
-    {% endfor %}
-  </div>
-  {% else %}
-  <div class="info-vazio">Nenhuma categoria disponível</div>
-  {% endif %}
-</section>
-
-<script>
-function setCatsView(modo) {
-  const container = document.getElementById('catsContainer');
-  const btnCarrossel = document.getElementById('btnCarrossel');
-  const btnGrade = document.getElementById('btnGrade');
-  if (!container) return;
-  if (modo === 'grade') {
-    container.classList.remove('modo-carrossel');
-    btnGrade.classList.add('ativo');
-    btnCarrossel.classList.remove('ativo');
-  } else {
-    container.classList.add('modo-carrossel');
-    btnCarrossel.classList.add('ativo');
-    btnGrade.classList.remove('ativo');
-  }
-  localStorage.setItem('catsView', modo);
-}
-(function() {
-  const saved = localStorage.getItem('catsView');
-  if (saved === 'grade') setCatsView('grade');
-})();
-
-function setNegsView(modo) {
-  const container = document.getElementById('negsContainer');
-  const btnCarrossel = document.getElementById('btnCarrosselNeg');
-  const btnGrade = document.getElementById('btnGradeNeg');
-  if (!container) return;
-  if (modo === 'grade') {
-    container.classList.remove('modo-carrossel');
-    btnGrade.classList.add('ativo');
-    btnCarrossel.classList.remove('ativo');
-  } else {
-    container.classList.add('modo-carrossel');
-    btnCarrossel.classList.add('ativo');
-    btnGrade.classList.remove('ativo');
-  }
-  localStorage.setItem('negsView', modo);
-}
-(function() {
-  const saved = localStorage.getItem('negsView');
-  if (saved === 'grade') setNegsView('grade');
-})();
-</script>
 
 <!-- ══ FOOTER ══ -->
 <footer>
   <div class="footer-logo">
     {% if hub.logo_url %}<img src="{{ hub.logo_url }}" alt="{{ hub.nome or 'Hub' }}">{% endif %}
   </div>
-  <p>&copy; {{ hub.nome or 'Hub' }} — todos os direitos reservados.</p>
+  <p>&copy; {{ now.year }} {{ hub.nome or 'Hub' }}. Todos os direitos reservados.</p>
 </footer>
 
-<!-- ══ WIDGET TRADUÇÃO ══ -->
-<button id="translate-btn" title="Traduzir página" style="position:fixed;bottom:24px;right:24px;background:var(--primary);color:#fff;border:none;border-radius:50%;width:52px;height:52px;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:20px;box-shadow:0 4px 20px rgba(0,0,0,0.2);z-index:999;transition:transform 0.2s">
-  <i class="fas fa-language"></i>
-</button>
-
-<div id="translate-drawer" style="position:fixed;bottom:70px;right:20px;z-index:1000;background:#fff;border-radius:16px;box-shadow:0 8px 40px rgba(0,0,0,0.2);width:280px;max-height:420px;display:none;flex-direction:column;overflow:hidden">
-  <div style="padding:12px 14px;border-bottom:1px solid #e0e0e0;display:flex;align-items:center;gap:8px">
-    <input id="td-search" type="text" placeholder="Buscar idioma..." style="flex:1;border:1.5px solid #e0e0e0;border-radius:8px;padding:8px 12px;font-size:13px;outline:none" onkeyup="filterLangs(this.value)">
-    <button id="td-close" style="background:none;border:none;color:#aaa;font-size:18px;cursor:pointer;padding:2px 4px" onclick="toggleTranslateDrawer()">✕</button>
-  </div>
-  <div id="td-list" style="overflow-y:auto;flex:1;padding:6px 0"></div>
-</div>
-
-<div id="google_translate_element" style="display:none"></div>
-<script src="//translate.google.com/translate_a/element.js?cb=googleTranslateElementInit"></script>
-
-<style>
-  #translate-btn:hover { transform: scale(1.1); }
-  #translate-drawer { display: none !important; }
-  #translate-drawer.open { display: flex !important; }
-  .td-item { padding: 9px 18px; font-size: 14px; cursor: pointer; color: #495057; transition: background 0.1s; display: flex; align-items: center; gap: 10px; }
-  .td-item:hover { background: #fff3e0; color: var(--primary); }
-  .td-item.active { color: var(--primary); font-weight: 600; background: #fff3e0; }
-  .td-item .flag { font-size: 18px; flex-shrink: 0; }
-  .td-empty { padding: 24px; text-align: center; color: #bbb; font-size: 13px; }
-</style>
-
 <script>
-const LANGS = [
-  {code:'pt',name:'Português',flag:'🇧🇷'},{code:'en',name:'English',flag:'🇺🇸'},{code:'es',name:'Español',flag:'🇪🇸'},
-  {code:'fr',name:'Français',flag:'🇫🇷'},{code:'de',name:'Deutsch',flag:'🇩🇪'},{code:'it',name:'Italiano',flag:'🇮🇹'},
-  {code:'ja',name:'日本語',flag:'🇯🇵'},{code:'zh-CN',name:'中文',flag:'🇨🇳'},{code:'ru',name:'Русский',flag:'🇷🇺'},
-  {code:'ko',name:'한국어',flag:'🇰🇷'},{code:'ar',name:'العربية',flag:'🇸🇦'},{code:'hi',name:'हिन्दी',flag:'🇮🇳'}
-];
-
-let currentLang = 'pt';
-let drawerOpen = false;
-
-function googleTranslateElementInit() {
-  new google.translate.TranslateElement({pageLanguage: 'pt', includedLanguages: 'pt,en,es,fr,de,it,ja,zh-CN,ru,ko,ar,hi'}, 'google_translate_element');
+function toggleMobileNav() {
+  const nav = document.getElementById('mobileNav');
+  nav.classList.toggle('open');
 }
 
-function renderLangs(list) {
-  const el = document.getElementById('td-list');
-  if (!list.length) {
-    el.innerHTML = '<div class="td-empty">Nenhum idioma encontrado</div>';
-    return;
-  }
-  el.innerHTML = list.map(l => `<div class="td-item ${l.code === currentLang ? 'active' : ''}" onclick="selectLang('${l.code}','${l.name}')"><span class="flag">${l.flag}</span> ${l.name}</div>`).join('');
+function closeMobileNav() {
+  document.getElementById('mobileNav').classList.remove('open');
 }
 
-function filterLangs(q) {
-  const filtered = LANGS.filter(l => l.name.toLowerCase().includes(q.toLowerCase()));
-  renderLangs(filtered);
-}
-
-function selectLang(code, name) {
-  currentLang = code;
-  drawerOpen = false;
-  document.getElementById('translate-drawer').classList.remove('open');
-  const btn = document.getElementById('translate-btn');
-
-  if (code === 'pt') {
-    btn.innerHTML = '<i class="fas fa-language"></i>';
-    btn.title = 'Traduzir página';
-    const sel = document.querySelector('.goog-te-combo');
-    if (sel) { sel.value = ''; sel.dispatchEvent(new Event('change')); }
-    return;
-  }
-
-  btn.innerHTML = `<span style="font-size:22px;line-height:1">${LANGS.find(l => l.code === code)?.flag || ''}</span>`;
-  btn.title = 'Traduzido para ' + name;
-
-  const tryTranslate = (attempts) => {
-    const sel = document.querySelector('.goog-te-combo');
-    if (sel) { sel.value = code; sel.dispatchEvent(new Event('change')); }
-    else if (attempts > 0) setTimeout(() => tryTranslate(attempts - 1), 300);
-  };
-  tryTranslate(10);
-}
-
-function toggleTranslateDrawer() {
-  drawerOpen = !drawerOpen;
-  const drawer = document.getElementById('translate-drawer');
-  if (drawerOpen) {
-    drawer.classList.add('open');
-    renderLangs(LANGS);
-    document.getElementById('td-search').value = '';
-    setTimeout(() => document.getElementById('td-search').focus(), 50);
-  } else {
-    drawer.classList.remove('open');
-  }
-}
-
-document.getElementById('translate-btn').addEventListener('click', toggleTranslateDrawer);
-document.addEventListener('click', (e) => {
-  if (drawerOpen && !document.getElementById('translate-drawer').contains(e.target) && !document.getElementById('translate-btn').contains(e.target)) {
-    drawerOpen = false;
-    document.getElementById('translate-drawer').classList.remove('open');
-  }
-});
-</script>
-
-<script>
-function toggleSlicer() {
-  const toggle = document.querySelector('.slicer-toggle');
-  const panel = document.querySelector('.slicer-panel');
-  const backdrop = document.querySelector('.slicer-backdrop');
+function toggleCategoriaSlicer() {
+  const toggle = document.getElementById('slicer-toggle');
+  const panel = document.getElementById('filtros-categoria');
+  const backdrop = document.getElementById('slicer-backdrop');
+  
   toggle.classList.toggle('open');
   panel.classList.toggle('open');
   backdrop.classList.toggle('open');
 }
 
-function closeSlicer() {
-  document.querySelector('.slicer-toggle').classList.remove('open');
-  document.querySelector('.slicer-panel').classList.remove('open');
-  document.querySelector('.slicer-backdrop').classList.remove('open');
+function fecharCategoriaSlicer() {
+  document.getElementById('slicer-toggle').classList.remove('open');
+  document.getElementById('filtros-categoria').classList.remove('open');
+  document.getElementById('slicer-backdrop').classList.remove('open');
 }
 
-function toggleMobileNav() {
-  const nav = document.querySelector('nav.desktop-nav');
-  if (!nav) return;
-  nav.classList.toggle('mobile-aberto');
-}
-
-document.addEventListener('click', function(e) {
-  const nav = document.querySelector('nav.desktop-nav');
-  const btn = document.querySelector('.hamburger-btn');
-  if (nav && nav.classList.contains('mobile-aberto') && !nav.contains(e.target) && !btn.contains(e.target)) {
-    nav.classList.remove('mobile-aberto');
-  }
-});
-
-document.querySelector('.slicer-backdrop').addEventListener('click', closeSlicer);
-document.addEventListener('click', function(e) {
-  if (!e.target.closest('.categoria-slicer')) {
-    closeSlicer();
-  }
-});
-</script>
-
-<!-- ══ BUSCA DE NEGÓCIO (qualquer negócio do hub) ══ -->
-<script>
-const HUB_LOGO_URL = {{ (hub.logo_url or '') | tojson }};
-let buscaNegocioTimeout = null;
-
-function fecharBuscaNegocio() {
-  const box = document.getElementById('busca-negocio-resultados');
-  box.classList.remove('open');
-  box.innerHTML = '';
-}
-
-function renderBuscaNegocio(lista, termo) {
-  const box = document.getElementById('busca-negocio-resultados');
-  if (!lista.length) {
-    box.innerHTML = '<div class="busca-negocio-vazio">Nenhum negócio encontrado para "' + termo + '"</div>';
-    box.classList.add('open');
-    return;
-  }
-  box.innerHTML = lista.slice(0, 8).map(n => `
-    <a class="busca-negocio-item" href="/${n.categoria_slug}/${n.slug}/">
-      <img src="${n.foto_url || HUB_LOGO_URL}" alt="" style="${n.foto_url ? '' : 'object-fit:contain;padding:4px;background:var(--light);'}">
-      <div>
-        <strong>${n.nome}</strong>
-        <span>${[n.bairro, n.cidade].filter(Boolean).join(' — ') || (n.categoria_nome || '')}</span>
-      </div>
-    </a>
-  `).join('');
-  box.classList.add('open');
-}
-
-async function buscarNegocioHub(termo) {
-  const box = document.getElementById('busca-negocio-resultados');
-  if (!termo || termo.trim().length < 2) {
-    fecharBuscaNegocio();
-    return;
-  }
-  box.innerHTML = '<div class="busca-negocio-loading">Buscando...</div>';
-  box.classList.add('open');
-  try {
-    const res = await fetch('/api/hub/negocios?q=' + encodeURIComponent(termo.trim()) + '&limit=8');
-    const data = await res.json();
-    renderBuscaNegocio(Array.isArray(data) ? data : [], termo.trim());
-  } catch (err) {
-    box.innerHTML = '<div class="busca-negocio-vazio">Erro ao buscar. Tente novamente.</div>';
-  }
-}
-
-const buscaNegocioInput = document.getElementById('busca-negocio-input');
-if (buscaNegocioInput) {
-  buscaNegocioInput.addEventListener('input', function() {
-    clearTimeout(buscaNegocioTimeout);
-    const val = this.value;
-    buscaNegocioTimeout = setTimeout(() => buscarNegocioHub(val), 320);
-  });
-  buscaNegocioInput.addEventListener('focus', function() {
-    if (this.value.trim().length >= 2) buscarNegocioHub(this.value);
-  });
-}
-
-document.addEventListener('click', function(e) {
-  if (!e.target.closest('.busca-negocio-wrapper')) fecharBuscaNegocio();
-});
-document.addEventListener('keydown', function(e) {
-  if (e.key === 'Escape') fecharBuscaNegocio();
-});
-</script>
-
-<!-- ══ GEOLOCALIZAÇÃO + DISTÂNCIA NOS CARDS ══ -->
-<script>
-let posicaoUsuario = null;
-
-function distanciaKm(lat1, lng1, lat2, lng2) {
-  const R = 6371;
-  const dLat = (lat2 - lat1) * Math.PI / 180;
-  const dLng = (lng2 - lng1) * Math.PI / 180;
-  const a = Math.sin(dLat / 2) ** 2 +
-            Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
-            Math.sin(dLng / 2) ** 2;
-  return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-}
-
-function formatarDistancia(km) {
-  return km < 1 ? Math.round(km * 1000) + ' m' : km.toFixed(1).replace('.', ',') + ' km';
-}
-
-function atualizarDistanciasNosCards() {
-  if (!posicaoUsuario) return;
-  const cards = Array.from(document.querySelectorAll('#negsContainer .negocio-card[data-lat][data-lng]'));
-  cards.forEach(card => {
-    const lat = parseFloat(card.dataset.lat);
-    const lng = parseFloat(card.dataset.lng);
-    if (isNaN(lat) || isNaN(lng)) return;
-    const km = distanciaKm(posicaoUsuario.lat, posicaoUsuario.lng, lat, lng);
-    card.dataset.distKm = km;
-    const el = card.querySelector('.card-distancia');
-    if (el) {
-      el.querySelector('.dist-valor').textContent = formatarDistancia(km) + ' de você';
-      el.style.display = 'flex';
-    }
-  });
-  // Reordena o carrossel/grade pelos mais próximos primeiro
-  const container = document.getElementById('negsContainer');
-  if (container) {
-    cards
-      .filter(c => c.dataset.distKm !== undefined)
-      .sort((a, b) => parseFloat(a.dataset.distKm) - parseFloat(b.dataset.distKm))
-      .forEach(c => container.appendChild(c));
-  }
-}
-
-function ativarGeolocalizacao() {
-  const btn = document.getElementById('btn-geoloc');
-  if (!navigator.geolocation) {
-    alert('Seu navegador não suporta geolocalização.');
-    return;
-  }
-  btn.classList.add('carregando');
-  navigator.geolocation.getCurrentPosition(
-    (pos) => {
-      posicaoUsuario = { lat: pos.coords.latitude, lng: pos.coords.longitude };
-      btn.classList.remove('carregando');
-      btn.classList.add('ativo');
-      btn.querySelector('span').textContent = 'Perto de você';
-      atualizarDistanciasNosCards();
-    },
-    (err) => {
-      btn.classList.remove('carregando');
-      alert('Não foi possível obter sua localização. Verifique as permissões do navegador.');
-    },
-    { enableHighAccuracy: true, timeout: 10000, maximumAge: 300000 }
+// Carregar categorias no slicer
+document.addEventListener('DOMContentLoaded', function() {
+  const categorias = {{ categorias | tojson }};
+  const negocios = {{ negocios | tojson }};
+  const panel = document.getElementById('filtros-categoria');
+  
+  const cats_com_negocios = categorias.filter(cat => 
+    negocios.some(neg => neg.categoria_slug === cat.slug)
   );
-}
-</script>
-
-<!-- ════════════════════════════════════════════
-     MODAL CADASTRO DE NEGÓCIO — botão flutuante
-     ════════════════════════════════════════════ -->
-
-<!-- Botão flutuante -->
-<button
-  id="btn-cadastrar"
-  onclick="document.getElementById('modal-cadastro').classList.remove('modal-oculto')"
-  style="
-    position: fixed; bottom: 84px; right: 24px; z-index: 8900;
-    background: var(--primary); color: #fff; border: none;
-    border-radius: 50px; padding: 13px 20px;
-    font-size: 14px; font-weight: 700; cursor: pointer;
-    box-shadow: 0 4px 16px rgba(0,0,0,.25);
-    display: flex; align-items: center; gap: 8px;
-    transition: transform .15s, box-shadow .15s;
-  "
-  onmouseover="this.style.transform='scale(1.05)'"
-  onmouseout="this.style.transform='scale(1)'"
->
-  <svg width="17" height="17" fill="none" stroke="currentColor" stroke-width="2.5"
-       viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg>
-  Cadastre seu negócio
-</button>
-
-<!-- Overlay + Modal -->
-<div id="modal-cadastro" class="modal-oculto" style="
-  position: fixed; inset: 0; z-index: 9999;
-  background: rgba(0,0,0,.55); backdrop-filter: blur(3px);
-  display: flex; align-items: center; justify-content: center; padding: 16px;
-">
-  <div style="
-    background: #fff; border-radius: 16px;
-    width: 100%; max-width: 560px; max-height: 92vh;
-    overflow-y: auto; padding: 32px 28px; position: relative;
-    box-shadow: 0 20px 60px rgba(0,0,0,.3);
-  ">
-    <!-- Fechar -->
-    <button onclick="fecharModalCadastro()" style="
-      position: absolute; top: 16px; right: 16px;
-      background: #f0f0f0; border: none; border-radius: 50%;
-      width: 32px; height: 32px; cursor: pointer; font-size: 20px;
-      line-height: 32px; text-align: center; color: #555;
-    ">×</button>
-
-    <h2 style="margin: 0 0 4px; font-size: 22px; font-weight: 800; color: #1a1a1a;">Cadastre seu negócio</h2>
-    <p style="margin: 0 0 24px; color: #666; font-size: 14px;">
-      Preencha os dados abaixo. Após análise, seu negócio aparecerá no diretório gratuitamente.
-    </p>
-
-    <!-- Tela de sucesso -->
-    <div id="cadastro-sucesso" style="display:none; text-align:center; padding: 32px 0;">
-      <div style="font-size: 52px;">🎉</div>
-      <h3 style="color: #1a1a1a; margin: 12px 0 8px; font-size: 20px;">Cadastro enviado!</h3>
-      <p style="color: #555; margin: 0 0 24px;">Vamos analisar e publicar em breve. Obrigado!</p>
-      <button onclick="fecharModalCadastro()" style="
-        background: var(--primary); color: #fff; border: none; border-radius: 8px;
-        padding: 12px 28px; font-size: 15px; cursor: pointer; font-weight: 700;
-      ">Fechar</button>
-    </div>
-
-    <!-- Formulário -->
-    <form id="form-cadastro" onsubmit="enviarCadastroNegocio(event)" style="display:flex; flex-direction:column; gap:14px;">
-
-      <!-- Nome -->
-      <div>
-        <label style="font-size:13px; font-weight:600; color:#333; display:block; margin-bottom:5px;">
-          Nome do negócio <span style="color:#e53935">*</span>
-        </label>
-        <input name="nome" required maxlength="255" placeholder="Ex: Barbearia do João"
-               class="cad-input">
-      </div>
-
-      <!-- Categoria: SÓ mostra categorias que já têm negócio cadastrado -->
-      <div>
-        <label style="font-size:13px; font-weight:600; color:#333; display:block; margin-bottom:5px;">Categoria</label>
-        <select name="categoria_slug" class="cad-input">
-          <option value="">Selecione uma categoria</option>
-          {% for cat in categorias %}
-          {% if (negocios | selectattr('categoria_slug', 'equalto', cat.slug) | list | length) > 0 %}
-          <option value="{{ cat.slug }}">{{ cat.nome }}</option>
-          {% endif %}
-          {% endfor %}
-        </select>
-      </div>
-
-      <!-- Cidade + Bairro -->
-      <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px;">
-        <div>
-          <label style="font-size:13px; font-weight:600; color:#333; display:block; margin-bottom:5px;">Cidade</label>
-          <input name="cidade" maxlength="255" placeholder="São Paulo" class="cad-input">
-        </div>
-        <div>
-          <label style="font-size:13px; font-weight:600; color:#333; display:block; margin-bottom:5px;">Bairro</label>
-          <input name="bairro" maxlength="255" placeholder="Centro" class="cad-input">
-        </div>
-      </div>
-
-      <!-- Endereço -->
-      <div>
-        <label style="font-size:13px; font-weight:600; color:#333; display:block; margin-bottom:5px;">Endereço</label>
-        <input name="endereco" maxlength="255" placeholder="Rua das Flores, 123" class="cad-input">
-      </div>
-
-      <!-- WhatsApp + Telefone -->
-      <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px;">
-        <div>
-          <label style="font-size:13px; font-weight:600; color:#333; display:block; margin-bottom:5px;">WhatsApp</label>
-          <input name="whatsapp" maxlength="50" placeholder="(11) 99999-9999" class="cad-input">
-        </div>
-        <div>
-          <label style="font-size:13px; font-weight:600; color:#333; display:block; margin-bottom:5px;">Telefone</label>
-          <input name="telefone" maxlength="50" placeholder="(11) 3333-3333" class="cad-input">
-        </div>
-      </div>
-
-      <!-- Instagram + Site -->
-      <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px;">
-        <div>
-          <label style="font-size:13px; font-weight:600; color:#333; display:block; margin-bottom:5px;">Instagram</label>
-          <input name="instagram" maxlength="255" placeholder="@seunegocio" class="cad-input">
-        </div>
-        <div>
-          <label style="font-size:13px; font-weight:600; color:#333; display:block; margin-bottom:5px;">Site</label>
-          <input name="site_url" maxlength="255" placeholder="https://seusite.com" class="cad-input">
-        </div>
-      </div>
-
-      <!-- Descrição -->
-      <div>
-        <label style="font-size:13px; font-weight:600; color:#333; display:block; margin-bottom:5px;">Descrição</label>
-        <textarea name="descricao" rows="3" maxlength="1000" class="cad-input"
-                  placeholder="Fale um pouco sobre seu negócio..." style="resize:vertical;"></textarea>
-      </div>
-
-      <!-- Foto — upload Imgur ou URL manual -->
-      <div>
-        <label style="font-size:13px; font-weight:600; color:#333; display:block; margin-bottom:8px;">Logo / foto do negócio</label>
-
-        <div id="imgur-area" style="
-          border: 2px dashed #ddd; border-radius: 10px; padding: 18px;
-          text-align: center; cursor: pointer; transition: border-color .2s, background .2s;
-          background: #fafafa; position: relative;
-        "
-          onclick="document.getElementById('imgur-file-input').click()"
-          ondragover="imgurDragOver(event)"
-          ondragleave="imgurDragLeave(event)"
-          ondrop="imgurDrop(event)"
-        >
-          <input type="file" id="imgur-file-input" accept="image/*"
-                 style="display:none" onchange="imgurUpload(this.files[0])">
-
-          <div id="imgur-idle">
-            <svg width="32" height="32" fill="none" stroke="#bbb" stroke-width="1.5" viewBox="0 0 24 24" style="margin-bottom:8px;">
-              <rect x="3" y="3" width="18" height="18" rx="3"/><circle cx="8.5" cy="8.5" r="1.5"/>
-              <polyline points="21 15 16 10 5 21"/>
-            </svg>
-            <p style="margin:0; font-size:13px; color:#888;">
-              Clique ou arraste uma imagem aqui<br>
-              <span style="font-size:12px; color:#bbb;">JPG, PNG, GIF, WebP — máx. 10 MB</span>
-            </p>
-          </div>
-
-          <div id="imgur-loading" style="display:none;">
-            <div style="
-              width:28px; height:28px; border:3px solid #eee;
-              border-top-color: var(--primary); border-radius:50%;
-              animation: spin-imgur .7s linear infinite; margin: 0 auto 8px;
-            "></div>
-            <p style="margin:0; font-size:13px; color:#888;">Enviando para o Imgur...</p>
-          </div>
-
-          <div id="imgur-preview" style="display:none;">
-            <img id="imgur-preview-img" src="" alt="Preview"
-                 style="max-height:120px; max-width:100%; border-radius:8px; object-fit:contain;">
-            <p id="imgur-preview-nome" style="margin:8px 0 0; font-size:12px; color:#888;"></p>
-            <button type="button" onclick="imgurLimpar(event)" style="
-              margin-top:6px; background:none; border:none; color:#e53935;
-              font-size:12px; cursor:pointer;
-            ">✕ Remover foto</button>
-          </div>
-        </div>
-
-        <div id="imgur-erro" style="display:none; color:#c0392b; font-size:12px; margin-top:6px;"></div>
-
-        <input type="hidden" name="foto_url" id="foto_url_hidden">
-
-        <details style="margin-top:10px;">
-          <summary style="font-size:12px; color:#888; cursor:pointer; user-select:none;">
-            Prefere colar um link de imagem?
-          </summary>
-          <input id="foto_url_manual" maxlength="512" placeholder="https://link-da-sua-imagem.com"
-                 class="cad-input" style="margin-top:6px;"
-                 oninput="imgurManualUrl(this.value)">
-        </details>
-      </div>
-
-      <div id="cadastro-erro" style="display:none; color:#c0392b; font-size:13px;
-           background:#fdf0ef; border:1px solid #f5c6c6; border-radius:8px; padding:10px 12px;"></div>
-
-      <button type="submit" id="btn-submit-cadastro" style="
-        background: var(--primary); color: #fff; border: none; border-radius: 10px;
-        padding: 14px; font-size: 16px; font-weight: 700; cursor: pointer;
-        transition: background .2s; margin-top: 4px;
-      "
-      onmouseover="this.style.background='var(--dark)'"
-      onmouseout="this.style.background='var(--primary)'"
-      >
-        Enviar cadastro
-      </button>
-    </form>
-  </div>
-</div>
-
-<style>
-  .modal-oculto { display: none !important; }
-  .cad-input {
-    width: 100%; padding: 10px 12px;
-    border: 1.5px solid #ddd; border-radius: 8px;
-    font-size: 14px; box-sizing: border-box;
-    outline: none; transition: border .15s;
-    background: #fff; color: #333;
-  }
-  .cad-input:focus { border-color: var(--primary); }
-  @keyframes spin-imgur { to { transform: rotate(360deg); } }
-</style>
-
-<script>
-// ── Imgur upload ──────────────────────────────────────────
-// Troque pelo seu Client ID gratuito em: https://api.imgur.com/oauth2/addclient
-const IMGUR_CLIENT_ID = '546c25a59c58ad7';
-
-function imgurDragOver(e) {
-  e.preventDefault();
-  document.getElementById('imgur-area').style.borderColor = 'var(--primary)';
-  document.getElementById('imgur-area').style.background  = '#fff8f0';
-}
-function imgurDragLeave(e) {
-  document.getElementById('imgur-area').style.borderColor = '#ddd';
-  document.getElementById('imgur-area').style.background  = '#fafafa';
-}
-function imgurDrop(e) {
-  e.preventDefault();
-  imgurDragLeave(e);
-  const file = e.dataTransfer.files[0];
-  if (file) imgurUpload(file);
-}
-
-async function imgurUpload(file) {
-  if (!file) return;
-  if (file.size > 10 * 1024 * 1024) {
-    document.getElementById('imgur-erro').textContent = 'Imagem muito grande (máx. 10 MB).';
-    document.getElementById('imgur-erro').style.display = 'block';
-    return;
-  }
-
-  document.getElementById('imgur-erro').style.display   = 'none';
-  document.getElementById('imgur-idle').style.display   = 'none';
-  document.getElementById('imgur-preview').style.display = 'none';
-  document.getElementById('imgur-loading').style.display = 'block';
-  document.getElementById('imgur-area').style.cursor    = 'default';
-
-  try {
-    const body = new FormData();
-    body.append('image', file);
-
-    const res = await fetch('https://api.imgur.com/3/image', {
-      method: 'POST',
-      headers: { Authorization: 'Client-ID ' + IMGUR_CLIENT_ID },
-      body,
-    });
-    const data = await res.json();
-
-    if (!res.ok || !data.success) {
-      throw new Error(data.data?.error || 'Erro no Imgur');
-    }
-
-    const url = data.data.link;
-    document.getElementById('foto_url_hidden').value = url;
-    document.getElementById('imgur-preview-img').src  = url;
-    document.getElementById('imgur-preview-nome').textContent = file.name;
-    document.getElementById('imgur-loading').style.display  = 'none';
-    document.getElementById('imgur-preview').style.display  = 'block';
-    document.getElementById('imgur-area').style.borderColor = 'var(--primary)';
-    document.getElementById('imgur-area').style.background  = '#fff8f0';
-    document.getElementById('imgur-area').style.cursor      = 'default';
-
-  } catch (err) {
-    document.getElementById('imgur-loading').style.display = 'none';
-    document.getElementById('imgur-idle').style.display    = 'block';
-    document.getElementById('imgur-area').style.cursor     = 'pointer';
-    document.getElementById('imgur-erro').textContent = 'Falha no upload: ' + (err.message || 'tente novamente.');
-    document.getElementById('imgur-erro').style.display = 'block';
-  }
-}
-
-function imgurLimpar(e) {
-  e.stopPropagation();
-  document.getElementById('foto_url_hidden').value        = '';
-  document.getElementById('imgur-file-input').value       = '';
-  document.getElementById('imgur-preview').style.display  = 'none';
-  document.getElementById('imgur-idle').style.display     = 'block';
-  document.getElementById('imgur-area').style.borderColor = '#ddd';
-  document.getElementById('imgur-area').style.background  = '#fafafa';
-  document.getElementById('imgur-area').style.cursor      = 'pointer';
-  document.getElementById('imgur-erro').style.display     = 'none';
-}
-
-function imgurManualUrl(val) {
-  document.getElementById('foto_url_hidden').value = val.trim();
-}
-</script>
-
-<script>
-function fecharModalCadastro() {
-  document.getElementById('modal-cadastro').classList.add('modal-oculto');
-  document.getElementById('form-cadastro').reset();
-  document.getElementById('form-cadastro').style.display = 'flex';
-  document.getElementById('cadastro-sucesso').style.display = 'none';
-  document.getElementById('cadastro-erro').style.display = 'none';
-}
-
-document.getElementById('modal-cadastro').addEventListener('click', function(e) {
-  if (e.target === this) fecharModalCadastro();
+  
+  cats_com_negocios.forEach(cat => {
+    const a = document.createElement('a');
+    a.href = '/' + cat.slug + '/';
+    a.className = 'chip-cat';
+    a.textContent = cat.nome;
+    panel.appendChild(a);
+  });
 });
-
-document.addEventListener('keydown', function(e) {
-  if (e.key === 'Escape' &&
-      !document.getElementById('modal-cadastro').classList.contains('modal-oculto')) {
-    fecharModalCadastro();
-  }
-});
-
-async function enviarCadastroNegocio(e) {
-  e.preventDefault();
-  const btn  = document.getElementById('btn-submit-cadastro');
-  const erro = document.getElementById('cadastro-erro');
-  erro.style.display = 'none';
-  btn.disabled = true;
-  btn.textContent = 'Enviando...';
-  try {
-    const formData = new FormData(e.target);
-    const res = await fetch('/cadastrar-negocio', { method: 'POST', body: formData });
-    const data = await res.json();
-    if (res.ok && data.ok) {
-      document.getElementById('form-cadastro').style.display = 'none';
-      document.getElementById('cadastro-sucesso').style.display = 'block';
-    } else {
-      erro.textContent = data.erro || 'Erro ao enviar. Tente novamente.';
-      erro.style.display = 'block';
-    }
-  } catch (err) {
-    erro.textContent = 'Erro de conexão. Verifique sua internet e tente novamente.';
-    erro.style.display = 'block';
-  } finally {
-    btn.disabled = false;
-    btn.textContent = 'Enviar cadastro';
-  }
-}
 </script>
 
 </body>
