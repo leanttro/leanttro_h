@@ -136,6 +136,9 @@ nav.desktop-nav ul li a:hover { border-bottom-color: #fff; background: rgba(0,0,
 .card-foto { width: 100%; height: 160px; overflow: hidden; position: relative; background: #f5f5f5; }
 .card-foto img { width: 100%; height: 100%; object-fit: cover; transition: transform 0.4s; }
 .negocio-card:hover .card-foto img { transform: scale(1.06); }
+.card-foto-fallback { width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; background: var(--light); }
+.card-foto-fallback img { width: auto; height: auto; max-width: 62%; max-height: 62%; object-fit: contain; transition: transform 0.4s; }
+.card-foto-fallback i { font-size: 2.4em; color: var(--primary); opacity: 0.35; }
 .badge-cat { position: absolute; top: 10px; left: 10px; background: var(--primary); color: #fff; font-size: 0.72em; font-weight: 700; padding: 3px 10px; border-radius: 20px; }
 .card-body { padding: 16px; flex: 1; display: flex; flex-direction: column; gap: 4px; }
 .card-body h3 { font-size: 1.05em; font-weight: 700; color: var(--dark-gray); }
@@ -143,6 +146,15 @@ nav.desktop-nav ul li a:hover { border-bottom-color: #fff; background: rgba(0,0,
 .btn-ver { margin-top: auto; padding-top: 12px; display: inline-block; background: var(--primary); color: #fff; padding: 9px 18px; border-radius: 6px; font-size: 0.88em; font-weight: 700; text-align: center; transition: background 0.2s; }
 .negocio-card:hover .btn-ver { background: var(--dark); }
 .info-vazio { text-align: center; color: #6c757d; padding: 60px 20px; font-size: 1.05em; }
+
+.negocios-grid.modo-carrossel { display: flex; grid-template-columns: none; overflow-x: auto; scroll-snap-type: x mandatory; gap: 18px; padding-bottom: 10px; -webkit-overflow-scrolling: touch; scrollbar-width: thin; }
+.negocios-grid.modo-carrossel .negocio-card { flex: 0 0 260px; scroll-snap-align: start; }
+.negocios-grid.modo-carrossel::-webkit-scrollbar { height: 6px; }
+.negocios-grid.modo-carrossel::-webkit-scrollbar-thumb { background: var(--primary); border-radius: 10px; }
+.negocios-header-row { display: flex; align-items: center; justify-content: flex-end; gap: 16px; flex-wrap: wrap; margin-bottom: 24px; }
+.cats-view-toggle { display: flex; gap: 6px; background: #f0f0f0; padding: 4px; border-radius: 10px; flex-shrink: 0; }
+.cats-view-toggle button { border: none; background: transparent; width: 38px; height: 34px; border-radius: 7px; display: flex; align-items: center; justify-content: center; cursor: pointer; color: var(--dark-gray); font-size: 15px; transition: background 0.2s, color 0.2s; }
+.cats-view-toggle button.ativo { background: var(--primary); color: #fff; }
 
 /* ══ BANNER MEIO ══ */
 .banner-meio { background: var(--light); padding: 28px 20px; text-align: center; border-top: 1px solid #ffe0b2; border-bottom: 1px solid #ffe0b2; min-height: 150px; display: flex; align-items: center; justify-content: center; }
@@ -252,11 +264,27 @@ footer a:hover { text-decoration: underline; }
 <!-- ══ NEGÓCIOS ══ -->
 <section class="section container">
   {% if negocios %}
-  <div class="negocios-grid">
+  <div class="negocios-header-row">
+    <div class="cats-view-toggle">
+      <button type="button" id="btnCarrosselNeg" class="ativo" onclick="setNegsView('carrossel')" aria-label="Ver em carrossel">
+        <i class="fas fa-arrows-left-right"></i>
+      </button>
+      <button type="button" id="btnGradeNeg" onclick="setNegsView('grade')" aria-label="Ver em grade">
+        <i class="fas fa-table-cells"></i>
+      </button>
+    </div>
+  </div>
+  <div class="negocios-grid modo-carrossel" id="negsContainer">
     {% for n in negocios %}
     <a href="/{{ n.categoria_slug }}/{{ n.slug }}/" class="negocio-card">
       <div class="card-foto">
-        <img src="{{ n.foto_url or 'https://via.placeholder.com/260x160?text=' ~ n.nome }}" alt="{{ n.nome }}">
+        {% if n.foto_url %}
+        <img src="{{ n.foto_url }}" alt="{{ n.nome }}">
+        {% elif hub.logo_url %}
+        <div class="card-foto-fallback"><img src="{{ hub.logo_url }}" alt="{{ hub.nome or 'Hub' }}"></div>
+        {% else %}
+        <div class="card-foto-fallback"><i class="fas fa-store"></i></div>
+        {% endif %}
         <div class="badge-cat">{{ n.categoria_nome }}</div>
       </div>
       <div class="card-body">
@@ -274,6 +302,29 @@ footer a:hover { text-decoration: underline; }
   </div>
   {% endif %}
 </section>
+
+<script>
+function setNegsView(modo) {
+  const container = document.getElementById('negsContainer');
+  const btnCarrossel = document.getElementById('btnCarrosselNeg');
+  const btnGrade = document.getElementById('btnGradeNeg');
+  if (!container) return;
+  if (modo === 'grade') {
+    container.classList.remove('modo-carrossel');
+    btnGrade.classList.add('ativo');
+    btnCarrossel.classList.remove('ativo');
+  } else {
+    container.classList.add('modo-carrossel');
+    btnCarrossel.classList.add('ativo');
+    btnGrade.classList.remove('ativo');
+  }
+  localStorage.setItem('negsView', modo);
+}
+(function() {
+  const saved = localStorage.getItem('negsView');
+  if (saved === 'grade') setNegsView('grade');
+})();
+</script>
 
 <!-- ══ BANNER MEIO ══ -->
 {% if anuncio_meio %}
