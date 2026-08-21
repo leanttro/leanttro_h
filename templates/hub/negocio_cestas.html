@@ -204,12 +204,12 @@ nav.desktop-nav ul li:hover .nav-dropdown { display: block; }
 .aviso-automatico-texto strong { color: #fff; font-weight: 800; }
 .aviso-automatico-btn {
   display: inline-flex; align-items: center; gap: 6px;
-  background: #1a1a1a; border: 1.5px solid #1a1a1a;
+  background: #25D366; border: 1.5px solid #25D366;
   color: #fff; font-size: 0.82em; font-weight: 700;
   padding: 6px 14px; border-radius: 30px; white-space: nowrap;
   transition: background 0.2s, color 0.2s;
 }
-.aviso-automatico-btn:hover { background: #000; }
+.aviso-automatico-btn:hover { background: #1da850; border-color: #1da850; }
 @media (max-width: 600px) {
   .aviso-automatico-texto { font-size: 0.8em; }
 }
@@ -339,7 +339,6 @@ footer p { margin: 8px 0; }
         </div>
       </li>
       <li><a href="/blog/">Blog</a></li>
-      <li><a href="https://wa.me/55{{ hub.whatsapp or '11999999999' }}?text=Olá,+quero+saber+mais" target="_blank" rel="noopener">Contato</a></li>
     </ul>
   </nav>
   <button class="hamburger-btn" id="hamburger-btn" aria-label="Abrir menu">
@@ -355,7 +354,6 @@ footer p { margin: 8px 0; }
       <li><a href="/" onclick="document.getElementById('mobile-nav').classList.remove('active')">Início</a></li>
       <li><a href="/{{ segmento }}/" onclick="document.getElementById('mobile-nav').classList.remove('active')">{{ negocio.categoria_nome }}</a></li>
       <li><a href="/blog/" onclick="document.getElementById('mobile-nav').classList.remove('active')">Blog</a></li>
-      <li><a href="https://wa.me/55{{ hub.whatsapp or '11999999999' }}?text=Olá,+quero+saber+mais" target="_blank" rel="noopener" onclick="document.getElementById('mobile-nav').classList.remove('active')">Contato</a></li>
     </ul>
   </nav>
 </div>
