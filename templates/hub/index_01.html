@@ -229,6 +229,13 @@ nav.desktop-nav ul li.dropdown-aberto .nav-dropdown {
 .negocio-card:hover .btn-ver { background: var(--dark); }
 .info-vazio { text-align: center; color: #6c757d; padding: 50px 0; font-size: 1.05em; }
 
+/* ══ PAGINAÇÃO ══ */
+.pagination-container { display: flex; justify-content: center; align-items: center; gap: 8px; margin-top: 32px; flex-wrap: wrap; }
+.pagination-btn { padding: 10px 14px; border: 1px solid var(--medium-gray); background: var(--white); color: var(--text-color); border-radius: 8px; cursor: pointer; font-weight: 600; font-size: 0.9em; transition: all 0.2s; }
+.pagination-btn:hover { border-color: var(--primary); color: var(--primary); }
+.pagination-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+.pagination-info { font-size: 0.9em; color: #6c757d; padding: 0 12px; }
+
 .negocios-grid.modo-carrossel { display: flex; grid-template-columns: none; overflow-x: auto; scroll-snap-type: x mandatory; gap: 18px; padding-bottom: 10px; -webkit-overflow-scrolling: touch; scrollbar-width: thin; }
 .negocios-grid.modo-carrossel .negocio-card { flex: 0 0 260px; scroll-snap-align: start; }
 .negocios-grid.modo-carrossel::-webkit-scrollbar { height: 6px; }
@@ -451,7 +458,7 @@ footer a:hover { text-decoration: underline; }
 
     {% if negocios %}
     <div class="negocios-grid modo-carrossel" id="negsContainer">
-      {% for n in negocios[:12] %}
+      {% for n in negocios %}
       <a href="/{{ n.categoria_slug }}/{{ n.slug }}/" class="negocio-card"
          {% if n.lat and n.lng %}data-lat="{{ n.lat }}" data-lng="{{ n.lng }}"{% endif %}>
         <div class="card-foto">
@@ -473,6 +480,18 @@ footer a:hover { text-decoration: underline; }
       </a>
       {% endfor %}
     </div>
+
+    <!-- PAGINAÇÃO -->
+    {% set total_neg_idx = negocios | length %}
+    {% if total_neg_idx > 12 %}
+    <div class="pagination-container" id="paginationContainer">
+      <button class="pagination-btn" id="btnPrevPage" onclick="irParaPagina(paginaAtual - 1)" disabled>← Anterior</button>
+      <div class="pagination-info">
+        Página <span id="paginaAtualDisplay">1</span> de <span id="totalPaginasDisplay">{{ ((total_neg_idx + 11) / 12) | int }}</span>
+      </div>
+      <button class="pagination-btn" id="btnNextPage" onclick="irParaPagina(paginaAtual + 1)">Próxima →</button>
+    </div>
+    {% endif %}
     {% else %}
     <div class="info-vazio">Nenhum negócio cadastrado ainda</div>
     {% endif %}
@@ -565,9 +584,46 @@ function setNegsView(modo) {
   }
   localStorage.setItem('negsView', modo);
 }
+
+let paginaAtual = 1;
+const ITENS_POR_PAGINA = 12;
+
+function renderPagina(pagina) {
+  const container = document.getElementById('negsContainer');
+  if (!container) return;
+
+  const cards = Array.from(container.querySelectorAll('.negocio-card'));
+  const totalCards = cards.length;
+  const totalPaginas = Math.ceil(totalCards / ITENS_POR_PAGINA);
+  if (pagina < 1 || pagina > totalPaginas) return;
+
+  paginaAtual = pagina;
+  const inicio = (pagina - 1) * ITENS_POR_PAGINA;
+  const fim = inicio + ITENS_POR_PAGINA;
+
+  cards.forEach((card, index) => {
+    card.style.display = (index >= inicio && index < fim) ? '' : 'none';
+  });
+
+  const btnPrev = document.getElementById('btnPrevPage');
+  const btnNext = document.getElementById('btnNextPage');
+  if (btnPrev) btnPrev.disabled = pagina === 1;
+  if (btnNext) btnNext.disabled = pagina === totalPaginas;
+
+  const displayPagina = document.getElementById('paginaAtualDisplay');
+  if (displayPagina) displayPagina.textContent = pagina;
+
+  if (container) container.scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
+function irParaPagina(pagina) {
+  renderPagina(pagina);
+}
+
 (function() {
   const saved = localStorage.getItem('negsView');
   if (saved === 'grade') setNegsView('grade');
+  renderPagina(1);
 })();
 </script>
 
@@ -828,6 +884,7 @@ function atualizarDistanciasNosCards() {
       .sort((a, b) => parseFloat(a.dataset.distKm) - parseFloat(b.dataset.distKm))
       .forEach(c => container.appendChild(c));
   }
+  renderPagina(1);
 }
 
 function ativarGeolocalizacao() {
