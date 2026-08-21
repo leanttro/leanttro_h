@@ -47,6 +47,117 @@
 <meta property="og:description" content="{{ seo_desc }}">
 <meta property="og:url" content="{{ seo_url }}">
 
+{# ══ FAQPage: JSON-LD com perguntas e respostas dinâmicas conforme contexto ══ #}
+{% set faq_items = [] %}
+{% if categoria and bairro %}
+  {% set _ = faq_items.append({
+    "@type": "Question",
+    "name": "Quantos cinemas de " ~ categoria.nome ~ " tem no bairro " ~ bairro ~ " em " ~ cidade ~ "?",
+    "acceptedAnswer": {
+      "@type": "Answer",
+      "text": total_negocios ~ " opções de " ~ categoria.nome ~ " estão cadastradas no bairro " ~ bairro ~ " em " ~ cidade ~ "."
+    }
+  }) %}
+  {% set _ = faq_items.append({
+    "@type": "Question",
+    "name": "Como encontrar " ~ categoria.nome ~ " perto do bairro " ~ bairro ~ "?",
+    "acceptedAnswer": {
+      "@type": "Answer",
+      "text": "Use os filtros de bairro e tipo na página para ver as opções de " ~ categoria.nome ~ " mais próximas do bairro " ~ bairro ~ "."
+    }
+  }) %}
+  {% set _ = faq_items.append({
+    "@type": "Question",
+    "name": "Existem outros bairros de " ~ cidade ~ " com " ~ categoria.nome ~ "?",
+    "acceptedAnswer": {
+      "@type": "Answer",
+      "text": (bairros_disponiveis | length | string) ~ " bairro(s) de " ~ cidade ~ " têm opções de " ~ categoria.nome ~ " cadastradas. Use o filtro de bairro para ver cada um." if bairros_disponiveis else ("Use o filtro de bairro na página para ver outras regiões de " ~ cidade ~ " com " ~ categoria.nome ~ ".")
+    }
+  }) %}
+{% elif categoria %}
+  {% set _ = faq_items.append({
+    "@type": "Question",
+    "name": "Quantos " ~ categoria.nome ~ " tem em " ~ cidade ~ "?",
+    "acceptedAnswer": {
+      "@type": "Answer",
+      "text": total_negocios ~ " opções de " ~ categoria.nome ~ " estão cadastradas em " ~ cidade ~ "."
+    }
+  }) %}
+  {% set _ = faq_items.append({
+    "@type": "Question",
+    "name": "Em quais bairros de " ~ cidade ~ " tem " ~ categoria.nome ~ "?",
+    "acceptedAnswer": {
+      "@type": "Answer",
+      "text": (categoria.nome ~ " está disponível em " ~ (bairros_disponiveis | length) ~ " bairro(s) de " ~ cidade ~ ". Use o filtro de bairro para ver a disponibilidade em cada região.") if bairros_disponiveis else ("Use o filtro de bairro na página para ver onde " ~ categoria.nome ~ " está disponível em " ~ cidade ~ ".")
+    }
+  }) %}
+  {% set _ = faq_items.append({
+    "@type": "Question",
+    "name": "Quantos tipos de espaço cultural tem em " ~ cidade ~ "?",
+    "acceptedAnswer": {
+      "@type": "Answer",
+      "text": (categorias_disponiveis | length | string) ~ " tipo(s) de espaço, entre cinemas, cineclubes e salas de arte, estão cadastrados em " ~ cidade ~ "." if categorias_disponiveis else ("Confira os tipos de espaço disponíveis nos filtros da página de " ~ cidade ~ ".")
+    }
+  }) %}
+{% elif bairro %}
+  {% set _ = faq_items.append({
+    "@type": "Question",
+    "name": "Quantos cinemas tem no bairro " ~ bairro ~ " em " ~ cidade ~ "?",
+    "acceptedAnswer": {
+      "@type": "Answer",
+      "text": total_negocios ~ " opções estão cadastradas no bairro " ~ bairro ~ " em " ~ cidade ~ "."
+    }
+  }) %}
+  {% set _ = faq_items.append({
+    "@type": "Question",
+    "name": "Quais tipos de espaço cultural tem no bairro " ~ bairro ~ "?",
+    "acceptedAnswer": {
+      "@type": "Answer",
+      "text": (categorias_disponiveis | length | string) ~ " tipo(s) de espaço, entre cinemas, cineclubes e salas de arte, estão cadastrados no bairro " ~ bairro ~ "." if categorias_disponiveis else ("Use o filtro de tipo na página para ver as opções disponíveis no bairro " ~ bairro ~ ".")
+    }
+  }) %}
+  {% set _ = faq_items.append({
+    "@type": "Question",
+    "name": "Existem cinemas em outros bairros de " ~ cidade ~ "?",
+    "acceptedAnswer": {
+      "@type": "Answer",
+      "text": (bairros_disponiveis | length | string) ~ " bairro(s) de " ~ cidade ~ " têm cinemas ou espaços culturais cadastrados. Use o filtro de bairro para ver cada um." if bairros_disponiveis else ("Use o filtro de bairro na página para ver outras regiões de " ~ cidade ~ ".")
+    }
+  }) %}
+{% else %}
+  {% set _ = faq_items.append({
+    "@type": "Question",
+    "name": "Quantos cinemas tem em " ~ cidade ~ "?",
+    "acceptedAnswer": {
+      "@type": "Answer",
+      "text": total_negocios ~ " cinema(s), cineclube(s) e sala(s) de arte estão cadastrados em " ~ cidade ~ "."
+    }
+  }) %}
+  {% set _ = faq_items.append({
+    "@type": "Question",
+    "name": "Em quantos bairros de " ~ cidade ~ " tem cinema?",
+    "acceptedAnswer": {
+      "@type": "Answer",
+      "text": (bairros_disponiveis | length | string) ~ " bairro(s) de " ~ cidade ~ " têm cinemas ou espaços culturais cadastrados." if bairros_disponiveis else ("Use o filtro de bairro na página para ver a distribuição por região em " ~ cidade ~ ".")
+    }
+  }) %}
+  {% set _ = faq_items.append({
+    "@type": "Question",
+    "name": "Quantos tipos de espaço cultural (cinema, cineclube, sala de arte) tem em " ~ cidade ~ "?",
+    "acceptedAnswer": {
+      "@type": "Answer",
+      "text": (categorias_disponiveis | length | string) ~ " tipo(s) de espaço estão cadastrados em " ~ cidade ~ "." if categorias_disponiveis else ("Confira os tipos de espaço disponíveis nos filtros da página de " ~ cidade ~ ".")
+    }
+  }) %}
+{% endif %}
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "FAQPage",
+  "mainEntity": {{ faq_items | tojson }}
+}
+</script>
+
 <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
 <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
 
@@ -89,7 +200,7 @@ nav.desktop-nav ul li a:hover { background: var(--primary); }
 .pagina-header .breadcrumb { font-size: .82em; color: var(--text-dim); margin-bottom: 8px; }
 .pagina-header .breadcrumb a:hover { color: var(--gold); }
 .pagina-header h1 { font-size: 1.6em; }
-.pagina-header .total { color: var(--text-dim); font-size: .9em; margin-top: 4px; }
+.pagina-header .intro { color: var(--text-dim); font-size: .95em; margin-top: 8px; }
 
 .chips-row { display: flex; gap: 8px; flex-wrap: wrap; padding: 16px 20px 0; }
 .chips-row .chips-label { font-size: .78em; color: var(--text-dim); width: 100%; margin-bottom: 4px; }
@@ -140,7 +251,7 @@ footer { background: var(--bg-card-alt); border-top: 1px solid var(--border); pa
     {% if categoria %} / {{ categoria.nome }}{% endif %}
   </div>
   <h1>{{ seo_title }}</h1>
-  <div class="total">{{ total_negocios }} resultado{{ 's' if total_negocios != 1 else '' }}</div>
+  <p class="intro">{{ total_negocios }} opção{{ 's' if total_negocios != 1 else '' }} de cinema{{ 's' if total_negocios != 1 else '' }} em {{ cidade }}{% if bairro %} no bairro {{ bairro }}{% endif %}{% if categoria %} de {{ categoria.nome }}{% endif %}.</p>
 </div>
 
 {% if bairros_disponiveis %}
