@@ -2606,6 +2606,8 @@ app.register_blueprint(chatbot_bp)
 from loteria import loteria_bp
 app.register_blueprint(loteria_bp)
 
+from bmi import bmi_bp
+app.register_blueprint(bmi_bp)
 
 # ════════════════════════════════════════════════════════════
 
