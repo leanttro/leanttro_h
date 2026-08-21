@@ -399,7 +399,7 @@ footer a:hover { text-decoration: underline; }
           <h3>{{ n.nome }}</h3>
           {% if n.bairro %}<div class="card-bairro"><i class="fas fa-map-marker-alt"></i> {{ n.bairro }}{% if n.cidade %} — {{ n.cidade }}{% endif %}</div>{% endif %}
           <div class="card-distancia" style="display:none;"><i class="fas fa-location-arrow"></i> <span class="dist-valor"></span></div>
-          <a href="/{{ n.categoria_slug }}/{{ n.slug }}/" class="btn-ver">Ver detalhes</a>
+          <span class="btn-ver">Ver detalhes</span>
         </div>
       </a>
       {% endfor %}
