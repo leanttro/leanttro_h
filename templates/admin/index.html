@@ -904,9 +904,16 @@ tbody td {
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
               <input type="text" placeholder="Buscar negócio..." id="searchNegocios" oninput="onNegociosFilterChange()">
             </div>
-            <select class="filter-select" id="filterCategoria" onchange="onNegociosFilterChange()">
-              <option value="">Todas as categorias</option>
-            </select>
+            <div class="multi-select" id="msCategoria">
+              <button type="button" class="multi-select-btn" onclick="toggleMultiSelect('msCategoria')">
+                <span id="msCategoriaLabel">Todas as categorias</span>
+              </button>
+              <div class="multi-select-panel" id="msCategoriaPanel">
+                <input type="text" class="multi-select-search" placeholder="Buscar categoria..." oninput="filtrarMultiSelectLista('msCategoria', this.value)">
+                <div class="multi-select-list" id="msCategoriaList"></div>
+                <button type="button" class="multi-select-clear" onclick="limparCategoriaFiltro()">Limpar seleção</button>
+              </div>
+            </div>
             <div class="multi-select" id="msCidade">
               <button type="button" class="multi-select-btn" onclick="toggleMultiSelect('msCidade')">
                 <span id="msCidadeLabel">Todas as cidades</span>
@@ -1381,6 +1388,42 @@ function montarMultiSelectLista(id, valores) {
   }).join('');
 }
 
+// ── Categoria: dropdown pesquisável de escolha única (mesmo painel do
+//    multi-select, mas com clique direto no item em vez de checkbox) ──
+function montarMultiSelectListaCategoria() {
+  const list = document.getElementById('msCategoriaList');
+  if (!list) return;
+  const categorias = state.negocios.categoriasDisponiveis || [];
+  if (!categorias.length) {
+    list.innerHTML = '<div class="multi-select-empty">Nenhuma categoria cadastrada.</div>';
+    return;
+  }
+  list.innerHTML = categorias.map(c => {
+    const ativo = String(state.negocios.categoria_id || '') === String(c.id) ? 'ativo' : '';
+    const total = c.total_negocios !== undefined ? ` <span class="multi-select-badge">${esc(c.total_negocios)}</span>` : '';
+    return `<label class="multi-select-item ${ativo}" onclick="selecionarCategoriaFiltro('${c.id}', '${esc(c.nome).replace(/'/g, "\\'")}')">
+      <span>${esc(c.nome)}</span>${total}
+    </label>`;
+  }).join('');
+}
+
+function selecionarCategoriaFiltro(id, nome) {
+  state.negocios.categoria_id = id;
+  document.getElementById('msCategoriaLabel').textContent = nome;
+  montarMultiSelectListaCategoria();
+  fecharTodosMultiSelect();
+  state.negocios.offset = 0;
+  loadNegocios();
+}
+
+function limparCategoriaFiltro() {
+  state.negocios.categoria_id = '';
+  document.getElementById('msCategoriaLabel').textContent = 'Todas as categorias';
+  montarMultiSelectListaCategoria();
+  state.negocios.offset = 0;
+  loadNegocios();
+}
+
 function onMultiSelectItemChange(id, checkbox) {
   const stateKey = id === 'msCidade' ? 'cidades' : 'bairros';
   const valor = checkbox.value;
@@ -1428,15 +1471,14 @@ function limparMultiSelect(id) {
 async function popularFiltrosNegocios() {
   try {
     const [categorias, bairros, localidades] = await Promise.all([
-      fetch('/api/hub/categorias').then(r => r.json()).catch(() => []),
+      fetch('/admin/categorias').then(r => r.json()).catch(() => []),
       fetch('/admin/negocios/bairros').then(r => r.json()).catch(() => []),
       fetch('/admin/negocios/localidades').then(r => r.json()).catch(() => ({})),
     ]);
-    const selCat = document.getElementById('filterCategoria');
-    if (selCat) {
-      selCat.innerHTML = '<option value="">Todas as categorias</option>' +
-        categorias.map(c => `<option value="${c.id}">${esc(c.nome)}</option>`).join('');
-    }
+    state.negocios.categoriasDisponiveis = Array.isArray(categorias)
+      ? categorias.slice().sort((a, b) => (a.nome || '').localeCompare(b.nome || '', 'pt-BR'))
+      : [];
+    montarMultiSelectListaCategoria();
     state.negocios.bairrosDisponiveis = Array.isArray(bairros) ? bairros : [];
     state.negocios.localidades = localidades && typeof localidades === 'object' ? localidades : {};
 
@@ -1468,7 +1510,6 @@ function atualizarListaBairrosDisponiveis() {
 
 const onNegociosFilterChange = debounce(function() {
   state.negocios.q = document.getElementById('searchNegocios')?.value.trim() || '';
-  state.negocios.categoria_id = document.getElementById('filterCategoria')?.value || '';
   state.negocios.status = document.getElementById('filterStatusNegocio')?.value || '';
   state.negocios.limit = parseInt(document.getElementById('limitNegocios')?.value || '50');
   state.negocios.offset = 0; // qualquer mudança de filtro volta para a primeira página
