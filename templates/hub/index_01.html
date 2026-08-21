@@ -1,8 +1,6 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-<script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-7617881885143728"
-     crossorigin="anonymous"></script>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
@@ -10,15 +8,16 @@
 {% set total_negs = negocios | length if negocios else 0 %}
 {% set total_cats = categorias | length if categorias else 0 %}
 {% set total_bairros = (negocios | map(attribute='bairro') | unique | list) | length if negocios else 0 %}
-{% set seo_title = hub.titulo or (hub.nome ~ " — " ~ total_negs ~ " negócio(s) em " ~ total_cats ~ " categoria(s)") %}
-{% set seo_desc = hub.descricao or ("Encontre " ~ total_negs ~ " negócio(s) em " ~ total_cats ~ " categoria(s) diferentes em " ~ total_bairros ~ " bairro(s). Endereços, telefones e localização no " ~ hub.nome ~ ".") %}
+{% set seo_title = hub.titulo or (hub.nome ~ " — Encontre " ~ total_negs ~ " negócio(s)") %}
+{% set seo_desc = hub.descricao or ("Descubra os melhores negócios em " ~ total_cats ~ " categoria(s) diferentes. Endereços, telefones e localização perto de você.") %}
 
 <title>{{ seo_title }}</title>
 <meta name="description" content="{{ seo_desc }}">
 <meta name="robots" content="index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1">
-<meta name="theme-color" content="{{ hub.cor_primaria or '#0071e3' }}">
+<meta name="theme-color" content="{{ hub.cor_primaria or '#f6972b' }}">
 <link rel="canonical" href="https://{{ request.host }}/">
 {% if hub.logo_url %}<link rel="icon" type="image/png" href="{{ hub.logo_url }}">{% endif %}
+<link rel="apple-touch-icon" href="{{ hub.logo_url or 'https://via.placeholder.com/180x180' }}">
 
 <meta property="og:type" content="website">
 <meta property="og:site_name" content="{{ hub.nome or 'Hub' }}">
@@ -28,27 +27,6 @@
 {% if hub.logo_url %}<meta property="og:image" content="{{ hub.logo_url }}">{% endif %}
 <meta name="twitter:card" content="summary_large_image">
 
-{# ══ JSON-LD Organization ══ #}
-<script type="application/ld+json">
-{
-  "@context": "https://schema.org",
-  "@type": "Organization",
-  "name": "{{ hub.nome or 'Hub' }}",
-  "url": "https://{{ request.host }}/",
-  "description": "{{ seo_desc }}",
-  "inLanguage": "pt-BR",
-  "contactPoint": {
-    "@type": "ContactPoint",
-    "contactType": "Customer Support",
-    "availableLanguage": "pt-BR"
-  }
-  {% if hub.logo_url %},
-  "logo": "{{ hub.logo_url }}"
-  {% endif %}
-}
-</script>
-
-{# ══ JSON-LD WebSite ══ #}
 <script type="application/ld+json">
 {
   "@context": "https://schema.org",
@@ -56,570 +34,364 @@
   "name": "{{ hub.nome or 'Hub' }}",
   "url": "https://{{ request.host }}/",
   "description": "{{ seo_desc }}",
-  "inLanguage": "pt-BR",
-  "potentialAction": {
-    "@type": "SearchAction",
-    "target": {
-      "@type": "EntryPoint",
-      "urlTemplate": "https://{{ request.host }}/buscar?q={search_term_string}"
-    },
-    "query-input": "required name=search_term_string"
-  }
+  "inLanguage": "pt-BR"
 }
 </script>
 
-{# ══ JSON-LD BreadcrumbList ══ #}
-<script type="application/ld+json">
-{
-  "@context": "https://schema.org",
-  "@type": "BreadcrumbList",
-  "itemListElement": [
-    {
-      "@type": "ListItem",
-      "position": 1,
-      "name": "Início",
-      "item": "https://{{ request.host }}/"
-    }
-  ]
-}
-</script>
-
-{# ══ JSON-LD ItemList de categorias ══ #}
-{% if categorias %}
-<script type="application/ld+json">
-{
-  "@context": "https://schema.org",
-  "@type": "ItemList",
-  "name": "Categorias — {{ hub.nome or 'Hub' }}",
-  "url": "https://{{ request.host }}/",
-  "numberOfItems": {{ categorias | length }},
-  "itemListElement": [
-    {% for cat in categorias %}
-    {
-      "@type": "ListItem",
-      "position": {{ loop.index }},
-      "item": {
-        "@type": "Thing",
-        "name": "{{ cat.nome }}",
-        "url": "https://{{ request.host }}/{{ cat.slug }}/"
-      }
-    }{% if not loop.last %},{% endif %}
-    {% endfor %}
-  ]
-}
-</script>
-{% endif %}
-
-{# ══ JSON-LD FAQPage ══ #}
-{% set total_cats = categorias | length if categorias else 0 %}
-{% set total_negs = negocios | length if negocios else 0 %}
-{% set total_bairros = (negocios | map(attribute='bairro') | unique | list) | length if negocios else 0 %}
-<script type="application/ld+json">
-{
-  "@context": "https://schema.org",
-  "@type": "FAQPage",
-  "mainEntity": [
-    {
-      "@type": "Question",
-      "name": "Quantos negócios estão cadastrados em {{ hub.nome or 'Hub' }}?",
-      "acceptedAnswer": {
-        "@type": "Answer",
-        "text": "{{ total_negs }} negócio(s) estão cadastrados em {{ hub.nome or 'Hub' }}, oferecendo {{ total_cats }} categoria(s) diferentes para você explorar."
-      }
-    },
-    {
-      "@type": "Question",
-      "name": "Como encontrar um negócio perto de mim em {{ hub.nome or 'Hub' }}?",
-      "acceptedAnswer": {
-        "@type": "Answer",
-        "text": "Você pode explorar os negócios cadastrados por categoria ou usar a função 'Próximo a mim' para encontrar os estabelecimentos mais próximos de sua localização. Navegue pelos {{ total_negs }} negócios disponíveis e escolha o que melhor atende às suas necessidades."
-      }
-    },
-    {
-      "@type": "Question",
-      "name": "Em quantos bairros {{ hub.nome or 'Hub' }} possui negócios?",
-      "acceptedAnswer": {
-        "@type": "Answer",
-        "text": "Os {{ total_negs }} negócio(s) cadastrados estão distribuídos em {{ total_bairros }} bairro(s) diferente(s), oferecendo opções em toda a região."
-      }
-    },
-    {
-      "@type": "Question",
-      "name": "Quais categorias de negócios estão disponíveis em {{ hub.nome or 'Hub' }}?",
-      "acceptedAnswer": {
-        "@type": "Answer",
-        "text": "{{ hub.nome or 'Hub' }} possui {{ total_cats }} categoria(s) de negócios disponíveis para exploração. Clique em qualquer categoria acima para ver todos os estabelecimentos daquele tipo."
-      }
-    }
-  ]
-}
-</script>
-
-{% if hub.ga4_id %}
-<script async src="https://www.googletagmanager.com/gtag/js?id={{ hub.ga4_id }}"></script>
-<script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag('js',new Date());gtag('config','{{ hub.ga4_id }}');</script>
-{% endif %}
-
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700;900&display=swap" rel="stylesheet">
 <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
 
 <style>
-:root{
-  --primary:{{ hub.cor_primaria or '#0071e3' }};
-  --primary-d:{{ hub.cor_secundaria or '#0051a2' }};
-  --bg:#ffffff;
-  --bg2:#f5f5f7;
-  --bg3:#fafafa;
-  --surface:#ffffff;
-  --border:#d2d2d7;
-  --border-light:#e8e8ed;
-  --text:#1d1d1f;
-  --text-soft:#6e6e73;
-  --muted:#86868b;
-  --radius:12px;
-  --radius-lg:18px;
-  --sans:'Inter',sans-serif;
-  --shadow:0 2px 12px rgba(0,0,0,.06);
-  --shadow-md:0 4px 24px rgba(0,0,0,.1);
-  --shadow-lg:0 8px 40px rgba(0,0,0,.12);
+:root {
+    --primary:       {{ hub.cor_primaria or '#f6972b' }};
+    --dark:          {{ hub.cor_secundaria or '#d47a1a' }};
+    --light:         #fff3e0;
+    --light-gray:    #f8f9fa;
+    --medium-gray:   #e0e0e0;
+    --dark-gray:     #343a40;
+    --text-color:    #495057;
+    --white:         #ffffff;
+    --shadow-light:  rgba(0,0,0,0.08);
+    --shadow-medium: rgba(0,0,0,0.16);
 }
-*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
-html{scroll-behavior:smooth}
-body{font-family:var(--sans);background:var(--bg);color:var(--text);line-height:1.6;overflow-x:hidden;-webkit-font-smoothing:antialiased}
-.container{max-width:1200px;margin:0 auto;padding:0 24px}
-a{text-decoration:none;color:inherit}
-img{max-width:100%;display:block}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html { scroll-behavior: smooth; }
+body { font-family: 'Roboto', sans-serif; background: var(--light-gray); color: var(--text-color); line-height: 1.6; }
+.container { max-width: 1200px; margin: 0 auto; padding: 0 20px; }
+a { text-decoration: none; color: inherit; }
 
-/* ── HEADER ── */
-header{
-  background:rgba(255,255,255,.85);
-  backdrop-filter:saturate(180%) blur(20px);
-  -webkit-backdrop-filter:saturate(180%) blur(20px);
-  border-bottom:1px solid rgba(0,0,0,.08);
-  position:sticky;top:0;z-index:200;
+/* ══ HEADER ══ */
+body > header {
+    background: var(--primary);
+    padding: 6px 24px 0;
+    display: flex; flex-direction: column;
+    align-items: center; justify-content: center;
+    position: relative;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.15);
 }
-.header-inner{max-width:1200px;margin:0 auto;padding:0 24px;display:flex;align-items:center;justify-content:space-between;height:68px;gap:16px}
-.logo-hub{display:flex;align-items:center;gap:9px;font-family:var(--sans);font-weight:700;font-size:1rem;color:var(--text);letter-spacing:-.2px}
-.logo-hub img{height:58px;width:auto}
-.logo-hub-mark{width:30px;height:30px;background:var(--primary);border-radius:8px;display:flex;align-items:center;justify-content:center;color:#fff;font-size:.85rem;font-weight:700;flex-shrink:0}
-nav.desktop-nav{display:flex;align-items:center;flex-shrink:0;margin-left:12px}
-.nav-slicer{display:flex;gap:2px;overflow-x:auto;scrollbar-width:none;-webkit-overflow-scrolling:touch;padding:2px 0;align-items:center}
-.nav-slicer::-webkit-scrollbar{display:none}
-.nav-slicer-item{display:inline-flex;align-items:center;padding:5px 12px;border-radius:6px;font-size:.8rem;font-weight:500;color:var(--text-soft);transition:all .15s;white-space:nowrap;flex-shrink:0;background:transparent}
-.nav-slicer-item:hover{background:rgba(0,0,0,.04);color:var(--text)}
-.nav-slicer-item.inicio{font-weight:600;color:var(--text)}
-.header-cta{display:flex;align-items:center;gap:8px;flex-shrink:0}
-.btn-site-header{display:inline-flex;align-items:center;gap:6px;background:var(--primary);color:#fff;padding:7px 14px;border-radius:20px;font-size:.78rem;font-weight:600;transition:all .2s;white-space:nowrap;border:1px solid var(--primary)}
-.btn-site-header:hover{opacity:.88;transform:scale(1.02)}
-.btn-site-header svg{width:13px;height:13px;flex-shrink:0}
-.btn-wpp-header{display:inline-flex;align-items:center;gap:6px;background:#25D366;color:#fff;padding:7px 14px;border-radius:20px;font-size:.78rem;font-weight:600;transition:all .2s;white-space:nowrap}
-.btn-wpp-header:hover{background:#1da850;transform:scale(1.02)}
-.btn-wpp-header svg{width:14px;height:14px;flex-shrink:0}
-.hamburger{display:none;background:none;border:none;cursor:pointer;padding:6px;color:var(--text)}
-.hamburger svg{width:22px;height:22px;stroke:currentColor;fill:none;stroke-width:2}
-.mobile-nav-overlay{display:none;position:fixed;inset:0;background:rgba(255,255,255,.98);backdrop-filter:blur(20px);z-index:300;justify-content:center;align-items:center;opacity:0;transition:opacity .2s}
-.mobile-nav-overlay.active{display:flex;opacity:1}
-.mobile-nav-overlay ul{list-style:none;text-align:center}
-.mobile-nav-overlay ul li{margin:14px 0}
-.mobile-nav-overlay ul li a{color:var(--text);font-size:1.6rem;font-weight:600;letter-spacing:-.5px}
-.mobile-nav-close{position:absolute;top:18px;right:18px;background:var(--bg2);border:none;color:var(--text);width:32px;height:32px;border-radius:50%;font-size:1.1rem;cursor:pointer;display:flex;align-items:center;justify-content:center}
+.header-logo { margin-bottom: 0; }
+.header-logo a { display: block; text-align: center; }
+.header-logo img { height: 160px; width: auto; display: block; margin: 0 auto; }
+.hamburger-btn {
+    display: none; background: none; border: none; color: #fff;
+    font-size: 1.8em; cursor: pointer; padding: 6px;
+    position: absolute; right: 20px; top: 20px;
+}
+nav.desktop-nav { width: 100%; }
+nav.desktop-nav ul { list-style: none; display: flex; align-items: center; justify-content: center; flex-wrap: wrap; }
+nav.desktop-nav ul li a {
+    color: #fff; font-weight: 600; font-size: 0.95em;
+    padding: 12px 20px; display: block;
+    border-bottom: 3px solid transparent; transition: border-color 0.2s, background 0.2s;
+}
+nav.desktop-nav ul li a:hover { border-bottom-color: #fff; background: rgba(0,0,0,0.08); }
 
-/* ── HERO ── */
-.hero{
-  background:var(--primary);
-  padding:56px 24px 44px;
-  text-align:center;
-  position:relative;overflow:hidden;
-}
-.hero-bg-img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:center;z-index:0;opacity:.2;mix-blend-mode:multiply}
-.hero .container{position:relative;z-index:1}
-.hero h1{
-  font-size:clamp(2rem,5vw,3.2rem);
-  font-weight:700;color:#fff;
-  line-height:1.1;letter-spacing:-.04em;
-  margin-bottom:16px;
-}
-.hero p{font-size:1rem;color:rgba(255,255,255,.85);max-width:500px;margin:0 auto 32px;line-height:1.6;font-weight:400}
-.hero-stats{
-  display:flex;justify-content:center;gap:0;flex-wrap:wrap;
-  border:1px solid rgba(255,255,255,.2);border-radius:var(--radius-lg);
-  background:rgba(255,255,255,.1);backdrop-filter:blur(10px);
-  box-shadow:0 2px 16px rgba(0,0,0,.2);
-  overflow:hidden;max-width:480px;margin:0 auto;
-}
-.hero-stat{
-  flex:1;padding:20px 16px;text-align:center;
-  border-right:1px solid rgba(255,255,255,.1);
-}
-.hero-stat:last-child{border-right:none}
-.hero-stat strong{display:block;font-size:1.6rem;font-weight:700;color:#fff;letter-spacing:-.03em;line-height:1}
-.hero-stat span{font-size:.72rem;color:rgba(255,255,255,.8);margin-top:4px;display:block;font-weight:500}
+/* ══ BANNER TOPO ══ */
+.banner-topo { background: var(--white); border-bottom: 1px solid var(--medium-gray); padding: 10px 20px; text-align: center; min-height: 110px; display: flex; align-items: center; justify-content: center; }
+.banner-rotativo { display: none; }
+.banner-rotativo.ativo { display: block; }
+.banner-rotativo img { max-height: 90px; width: auto; max-width: 100%; border-radius: 8px; }
+.banner-placeholder { display: inline-block; background: var(--light-gray); border: 2px dashed var(--medium-gray); border-radius: 8px; padding: 12px 36px; color: #aaa; font-size: 0.9em; }
 
-/* ── BANNERS ── */
-.banners-section{padding:32px 24px;background:var(--bg)}
-.banners-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px}
-.banner-link{display:block;border-radius:var(--radius-lg);overflow:hidden;box-shadow:var(--shadow);transition:all .25s}
-.banner-link:hover{transform:scale(1.01);box-shadow:var(--shadow-md)}
-.banner-link img{width:100%;height:140px;object-fit:cover;display:block}
-.banner-placeholder{display:block;width:100%;height:140px;background:var(--bg2);border-radius:var(--radius-lg);display:flex;align-items:center;justify-content:center;color:var(--muted);font-size:.85rem;text-align:center;padding:16px}
-@media(max-width:600px){
-  .banners-grid{grid-template-columns:1fr}
+/* ══ HERO ══ */
+.hero-section {
+    color: #fff; text-align: center; min-height: 540px;
+    display: flex; align-items: center; justify-content: center;
+    background:
+        linear-gradient(rgba(0,0,0,0.55), rgba(0,0,0,0.55)),
+        url('{{ hub.banner_fundo_url or "https://via.placeholder.com/1920x540" }}') center/cover no-repeat;
+}
+.hero-inner { padding: 48px 20px; }
+.hero-section h1 { font-size: 3em; font-weight: 900; line-height: 1.2; text-shadow: 2px 2px 8px rgba(0,0,0,0.6); margin-bottom: 16px; }
+.hero-section h1 em { color: var(--primary); font-style: normal; }
+.hero-section .hero-sub { font-size: 1.25em; max-width: 660px; margin: 0 auto 32px; text-shadow: 1px 1px 4px rgba(0,0,0,0.5); opacity: 0.92; }
+.hero-btns { display: flex; gap: 14px; justify-content: center; flex-wrap: wrap; }
+.btn-hero { display: inline-flex; align-items: center; gap: 8px; background: var(--primary); color: #fff; padding: 15px 34px; border-radius: 8px; font-size: 1.1em; font-weight: 700; border: none; cursor: pointer; transition: background 0.3s, transform 0.2s; }
+.btn-hero:hover { background: var(--dark); transform: translateY(-2px); }
+
+/* ══ HERO STATS ══ */
+.hero-stats {
+    display: flex; align-items: center; justify-content: center;
+    gap: 0; margin-top: 36px; flex-wrap: wrap;
+}
+.hero-stat {
+    display: flex; flex-direction: column; align-items: center;
+    padding: 0 28px;
+}
+.hero-stat-num {
+    font-size: 1.8em; font-weight: 900; color: var(--primary);
+    line-height: 1; letter-spacing: -0.5px;
+    text-shadow: 0 2px 8px rgba(0,0,0,0.4);
+}
+.hero-stat-label {
+    font-size: 0.82em; font-weight: 500; color: rgba(255,255,255,0.85);
+    margin-top: 4px; text-transform: uppercase; letter-spacing: 0.5px;
+}
+.hero-stat-divider {
+    width: 1px; height: 36px; background: rgba(255,255,255,0.3);
 }
 
-/* ── CATEGORIAS ── */
-.section{padding:56px 24px}
-.section-alt{background:var(--bg2)}
-.section-header{text-align:center;margin-bottom:40px}
-.section-eyebrow{font-size:.72rem;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--primary);margin-bottom:10px;display:block}
-.section-title{font-size:clamp(1.6rem,3.5vw,2.2rem);font-weight:700;color:var(--text);letter-spacing:-.04em;line-height:1.1}
-.section-subtitle{color:var(--muted);font-size:.9rem;margin-top:8px}
+/* ══ BUSCA ══ */
+.busca-section { background: var(--white); padding: 52px 0; }
+.busca-topo { text-align: center; margin-bottom: 32px; }
+.busca-topo h2 { font-size: 2em; font-weight: 800; color: var(--dark-gray); margin-bottom: 8px; }
+.busca-topo p { color: #6c757d; margin-bottom: 20px; font-size: 1.05em; }
+.chip-cat { padding: 7px 20px; border-radius: 20px; border: 2px solid var(--medium-gray); background: var(--white); color: var(--text-color); font-family: inherit; font-size: 0.9em; font-weight: 600; cursor: pointer; transition: all 0.2s; }
+.chip-cat:hover { border-color: var(--primary); color: var(--primary); }
+.chip-cat.active { background: var(--primary); border-color: var(--primary); color: #fff; }
 
-.cats-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:14px}
-.cat-card{
-  background:#fff;border:1px solid var(--border-light);border-radius:var(--radius-lg);
-  overflow:hidden;transition:all .25s;display:flex;flex-direction:column;align-items:center;
-  padding:0 0 14px;text-align:center;box-shadow:var(--shadow);
+.categoria-slicer { position: relative; max-width: 480px; margin: 0 auto 28px; z-index: 20; }
+.slicer-toggle {
+    width: 100%; display: flex; align-items: center; justify-content: space-between; gap: 12px;
+    background: var(--white); border: 2px solid var(--medium-gray); border-radius: 10px;
+    padding: 13px 18px; font-family: inherit; font-size: 0.98em; font-weight: 600;
+    color: var(--text-color); cursor: pointer; transition: all 0.2s;
 }
-.cat-card:hover{transform:translateY(-3px);box-shadow:var(--shadow-md);border-color:rgba(0,113,227,.2)}
-.cat-card-icon{width:100%;height:100px;display:flex;align-items:center;justify-content:center;font-size:2.4rem;background:var(--bg2)}
-.cat-card h3{font-size:.85rem;font-weight:600;color:var(--text);margin:10px 12px 2px;letter-spacing:-.01em}
-.cat-card p{font-size:.72rem;color:var(--muted);padding:0 12px;line-height:1.4}
-.cat-card-btn{
-  margin-top:8px;display:inline-flex;align-items:center;gap:4px;
-  background:var(--primary);color:#fff;
-  padding:6px 14px;border-radius:20px;font-size:.7rem;font-weight:600;transition:background .2s;
-}
-.cat-card:hover .cat-card-btn{background:var(--primary-d)}
+.slicer-toggle:hover { border-color: var(--primary); }
+.slicer-toggle.open { border-color: var(--primary); }
+.slicer-chevron { transition: transform 0.25s; color: #adb5bd; flex-shrink: 0; }
+.slicer-toggle.open .slicer-chevron { transform: rotate(180deg); color: var(--primary); }
 
-/* ── NEGÓCIOS GRID ── */
-.negocios-carousel-outer{overflow:hidden;width:100%}
-.negocios-track{
-  display:flex;gap:16px;
-  transition:transform .4s cubic-bezier(.4,0,.2,1);
-  will-change:transform;cursor:grab;user-select:none;
+.slicer-panel {
+    display: none; flex-direction: column; gap: 3px;
+    position: absolute; top: calc(100% + 8px); left: 0; right: 0;
+    background: var(--white); border: 1px solid var(--medium-gray); border-radius: 12px;
+    box-shadow: 0 14px 38px var(--shadow-medium);
+    max-height: 340px; overflow-y: auto; z-index: 21; padding: 8px;
 }
-.negocios-track:active{cursor:grabbing}
-@media(max-width:768px){
-  .negocios-carousel-outer{overflow-x:scroll;-webkit-overflow-scrolling:touch;scroll-snap-type:x mandatory;scrollbar-width:none}
-  .negocios-carousel-outer::-webkit-scrollbar{display:none}
-  .negocios-track{transform:none!important;transition:none!important;cursor:default}
-}
-.negocio-card{
-  flex:0 0 calc(33.333% - 11px);min-width:0;
-  background:white;
-  border:1px solid var(--border-light);
-  border-radius:var(--radius-lg);
-  overflow:hidden;transition:all .25s;display:flex;flex-direction:column;
-  text-decoration:none;color:inherit;
-  box-shadow:var(--shadow);
-}
-@media(max-width:900px){.negocio-card{flex:0 0 calc(50% - 8px)}}
-@media(max-width:580px){.negocio-card{flex:0 0 calc(85% - 8px);scroll-snap-align:start}}
-.negocio-card:hover{transform:translateY(-4px);box-shadow:var(--shadow-lg);border-color:rgba(0,113,227,.2)}
-.negocio-card-foto{width:100%;height:160px;object-fit:cover;display:block}
-.negocio-card-sem-foto{width:100%;height:160px;background:var(--bg2);display:flex;align-items:center;justify-content:center;font-size:2rem}
-.negocio-card-body{padding:14px;flex:1;display:flex;flex-direction:column;gap:4px}
-.negocio-badge{
-  display:inline-block;padding:3px 10px;border-radius:20px;
-  background:rgba(0,113,227,.08);color:var(--primary);
-  font-size:.68rem;font-weight:600;width:fit-content;letter-spacing:.01em;
-}
-.negocio-card-body h3{font-size:.9rem;font-weight:600;color:var(--text);line-height:1.3;letter-spacing:-.01em}
-.negocio-bairro{display:flex;align-items:center;gap:4px;font-size:.75rem;color:var(--muted)}
-.negocio-bairro svg{width:10px;height:10px;stroke:currentColor;fill:none;stroke-width:2;flex-shrink:0}
+.slicer-panel.open { display: flex; }
+.slicer-backdrop { display: none; position: fixed; inset: 0; background: transparent; z-index: 15; }
+.slicer-backdrop.open { display: block; }
 
-/* ── BLOG / POSTS ── */
-.posts-section{padding:56px 24px;background:var(--bg2)}
-.posts-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:24px}
-.post-card{
-  background:#fff;border:1px solid var(--border-light);border-radius:var(--radius-lg);
-  overflow:hidden;transition:all .25s;display:flex;flex-direction:column;
-  box-shadow:var(--shadow);
-}
-.post-card:hover{transform:translateY(-4px);box-shadow:var(--shadow-md);border-color:rgba(0,113,227,.2)}
-.post-card-img{width:100%;height:180px;object-fit:cover;background:var(--bg2);display:flex;align-items:center;justify-content:center;color:var(--muted);font-size:1.8rem}
-.post-card-body{padding:18px;flex:1;display:flex;flex-direction:column}
-.post-cat{font-size:.7rem;color:var(--primary);font-weight:700;text-transform:uppercase;margin-bottom:6px}
-.post-title{font-size:.95rem;font-weight:600;color:var(--text);margin-bottom:8px;line-height:1.4}
-.post-desc{font-size:.8rem;color:var(--text-soft);margin-bottom:12px;flex:1;line-height:1.5}
-.post-meta{display:flex;gap:12px;font-size:.72rem;color:var(--muted)}
-.post-meta span{display:flex;align-items:center;gap:4px}
-.post-link{display:inline-flex;align-items:center;gap:4px;color:var(--primary);font-size:.8rem;font-weight:600;margin-top:auto}
-.post-link:hover{color:var(--primary-d)}
+/* ══ NEGÓCIOS ══ */
+.negocios-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 22px; }
+.negocio-card { background: var(--white); border-radius: 14px; overflow: hidden; box-shadow: 0 4px 14px var(--shadow-light); transition: transform 0.3s, box-shadow 0.3s; display: flex; flex-direction: column; cursor: pointer; text-decoration: none; color: inherit; }
+.negocio-card:hover { transform: translateY(-5px); box-shadow: 0 10px 28px var(--shadow-medium); }
+.card-foto { width: 100%; height: 160px; overflow: hidden; position: relative; background: #f5f5f5; }
+.card-foto img { width: 100%; height: 100%; object-fit: cover; transition: transform 0.4s; }
+.negocio-card:hover .card-foto img { transform: scale(1.06); }
+.badge-cat { position: absolute; top: 10px; left: 10px; background: var(--primary); color: #fff; font-size: 0.72em; font-weight: 700; padding: 3px 10px; border-radius: 20px; }
+.card-body { padding: 16px; flex: 1; display: flex; flex-direction: column; gap: 4px; }
+.card-body h3 { font-size: 1.05em; font-weight: 700; color: var(--dark-gray); }
+.card-bairro { font-size: 0.88em; color: #6c757d; display: flex; align-items: center; gap: 5px; }
+.btn-ver { margin-top: auto; padding-top: 12px; display: inline-block; background: var(--primary); color: #fff; padding: 9px 18px; border-radius: 6px; font-size: 0.88em; font-weight: 700; text-align: center; transition: background 0.2s; }
+.negocio-card:hover .btn-ver { background: var(--dark); }
+.info-vazio { text-align: center; color: #6c757d; padding: 50px 0; font-size: 1.05em; }
 
-/* ── CTA ANUNCIE ── */
-.anuncie-section{padding:48px 24px;background:linear-gradient(135deg,var(--primary),var(--primary-d));color:#fff;text-align:center}
-.anuncie-inner h2{font-size:1.8rem;font-weight:700;margin-bottom:12px}
-.anuncie-inner p{font-size:.95rem;max-width:500px;margin:0 auto 28px;opacity:.95}
-.btn-anuncie{display:inline-flex;align-items:center;gap:8px;background:#fff;color:var(--primary);padding:12px 32px;border-radius:20px;font-size:.9rem;font-weight:600;transition:all .2s;border:none;cursor:pointer}
-.btn-anuncie:hover{transform:scale(1.05);box-shadow:0 8px 20px rgba(0,0,0,.2)}
+/* ══ BANNER MEIO ══ */
+.banner-meio { background: var(--light); padding: 28px 20px; text-align: center; border-top: 1px solid #ffe0b2; border-bottom: 1px solid #ffe0b2; min-height: 150px; display: flex; align-items: center; justify-content: center; }
+.banner-meio .banner-rotativo img { max-height: 120px; }
 
-/* ── FOOTER ── */
-footer{background:var(--text);color:#fff;padding:40px 24px;text-align:center;font-size:.85rem}
-footer strong{display:block;margin-bottom:4px}
-footer p{opacity:.8;margin:6px 0}
+/* ══ CATEGORIAS ══ */
+.section { padding: 62px 0; }
+.section-title { text-align: center; font-size: 2em; font-weight: 800; color: var(--dark-gray); margin-bottom: 10px; }
+.section-subtitle { text-align: center; color: #6c757d; margin-bottom: 40px; font-size: 1.05em; }
+.categorias-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 20px; }
+.categoria-card { background: var(--white); border-radius: 14px; overflow: hidden; box-shadow: 0 4px 12px var(--shadow-light); transition: transform 0.3s, box-shadow 0.3s; display: flex; flex-direction: column; align-items: center; padding-bottom: 20px; text-align: center; cursor: pointer; text-decoration: none; color: inherit; }
+.categoria-card:hover { transform: translateY(-6px); box-shadow: 0 10px 26px var(--shadow-medium); }
+.cat-photo { width: 100%; aspect-ratio: 1/1; overflow: hidden; background: #eee; }
+.cat-photo img { width: 100%; height: 100%; object-fit: cover; transition: transform 0.4s; }
+.categoria-card:hover .cat-photo img { transform: scale(1.07); }
+.categoria-card h3 { font-size: 1.05em; font-weight: 700; color: var(--dark-gray); margin: 14px 12px 4px; }
+.categoria-card .btn-ver { margin-top: 10px; background: var(--primary); color: #fff; padding: 8px 18px; border-radius: 6px; font-weight: 600; font-size: 0.88em; transition: background 0.3s; display: inline-block; }
+.categoria-card:hover .btn-ver { background: var(--dark); }
 
-/* ── WHATSAPP FLUTUANTE ── */
-.wpp-float{position:fixed;bottom:24px;right:24px;background:#25D366;color:#fff;width:52px;height:52px;border-radius:50%;display:flex;align-items:center;justify-content:center;box-shadow:0 4px 20px rgba(37,211,102,.4);z-index:999;transition:transform .2s;cursor:pointer;text-decoration:none}
-.wpp-float:hover{transform:scale(1.08)}
-.wpp-float svg{width:24px;height:24px;fill:currentColor}
+/* ══ FOOTER ══ */
+footer { background: #111; color: #999; text-align: center; padding: 32px 20px; font-size: 0.88em; }
+footer a { color: var(--primary); }
+footer a:hover { text-decoration: underline; }
+.footer-logo { margin-bottom: 14px; }
+.footer-logo img { height: 36px; width: auto; opacity: 0.85; }
 
-/* ── RESPONSIVO ── */
-@media(max-width:768px){
-  nav.desktop-nav{display:none}
-  .hamburger{display:block}
-  .hero{padding:44px 20px 36px}
-  .hero h1{font-size:1.8rem}
-  .hero-stats{max-width:100%}
-  .hero-stat{padding:16px 10px}
-  .hero-stat strong{font-size:1.3rem}
-  .section{padding:40px 20px}
-  .anuncie-section{padding:40px 20px}
-}
-@media(max-width:480px){
-  .header-inner{height:56px}
-  .logo-hub img{height:40px}
-  .section-title{font-size:1.4rem}
+/* ══ RESPONSIVE ══ */
+@media (max-width: 768px) {
+    body > header { padding: 16px 60px 16px 20px; flex-direction: row; justify-content: center; }
+    .header-logo img { height: 96px; }
+    nav.desktop-nav { display: none; }
+    .hamburger-btn { display: block; top: 50%; transform: translateY(-50%); }
+    .hero-section { min-height: 440px; }
+    .hero-section h1 { font-size: 2.1em; }
+    .hero-section .hero-sub { font-size: 1em; }
+    .section { padding: 44px 0; }
+    .section-title { font-size: 1.6em; }
+    .busca-section { padding: 36px 0; }
+    .banner-rotativo img { max-height: 120px !important; }
+    .banner-meio .banner-rotativo img { max-height: 120px !important; }
 }
 </style>
 </head>
 <body>
 
-<!-- HEADER -->
+<!-- ══ HEADER ══ -->
 <header>
-  <div class="header-inner">
-    <div style="display:flex;align-items:center;gap:8px;flex-shrink:0;">
-      <a href="/" class="logo-hub">
-        {% if hub.logo_url %}
-          <img src="{{ hub.logo_url }}" alt="{{ hub.nome or 'Hub' }}">
-        {% else %}
-          <div class="logo-hub-mark">{{ (hub.nome or 'H')[0] | upper }}</div>
-          <span>{{ hub.nome or 'Hub' }}</span>
-        {% endif %}
-      </a>
-    </div>
-    <nav class="desktop-nav">
-      <div class="nav-slicer">
-        <a href="/" class="nav-slicer-item inicio">Início</a>
-        {% if categorias %}
-        {% for cat in categorias[:5] %}
-        <a href="/{{ cat.slug }}/" class="nav-slicer-item">{{ cat.nome }}</a>
-        {% endfor %}
-        {% endif %}
-      </div>
-    </nav>
-    <div class="header-cta">
-      {% if hub.site_url %}<a href="{{ hub.site_url }}" target="_blank" class="btn-site-header"><i class="fas fa-globe"></i> Site</a>{% endif %}
-      {% if hub.whatsapp %}<a href="https://wa.me/{{ hub.whatsapp }}" target="_blank" class="btn-wpp-header"><i class="fab fa-whatsapp"></i></a>{% endif %}
-      <button class="hamburger" id="hamburger"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg></button>
-    </div>
+  <div class="header-logo">
+    <a href="/">
+      {% if hub.logo_url %}<img src="{{ hub.logo_url }}" alt="{{ hub.nome or 'Hub' }}">{% endif %}
+    </a>
   </div>
-</header>
-
-<!-- MOBILE NAV -->
-<div class="mobile-nav-overlay" id="mobileNav">
-  <button class="mobile-nav-close" id="navClose">✕</button>
-  <nav>
+  <button class="hamburger-btn" onclick="toggleMobileNav()">☰</button>
+  <nav class="desktop-nav">
     <ul>
       <li><a href="/">Início</a></li>
-      {% if categorias %}
-      {% for cat in categorias[:10] %}
+      {% for cat in categorias[:5] %}
       <li><a href="/{{ cat.slug }}/">{{ cat.nome }}</a></li>
       {% endfor %}
-      {% endif %}
     </ul>
   </nav>
+</header>
+
+<!-- ══ BANNER TOPO ══ -->
+{% if anuncio_topo %}
+<div class="banner-topo">
+  {% if anuncio_topo.url %}
+    <a href="{{ anuncio_topo.url }}" target="_blank">
+      <img class="banner-rotativo ativo" src="{{ anuncio_topo.imagem_url }}" alt="Anúncio">
+    </a>
+  {% else %}
+    <div class="banner-placeholder">🎯 Espaço para seu anúncio</div>
+  {% endif %}
 </div>
+{% endif %}
 
-<!-- HERO -->
-<section class="hero" aria-label="Bem-vindo">
-  <div class="container">
-    <h1>{{ hub.nome or 'Hub' }}</h1>
-    {% if negocios and categorias %}
-    <p>Explore {{ negocios | length }} negócio(s) em {{ categorias | length }} categoria(s) diferente(s). {{ hub.descricao or "Encontre os melhores estabelecimentos perto de você com endereço, telefone e localização." }}</p>
+<!-- ══ HERO ══ -->
+<section class="hero-section">
+  <div class="hero-inner">
+    <h1>{{ hub.nome or 'Bem-vindo' }} <em>Perto de Você</em></h1>
+    <p class="hero-sub">{{ hub.descricao or 'Descubra os melhores negócios perto de você' }}</p>
+    <div class="hero-btns">
+      <button class="btn-hero" onclick="document.querySelector('.slicer-toggle').click()">
+        <i class="fas fa-search"></i> Explorar
+      </button>
+    </div>
     <div class="hero-stats">
-      <div class="hero-stat"><strong>{{ negocios | length }}</strong><span>negócio(s)</span></div>
-      <div class="hero-stat"><strong>{{ categorias | length }}</strong><span>categoria(s)</span></div>
-      <div class="hero-stat"><strong>{{ (negocios | map(attribute='bairro') | unique | list) | length }}</strong><span>bairro(s)</span></div>
-    </div>
-    {% else %}
-    <p>{{ hub.descricao or "Descubra os melhores negócios perto de você com endereço, telefone e localização." }}</p>
-    {% endif %}
-  </div>
-</section>
-
-<!-- BANNERS TOPO E MEIO -->
-{% if anuncio_topo or anuncio_meio or hub.banner1_foto_url or hub.banner2_foto_url %}
-<section class="banners-section" aria-label="Banners">
-  <div class="container">
-    <div class="banners-grid">
-      {% if anuncio_topo or hub.banner1_foto_url %}
-      <a href="{{ anuncio_topo.url or '#' }}" class="banner-link">
-        <img src="{{ anuncio_topo.imagem_url or hub.banner1_foto_url or 'https://via.placeholder.com/400x140?text=Anuncie+aqui' }}" alt="Banner">
-      </a>
-      {% else %}
-      <div class="banner-placeholder">Anuncie aqui</div>
-      {% endif %}
-
-      {% if anuncio_meio or hub.banner2_foto_url %}
-      <a href="{{ anuncio_meio.url or '#' }}" class="banner-link">
-        <img src="{{ anuncio_meio.imagem_url or hub.banner2_foto_url or 'https://via.placeholder.com/400x140?text=Anuncie+aqui' }}" alt="Banner">
-      </a>
-      {% else %}
-      <div class="banner-placeholder">Anuncie aqui</div>
-      {% endif %}
-    </div>
-  </div>
-</section>
-{% endif %}
-
-<!-- INTRODUÇÃO TEXTUAL / REFORÇO SEO -->
-<section style="padding:32px 24px;background:#fff;border-top:1px solid var(--border-light);border-bottom:1px solid var(--border-light);">
-  <div class="container" style="max-width:800px;text-align:center;">
-    <p style="font-size:.95rem;color:var(--text-soft);line-height:1.8;">
-      {% if categorias and negocios %}
-        Bem-vindo ao {{ hub.nome or 'Hub' }}, o seu guia completo de negócios locais. 
-        Com {{ negocios | length }} estabelecimento(s) cadastrado(s) em {{ (negocios | map(attribute='bairro') | unique | list) | length }} bairro(s) diferente(s), 
-        você encontra exatamente o que procura em {{ categorias | length }} categoria(s) distintas. 
-        Use a geolocalização para descobrir as opções mais próximas de você, ou navegue por categoria para explorar todas as possibilidades.
-      {% else %}
-        Bem-vindo ao {{ hub.nome or 'Hub' }}, seu guia completo de negócios locais. Explore negócios por categoria, 
-        encontre os mais próximos de você e tenha acesso a telefone, localização e informações de contato.
-      {% endif %}
-    </p>
-  </div>
-</section>
-
-<!-- CATEGORIAS -->
-{% if categorias %}
-<section class="section" aria-label="Categorias">
-  <div class="container">
-    <div class="section-header">
-      <span class="section-eyebrow">Explorar</span>
-      <h2 class="section-title">Categorias</h2>
-      <p class="section-subtitle">Escolha uma categoria para explorar</p>
-    </div>
-    <div class="cats-grid">
-      {% for cat in categorias %}
-      <a href="/{{ cat.slug }}/" class="cat-card">
-        <div class="cat-card-icon">{{ cat.icone or '📁' }}</div>
-        <h3>{{ cat.nome }}</h3>
-        <p>{{ cat.descricao or '' }}</p>
-        <button class="cat-card-btn">Explorar</button>
-      </a>
-      {% endfor %}
-    </div>
-  </div>
-</section>
-{% endif %}
-
-<!-- NEGÓCIOS -->
-{% if negocios %}
-<section class="section section-alt" aria-label="Todos os negócios">
-  <div class="container">
-    <div class="section-header">
-      <span class="section-eyebrow">Diretório</span>
-      <h2 class="section-title">Todos os negócios</h2>
-      <p class="section-subtitle">{{ negocios | length }} negócio(s) cadastrado(s)</p>
-      <p style="font-size:.9rem;color:var(--text-soft);margin-top:16px;max-width:700px;margin-left:auto;margin-right:auto;line-height:1.6;">
-        Conheça todos os {{ negocios | length }} negócio(s) disponível(is) em {{ hub.nome or 'Hub' }}. 
-        Cada estabelecimento conta com endereço completo, telefone de contato e localização no mapa. 
-        Use a função <strong>Próximo a mim</strong> para encontrar os mais perto de sua localização atual.
-      </p>
-    </div>
-    <div class="negocios-carousel-outer">
-      <div class="negocios-track">
-        {% for n in negocios[:12] %}
-        <a href="/{{ n.categoria_slug }}/{{ n.slug }}/" class="negocio-card">
-          {% if n.foto_url %}
-          <img src="{{ n.foto_url }}" alt="{{ n.nome }}" class="negocio-card-foto">
-          {% else %}
-          <div class="negocio-card-sem-foto">📷</div>
-          {% endif %}
-          <div class="negocio-card-body">
-            <div class="negocio-badge">{{ n.categoria_nome }}</div>
-            <h3>{{ n.nome }}</h3>
-            {% if n.bairro %}<div class="negocio-bairro"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg> {{ n.bairro }}</div>{% endif %}
-          </div>
-        </a>
-        {% endfor %}
+      <div class="hero-stat">
+        <div class="hero-stat-num">{{ total_negocios }}</div>
+        <div class="hero-stat-label">Negócios</div>
+      </div>
+      <div class="hero-stat-divider"></div>
+      <div class="hero-stat">
+        <div class="hero-stat-num">{{ total_cats }}</div>
+        <div class="hero-stat-label">Categorias</div>
+      </div>
+      <div class="hero-stat-divider"></div>
+      <div class="hero-stat">
+        <div class="hero-stat-num">{{ total_bairros }}</div>
+        <div class="hero-stat-label">Bairros</div>
       </div>
     </div>
   </div>
 </section>
-{% endif %}
 
-<!-- BLOG / POSTS -->
-{% if posts and posts | length > 0 %}
-<section class="posts-section" aria-label="Blog">
+<!-- ══ BUSCA ══ -->
+<section class="busca-section">
   <div class="container">
-    <div class="section-header">
-      <span class="section-eyebrow">Novidades</span>
-      <h2 class="section-title">Blog</h2>
-      <p class="section-subtitle">Dicas e informações úteis</p>
+    <div class="busca-topo">
+      <h2>Explorar Categorias</h2>
+      <p>Escolha uma categoria para ver os negócios disponíveis</p>
     </div>
-    <div class="posts-grid">
-      {% for post in posts[:6] %}
-      <a href="{{ post.url or '#' }}" class="post-card">
-        {% if post.imagem_url %}
-        <img src="{{ post.imagem_url }}" alt="{{ post.titulo }}" class="post-card-img">
-        {% else %}
-        <div class="post-card-img">📝</div>
-        {% endif %}
-        <div class="post-card-body">
-          {% if post.categoria %}<div class="post-cat">{{ post.categoria }}</div>{% endif %}
-          <h3 class="post-title">{{ post.titulo }}</h3>
-          <p class="post-desc">{{ post.descricao or post.resumo or 'Leia mais...' }}</p>
-          <div class="post-meta">
-            {% if post.data %}<span>📅 {{ post.data }}</span>{% endif %}
-            {% if post.autor %}<span>✍️ {{ post.autor }}</span>{% endif %}
-          </div>
+
+    <div class="categoria-slicer">
+      <button class="slicer-toggle" onclick="toggleSlicer()">
+        <span class="slicer-label"><i class="fas fa-filter"></i> <strong>Selecione uma categoria</strong></span>
+        <i class="fas fa-chevron-down slicer-chevron"></i>
+      </button>
+      <div class="slicer-backdrop" onclick="closeSlicer()"></div>
+      <div class="slicer-panel" id="slicerPanel">
+        {% for cat in categorias %}
+        <a href="/{{ cat.slug }}/" class="chip-cat">{{ cat.nome }}</a>
+        {% endfor %}
+      </div>
+    </div>
+
+    {% if negocios %}
+    <div class="negocios-grid">
+      {% for n in negocios[:12] %}
+      <a href="/{{ n.categoria_slug }}/{{ n.slug }}/" class="negocio-card">
+        <div class="card-foto">
+          <img src="{{ n.foto_url or 'https://via.placeholder.com/260x160?text=' ~ n.nome }}" alt="{{ n.nome }}">
+          <div class="badge-cat">{{ n.categoria_nome }}</div>
+        </div>
+        <div class="card-body">
+          <h3>{{ n.nome }}</h3>
+          {% if n.bairro %}<div class="card-bairro"><i class="fas fa-map-marker-alt"></i> {{ n.bairro }}</div>{% endif %}
+          <a href="/{{ n.categoria_slug }}/{{ n.slug }}/" class="btn-ver">Ver detalhes</a>
         </div>
       </a>
       {% endfor %}
     </div>
+    {% else %}
+    <div class="info-vazio">Nenhum negócio cadastrado ainda</div>
+    {% endif %}
   </div>
 </section>
+
+<!-- ══ BANNER MEIO ══ -->
+{% if anuncio_meio %}
+<div class="banner-meio">
+  {% if anuncio_meio.url %}
+    <a href="{{ anuncio_meio.url }}" target="_blank">
+      <img class="banner-rotativo ativo" src="{{ anuncio_meio.imagem_url }}" alt="Anúncio">
+    </a>
+  {% endif %}
+</div>
 {% endif %}
 
-<!-- CTA ANUNCIE AQUI -->
-<section class="anuncie-section" aria-label="Anuncie aqui">
-  <div class="container">
-    <div class="anuncie-inner">
-      <h2>Quer anunciar aqui?</h2>
-      <p>Coloque seu negócio em destaque no {{ hub.nome or 'Hub' }} e alcance mais clientes.</p>
-      {% if hub.whatsapp %}
-      <a href="https://wa.me/{{ hub.whatsapp }}?text=Olá! Gostaria de anunciar no {{ hub.nome or 'Hub' }}" class="btn-anuncie">
-        <i class="fab fa-whatsapp"></i> Fale conosco
-      </a>
-      {% endif %}
-    </div>
+<!-- ══ CATEGORIAS ══ -->
+<section class="section container">
+  <h2 class="section-title">Categorias Disponíveis</h2>
+  <p class="section-subtitle">Encontre tudo que você precisa</p>
+  
+  {% if categorias %}
+  <div class="categorias-grid">
+    {% for cat in categorias %}
+    <a href="/{{ cat.slug }}/" class="categoria-card">
+      <div class="cat-photo">
+        <i class="fas fa-folder" style="font-size: 3em; color: var(--primary); display: flex; align-items: center; justify-content: center; width: 100%; height: 100%;"></i>
+      </div>
+      <h3>{{ cat.nome }}</h3>
+      <span class="btn-ver">Explorar</span>
+    </a>
+    {% endfor %}
   </div>
+  {% else %}
+  <div class="info-vazio">Nenhuma categoria disponível</div>
+  {% endif %}
 </section>
 
-<!-- FOOTER -->
+<!-- ══ FOOTER ══ -->
 <footer>
-  <div class="container">
-    <strong>{{ hub.nome or 'Hub' }}</strong>
-    <p>{{ hub.descricao or 'Guia local de negócios' }}</p>
-    <p>&copy; {{ hub.nome or 'Hub' }} — todos os direitos reservados.</p>
+  <div class="footer-logo">
+    {% if hub.logo_url %}<img src="{{ hub.logo_url }}" alt="{{ hub.nome or 'Hub' }}">{% endif %}
   </div>
+  <p>&copy; {{ hub.nome or 'Hub' }} — todos os direitos reservados.</p>
 </footer>
 
-<!-- WHATSAPP FLUTUANTE -->
-{% if hub.whatsapp %}
-<a href="https://wa.me/{{ hub.whatsapp }}" target="_blank" class="wpp-float" title="Enviar mensagem">
-  <svg viewBox="0 0 24 24"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.272-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.67-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.076 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421-7.403h-.004a9.87 9.87 0 00-5.031 1.378c-3.055 2.2-5.001 5.6-5.001 9.262 0 1.541.341 3.013.999 4.373L2.257 22l4.7-1.232c1.24.757 2.738 1.16 4.322 1.16 5.514 0 10-4.486 10-10S13.081 2.5 7.566 2.5c-1.584 0-3.083.403-4.322 1.16L2.257 2l1.241 3.9c-.658 1.36-.999 2.832-.999 4.373 0 3.662 1.946 7.062 5.001 9.262 1.515 1.093 3.281 1.784 5.079 2.087 1.797.303 3.712.212 5.514-.271 3.146-.9 5.848-3.5 6.694-6.566.846-3.065.337-6.379-1.365-8.954-1.702-2.575-4.465-4.33-7.523-4.33z"/></svg>
-</a>
-{% endif %}
-
 <script>
-// Mobile nav
-document.getElementById('hamburger').addEventListener('click',()=>document.getElementById('mobileNav').classList.add('active'));
-document.getElementById('navClose').addEventListener('click',()=>document.getElementById('mobileNav').classList.remove('active'));
-</script>
+function toggleSlicer() {
+  const toggle = document.querySelector('.slicer-toggle');
+  const panel = document.querySelector('.slicer-panel');
+  const backdrop = document.querySelector('.slicer-backdrop');
+  toggle.classList.toggle('open');
+  panel.classList.toggle('open');
+  backdrop.classList.toggle('open');
+}
 
+function closeSlicer() {
+  document.querySelector('.slicer-toggle').classList.remove('open');
+  document.querySelector('.slicer-panel').classList.remove('open');
+  document.querySelector('.slicer-backdrop').classList.remove('open');
+}
+
+function toggleMobileNav() {
+  console.log('Mobile nav not implemented yet');
+}
+
+document.querySelector('.slicer-backdrop').addEventListener('click', closeSlicer);
+document.addEventListener('click', function(e) {
+  if (!e.target.closest('.categoria-slicer')) {
+    closeSlicer();
+  }
+});
+</script>
 </body>
 </html>
