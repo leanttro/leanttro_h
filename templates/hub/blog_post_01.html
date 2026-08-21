@@ -1,0 +1,288 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+{# ══ SEO dinâmico do post ══ #}
+{% set seo_image = post.capa_url or hub.logo_url or 'https://via.placeholder.com/1200x630?text=Blog' %}
+
+<title>{{ post.titulo }} — {{ hub.nome or 'Hub' }}</title>
+<meta name="description" content="{{ post.resumo or (post.titulo ~ ' — ' ~ (hub.nome or 'Hub')) }}">
+<meta name="robots" content="index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1">
+<meta name="theme-color" content="{{ hub.cor_primaria or '#0071e3' }}">
+<link rel="canonical" href="https://{{ request.host }}/blog/{{ post.slug }}/">
+{% if hub.logo_url %}<link rel="icon" type="image/png" href="{{ hub.logo_url }}">{% endif %}
+<link rel="apple-touch-icon" href="{{ hub.logo_url or 'https://via.placeholder.com/180x180' }}">
+
+{# ══ Open Graph ══ #}
+<meta property="og:type" content="article">
+<meta property="og:site_name" content="{{ hub.nome or 'Hub' }}">
+<meta property="og:url" content="https://{{ request.host }}/blog/{{ post.slug }}/">
+<meta property="og:title" content="{{ post.titulo }} — {{ hub.nome or 'Hub' }}">
+<meta property="og:description" content="{{ post.resumo or post.titulo }}">
+<meta property="og:image" content="{{ seo_image }}">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:locale" content="pt_BR">
+{% if post.publicado_em %}<meta property="article:published_time" content="{{ post.publicado_em }}">{% endif %}
+{% if post.atualizado_em %}<meta property="article:modified_time" content="{{ post.atualizado_em }}">{% endif %}
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="{{ post.titulo }} — {{ hub.nome or 'Hub' }}">
+<meta name="twitter:description" content="{{ post.resumo or post.titulo }}">
+<meta name="twitter:image" content="{{ seo_image }}">
+
+{# ══ JSON-LD BlogPosting ══ #}
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "BlogPosting",
+  "headline": {{ post.titulo | tojson }},
+  "url": "https://{{ request.host }}/blog/{{ post.slug }}/",
+  "description": {{ (post.resumo or post.titulo) | tojson }},
+  "image": {{ seo_image | tojson }},
+  "datePublished": {{ (post.publicado_em | string) | tojson }},
+  {% if post.atualizado_em %}"dateModified": {{ (post.atualizado_em | string) | tojson }},{% endif %}
+  "inLanguage": "pt-BR",
+  "author": {
+    "@type": "Person",
+    "name": {{ (post.autor or (hub.nome or 'Hub')) | tojson }}
+  },
+  "publisher": {
+    "@type": "Organization",
+    "name": {{ (hub.nome or 'Hub') | tojson }},
+    "logo": {
+      "@type": "ImageObject",
+      "url": {{ (hub.logo_url or 'https://via.placeholder.com/512x512') | tojson }}
+    }
+  }
+}
+</script>
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+
+<style>
+:root{
+  --primary:{{ hub.cor_primaria or '#0071e3' }};
+  --primary-d:{{ hub.cor_secundaria or '#0051a2' }};
+  --bg:#ffffff;
+  --bg2:#f5f5f7;
+  --surface:#ffffff;
+  --border:#d2d2d7;
+  --text:#1d1d1f;
+  --text-soft:#6e6e73;
+  --muted:#86868b;
+  --radius:12px;
+  --sans:'Inter',sans-serif;
+  --shadow:0 2px 12px rgba(0,0,0,.06);
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth}
+body{font-family:var(--sans);background:var(--bg);color:var(--text);line-height:1.65;overflow-x:hidden}
+.container{max-width:1200px;margin:0 auto;padding:0 24px}
+a{text-decoration:none;color:inherit}
+img{max-width:100%;display:block}
+
+/* ══ HEADER ══ */
+header{background:rgba(255,255,255,.85);backdrop-filter:blur(20px);border-bottom:1px solid rgba(0,0,0,.08);position:sticky;top:0;z-index:100}
+.header-inner{max-width:1200px;margin:0 auto;padding:0 24px;display:flex;align-items:center;justify-content:space-between;height:68px}
+.logo-hub{display:flex;align-items:center;gap:12px;font-weight:700;font-size:.95rem;color:var(--text)}
+.logo-hub img{height:48px;width:auto}
+
+/* ══ BREADCRUMB ══ */
+.breadcrumb{background:var(--bg);border-bottom:1px solid var(--border);padding:12px 0;position:sticky;top:68px;z-index:50}
+.breadcrumb nav{display:flex;align-items:center;gap:8px;flex-wrap:wrap;font-size:.85rem;color:var(--text-soft)}
+.breadcrumb nav a{color:var(--primary);font-weight:500}
+.breadcrumb nav a:hover{text-decoration:underline}
+.breadcrumb nav span{color:var(--muted)}
+
+/* ══ HERO POST ══ */
+.post-hero{position:relative;width:100%;max-height:420px;overflow:hidden;background:var(--text)}
+.post-hero img{width:100%;height:420px;object-fit:cover}
+
+/* ══ CONTEÚDO DO POST ══ */
+.post-wrapper{max-width:760px;margin:0 auto;padding:48px 24px}
+.post-meta{display:flex;gap:24px;align-items:center;flex-wrap:wrap;margin-bottom:32px;padding-bottom:24px;border-bottom:1px solid var(--border)}
+.meta-item{display:flex;align-items:center;gap:8px;font-size:.9rem;color:var(--text-soft)}
+.meta-item i{color:var(--primary)}
+.meta-label{display:block;font-size:.75rem;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;margin-bottom:2px}
+.meta-value{font-weight:600;color:var(--text)}
+
+.post-titulo{font-size:clamp(1.8rem,5vw,2.6rem);font-weight:700;line-height:1.2;letter-spacing:-.02em;margin-bottom:16px;color:var(--text)}
+.post-resumo{font-size:1.1rem;color:var(--text-soft);line-height:1.6;margin-bottom:24px}
+.post-categoria{display:inline-block;padding:6px 14px;border-radius:20px;background:rgba(0,0,0,.06);color:var(--primary);font-size:.75rem;font-weight:700;text-transform:uppercase;margin-bottom:20px}
+
+/* ══ CONTEÚDO ══ */
+.post-content{padding:32px 0;line-height:1.75;color:var(--text)}
+.post-content h2{font-size:1.8rem;font-weight:700;margin:40px 0 20px;color:var(--text)}
+.post-content h3{font-size:1.3rem;font-weight:600;margin:32px 0 16px;color:var(--text)}
+.post-content p{margin-bottom:18px;text-align:justify}
+.post-content ul,.post-content ol{margin:20px 0 20px 24px;padding:0}
+.post-content li{margin-bottom:10px}
+.post-content blockquote{border-left:4px solid var(--primary);padding:16px 20px;margin:24px 0;background:var(--bg2);font-style:italic;color:var(--text-soft)}
+.post-content img{border-radius:var(--radius);margin:28px 0;box-shadow:var(--shadow)}
+.post-content a{color:var(--primary);font-weight:500;text-decoration:underline}
+.post-content a:hover{opacity:.8}
+
+/* ══ TAGS DO POST ══ */
+.post-tags{display:flex;gap:10px;flex-wrap:wrap;margin:32px 0;padding:24px 0;border-top:1px solid var(--border);border-bottom:1px solid var(--border)}
+.post-tag{display:inline-block;padding:7px 14px;border-radius:20px;border:1.5px solid var(--border);background:var(--bg);color:var(--text);font-size:.85rem;font-weight:500;transition:all .15s}
+.post-tag:hover{border-color:var(--primary);color:var(--primary)}
+
+/* ══ AUTOR ══ */
+.post-author{background:var(--bg2);border-radius:var(--radius);padding:24px;margin:40px 0;text-align:center}
+.author-avatar{width:80px;height:80px;border-radius:50%;background:var(--primary);margin:0 auto 16px;display:flex;align-items:center;justify-content:center;color:#fff;font-size:2rem}
+.author-nome{font-size:1.1rem;font-weight:700;margin-bottom:4px}
+.author-bio{font-size:.9rem;color:var(--text-soft);line-height:1.5}
+
+/* ══ POSTS RELACIONADOS ══ */
+.related-section{margin:60px 0;padding:48px 0;border-top:1px solid var(--border)}
+.related-titulo{font-size:1.5rem;font-weight:700;margin-bottom:28px}
+.related-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:20px}
+.related-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);overflow:hidden;transition:all .3s}
+.related-card:hover{transform:translateY(-2px);box-shadow:var(--shadow)}
+.related-card-img{width:100%;height:140px;object-fit:cover}
+.related-card-body{padding:16px}
+.related-card-titulo{font-size:.95rem;font-weight:600;line-height:1.35;margin-bottom:8px;color:var(--text)}
+.related-card-data{font-size:.75rem;color:var(--muted)}
+
+/* ══ CTA ══ */
+.post-cta{background:linear-gradient(135deg,var(--primary),var(--primary-d));color:#fff;border-radius:var(--radius);padding:32px;text-align:center;margin:48px 0}
+.post-cta h3{color:#fff;margin:0 0 12px}
+.post-cta p{color:rgba(255,255,255,.85);margin-bottom:20px;font-size:.95rem}
+.cta-btn{display:inline-block;padding:12px 28px;background:#fff;color:var(--primary);border-radius:20px;font-weight:600;transition:all .2s}
+.cta-btn:hover{transform:scale(1.05)}
+
+/* ══ FOOTER ══ */
+footer{background:var(--bg2);border-top:1px solid var(--border);padding:24px;text-align:center;color:var(--text-soft);font-size:.85rem}
+
+@media(max-width:768px){
+  .post-titulo{font-size:1.6rem}
+  .post-meta{gap:12px}
+  .post-hero{max-height:280px}
+  .post-hero img{height:280px}
+}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="header-inner">
+    <a href="/" class="logo-hub">
+      {% if hub.logo_url %}<img src="{{ hub.logo_url }}" alt="{{ hub.nome or 'Hub' }}">{% endif %}
+      <span>{{ hub.nome or 'Hub' }}</span>
+    </a>
+  </div>
+</header>
+
+{% if post %}
+<section class="post-hero">
+  <img src="{{ post.capa_url or 'https://via.placeholder.com/1200x420?text=' ~ post.titulo }}" alt="{{ post.titulo }}">
+</section>
+
+<div class="breadcrumb">
+  <div class="container">
+    <nav aria-label="Breadcrumb">
+      <a href="/">Início</a>
+      <span>›</span>
+      <a href="/blog/">Blog</a>
+      <span>›</span>
+      <span>{{ post.titulo }}</span>
+    </nav>
+  </div>
+</div>
+
+<article class="post-wrapper">
+  <div class="post-meta">
+    {% if post.categoria %}
+    <div class="meta-item">
+      <i class="fas fa-tag"></i>
+      <div>
+        <div class="meta-label">Categoria</div>
+        <div class="meta-value">{{ post.categoria }}</div>
+      </div>
+    </div>
+    {% endif %}
+    {% if post.publicado_em %}
+    <div class="meta-item">
+      <i class="fas fa-calendar-alt"></i>
+      <div>
+        <div class="meta-label">Publicado</div>
+        <div class="meta-value">{{ post.publicado_em | strftime('%d de %b de %Y') if post.publicado_em is string else post.publicado_em.strftime('%d de %b de %Y') }}</div>
+      </div>
+    </div>
+    {% endif %}
+    {% if post.tempo_leitura %}
+    <div class="meta-item">
+      <i class="fas fa-clock"></i>
+      <div>
+        <div class="meta-label">Leitura</div>
+        <div class="meta-value">{{ post.tempo_leitura }} min</div>
+      </div>
+    </div>
+    {% endif %}
+  </div>
+
+  {% if post.categoria %}<div class="post-categoria">{{ post.categoria }}</div>{% endif %}
+  <h1 class="post-titulo">{{ post.titulo }}</h1>
+  {% if post.resumo %}<p class="post-resumo">{{ post.resumo }}</p>{% endif %}
+
+  <div class="post-content">
+    {{ post.conteudo | safe }}
+  </div>
+
+  {% if post.tags %}
+  <div class="post-tags">
+    {% for tag in post.tags %}
+    <a href="/blog/{{ tag.slug }}/" class="post-tag">#{{ tag.nome }}</a>
+    {% endfor %}
+  </div>
+  {% endif %}
+
+  {% if post.autor or post.autor_bio %}
+  <div class="post-author">
+    <div class="author-avatar"><i class="fas fa-user"></i></div>
+    <div class="author-nome">{{ post.autor or (hub.nome or 'Hub') }}</div>
+    {% if post.autor_bio %}<div class="author-bio">{{ post.autor_bio }}</div>{% endif %}
+  </div>
+  {% endif %}
+
+  {% if post_relacionados %}
+  <section class="related-section">
+    <h2 class="related-titulo">Posts relacionados</h2>
+    <div class="related-grid">
+      {% for p in post_relacionados %}
+      <a href="/blog/{{ p.slug }}/" class="related-card">
+        <img src="{{ p.capa_url or 'https://via.placeholder.com/240x140' }}" alt="{{ p.titulo }}" class="related-card-img">
+        <div class="related-card-body">
+          <div class="related-card-titulo">{{ p.titulo }}</div>
+          {% if p.publicado_em %}
+          <div class="related-card-data">{{ p.publicado_em | strftime('%d de %b de %Y') if p.publicado_em is string else p.publicado_em.strftime('%d de %b de %Y') }}</div>
+          {% endif %}
+        </div>
+      </a>
+      {% endfor %}
+    </div>
+  </section>
+  {% endif %}
+
+  <div class="post-cta">
+    <h3>Gostou do conteúdo?</h3>
+    <p>Continue acompanhando nosso blog para mais dicas e novidades.</p>
+    <a href="/blog/" class="cta-btn">Ver mais posts</a>
+  </div>
+</article>
+
+{% else %}
+<div class="container" style="padding:60px 24px;text-align:center;">
+  <p style="color:var(--text-soft);font-size:1.1rem;">Post não encontrado.</p>
+</div>
+{% endif %}
+
+<footer>&copy; {{ hub.nome or 'Hub' }} — todos os direitos reservados.</footer>
+
+</body>
+</html>
