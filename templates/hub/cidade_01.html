@@ -1,0 +1,314 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+{# ══ SEO dinâmico por contexto ══ #}
+{% if categoria and bairro %}
+  {% set seo_title = categoria.nome ~ " no " ~ bairro ~ " — " ~ cidade ~ " | " ~ (hub.nome or 'Hub') %}
+  {% set seo_desc  = "Encontre " ~ categoria.nome ~ " no bairro " ~ bairro ~ " em " ~ cidade ~ ". Endereços, telefones e localização perto de você." %}
+{% elif categoria %}
+  {% set seo_title = categoria.nome ~ " em " ~ cidade ~ " | " ~ (hub.nome or 'Hub') %}
+  {% set seo_desc  = "Encontre " ~ categoria.nome ~ " em " ~ cidade ~ ". Lista completa com endereços, telefones e localização." %}
+{% elif bairro %}
+  {% set seo_title = "Negócios no " ~ bairro ~ " — " ~ cidade ~ " | " ~ (hub.nome or 'Hub') %}
+  {% set seo_desc  = "Descubra negócios no bairro " ~ bairro ~ " em " ~ cidade ~ ". Encontre tudo perto de você." %}
+{% else %}
+  {% set seo_title = "Negócios em " ~ cidade ~ " | " ~ (hub.nome or 'Hub') %}
+  {% set seo_desc  = "Encontre os melhores negócios em " ~ cidade ~ ". O guia completo perto de você." %}
+{% endif %}
+
+<title>{{ seo_title }}</title>
+<meta name="description" content="{{ seo_desc }}">
+<meta name="robots" content="index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1">
+<meta name="theme-color" content="{{ hub.cor_primaria or '#0071e3' }}">
+<link rel="canonical" href="https://{{ request.host }}/cidade/{{ cidade | slugify }}/{% if bairro %}{{ bairro | slugify }}/{% endif %}{% if categoria %}{{ categoria.slug }}/{% endif %}">
+{% if hub.logo_url %}<link rel="icon" type="image/png" href="{{ hub.logo_url }}">{% endif %}
+
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="{{ hub.nome or 'Hub' }}">
+<meta property="og:title" content="{{ seo_title }}">
+<meta property="og:description" content="{{ seo_desc }}">
+
+{# ══ FAQPage: JSON-LD com perguntas dinâmicas ══ #}
+{% set faq_items = [] %}
+{% if categoria and bairro %}
+  {% set _ = faq_items.append({
+    "@type": "Question",
+    "name": "Quantos " ~ categoria.nome | lower ~ " têm no bairro " ~ bairro ~ " em " ~ cidade ~ "?",
+    "acceptedAnswer": {
+      "@type": "Answer",
+      "text": total_negocios ~ " opção(ões) estão cadastradas."
+    }
+  }) %}
+  {% set _ = faq_items.append({
+    "@type": "Question",
+    "name": "Como encontrar " ~ categoria.nome | lower ~ " perto de mim no " ~ bairro ~ "?",
+    "acceptedAnswer": {
+      "@type": "Answer",
+      "text": "Use os filtros de bairro e tipo na página para ver as opções mais próximas."
+    }
+  }) %}
+  {% set _ = faq_items.append({
+    "@type": "Question",
+    "name": "Existem outros bairros com " ~ categoria.nome | lower ~ " em " ~ cidade ~ "?",
+    "acceptedAnswer": {
+      "@type": "Answer",
+      "text": "Use o filtro de bairro para explorar outras regiões de " ~ cidade ~ "."
+    }
+  }) %}
+{% elif categoria %}
+  {% set _ = faq_items.append({
+    "@type": "Question",
+    "name": "Quantos " ~ categoria.nome | lower ~ " têm em " ~ cidade ~ "?",
+    "acceptedAnswer": {
+      "@type": "Answer",
+      "text": total_negocios ~ " opção(ões) estão cadastradas."
+    }
+  }) %}
+  {% set _ = faq_items.append({
+    "@type": "Question",
+    "name": "Em quais bairros de " ~ cidade ~ " tem " ~ categoria.nome | lower ~ "?",
+    "acceptedAnswer": {
+      "@type": "Answer",
+      "text": (bairros_disponiveis | length | string) ~ " bairro(s) têm " ~ categoria.nome | lower ~ " cadastrados." if bairros_disponiveis else "Use o filtro de bairro para explorar."
+    }
+  }) %}
+  {% set _ = faq_items.append({
+    "@type": "Question",
+    "name": "Como encontrar " ~ categoria.nome | lower ~ " perto de mim em " ~ cidade ~ "?",
+    "acceptedAnswer": {
+      "@type": "Answer",
+      "text": "Use o filtro de bairro para localizar a opção mais próxima de você."
+    }
+  }) %}
+{% elif bairro %}
+  {% set _ = faq_items.append({
+    "@type": "Question",
+    "name": "Quantos negócios têm no bairro " ~ bairro ~ " em " ~ cidade ~ "?",
+    "acceptedAnswer": {
+      "@type": "Answer",
+      "text": total_negocios ~ " negócio(s) estão cadastrado(s)."
+    }
+  }) %}
+  {% set _ = faq_items.append({
+    "@type": "Question",
+    "name": "Quais tipos de negócios estão disponíveis no bairro " ~ bairro ~ "?",
+    "acceptedAnswer": {
+      "@type": "Answer",
+      "text": (categorias_disponiveis | length | string) ~ " tipo(s) estão cadastrados." if categorias_disponiveis else "Use o filtro de tipo para explorar."
+    }
+  }) %}
+  {% set _ = faq_items.append({
+    "@type": "Question",
+    "name": "Existem negócios em outros bairros de " ~ cidade ~ "?",
+    "acceptedAnswer": {
+      "@type": "Answer",
+      "text": (bairros_disponiveis | length | string) ~ " bairro(s) têm negócios cadastrados." if bairros_disponiveis else "Use o filtro de bairro para explorar."
+    }
+  }) %}
+{% else %}
+  {% set _ = faq_items.append({
+    "@type": "Question",
+    "name": "Quantos negócios têm em " ~ cidade ~ "?",
+    "acceptedAnswer": {
+      "@type": "Answer",
+      "text": total_negocios ~ " negócio(s) estão cadastrado(s)."
+    }
+  }) %}
+  {% set _ = faq_items.append({
+    "@type": "Question",
+    "name": "Em quantos bairros de " ~ cidade ~ " têm negócios?",
+    "acceptedAnswer": {
+      "@type": "Answer",
+      "text": (bairros_disponiveis | length | string) ~ " bairro(s) têm negócios cadastrados." if bairros_disponiveis else "Use o filtro de bairro para explorar."
+    }
+  }) %}
+  {% set _ = faq_items.append({
+    "@type": "Question",
+    "name": "Quantos tipos de negócios estão disponíveis em " ~ cidade ~ "?",
+    "acceptedAnswer": {
+      "@type": "Answer",
+      "text": (categorias_disponiveis | length | string) ~ " tipo(s) estão cadastrados." if categorias_disponiveis else "Use o filtro de tipo para explorar."
+    }
+  }) %}
+{% endif %}
+
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "BreadcrumbList",
+  "itemListElement": [
+    {"@type":"ListItem","position":1,"item":{"@id":"https://{{ request.host }}/","name":"Início"}},
+    {"@type":"ListItem","position":2,"item":{"@id":"https://{{ request.host }}/cidade/{{ cidade | slugify }}/","name":"{{ cidade }}"}}
+    {% if bairro %},{"@type":"ListItem","position":3,"item":{"@id":"https://{{ request.host }}/cidade/{{ cidade | slugify }}/{{ bairro | slugify }}/","name":"{{ bairro }}"}}{% endif %}
+    {% if categoria %},{"@type":"ListItem","position":{{ 4 if bairro else 3 }},"item":{"@id":"https://{{ request.host }}/cidade/{{ cidade | slugify }}/{{ categoria.slug }}/","name":"{{ categoria.nome }}"}}{% endif %}
+  ]
+}
+</script>
+
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "FAQPage",
+  "mainEntity": {{ faq_items | tojson }}
+}
+</script>
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+
+<style>
+:root{
+  --primary:{{ hub.cor_primaria or '#0071e3' }};
+  --primary-d:{{ hub.cor_secundaria or '#0051a2' }};
+  --bg:#ffffff;
+  --bg2:#f5f5f7;
+  --surface:#ffffff;
+  --border:#d2d2d7;
+  --text:#1d1d1f;
+  --text-soft:#6e6e73;
+  --muted:#86868b;
+  --radius:12px;
+  --sans:'Inter',sans-serif;
+  --shadow:0 2px 12px rgba(0,0,0,.06);
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth}
+body{font-family:var(--sans);background:var(--bg);color:var(--text);line-height:1.6;overflow-x:hidden}
+.container{max-width:1200px;margin:0 auto;padding:0 24px}
+a{text-decoration:none;color:inherit}
+img{max-width:100%;display:block}
+
+header{background:rgba(255,255,255,.85);backdrop-filter:blur(20px);border-bottom:1px solid rgba(0,0,0,.08);position:sticky;top:0;z-index:100}
+.header-inner{max-width:1200px;margin:0 auto;padding:0 24px;display:flex;align-items:center;justify-content:space-between;height:68px}
+.logo-hub{display:flex;align-items:center;gap:12px;font-weight:700;font-size:.95rem;color:var(--text)}
+.logo-hub img{height:48px;width:auto}
+
+.hero{background:var(--primary);color:#fff;padding:56px 24px 44px;text-align:center}
+.hero .container{position:relative;z-index:1}
+.breadcrumb{display:flex;align-items:center;justify-content:center;gap:6px;margin-bottom:20px;font-size:.75rem;color:rgba(255,255,255,.7);flex-wrap:wrap}
+.breadcrumb a{color:rgba(255,255,255,.7)}
+.hero h1{font-size:clamp(2rem,5vw,3.2rem);font-weight:700;line-height:1.1;letter-spacing:-.04em;margin-bottom:14px}
+.hero p{font-size:1rem;color:rgba(255,255,255,.85);max-width:480px;margin:0 auto 32px;line-height:1.6}
+.hero-stats{display:flex;gap:32px;justify-content:center;flex-wrap:wrap;margin-top:24px}
+.hero-stat strong{display:block;font-size:1.6rem;font-weight:700;letter-spacing:-.03em}
+.hero-stat span{font-size:.75rem;color:rgba(255,255,255,.7);margin-top:4px;display:block}
+
+.filtros{background:var(--bg2);padding:24px;sticky:top:68px;z-index:50}
+.filtros-inner{display:flex;gap:12px;flex-wrap:wrap;justify-content:center;align-items:center}
+.chip{padding:8px 16px;border-radius:20px;border:1px solid var(--border);background:#fff;font-size:.85rem;font-weight:500;color:var(--text);cursor:pointer;transition:all .15s}
+.chip:hover{border-color:var(--primary);color:var(--primary)}
+.chip.ativo{background:var(--primary);border-color:var(--primary);color:#fff}
+
+.secao{padding:48px 24px}
+.secao-titulo{font-size:1.8rem;font-weight:700;margin-bottom:8px}
+.secao-desc{font-size:.95rem;color:var(--text-soft);margin-bottom:32px}
+
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:18px}
+.card{background:#fff;border:1px solid var(--border);border-radius:var(--radius);overflow:hidden;transition:all .2s}
+.card:hover{border-color:var(--primary);transform:translateY(-2px);box-shadow:var(--shadow)}
+.card-img{width:100%;height:140px;object-fit:cover;background:var(--bg2)}
+.card-body{padding:16px}
+.card-cat{font-size:.7rem;color:var(--primary);font-weight:700;text-transform:uppercase}
+.card-nome{font-size:1.05rem;font-weight:600;margin:6px 0 8px}
+.card-info{font-size:.85rem;color:var(--text-soft);display:flex;gap:4px;align-items:center}
+
+.vazio{color:var(--text-soft);padding:40px 20px;text-align:center}
+
+footer{background:var(--bg2);border-top:1px solid var(--border);padding:24px;text-align:center;color:var(--text-soft);font-size:.85rem}
+
+@media(max-width:768px){
+  .hero h1{font-size:1.8rem}
+  .hero-stats{gap:16px}
+  .filtros-inner{gap:8px}
+  .grid{grid-template-columns:repeat(auto-fill,minmax(160px,1fr))}
+}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="header-inner">
+    <a href="/" class="logo-hub">
+      {% if hub.logo_url %}<img src="{{ hub.logo_url }}" alt="{{ hub.nome or 'Hub' }}">{% endif %}
+      <span>{{ hub.nome or 'Hub' }}</span>
+    </a>
+  </div>
+</header>
+
+<section class="hero">
+  <div class="container">
+    <nav class="breadcrumb" aria-label="Breadcrumb">
+      <a href="/">Início</a>
+      <span>›</span>
+      <span style="color:rgba(255,255,255,.9)">{{ cidade }}</span>
+      {% if bairro %}<span>›</span><span style="color:rgba(255,255,255,.9)">{{ bairro }}</span>{% endif %}
+      {% if categoria %}<span>›</span><span style="color:rgba(255,255,255,.9)">{{ categoria.nome }}</span>{% endif %}
+    </nav>
+    <h1>
+      {% if categoria and bairro %}{{ categoria.nome }} em {{ bairro }}
+      {% elif categoria %}{{ categoria.nome }} em {{ cidade }}
+      {% elif bairro %}Negócios em {{ bairro }}
+      {% else %}Negócios em {{ cidade }}{% endif %}
+    </h1>
+    <p>{{ total_negocios }} resultado{{ 's' if total_negocios != 1 else '' }} encontrado{{ 's' if total_negocios != 1 else '' }}.</p>
+    <div class="hero-stats">
+      <div class="hero-stat"><strong>{{ total_negocios }}</strong><span>negócio(s)</span></div>
+      {% if bairros_disponiveis %}
+      <div class="hero-stat"><strong>{{ bairros_disponiveis | length }}</strong><span>bairro(s)</span></div>
+      {% endif %}
+      {% if categorias_disponiveis %}
+      <div class="hero-stat"><strong>{{ categorias_disponiveis | length }}</strong><span>tipo(s)</span></div>
+      {% endif %}
+    </div>
+  </div>
+</section>
+
+{% if bairros_disponiveis or categorias_disponiveis %}
+<div class="filtros">
+  <div class="container">
+    <div class="filtros-inner">
+      {% if bairros_disponiveis %}
+      {% for b in bairros_disponiveis %}
+      <a class="chip {% if bairro == b %}ativo{% endif %}" href="/cidade/{{ cidade | slugify }}/{{ b | slugify }}/{% if categoria %}{{ categoria.slug }}/{% endif %}">{{ b }}</a>
+      {% endfor %}
+      {% endif %}
+      {% if categorias_disponiveis %}
+      {% for cat in categorias_disponiveis %}
+      <a class="chip {% if categoria and categoria.slug == cat.slug %}ativo{% endif %}" href="/cidade/{{ cidade | slugify }}/{% if bairro %}{{ bairro | slugify }}/{% endif %}{{ cat.slug }}/">{{ cat.nome }}</a>
+      {% endfor %}
+      {% endif %}
+    </div>
+  </div>
+</div>
+{% endif %}
+
+<section class="secao container">
+  {% if negocios %}
+  <div class="grid">
+    {% for n in negocios %}
+    <a class="card" href="/{{ n.categoria_slug }}/{{ n.slug }}/">
+      <img src="{{ n.foto_url or 'https://via.placeholder.com/240x140?text=' ~ n.nome }}" alt="{{ n.nome }}" class="card-img">
+      <div class="card-body">
+        <div class="card-cat">{{ n.categoria_nome }}</div>
+        <div class="card-nome">{{ n.nome }}</div>
+        {% if n.bairro %}<div class="card-info"><i class="fas fa-map-marker-alt"></i> {{ n.bairro }}</div>{% endif %}
+      </div>
+    </a>
+    {% endfor %}
+  </div>
+  {% else %}
+  <div class="vazio">
+    <p>Nenhum resultado encontrado.</p>
+  </div>
+  {% endif %}
+</section>
+
+<footer>&copy; {{ hub.nome or 'Hub' }} — todos os direitos reservados.</footer>
+
+</body>
+</html>
