@@ -92,6 +92,21 @@ nav.mobile-nav ul { list-style: none; display: flex; flex-direction: column; wid
 nav.mobile-nav ul li a { color: #fff; font-weight: 600; font-size: 0.98em; padding: 12px 20px; display: block; border-radius: 8px; }
 nav.mobile-nav ul li a:hover, nav.mobile-nav ul li a:active { background: rgba(0,0,0,0.12); }
 
+/* ══ NAV DROPDOWN ══ */
+.nav-dropdown { 
+    display: none; position: absolute; top: 100%; left: 50%; transform: translateX(-50%); 
+    background: #fff; border-radius: 12px; box-shadow: 0 8px 32px rgba(0,0,0,0.15); 
+    min-width: 220px; max-height: 360px; overflow-y: auto; z-index: 999; padding: 8px 0; 
+}
+nav.desktop-nav ul li { position: relative; }
+nav.desktop-nav ul li:hover .nav-dropdown { display: block; }
+.nav-dropdown a { 
+    display: block; padding: 10px 20px; color: var(--dark-gray) !important; 
+    font-size: 0.9em; font-weight: 500; border-bottom: none !important; 
+    background: none !important; transition: background 0.15s; white-space: nowrap; 
+}
+.nav-dropdown a:hover { background: var(--light) !important; color: var(--primary) !important; }
+
 /* ══ BANNER TOPO ══ */
 .banner-topo { background: var(--white); border-bottom: 1px solid var(--medium-gray); padding: 10px 20px; text-align: center; min-height: 110px; display: flex; align-items: center; justify-content: center; }
 .banner-rotativo { display: none; }
@@ -237,23 +252,39 @@ footer a:hover { text-decoration: underline; }
   <nav class="desktop-nav">
     <ul>
       <li><a href="/">Início</a></li>
-      {% set cats_ativas_nav = [] %}
-      {% for cat in categorias %}
-        {% if (negocios | selectattr('categoria_slug', 'equalto', cat.slug) | list | length) > 0 %}
-          {% set _ = cats_ativas_nav.append(cat) %}
-        {% endif %}
-      {% endfor %}
-      {% for cat in cats_ativas_nav[:5] %}
-      <li><a href="/{{ cat.slug }}/">{{ cat.nome }}</a></li>
-      {% endfor %}
+      <li>
+        <a href="#categorias">Categorias ▾</a>
+        <div class="nav-dropdown">
+          {% set cats_ativas_nav = [] %}
+          {% for cat in categorias %}
+            {% if (negocios | selectattr('categoria_slug', 'equalto', cat.slug) | list | length) > 0 %}
+              {% set _ = cats_ativas_nav.append(cat) %}
+            {% endif %}
+          {% endfor %}
+          {% for cat in cats_ativas_nav %}
+          <a href="/{{ cat.slug }}/">{{ cat.nome }}</a>
+          {% endfor %}
+        </div>
+      </li>
+      <li>
+        <a href="#cidades">Cidades ▾</a>
+        <div class="nav-dropdown">
+          {% set cidades_unicas = negocios | map(attribute='cidade') | unique | list | sort %}
+          {% for c in cidades_unicas[:10] %}
+          <a href="/cidade/{{ c | slugify }}/">{{ c }}</a>
+          {% endfor %}
+          {% if cidades_unicas | length > 10 %}
+          <a href="/cidades/">Ver todas as cidades</a>
+          {% endif %}
+        </div>
+      </li>
     </ul>
   </nav>
   <nav class="mobile-nav" id="mobileNav">
     <ul>
       <li><a href="/" onclick="closeMobileNav()">Início</a></li>
-      {% for cat in cats_ativas_nav[:8] %}
-      <li><a href="/{{ cat.slug }}/" onclick="closeMobileNav()">{{ cat.nome }}</a></li>
-      {% endfor %}
+      <li><a href="#categorias" onclick="closeMobileNav()">Categorias</a></li>
+      <li><a href="#cidades" onclick="closeMobileNav()">Cidades</a></li>
     </ul>
   </nav>
 </header>
@@ -291,21 +322,29 @@ footer a:hover { text-decoration: underline; }
 </section>
 
 <!-- ══ FILTROS STICKY ══ -->
-{% if filtro_tipo == 'categoria' and bairros_disponiveis %}
+{% if bairros_disponiveis %}
 <div class="filtros-sticky">
   <div class="container">
-    <div class="categoria-slicer">
-      <button class="slicer-toggle" onclick="toggleSlicer()">
-        <span class="slicer-label"><i class="fas fa-filter"></i> <strong>{{ bairro_ativo if bairro_ativo else 'Selecione um bairro' }}</strong></span>
-        <i class="fas fa-chevron-down slicer-chevron"></i>
-      </button>
-      <div class="slicer-backdrop" onclick="closeSlicer()"></div>
-      <div class="slicer-panel" id="slicerPanel">
-        <a class="chip-cat {% if not bairro_ativo %}ativo{% endif %}" href="/{{ segmento }}/">Todos os bairros</a>
-        {% for b in bairros_disponiveis %}
-        <a class="chip-cat {% if bairro_ativo == b %}ativo{% endif %}" href="/{{ segmento }}/{{ b | slugify }}/">{{ b }}</a>
-        {% endfor %}
+    <div class="filtros-grupo-label">Filtrar por bairro</div>
+    <div class="filtros-inner">
+      <a href="/{{ segmento }}/" class="chip-filtro {% if not bairro_ativo %}ativo{% endif %}">Todos</a>
+      {% for b in bairros_disponiveis[:10] %}
+      <a href="/{{ segmento }}/{{ b | slugify }}/" class="chip-filtro {% if bairro_ativo == b %}ativo{% endif %}">{{ b }}</a>
+      {% endfor %}
+      {% if bairros_disponiveis | length > 10 %}
+      <div class="categoria-slicer" style="display:inline-block; margin-left: 8px;">
+        <button class="slicer-toggle" onclick="toggleSlicer()" style="padding: 8px 16px; font-size: 0.85em;">
+          <span class="slicer-label"><i class="fas fa-filter"></i> <strong>Mais bairros</strong></span>
+          <i class="fas fa-chevron-down slicer-chevron"></i>
+        </button>
+        <div class="slicer-backdrop" onclick="closeSlicer()"></div>
+        <div class="slicer-panel" id="slicerPanel">
+          {% for b in bairros_disponiveis[10:] %}
+          <a class="chip-cat {% if bairro_ativo == b %}ativo{% endif %}" href="/{{ segmento }}/{{ b | slugify }}/">{{ b }}</a>
+          {% endfor %}
+        </div>
       </div>
+      {% endif %}
     </div>
   </div>
 </div>
