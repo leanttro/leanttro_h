@@ -220,8 +220,30 @@ def _categorias_do_hub(hub):
             ORDER BY c.nome
         """, (hub["id"],))
         return _cache_set(chave_cache, resultado)
-    # Comportamento original, intocado, pra todos os demais hubs.
-    return query("SELECT * FROM hub_categorias WHERE ativo = true ORDER BY nome")
+    # Comportamento padrão pra todos os demais hubs: só categorias que têm
+    # negócio ativo de fato vinculado a ESTE hub (mesmo critério de
+    # _categorias_cidade/_categorias_do_hub_por_negocio acima). Antes essa
+    # linha devolvia TODAS as categorias da plataforma pra qualquer hub sem
+    # prefixo configurado — inflava o contador "categorias" do hero e o
+    # dropdown de filtro com categoria de negócio que nem existe no hub.
+    # Exceção: se o hub ainda não tem NENHUM negócio cadastrado, mantém o
+    # fallback antigo (mostra tudo) — é o caso de curadoria/hub novo, onde
+    # faz sentido ver a lista completa pra ir organizando.
+    chave_cache = ("categorias_do_hub_padrao", hub["id"])
+    cached = _cache_get(chave_cache)
+    if cached is not None:
+        return cached
+    resultado = query("""
+        SELECT DISTINCT c.*
+        FROM hub_categorias c
+        JOIN hub_negocios n ON n.categoria_id = c.id
+        JOIN hub_negocio_hubs nh ON nh.negocio_id = n.id
+        WHERE nh.hub_id = %s AND n.ativo = true AND c.ativo = true
+        ORDER BY c.nome
+    """, (hub["id"],))
+    if not resultado:
+        resultado = query("SELECT * FROM hub_categorias WHERE ativo = true ORDER BY nome")
+    return _cache_set(chave_cache, resultado)
 
 # ── Auth ──────────────────────────────────────────────────────
 
@@ -952,6 +974,54 @@ def _categorias_cidade(hub_id, cidade_variantes):
     return _cache_set(chave_cache, resultado)
 
 
+def _categorias_bairro(hub_id, cidade_variantes, bairro_variantes):
+    """Igual a _categorias_cidade, mas só as categorias que têm negócio NAQUELE bairro
+    específico — usado pra restringir os chips de categoria quando um bairro já está
+    selecionado (senão apareciam categorias sem nenhum resultado ali). CACHEADO."""
+    chave_cache = ("categorias_bairro", hub_id, tuple(sorted(cidade_variantes)),
+                   tuple(sorted(bairro_variantes)))
+    cached = _cache_get(chave_cache)
+    if cached is not None:
+        return cached
+    resultado = query("""
+        SELECT DISTINCT c.id, c.nome, c.slug, c.icone_url
+        FROM hub_categorias c
+        JOIN hub_negocios n ON n.categoria_id = c.id
+        JOIN hub_negocio_hubs nh ON nh.negocio_id = n.id
+        WHERE nh.hub_id = %s AND n.ativo = true AND c.ativo = true
+          AND n.cidade = ANY(%s) AND n.bairro = ANY(%s)
+        ORDER BY c.nome
+    """, (hub_id, cidade_variantes, bairro_variantes))
+    return _cache_set(chave_cache, resultado)
+
+
+def _bairros_categoria(hub_id, cidade_variantes, cat_slug):
+    """Igual a _bairros_cidade, mas só os bairros que têm negócio NAQUELA categoria
+    específica — usado pra restringir os chips de bairro quando uma categoria já
+    está selecionada (senão apareciam bairros sem nenhum resultado ali). CACHEADO."""
+    chave_cache = ("bairros_categoria", hub_id, tuple(sorted(cidade_variantes)), cat_slug)
+    cached = _cache_get(chave_cache)
+    if cached is not None:
+        return cached
+    rows = query("""
+        SELECT n.bairro, COUNT(*) as qtd
+        FROM hub_negocios n
+        JOIN hub_negocio_hubs nh ON nh.negocio_id = n.id
+        LEFT JOIN hub_categorias c ON c.id = n.categoria_id
+        WHERE nh.hub_id = %s AND n.ativo = true
+          AND n.bairro IS NOT NULL AND TRIM(n.bairro) != ''
+          AND n.cidade = ANY(%s) AND c.slug = %s
+        GROUP BY n.bairro
+        ORDER BY qtd DESC, n.bairro
+    """, (hub_id, cidade_variantes, cat_slug))
+    vistos = {}
+    for r in rows:
+        chave = _chave_normalizada(r["bairro"])
+        if chave not in vistos:
+            vistos[chave] = r["bairro"]
+    return _cache_set(chave_cache, sorted(vistos.values()))
+
+
 def _render_cidade(hub, negocios, categorias, cidade_nome,
                    bairro=None, categoria=None,
                    bairros_disponiveis=None, categorias_disponiveis=None,
@@ -1015,11 +1085,11 @@ def pagina_cidade_segundo(cidade_slug, segundo_slug):
         (segundo_slug,), one=True
     )
     categorias = _categorias_do_hub(hub)
-    bairros    = _bairros_cidade(hub["id"], cidade_var)
-    cats_disp  = _categorias_cidade(hub["id"], cidade_var)
     if categoria:
         negocios = _negocios_cidade(hub["id"], cidade_variantes=cidade_var, cat_slug=segundo_slug)
         total    = _contar_negocios_cidade(hub["id"], cidade_variantes=cidade_var, cat_slug=segundo_slug)
+        bairros    = _bairros_categoria(hub["id"], cidade_var, segundo_slug)
+        cats_disp  = _categorias_cidade(hub["id"], cidade_var)
         return _render_cidade(hub, negocios, categorias, cidade_nome,
                               categoria=dict(categoria),
                               bairros_disponiveis=bairros,
@@ -1032,6 +1102,8 @@ def pagina_cidade_segundo(cidade_slug, segundo_slug):
             bairro_var  = [bairro_nome]
         negocios    = _negocios_cidade(hub["id"], cidade_variantes=cidade_var, bairro_variantes=bairro_var)
         total       = _contar_negocios_cidade(hub["id"], cidade_variantes=cidade_var, bairro_variantes=bairro_var)
+        bairros    = _bairros_cidade(hub["id"], cidade_var)
+        cats_disp  = _categorias_bairro(hub["id"], cidade_var, bairro_var)
         return _render_cidade(hub, negocios, categorias, cidade_nome,
                               bairro=bairro_nome,
                               bairros_disponiveis=bairros,
@@ -1052,8 +1124,6 @@ def pagina_cidade_bairro_cat(cidade_slug, bairro_slug, cat_slug):
         (cat_slug,), one=True
     )
     categorias  = _categorias_do_hub(hub)
-    bairros     = _bairros_cidade(hub["id"], cidade_var)
-    cats_disp   = _categorias_cidade(hub["id"], cidade_var)
     bairro_nome, bairro_var = _resolve_bairro(hub["id"], bairro_slug, cidade_var)
     if not bairro_nome:
         bairro_nome = bairro_slug.replace("-", " ").title()
@@ -1062,6 +1132,11 @@ def pagina_cidade_bairro_cat(cidade_slug, bairro_slug, cat_slug):
                                    cat_slug=cat_slug, bairro_variantes=bairro_var)
     total       = _contar_negocios_cidade(hub["id"], cidade_variantes=cidade_var,
                                           cat_slug=cat_slug, bairro_variantes=bairro_var)
+    # Ambos selecionados: bairros mostra onde essa categoria existe (pra trocar de
+    # bairro sem perder a categoria), categorias mostra o que existe nesse bairro
+    # (pra trocar de categoria sem perder o bairro).
+    bairros     = _bairros_categoria(hub["id"], cidade_var, cat_slug)
+    cats_disp   = _categorias_bairro(hub["id"], cidade_var, bairro_var)
     return _render_cidade(hub, negocios, categorias, cidade_nome,
                           bairro=bairro_nome,
                           categoria=dict(categoria) if categoria else None,
@@ -1089,7 +1164,7 @@ def pagina_cat_cidade(cat_slug, cidade_slug):
     negocios   = _negocios_cidade(hub["id"], cidade_variantes=cidade_var, cat_slug=cat_slug)
     total      = _contar_negocios_cidade(hub["id"], cidade_variantes=cidade_var, cat_slug=cat_slug)
     categorias = _categorias_do_hub(hub)
-    bairros    = _bairros_cidade(hub["id"], cidade_var)
+    bairros    = _bairros_categoria(hub["id"], cidade_var, cat_slug)
     cats_disp  = _categorias_cidade(hub["id"], cidade_var)
     return _render_cidade(hub, negocios, categorias, cidade_nome,
                           categoria=dict(categoria),
@@ -1123,8 +1198,8 @@ def pagina_cat_cidade_bairro(cat_slug, cidade_slug, bairro_slug):
     total       = _contar_negocios_cidade(hub["id"], cidade_variantes=cidade_var,
                                           cat_slug=cat_slug, bairro_variantes=bairro_var)
     categorias  = _categorias_do_hub(hub)
-    bairros     = _bairros_cidade(hub["id"], cidade_var)
-    cats_disp   = _categorias_cidade(hub["id"], cidade_var)
+    bairros     = _bairros_categoria(hub["id"], cidade_var, cat_slug)
+    cats_disp   = _categorias_bairro(hub["id"], cidade_var, bairro_var)
     return _render_cidade(hub, negocios, categorias, cidade_nome,
                           bairro=bairro_nome,
                           categoria=dict(categoria),
