@@ -59,6 +59,97 @@
 <meta name="twitter:image"       content="{{ hub.banner_fundo_url or 'https://res.cloudinary.com/dhu1cqvrb/image/upload/v1783643721/Massas_Sabores_6_utat55.png' }}">
 
 <!-- JSON-LD -->
+{# ══ FAQPage: perguntas geradas a partir das variáveis já existentes no
+     template (filtro_nome, total_negocios, bairros_disponiveis, filtro_valor,
+     hub.nome). Montado como lista Python + |tojson pra garantir JSON válido
+     sem risco de escaping manual quebrado. ══ #}
+{% set faq_items = [] %}
+{% if filtro_tipo == 'categoria' %}
+  {% if is_ferramenta_ia %}
+    {% set _ = faq_items.append({
+      "@type": "Question",
+      "name": "Quantas " ~ filtro_nome ~ " estão disponíveis no " ~ (hub.nome or 'AgênciaStart') ~ "?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Atualmente há " ~ total_negocios ~ " " ~ filtro_nome ~ " cadastradas no " ~ (hub.nome or 'AgênciaStart') ~ "."
+      }
+    }) %}
+    {% set _ = faq_items.append({
+      "@type": "Question",
+      "name": "As ferramentas de IA listadas mostram modelo de preço?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Sim, cada ferramenta traz descrição, modelo de preço (quando disponível) e link direto de acesso."
+      }
+    }) %}
+    {% set _ = faq_items.append({
+      "@type": "Question",
+      "name": "É gratuito consultar a lista de " ~ filtro_nome ~ "?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Sim, a consulta às " ~ total_negocios ~ " " ~ filtro_nome ~ " listadas no " ~ (hub.nome or 'AgênciaStart') ~ " é totalmente gratuita."
+      }
+    }) %}
+  {% else %}
+    {% set _ = faq_items.append({
+      "@type": "Question",
+      "name": "Quantas opções de " ~ filtro_nome ~ " tem no " ~ (hub.nome or 'AgênciaStart') ~ "?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": total_negocios ~ " opções de " ~ filtro_nome ~ " estão cadastradas atualmente."
+      }
+    }) %}
+    {% set _ = faq_items.append({
+      "@type": "Question",
+      "name": "Como encontrar " ~ filtro_nome ~ " perto de mim?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Use o filtro de bairro ou o botão \"Mais próximo\" para ver as opções de " ~ filtro_nome ~ " mais próximas da sua localização, entre os " ~ (bairros_disponiveis | length) ~ " bairro(s) disponíveis."
+      }
+    }) %}
+    {% set _ = faq_items.append({
+      "@type": "Question",
+      "name": "Existe " ~ filtro_nome ~ " em todos os bairros?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "As opções de " ~ filtro_nome ~ " estão distribuídas em " ~ (bairros_disponiveis | length) ~ " bairro(s) diferentes. Use o filtro de bairro para ver a disponibilidade em cada região."
+      }
+    }) %}
+    {% set _ = faq_items.append({
+      "@type": "Question",
+      "name": "É gratuito buscar " ~ filtro_nome ~ " no " ~ (hub.nome or 'AgênciaStart') ~ "?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Sim, a busca por " ~ filtro_nome ~ " no " ~ (hub.nome or 'AgênciaStart') ~ " é totalmente gratuita."
+      }
+    }) %}
+  {% endif %}
+{% else %}
+  {% set _ = faq_items.append({
+    "@type": "Question",
+    "name": "Quantos negócios tem no bairro " ~ (filtro_valor | capitalize) ~ "?",
+    "acceptedAnswer": {
+      "@type": "Answer",
+      "text": total_negocios ~ " negócio(s) estão cadastrados no bairro " ~ (filtro_valor | capitalize) ~ " no momento."
+    }
+  }) %}
+  {% set _ = faq_items.append({
+    "@type": "Question",
+    "name": "Quais tipos de serviço encontro no bairro " ~ (filtro_valor | capitalize) ~ "?",
+    "acceptedAnswer": {
+      "@type": "Answer",
+      "text": "No bairro " ~ (filtro_valor | capitalize) ~ " você encontra cartórios, correios, freelancers de tecnologia e ferramentas de IA cadastrados no " ~ (hub.nome or 'AgênciaStart') ~ "."
+    }
+  }) %}
+  {% set _ = faq_items.append({
+    "@type": "Question",
+    "name": "É gratuito buscar negócios no bairro " ~ (filtro_valor | capitalize) ~ "?",
+    "acceptedAnswer": {
+      "@type": "Answer",
+      "text": "Sim, a busca no bairro " ~ (filtro_valor | capitalize) ~ " é totalmente gratuita no " ~ (hub.nome or 'AgênciaStart') ~ "."
+    }
+  }) %}
+{% endif %}
 <script type="application/ld+json">
 {
   "@context": "https://schema.org",
@@ -77,6 +168,10 @@
       "name": "{{ seo_title }}",
       "description": "{{ seo_desc }}",
       "inLanguage": "pt-BR"
+    },
+    {
+      "@type": "FAQPage",
+      "mainEntity": {{ faq_items | tojson }}
     }
   ]
 }
@@ -425,12 +520,12 @@
         <p>
             {% if filtro_tipo == 'categoria' %}
             {% if is_ferramenta_ia %}
-            Encontre as melhores {{ filtro_nome }} com descrição, modelo de preço e link direto — tudo num só lugar.
+            {{ total_negocios }} {{ filtro_nome }} com descrição, modelo de preço e link direto — tudo num só lugar.
             {% else %}
-            Encontre as melhores opções de {{ filtro_nome }} com endereço, horário e contato — tudo num só lugar.
+            {{ total_negocios }} opções de {{ filtro_nome }} com endereço, horário e contato, distribuídas em {{ bairros_disponiveis | length }} bairro(s) — tudo num só lugar.
             {% endif %}
             {% else %}
-            Todos os cartórios, correios, freelancers de tecnologia e ferramentas de IA cadastrados no bairro {{ filtro_valor | capitalize }}.
+            {{ total_negocios }} negócio(s) cadastrados no bairro {{ filtro_valor | capitalize }}, entre cartórios, correios, freelancers de tecnologia e ferramentas de IA.
             {% endif %}
         </p>
         <div class="filtro-hero-stats">
