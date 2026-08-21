@@ -335,6 +335,59 @@ body {
 }
 .filter-select:focus { border-color: var(--accent); }
 
+/* ── Multi-select dropdown (cidade/bairro) ── */
+.multi-select { position: relative; display: inline-block; }
+.multi-select-btn {
+  padding: 7px 12px;
+  border: 1px solid var(--border2);
+  border-radius: var(--radius-sm);
+  background: var(--surface);
+  color: var(--text);
+  font-family: var(--font);
+  font-size: 13px;
+  cursor: pointer;
+  outline: none;
+  transition: border-color var(--transition);
+  display: flex; align-items: center; gap: 6px;
+}
+.multi-select-btn:focus, .multi-select-btn.open { border-color: var(--accent); }
+.multi-select-badge {
+  background: var(--accent); color: #fff;
+  border-radius: 999px; font-size: 11px; font-weight: 600;
+  padding: 1px 6px; line-height: 1.5;
+}
+.multi-select-panel {
+  display: none;
+  position: absolute; top: calc(100% + 4px); left: 0; z-index: 50;
+  background: var(--surface);
+  border: 1px solid var(--border2);
+  border-radius: var(--radius-sm);
+  box-shadow: 0 8px 24px rgba(0,0,0,.12);
+  min-width: 220px; max-width: 280px;
+  padding: 8px;
+}
+.multi-select-panel.open { display: block; }
+.multi-select-search {
+  width: 100%; padding: 6px 8px; margin-bottom: 6px;
+  border: 1px solid var(--border2); border-radius: var(--radius-sm);
+  font-family: var(--font); font-size: 12.5px; outline: none;
+}
+.multi-select-search:focus { border-color: var(--accent); }
+.multi-select-list { max-height: 220px; overflow-y: auto; }
+.multi-select-item {
+  display: flex; align-items: center; gap: 8px;
+  padding: 5px 4px; font-size: 13px; cursor: pointer;
+  border-radius: 4px;
+}
+.multi-select-item:hover { background: var(--accent-light); }
+.multi-select-item input { flex-shrink: 0; cursor: pointer; }
+.multi-select-empty { font-size: 12.5px; color: var(--text2); padding: 6px 4px; }
+.multi-select-clear {
+  font-size: 12px; color: var(--accent); cursor: pointer; background: none;
+  border: none; padding: 4px; margin-top: 4px; width: 100%; text-align: left;
+}
+.multi-select-clear:hover { text-decoration: underline; }
+
 /* ── Bulk bar ── */
 .bulk-bar {
   display: none;
@@ -854,9 +907,26 @@ tbody td {
             <select class="filter-select" id="filterCategoria" onchange="onNegociosFilterChange()">
               <option value="">Todas as categorias</option>
             </select>
-            <select class="filter-select" id="filterBairro" onchange="onNegociosFilterChange()">
-              <option value="">Todos os bairros</option>
-            </select>
+            <div class="multi-select" id="msCidade">
+              <button type="button" class="multi-select-btn" onclick="toggleMultiSelect('msCidade')">
+                <span id="msCidadeLabel">Todas as cidades</span>
+              </button>
+              <div class="multi-select-panel" id="msCidadePanel">
+                <input type="text" class="multi-select-search" placeholder="Buscar cidade..." oninput="filtrarMultiSelectLista('msCidade', this.value)">
+                <div class="multi-select-list" id="msCidadeList"></div>
+                <button type="button" class="multi-select-clear" onclick="limparMultiSelect('msCidade')">Limpar seleção</button>
+              </div>
+            </div>
+            <div class="multi-select" id="msBairro">
+              <button type="button" class="multi-select-btn" onclick="toggleMultiSelect('msBairro')">
+                <span id="msBairroLabel">Todos os bairros</span>
+              </button>
+              <div class="multi-select-panel" id="msBairroPanel">
+                <input type="text" class="multi-select-search" placeholder="Buscar bairro..." oninput="filtrarMultiSelectLista('msBairro', this.value)">
+                <div class="multi-select-list" id="msBairroList"></div>
+                <button type="button" class="multi-select-clear" onclick="limparMultiSelect('msBairro')">Limpar seleção</button>
+              </div>
+            </div>
             <button class="btn btn-secondary btn-sm" onclick="openBairroMerge()" title="Selecionar vários bairros (ex: grafias erradas) e mesclar em um só">↷ Mesclar bairros</button>
             <select class="filter-select" id="filterStatusNegocio" onchange="onNegociosFilterChange()">
               <option value="">Ativos e inativos</option>
@@ -917,8 +987,8 @@ tbody td {
         </div>
         <div class="table-wrap">
           <table>
-            <thead><tr><th>Nome</th><th>Slug</th><th>Ícone</th><th>Status</th><th>Ações</th></tr></thead>
-            <tbody id="categoriasBody"><tr><td colspan="5"><div class="loading"><div class="spinner"></div>Carregando...</div></td></tr></tbody>
+            <thead><tr><th>Nome</th><th>Slug</th><th>Ícone</th><th>Negócios</th><th>Status</th><th>Ações</th></tr></thead>
+            <tbody id="categoriasBody"><tr><td colspan="6"><div class="loading"><div class="spinner"></div>Carregando...</div></td></tr></tbody>
           </table>
         </div>
       </div>
@@ -1147,7 +1217,7 @@ const state = {
   data: { hubs: [], negocios: [], categorias: [], usuarios: [], assinaturas: [], blog: [], 'blog-tags': [], anuncios: [], pendentes: [] },
   editId: null,
   editType: null,
-  negocios: { q: '', categoria_id: '', bairro: '', status: '', limit: 50, offset: 0, total: 0, filtrosCarregados: false, bairrosDisponiveis: [] },
+  negocios: { q: '', categoria_id: '', cidades: [], bairros: [], status: '', limit: 50, offset: 0, total: 0, filtrosCarregados: false, bairrosDisponiveis: [], localidades: {} },
   pendentes: { status: 'pendente', hub_id: '' },
 };
 
@@ -1277,30 +1347,128 @@ async function initNegociosSection() {
   await loadNegocios();
 }
 
+// ── Multi-select genérico (usado pelos filtros de Cidade e Bairro) ────
+function toggleMultiSelect(id) {
+  const jaAberto = document.getElementById(id + 'Panel').classList.contains('open');
+  fecharTodosMultiSelect();
+  if (!jaAberto) {
+    document.getElementById(id + 'Panel').classList.add('open');
+    document.querySelector(`#${id} .multi-select-btn`).classList.add('open');
+  }
+}
+function fecharTodosMultiSelect() {
+  document.querySelectorAll('.multi-select-panel.open').forEach(p => p.classList.remove('open'));
+  document.querySelectorAll('.multi-select-btn.open').forEach(b => b.classList.remove('open'));
+}
+document.addEventListener('click', function(e) {
+  if (!e.target.closest('.multi-select')) fecharTodosMultiSelect();
+});
+
+function montarMultiSelectLista(id, valores) {
+  const stateKey = id === 'msCidade' ? 'cidades' : 'bairros';
+  const list = document.getElementById(id + 'List');
+  if (!list) return;
+  if (!valores.length) {
+    list.innerHTML = '<div class="multi-select-empty">Nenhuma opção disponível.</div>';
+    return;
+  }
+  list.innerHTML = valores.map(v => {
+    const checked = state.negocios[stateKey].includes(v) ? 'checked' : '';
+    return `<label class="multi-select-item">
+      <input type="checkbox" value="${esc(v)}" ${checked} onchange="onMultiSelectItemChange('${id}', this)">
+      <span>${esc(v)}</span>
+    </label>`;
+  }).join('');
+}
+
+function onMultiSelectItemChange(id, checkbox) {
+  const stateKey = id === 'msCidade' ? 'cidades' : 'bairros';
+  const valor = checkbox.value;
+  const arr = state.negocios[stateKey];
+  const idx = arr.indexOf(valor);
+  if (checkbox.checked && idx === -1) arr.push(valor);
+  if (!checkbox.checked && idx !== -1) arr.splice(idx, 1);
+
+  const labelPadrao = id === 'msCidade' ? 'Todas as cidades' : 'Todos os bairros';
+  atualizarLabelMultiSelect(id, arr, labelPadrao);
+
+  if (id === 'msCidade') atualizarListaBairrosDisponiveis(); // recalcula bairros disponíveis pra cidade(s) escolhida(s)
+
+  state.negocios.offset = 0;
+  loadNegocios();
+}
+
+function atualizarLabelMultiSelect(id, arr, labelPadrao) {
+  const label = document.getElementById(id + 'Label');
+  if (!label) return;
+  label.innerHTML = arr.length
+    ? `${labelPadrao.replace(/^Tod[ao]s? /i, '')} <span class="multi-select-badge">${arr.length}</span>`
+    : labelPadrao;
+}
+
+function filtrarMultiSelectLista(id, termo) {
+  const t = termo.trim().toLowerCase();
+  document.querySelectorAll(`#${id}List .multi-select-item`).forEach(item => {
+    const texto = item.textContent.trim().toLowerCase();
+    item.style.display = texto.includes(t) ? '' : 'none';
+  });
+}
+
+function limparMultiSelect(id) {
+  const stateKey = id === 'msCidade' ? 'cidades' : 'bairros';
+  state.negocios[stateKey] = [];
+  const labelPadrao = id === 'msCidade' ? 'Todas as cidades' : 'Todos os bairros';
+  document.getElementById(id + 'Label').textContent = labelPadrao;
+  document.querySelectorAll(`#${id}List input[type="checkbox"]`).forEach(cb => cb.checked = false);
+  if (id === 'msCidade') atualizarListaBairrosDisponiveis();
+  state.negocios.offset = 0;
+  loadNegocios();
+}
+
 async function popularFiltrosNegocios() {
   try {
-    const [categorias, bairros] = await Promise.all([
+    const [categorias, bairros, localidades] = await Promise.all([
       fetch('/api/hub/categorias').then(r => r.json()).catch(() => []),
       fetch('/admin/negocios/bairros').then(r => r.json()).catch(() => []),
+      fetch('/admin/negocios/localidades').then(r => r.json()).catch(() => ({})),
     ]);
     const selCat = document.getElementById('filterCategoria');
-    const selBairro = document.getElementById('filterBairro');
     if (selCat) {
       selCat.innerHTML = '<option value="">Todas as categorias</option>' +
         categorias.map(c => `<option value="${c.id}">${esc(c.nome)}</option>`).join('');
     }
-    if (selBairro) {
-      selBairro.innerHTML = '<option value="">Todos os bairros</option>' +
-        bairros.map(b => `<option value="${esc(b)}">${esc(b)}</option>`).join('');
-    }
     state.negocios.bairrosDisponiveis = Array.isArray(bairros) ? bairros : [];
+    state.negocios.localidades = localidades && typeof localidades === 'object' ? localidades : {};
+
+    const cidadesOrdenadas = Object.keys(state.negocios.localidades).sort((a, b) => a.localeCompare(b, 'pt-BR'));
+    montarMultiSelectLista('msCidade', cidadesOrdenadas);
+    atualizarListaBairrosDisponiveis(); // popula msBairro considerando cidades selecionadas (nenhuma = todas)
   } catch (e) { console.error(e); }
+}
+
+// Reconstrói a lista de bairros do multi-select considerando as cidades
+// selecionadas no momento (se nenhuma cidade estiver marcada, mostra todos
+// os bairros do banco, igual comportamento de antes).
+function atualizarListaBairrosDisponiveis() {
+  const cidadesSelecionadas = state.negocios.cidades;
+  let bairros;
+  if (cidadesSelecionadas.length) {
+    const set = new Set();
+    cidadesSelecionadas.forEach(cid => (state.negocios.localidades[cid] || []).forEach(b => set.add(b)));
+    bairros = Array.from(set);
+  } else {
+    bairros = state.negocios.bairrosDisponiveis;
+  }
+  bairros = bairros.slice().sort((a, b) => a.localeCompare(b, 'pt-BR'));
+  montarMultiSelectLista('msBairro', bairros);
+  // remove da seleção qualquer bairro que não pertença mais às cidades filtradas
+  state.negocios.bairros = state.negocios.bairros.filter(b => bairros.includes(b));
+  atualizarLabelMultiSelect('msBairro', state.negocios.bairros, 'Todos os bairros');
 }
 
 const onNegociosFilterChange = debounce(function() {
   state.negocios.q = document.getElementById('searchNegocios')?.value.trim() || '';
   state.negocios.categoria_id = document.getElementById('filterCategoria')?.value || '';
-  state.negocios.bairro = document.getElementById('filterBairro')?.value || '';
   state.negocios.status = document.getElementById('filterStatusNegocio')?.value || '';
   state.negocios.limit = parseInt(document.getElementById('limitNegocios')?.value || '50');
   state.negocios.offset = 0; // qualquer mudança de filtro volta para a primeira página
@@ -1314,14 +1482,16 @@ function negociosMudarPagina(direcao) {
   loadNegocios();
 }
 
+
 async function loadNegocios() {
   const tbody = document.getElementById('negociosBody');
   tbody.innerHTML = `<tr><td colspan="8"><div class="loading"><div class="spinner"></div>Carregando...</div></td></tr>`;
-  const { q, categoria_id, bairro, status, limit, offset } = state.negocios;
+  const { q, categoria_id, cidades, bairros, status, limit, offset } = state.negocios;
   const params = new URLSearchParams({ limit, offset });
   if (q) params.set('q', q);
   if (categoria_id) params.set('categoria_id', categoria_id);
-  if (bairro) params.set('bairro', bairro);
+  (cidades || []).forEach(c => params.append('cidade', c));
+  (bairros || []).forEach(b => params.append('bairro', b));
   if (status) params.set('status', status);
   try {
     const r = await fetch(`/admin/negocios?${params.toString()}`, { headers: { 'X-Requested-With': 'XMLHttpRequest' } });
@@ -1379,12 +1549,13 @@ function renderNegocios(data) {
 
 function renderCategorias(data) {
   const tbody = document.getElementById('categoriasBody');
-  if (!data.length) { tbody.innerHTML = emptyRow(5); return; }
+  if (!data.length) { tbody.innerHTML = emptyRow(6); return; }
   tbody.innerHTML = data.map(c => `
     <tr>
       <td><strong>${esc(c.nome)}</strong></td>
       <td class="td-mono">${esc(c.slug)}</td>
       <td class="td-muted">${esc(c.icone_url) || '—'}</td>
+      <td class="td-muted">${(c.total_negocios ?? 0).toLocaleString('pt-BR')}</td>
       <td>${badgeAtivo(c.ativo)}</td>
       <td>${actionBtns('categoria', c.id)}</td>
     </tr>
