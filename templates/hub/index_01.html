@@ -237,39 +237,16 @@ footer a:hover { text-decoration: underline; }
   <nav class="desktop-nav">
     <ul>
       <li><a href="/">Início</a></li>
-      <li>
-        <a href="#categorias">Categorias ▾</a>
-        <div class="nav-dropdown">
-          {% set cats_ativas_nav = [] %}
-          {% for cat in categorias %}
-            {% if (negocios | selectattr('categoria_slug', 'equalto', cat.slug) | list | length) > 0 %}
-              {% set _ = cats_ativas_nav.append(cat) %}
-            {% endif %}
-          {% endfor %}
-          {% for cat in cats_ativas_nav %}
-          <a href="/{{ cat.slug }}/">{{ cat.nome }}</a>
-          {% endfor %}
-        </div>
-      </li>
-      <li>
-        <a href="#cidades">Cidades ▾</a>
-        <div class="nav-dropdown">
-          {% set cidades_unicas = negocios | map(attribute='cidade') | unique | list | sort %}
-          {% for c in cidades_unicas[:10] %}
-          <a href="/cidade/{{ c | slugify }}/">{{ c }}</a>
-          {% endfor %}
-          {% if cidades_unicas | length > 10 %}
-          <a href="/cidades/">Ver todas as cidades</a>
-          {% endif %}
-        </div>
-      </li>
-    </ul>
-  </nav>
-  <nav class="mobile-nav" id="mobileNav">
-    <ul>
-      <li><a href="/" onclick="closeMobileNav()">Início</a></li>
-      <li><a href="#categorias" onclick="closeMobileNav()">Categorias</a></li>
-      <li><a href="#cidades" onclick="closeMobileNav()">Cidades</a></li>
+      {% set cats_ativas_nav = [] %}
+      {% for cat in categorias %}
+        {% if (negocios | selectattr('categoria_slug', 'equalto', cat.slug) | list | length) > 0 %}
+          {% set _ = cats_ativas_nav.append(cat) %}
+        {% endif %}
+      {% endfor %}
+      {% for cat in cats_ativas_nav[:5] %}
+      <li><a href="/{{ cat.slug }}/">{{ cat.nome }}</a></li>
+      {% endfor %}
+      <li><a href="/blog/">Blog</a></li>
     </ul>
   </nav>
 </header>
