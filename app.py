@@ -355,27 +355,27 @@ def index():
         LIMIT %s
     """, (hub["id"], limite))
 
-    # Contagem real (sem LIMIT) só pra alimentar a barra de progresso do
-    # front do hub de lotérica — o JS usa isso pra saber quantas faltam
-    # carregar, não pra limitar nada.
-    #
-    # ⚠️ Só roda essa query extra se o template for "index_loterica".
-    # Pra qualquer outro hub, total_negocios fica None e nem essa consulta
-    # a mais no banco é feita — zero mudança de comportamento/custo pros
-    # outros hubs.
-    total_negocios = None
-    if template == "index_loterica":
-        total_negocios = query("""
-            SELECT COUNT(*) as total
-            FROM hub_negocios n
-            JOIN hub_negocio_hubs nh ON nh.negocio_id = n.id
-            WHERE nh.hub_id = %s AND n.ativo = true
-        """, (hub["id"],), one=True)["total"]
+    # Contagem real (sem LIMIT) — alimenta a barra de progresso do front do
+    # hub de lotérica E o stat "Negócios" do hero de qualquer template (antes
+    # ficava None pra quem não fosse index_loterica, aparecendo "None" na
+    # tela). É um COUNT indexado e barato, então roda pra todo hub agora.
+    # total_cidades segue o mesmo raciocínio, pro stat "Cidades" do hero
+    # (só aparece no template se o hub tiver negócio em mais de uma cidade).
+    stats_hub = query("""
+        SELECT COUNT(*) as total_negocios,
+               COUNT(DISTINCT NULLIF(TRIM(n.cidade), '')) as total_cidades
+        FROM hub_negocios n
+        JOIN hub_negocio_hubs nh ON nh.negocio_id = n.id
+        WHERE nh.hub_id = %s AND n.ativo = true
+    """, (hub["id"],), one=True)
+    total_negocios = stats_hub["total_negocios"]
+    total_cidades = stats_hub["total_cidades"]
 
     anuncio_topo = _get_anuncios(hub["id"], "topo")
     anuncio_meio = _get_anuncios(hub["id"], "meio")
     return render_template(f"hub/{template}.html", hub=hub, negocios=negocios, categorias=categorias,
-                           anuncio_topo=anuncio_topo, anuncio_meio=anuncio_meio, total_negocios=total_negocios)
+                           anuncio_topo=anuncio_topo, anuncio_meio=anuncio_meio,
+                           total_negocios=total_negocios, total_cidades=total_cidades)
 
 
 @app.route("/ads.txt")
