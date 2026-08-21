@@ -290,7 +290,7 @@ footer a:hover { text-decoration: underline; }
       <div class="card-body">
         <h3>{{ n.nome }}</h3>
         {% if n.bairro %}<div class="card-bairro"><i class="fas fa-map-marker-alt"></i> {{ n.bairro }}</div>{% endif %}
-        <a href="/{{ n.categoria_slug }}/{{ n.slug }}/" class="btn-ver">Ver detalhes</a>
+        <span class="btn-ver">Ver detalhes</span>
       </div>
     </a>
     {% endfor %}
