@@ -186,7 +186,17 @@ nav.desktop-nav ul li a:hover { border-bottom-color: #fff; background: rgba(0,0,
 .section { padding: 62px 0; }
 .section-title { text-align: center; font-size: 2em; font-weight: 800; color: var(--dark-gray); margin-bottom: 10px; }
 .section-subtitle { text-align: center; color: #6c757d; margin-bottom: 40px; font-size: 1.05em; }
+.cats-header-row { display: flex; align-items: center; justify-content: space-between; gap: 16px; flex-wrap: wrap; }
+.cats-view-toggle { display: flex; gap: 6px; background: #f0f0f0; padding: 4px; border-radius: 10px; flex-shrink: 0; }
+.cats-view-toggle button { border: none; background: transparent; width: 38px; height: 34px; border-radius: 7px; display: flex; align-items: center; justify-content: center; cursor: pointer; color: var(--dark-gray); font-size: 15px; transition: background 0.2s, color 0.2s; }
+.cats-view-toggle button.ativo { background: var(--primary); color: #fff; }
+
 .categorias-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 20px; }
+.categorias-grid.modo-carrossel { display: flex; grid-template-columns: none; overflow-x: auto; scroll-snap-type: x mandatory; gap: 16px; padding-bottom: 10px; -webkit-overflow-scrolling: touch; scrollbar-width: thin; }
+.categorias-grid.modo-carrossel .categoria-card { flex: 0 0 150px; scroll-snap-align: start; }
+.categorias-grid.modo-carrossel::-webkit-scrollbar { height: 6px; }
+.categorias-grid.modo-carrossel::-webkit-scrollbar-thumb { background: var(--primary); border-radius: 10px; }
+
 .categoria-card { background: var(--white); border-radius: 14px; overflow: hidden; box-shadow: 0 4px 12px var(--shadow-light); transition: transform 0.3s, box-shadow 0.3s; display: flex; flex-direction: column; align-items: center; padding-bottom: 20px; text-align: center; cursor: pointer; text-decoration: none; color: inherit; }
 .categoria-card:hover { transform: translateY(-6px); box-shadow: 0 10px 26px var(--shadow-medium); }
 .cat-photo { width: 100%; aspect-ratio: 1/1; overflow: hidden; background: #eee; }
@@ -233,7 +243,13 @@ footer a:hover { text-decoration: underline; }
   <nav class="desktop-nav">
     <ul>
       <li><a href="/">Início</a></li>
-      {% for cat in categorias[:5] %}
+      {% set cats_ativas_nav = [] %}
+      {% for cat in categorias %}
+        {% if (negocios | selectattr('categoria_slug', 'equalto', cat.slug) | list | length) > 0 %}
+          {% set _ = cats_ativas_nav.append(cat) %}
+        {% endif %}
+      {% endfor %}
+      {% for cat in cats_ativas_nav[:5] %}
       <li><a href="/{{ cat.slug }}/">{{ cat.nome }}</a></li>
       {% endfor %}
     </ul>
@@ -298,7 +314,9 @@ footer a:hover { text-decoration: underline; }
       <div class="slicer-backdrop" onclick="closeSlicer()"></div>
       <div class="slicer-panel" id="slicerPanel">
         {% for cat in categorias %}
+        {% if (negocios | selectattr('categoria_slug', 'equalto', cat.slug) | list | length) > 0 %}
         <a href="/{{ cat.slug }}/" class="chip-cat">{{ cat.nome }}</a>
+        {% endif %}
         {% endfor %}
       </div>
     </div>
@@ -338,25 +356,63 @@ footer a:hover { text-decoration: underline; }
 
 <!-- ══ CATEGORIAS ══ -->
 <section class="section container">
-  <h2 class="section-title">Categorias Disponíveis</h2>
-  <p class="section-subtitle">Encontre tudo que você precisa</p>
-  
+  <div class="cats-header-row">
+    <div>
+      <h2 class="section-title">Categorias Disponíveis</h2>
+      <p class="section-subtitle">Encontre tudo que você precisa</p>
+    </div>
+    <div class="cats-view-toggle">
+      <button type="button" id="btnCarrossel" class="ativo" onclick="setCatsView('carrossel')" aria-label="Ver em carrossel">
+        <i class="fas fa-arrows-left-right"></i>
+      </button>
+      <button type="button" id="btnGrade" onclick="setCatsView('grade')" aria-label="Ver em grade">
+        <i class="fas fa-table-cells"></i>
+      </button>
+    </div>
+  </div>
+
   {% if categorias %}
-  <div class="categorias-grid">
+  <div class="categorias-grid modo-carrossel" id="catsContainer">
     {% for cat in categorias %}
+    {% set total = negocios | selectattr('categoria_slug', 'equalto', cat.slug) | list | length %}
+    {% if total > 0 %}
     <a href="/{{ cat.slug }}/" class="categoria-card">
       <div class="cat-photo">
-        <i class="fas fa-folder" style="font-size: 3em; color: var(--primary); display: flex; align-items: center; justify-content: center; width: 100%; height: 100%;"></i>
+        <i class="fas fa-location-dot" style="font-size: 3em; color: var(--primary); display: flex; align-items: center; justify-content: center; width: 100%; height: 100%;"></i>
       </div>
       <h3>{{ cat.nome }}</h3>
       <span class="btn-ver">Explorar</span>
     </a>
+    {% endif %}
     {% endfor %}
   </div>
   {% else %}
   <div class="info-vazio">Nenhuma categoria disponível</div>
   {% endif %}
 </section>
+
+<script>
+function setCatsView(modo) {
+  const container = document.getElementById('catsContainer');
+  const btnCarrossel = document.getElementById('btnCarrossel');
+  const btnGrade = document.getElementById('btnGrade');
+  if (!container) return;
+  if (modo === 'grade') {
+    container.classList.remove('modo-carrossel');
+    btnGrade.classList.add('ativo');
+    btnCarrossel.classList.remove('ativo');
+  } else {
+    container.classList.add('modo-carrossel');
+    btnCarrossel.classList.add('ativo');
+    btnGrade.classList.remove('ativo');
+  }
+  localStorage.setItem('catsView', modo);
+}
+(function() {
+  const saved = localStorage.getItem('catsView');
+  if (saved === 'grade') setCatsView('grade');
+})();
+</script>
 
 <!-- ══ FOOTER ══ -->
 <footer>
@@ -365,6 +421,104 @@ footer a:hover { text-decoration: underline; }
   </div>
   <p>&copy; {{ hub.nome or 'Hub' }} — todos os direitos reservados.</p>
 </footer>
+
+<!-- ══ WIDGET TRADUÇÃO ══ -->
+<button id="translate-btn" style="position:fixed;bottom:24px;right:24px;background:var(--primary);color:#fff;border:none;border-radius:50%;width:52px;height:52px;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:18px;box-shadow:0 4px 20px rgba(0,0,0,0.2);z-index:999;transition:transform 0.2s">
+  <i class="fas fa-language"></i> Traduzir
+</button>
+
+<div id="translate-drawer" style="position:fixed;bottom:70px;right:20px;z-index:1000;background:#fff;border-radius:16px;box-shadow:0 8px 40px rgba(0,0,0,0.2);width:280px;max-height:420px;display:none;flex-direction:column;overflow:hidden">
+  <div style="padding:12px 14px;border-bottom:1px solid #e0e0e0;display:flex;align-items:center;gap:8px">
+    <input id="td-search" type="text" placeholder="Buscar idioma..." style="flex:1;border:1.5px solid #e0e0e0;border-radius:8px;padding:8px 12px;font-size:13px;outline:none" onkeyup="filterLangs(this.value)">
+    <button id="td-close" style="background:none;border:none;color:#aaa;font-size:18px;cursor:pointer;padding:2px 4px" onclick="toggleTranslateDrawer()">✕</button>
+  </div>
+  <div id="td-list" style="overflow-y:auto;flex:1;padding:6px 0"></div>
+</div>
+
+<div id="google_translate_element" style="display:none"></div>
+<script src="//translate.google.com/translate_a/element.js?cb=googleTranslateElementInit"></script>
+
+<style>
+  #translate-btn:hover { transform: scale(1.1); }
+  #translate-drawer { display: none !important; }
+  #translate-drawer.open { display: flex !important; }
+  .td-item { padding: 9px 18px; font-size: 14px; cursor: pointer; color: #495057; transition: background 0.1s; display: flex; align-items: center; gap: 10px; }
+  .td-item:hover { background: #fff3e0; color: var(--primary); }
+  .td-item.active { color: var(--primary); font-weight: 600; background: #fff3e0; }
+  .td-item .flag { font-size: 18px; flex-shrink: 0; }
+  .td-empty { padding: 24px; text-align: center; color: #bbb; font-size: 13px; }
+</style>
+
+<script>
+const LANGS = [
+  {code:'pt',name:'Português',flag:'🇧🇷'},{code:'en',name:'English',flag:'🇺🇸'},{code:'es',name:'Español',flag:'🇪🇸'},
+  {code:'fr',name:'Français',flag:'🇫🇷'},{code:'de',name:'Deutsch',flag:'🇩🇪'},{code:'it',name:'Italiano',flag:'🇮🇹'},
+  {code:'ja',name:'日本語',flag:'🇯🇵'},{code:'zh-CN',name:'中文',flag:'🇨🇳'},{code:'ru',name:'Русский',flag:'🇷🇺'},
+  {code:'ko',name:'한국어',flag:'🇰🇷'},{code:'ar',name:'العربية',flag:'🇸🇦'},{code:'hi',name:'हिन्दी',flag:'🇮🇳'}
+];
+
+let currentLang = 'pt';
+let drawerOpen = false;
+
+function googleTranslateElementInit() {
+  new google.translate.TranslateElement({pageLanguage: 'pt', includedLanguages: 'pt,en,es,fr,de,it,ja,zh-CN,ru,ko,ar,hi'}, 'google_translate_element');
+}
+
+function renderLangs(list) {
+  const el = document.getElementById('td-list');
+  if (!list.length) {
+    el.innerHTML = '<div class="td-empty">Nenhum idioma encontrado</div>';
+    return;
+  }
+  el.innerHTML = list.map(l => `<div class="td-item ${l.code === currentLang ? 'active' : ''}" onclick="selectLang('${l.code}','${l.name}')"><span class="flag">${l.flag}</span> ${l.name}</div>`).join('');
+}
+
+function filterLangs(q) {
+  const filtered = LANGS.filter(l => l.name.toLowerCase().includes(q.toLowerCase()));
+  renderLangs(filtered);
+}
+
+function selectLang(code, name) {
+  currentLang = code;
+  drawerOpen = false;
+  document.getElementById('translate-drawer').classList.remove('open');
+  document.getElementById('translate-btn').innerHTML = `<i class="fas fa-language"></i> ${LANGS.find(l => l.code === code)?.flag || ''} ${name}`;
+  
+  if (code === 'pt') {
+    const sel = document.querySelector('.goog-te-combo');
+    if (sel) { sel.value = ''; sel.dispatchEvent(new Event('change')); }
+    return;
+  }
+  
+  const tryTranslate = (attempts) => {
+    const sel = document.querySelector('.goog-te-combo');
+    if (sel) { sel.value = code; sel.dispatchEvent(new Event('change')); }
+    else if (attempts > 0) setTimeout(() => tryTranslate(attempts - 1), 300);
+  };
+  tryTranslate(10);
+}
+
+function toggleTranslateDrawer() {
+  drawerOpen = !drawerOpen;
+  const drawer = document.getElementById('translate-drawer');
+  if (drawerOpen) {
+    drawer.classList.add('open');
+    renderLangs(LANGS);
+    document.getElementById('td-search').value = '';
+    setTimeout(() => document.getElementById('td-search').focus(), 50);
+  } else {
+    drawer.classList.remove('open');
+  }
+}
+
+document.getElementById('translate-btn').addEventListener('click', toggleTranslateDrawer);
+document.addEventListener('click', (e) => {
+  if (drawerOpen && !document.getElementById('translate-drawer').contains(e.target) && !document.getElementById('translate-btn').contains(e.target)) {
+    drawerOpen = false;
+    document.getElementById('translate-drawer').classList.remove('open');
+  }
+});
+</script>
 
 <script>
 function toggleSlicer() {
