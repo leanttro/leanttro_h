@@ -250,6 +250,13 @@ footer a:hover { text-decoration: underline; }
     body > header { padding: 16px 60px 16px 20px; flex-direction: row; justify-content: center; }
     .header-logo img { height: 96px; }
     nav.desktop-nav { display: none; }
+    nav.desktop-nav.mobile-aberto {
+        display: block; position: absolute; top: 100%; left: 0; right: 0;
+        background: var(--primary); box-shadow: 0 8px 20px rgba(0,0,0,0.2);
+        z-index: 60;
+    }
+    nav.desktop-nav.mobile-aberto ul { flex-direction: column; align-items: stretch; }
+    nav.desktop-nav.mobile-aberto ul li a { text-align: center; border-bottom: 1px solid rgba(255,255,255,0.15); }
     .hamburger-btn { display: block; top: 50%; transform: translateY(-50%); }
     .hero-section { min-height: 440px; }
     .hero-section h1 { font-size: 2.1em; }
@@ -631,8 +638,18 @@ function closeSlicer() {
 }
 
 function toggleMobileNav() {
-  console.log('Mobile nav not implemented yet');
+  const nav = document.querySelector('nav.desktop-nav');
+  if (!nav) return;
+  nav.classList.toggle('mobile-aberto');
 }
+
+document.addEventListener('click', function(e) {
+  const nav = document.querySelector('nav.desktop-nav');
+  const btn = document.querySelector('.hamburger-btn');
+  if (nav && nav.classList.contains('mobile-aberto') && !nav.contains(e.target) && !btn.contains(e.target)) {
+    nav.classList.remove('mobile-aberto');
+  }
+});
 
 document.querySelector('.slicer-backdrop').addEventListener('click', closeSlicer);
 document.addEventListener('click', function(e) {
