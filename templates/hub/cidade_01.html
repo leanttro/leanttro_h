@@ -435,7 +435,18 @@ footer a:hover { text-decoration: underline; }
       {% elif bairro %}Negócios em {{ bairro }}
       {% else %}Negócios em {{ cidade }}{% endif %}
     </h1>
-    <p>{{ total_negocios }} resultado{{ 's' if total_negocios != 1 else '' }} encontrado{{ 's' if total_negocios != 1 else '' }}</p>
+    <p>
+      {{ total_negocios }}
+      {% if categoria and bairro %}
+        {{ categoria.nome | lower }}{{ 's' if total_negocios != 1 else '' }} encontrado{{ 's' if total_negocios != 1 else '' }} no bairro {{ bairro }}, em {{ cidade }}.
+      {% elif categoria %}
+        {{ categoria.nome | lower }}{{ 's' if total_negocios != 1 else '' }} encontrado{{ 's' if total_negocios != 1 else '' }} em {{ cidade }}{% if bairros_disponiveis %}, distribuído{{ 's' if total_negocios != 1 else '' }} em {{ bairros_disponiveis | length }} bairro{{ 's' if bairros_disponiveis | length != 1 else '' }}{% endif %}.
+      {% elif bairro %}
+        negócio{{ 's' if total_negocios != 1 else '' }} encontrado{{ 's' if total_negocios != 1 else '' }} no bairro {{ bairro }}, em {{ cidade }}.
+      {% else %}
+        negócio{{ 's' if total_negocios != 1 else '' }} encontrado{{ 's' if total_negocios != 1 else '' }} em {{ cidade }}{% if bairros_disponiveis %}, em {{ bairros_disponiveis | length }} bairro{{ 's' if bairros_disponiveis | length != 1 else '' }}{% endif %}.
+      {% endif %}
+    </p>
     <div class="hero-stats">
       <div class="hero-stat">
         <div class="hero-stat-num">{{ total_negocios }}</div>
