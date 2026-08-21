@@ -158,6 +158,8 @@ nav.mobile-nav ul li a:hover, nav.mobile-nav ul li a:active { background: rgba(0
 }
 .cidade-hero h1 { font-size: 2.6em; font-weight: 900; line-height: 1.2; text-shadow: 2px 2px 8px rgba(0,0,0,0.6); margin-bottom: 14px; }
 .cidade-hero p { font-size: 1.1em; color: rgba(255,255,255,.88); text-shadow: 1px 1px 4px rgba(0,0,0,0.5); margin-bottom: 28px; }
+.hero-eyebrow { display: inline-flex; align-items: center; gap: 8px; font-size: 0.85em; font-weight: 800; letter-spacing: 1.5px; text-transform: uppercase; color: var(--primary); margin-bottom: 14px; }
+.hero-destaque { color: var(--primary); }
 
 .hero-stats { display: flex; align-items: center; justify-content: center; gap: 0; flex-wrap: wrap; }
 .hero-stat { display: flex; flex-direction: column; align-items: center; padding: 0 28px; }
@@ -373,8 +375,26 @@ footer a:hover { text-decoration: underline; }
 <!-- ══ HERO CIDADE ══ -->
 <section class="cidade-hero">
   <div class="container">
-    <h1>{% if bairro %}{{ bairro }} — {{ cidade }}{% else %}{{ cidade }}{% endif %}</h1>
-    <p>{{ total_negocios }} negócio(s) encontrado(s)</p>
+    <span class="hero-eyebrow">
+      {% if bairro and categoria %}<i class="fas fa-tag"></i> {{ categoria.nome }} em {{ bairro }}
+      {% elif categoria %}<i class="fas fa-tag"></i> Categoria
+      {% elif bairro %}<i class="fas fa-map-marker-alt"></i> Bairro
+      {% else %}<i class="fas fa-map-marker-alt"></i> {{ cidade }}
+      {% endif %}
+    </span>
+    {% if bairro and categoria %}
+    <h1>As melhores <span class="hero-destaque">{{ categoria.nome }}</span> em {{ bairro }}</h1>
+    <p>{{ total_negocios }} opção(ões) de {{ categoria.nome | lower }} no bairro {{ bairro }}, {{ cidade }} — encontre a mais perto de você.</p>
+    {% elif categoria %}
+    <h1>As melhores <span class="hero-destaque">{{ categoria.nome }}</span> em {{ cidade }}</h1>
+    <p>{{ total_negocios }} negócio(s) de {{ categoria.nome | lower }} — encontre o mais perto de você agora.</p>
+    {% elif bairro %}
+    <h1>O que tem em <span class="hero-destaque">{{ bairro }}</span>?</h1>
+    <p>{{ total_negocios }} estabelecimento(s) no bairro {{ bairro }}, {{ cidade }} — descubra o que tem pertinho de você.</p>
+    {% else %}
+    <h1>O que tem em <span class="hero-destaque">{{ cidade }}</span>?</h1>
+    <p>{{ total_negocios }} estabelecimento(s) cadastrados — explore lojas e serviços perto de você em {{ cidade }}.</p>
+    {% endif %}
     {% if not bairro and not categoria %}
     <div class="hero-stats">
       <div class="hero-stat">
