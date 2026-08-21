@@ -1,0 +1,381 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-7617881885143728"
+     crossorigin="anonymous"></script>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+{# ══ Dynamic SEO ══ #}
+{% set seo_title = pais_nome ~ " BMI Calculator (" ~ standard.nome ~ ") | " ~ (hub.nome or 'Adult BMI Calculator') %}
+{% set seo_desc = "Calculate your BMI using the " ~ standard.nome ~ ", the classification applied in " ~ pais_nome ~ ". Browse " ~ (total_negocios if total_negocios is not none else 0) ~ " gyms across " ~ pais_nome ~ "." %}
+{% set seo_url = "https://" ~ request.host ~ "/country/" ~ pais_slug ~ "/" %}
+
+<title>{{ seo_title }}</title>
+<meta name="description" content="{{ seo_desc }}">
+<meta name="robots" content="index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1">
+<meta name="theme-color" content="{{ hub.cor_primaria or '#0071e3' }}">
+<link rel="canonical" href="{{ seo_url }}">
+{% if hub.logo_url %}<link rel="icon" type="image/png" href="{{ hub.logo_url }}">{% endif %}
+
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="{{ hub.nome or 'Adult BMI Calculator' }}">
+<meta property="og:url" content="{{ seo_url }}">
+<meta property="og:title" content="{{ seo_title }}">
+<meta property="og:description" content="{{ seo_desc }}">
+{% if hub.logo_url %}<meta property="og:image" content="{{ hub.logo_url }}">{% endif %}
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="{{ seo_title }}">
+<meta name="twitter:description" content="{{ seo_desc }}">
+
+{# ══ FAQPage: dynamic per-country questions ══ #}
+{% set faq_items = [] %}
+{% set _ = faq_items.append({
+  "@type": "Question",
+  "name": "What BMI standard does " ~ pais_nome ~ " use?",
+  "acceptedAnswer": {
+    "@type": "Answer",
+    "text": pais_nome ~ " classifies adult BMI using the " ~ standard.nome ~ ", which defines " ~ (standard.faixas | length | string) ~ " weight categories."
+  }
+}) %}
+{% set _ = faq_items.append({
+  "@type": "Question",
+  "name": "How many gyms are listed in " ~ pais_nome ~ "?",
+  "acceptedAnswer": {
+    "@type": "Answer",
+    "text": (total_negocios | string) ~ " gym(s) are currently listed across " ~ pais_nome ~ " on " ~ (hub.nome or 'this directory') ~ "."
+  }
+}) %}
+{% set _ = faq_items.append({
+  "@type": "Question",
+  "name": "Which cities in " ~ pais_nome ~ " are available?",
+  "acceptedAnswer": {
+    "@type": "Answer",
+    "text": (cidades_disponiveis | length | string) ~ " cities in " ~ pais_nome ~ " have gyms listed. Select a city below to see its local BMI page and gym directory." if cidades_disponiveis else ("Use the city list on this page to browse gyms in " ~ pais_nome ~ " by city.")
+  }
+}) %}
+{% set _ = faq_items.append({
+  "@type": "Question",
+  "name": "Is the " ~ standard.nome ~ " different from the general WHO standard?",
+  "acceptedAnswer": {
+    "@type": "Answer",
+    "text": "Some countries adjust BMI thresholds based on national health research. Check the classification table on this page for the exact ranges used in " ~ pais_nome ~ "."
+  }
+}) %}
+
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@graph": [
+    {
+      "@type": "BreadcrumbList",
+      "itemListElement": [
+        {"@type":"ListItem","position":1,"name":"Home","item":"https://{{ request.host }}/"},
+        {"@type":"ListItem","position":2,"name":"{{ pais_nome }}","item":"{{ seo_url }}"}
+      ]
+    },
+    {
+      "@type": "WebPage",
+      "@id": "{{ seo_url }}",
+      "url": "{{ seo_url }}",
+      "name": {{ seo_title | tojson }},
+      "description": {{ seo_desc | tojson }},
+      "inLanguage": "en"
+    },
+    {
+      "@type": "FAQPage",
+      "mainEntity": {{ faq_items | tojson }}
+    }
+  ]
+}
+</script>
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+<link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+
+<style>
+:root{
+  --primary:{{ hub.cor_primaria or '#0071e3' }};
+  --primary-d:{{ hub.cor_secundaria or '#0051a2' }};
+  --bg:#ffffff;--bg2:#f5f5f7;--surface:#ffffff;--border:#d2d2d7;--border-light:#e8e8ed;
+  --text:#1d1d1f;--text-soft:#6e6e73;--muted:#86868b;
+  --radius:12px;--radius-lg:18px;--sans:'Inter',sans-serif;
+  --shadow:0 2px 12px rgba(0,0,0,.06);--shadow-md:0 4px 24px rgba(0,0,0,.1);--shadow-lg:0 8px 40px rgba(0,0,0,.12);
+  --cat-under:#3b82f6;--cat-normal:#1a9e5c;--cat-over:#e0a324;--cat-obese:#e0473f;
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+body{font-family:var(--sans);background:var(--bg);color:var(--text);line-height:1.6}
+.container{max-width:1100px;margin:0 auto;padding:0 24px}
+a{text-decoration:none;color:inherit}
+img{max-width:100%;display:block}
+
+header{background:rgba(255,255,255,.9);backdrop-filter:blur(20px);border-bottom:1px solid var(--border-light);position:sticky;top:0;z-index:100}
+.header-inner{max-width:1100px;margin:0 auto;padding:14px 24px;display:flex;align-items:center;gap:10px}
+.logo-hub{display:flex;align-items:center;gap:9px;font-weight:700;font-size:.95rem}
+.logo-hub img{height:38px;width:auto}
+
+.ad-slot{text-align:center;padding:10px 20px;background:var(--bg2);border-bottom:1px solid var(--border-light)}
+.ad-slot img{max-height:90px;margin:0 auto;border-radius:8px}
+
+.breadcrumb{font-size:.83em;color:var(--text-soft);padding:16px 0 0}
+.breadcrumb a:hover{color:var(--primary)}
+
+.page-hero{padding:28px 0 8px}
+.page-hero h1{font-size:clamp(1.6rem,4vw,2.3rem);font-weight:800;letter-spacing:-.02em;margin-bottom:10px}
+.page-hero p.lead{color:var(--text-soft);max-width:720px;font-size:1.02rem}
+
+.unique-copy{background:var(--bg2);border-radius:var(--radius-lg);padding:24px;margin:24px 0;color:var(--text-soft);font-size:.95rem;line-height:1.75}
+.unique-copy strong{color:var(--text)}
+
+.section{padding:36px 0}
+.section-title{font-size:1.4rem;font-weight:800;margin-bottom:6px}
+.section-sub{color:var(--text-soft);margin-bottom:22px}
+
+/* calculator */
+.calc-card{max-width:600px;background:var(--surface);border:1px solid var(--border-light);border-radius:var(--radius-lg);box-shadow:var(--shadow-lg);padding:28px}
+.unit-toggle{display:flex;background:var(--bg2);border-radius:10px;padding:4px;margin-bottom:20px}
+.unit-toggle button{flex:1;padding:9px;border:none;background:none;border-radius:8px;font-weight:700;font-size:.85rem;color:var(--text-soft);cursor:pointer}
+.unit-toggle button.active{background:#fff;color:var(--primary);box-shadow:var(--shadow)}
+.calc-fields{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:18px}
+.calc-field label{display:block;font-size:.76rem;font-weight:700;text-transform:uppercase;letter-spacing:.4px;color:var(--muted);margin-bottom:6px}
+.calc-field input{width:100%;padding:12px 14px;border:1.5px solid var(--border);border-radius:10px;font-size:1rem;font-family:inherit;outline:none}
+.calc-field input:focus{border-color:var(--primary)}
+.btn-calc{width:100%;padding:14px;background:var(--primary);color:#fff;border:none;border-radius:10px;font-weight:700;font-size:1rem;cursor:pointer}
+.btn-calc:hover{background:var(--primary-d)}
+.result-box{display:none;margin-top:22px;padding:20px;border-radius:var(--radius);background:var(--bg2);text-align:center}
+.result-box.show{display:block}
+.result-bmi{font-size:2.4rem;font-weight:800}
+.result-label{font-size:.78rem;color:var(--muted);text-transform:uppercase;letter-spacing:.4px}
+.result-cat{display:inline-block;margin-top:10px;padding:6px 16px;border-radius:20px;font-weight:700;font-size:.88rem;color:#fff}
+
+/* standard table */
+.who-table{width:100%;border-collapse:collapse;background:var(--surface);border:1px solid var(--border-light);border-radius:var(--radius);overflow:hidden;margin-top:24px}
+.who-table th,.who-table td{padding:13px 18px;text-align:left;font-size:.92rem;border-bottom:1px solid var(--border-light)}
+.who-table th{background:var(--bg2);font-weight:700;color:var(--text-soft);font-size:.78rem;text-transform:uppercase}
+.who-table tr:last-child td{border-bottom:none}
+.who-dot{display:inline-block;width:10px;height:10px;border-radius:50%;margin-right:8px}
+
+/* cities */
+.cities-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:14px}
+.city-card{display:flex;align-items:center;justify-content:space-between;background:var(--surface);border:1px solid var(--border-light);border-radius:var(--radius);padding:14px 16px;transition:all .2s}
+.city-card:hover{border-color:var(--primary);box-shadow:var(--shadow)}
+
+/* gyms */
+.gym-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:18px}
+.gym-card{background:var(--surface);border:1px solid var(--border-light);border-radius:var(--radius);overflow:hidden;box-shadow:var(--shadow);transition:all .2s;display:flex;flex-direction:column}
+.gym-card:hover{transform:translateY(-3px);box-shadow:var(--shadow-md);border-color:var(--primary)}
+.gym-photo{width:100%;height:140px;object-fit:cover;background:var(--bg2)}
+.gym-photo-fallback{width:100%;height:140px;display:flex;align-items:center;justify-content:center;background:var(--bg2)}
+.gym-photo-fallback i{font-size:1.8rem;color:var(--primary);opacity:.4}
+.gym-body{padding:14px;flex:1;display:flex;flex-direction:column;gap:3px}
+.gym-cat{font-size:.68rem;font-weight:700;color:var(--primary);text-transform:uppercase}
+.gym-name{font-weight:700;font-size:.98rem}
+.gym-loc{font-size:.8rem;color:var(--text-soft)}
+.empty-state{text-align:center;padding:40px 0;color:var(--text-soft)}
+
+footer{background:#111;color:#999;padding:32px 20px;font-size:.85em;text-align:center}
+footer a{color:var(--primary)}
+
+@media(max-width:640px){.calc-fields{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="header-inner">
+    <a class="logo-hub" href="/">
+      {% if hub.logo_url %}<img src="{{ hub.logo_url }}" alt="{{ hub.nome or 'Adult BMI Calculator' }}">{% endif %}
+      <span>{{ hub.nome or 'Adult BMI Calculator' }}</span>
+    </a>
+  </div>
+</header>
+
+{% if anuncio_topo %}
+<div class="ad-slot">
+  <a href="{{ anuncio_topo.link_url or anuncio_topo.link or '#' }}" target="_blank" rel="noopener sponsored">
+    <img src="{{ anuncio_topo.imagem_url or anuncio_topo.foto_url }}" alt="{{ anuncio_topo.titulo or 'Advertisement' }}">
+  </a>
+</div>
+{% endif %}
+
+<div class="container">
+  <div class="breadcrumb">
+    <a href="/">Home</a> › <span style="color:var(--text)">{{ pais_nome }}</span>
+  </div>
+
+  <div class="page-hero">
+    <h1>{{ pais_nome }} BMI Calculator — {{ standard.nome }}</h1>
+    <p class="lead">Calculate your Body Mass Index using the classification applied in {{ pais_nome }}, and browse {{ total_negocios if total_negocios is not none else 0 }} gym(s) across the country.</p>
+  </div>
+
+  <div class="unique-copy">
+    <p>
+      <strong>{{ pais_nome }}</strong> classifies adult body weight using the <strong>{{ standard.nome }}</strong>, made up of
+      {{ standard.faixas | length }} distinct categories{% if standard.faixas %} — from
+      {% for faixa in standard.faixas %}<strong>{{ faixa.label }}</strong>{% if not loop.last %}, {% endif %}{% endfor %}{% endif %}.
+      {% if total_negocios %}Alongside the calculator below, {{ hub.nome or 'this directory' }} currently lists <strong>{{ total_negocios }}</strong> gym{% if total_negocios != 1 %}s{% endif %} in {{ pais_nome }}{% if cidades_disponiveis %}, spread across <strong>{{ cidades_disponiveis | length }}</strong> {{ 'city' if cidades_disponiveis | length == 1 else 'cities' }}{% endif %}.{% endif %}
+      Use the tool to see instantly which category your BMI falls into under the {{ pais_nome }} standard, then explore nearby training options below.
+    </p>
+  </div>
+
+  <section class="section">
+    <h2 class="section-title">Calculate Your BMI — {{ pais_nome }} Standard</h2>
+    <p class="section-sub">Results below are classified using {{ standard.nome }}.</p>
+
+    <div class="calc-card">
+      <div class="unit-toggle">
+        <button type="button" class="active" id="unitMetric" onclick="setUnits('metric')">Metric (kg / cm)</button>
+        <button type="button" id="unitImperial" onclick="setUnits('imperial')">Imperial (lb / ft-in)</button>
+      </div>
+      <div class="calc-fields">
+        <div class="calc-field">
+          <label>Weight</label>
+          <input type="number" id="weightInput" placeholder="70" min="1" step="0.1">
+        </div>
+        <div class="calc-field" id="heightMetricField">
+          <label>Height (cm)</label>
+          <input type="number" id="heightInput" placeholder="175" min="1" step="0.1">
+        </div>
+        <div class="calc-field" id="heightImperialField" style="display:none">
+          <label>Height (ft / in)</label>
+          <div style="display:flex;gap:8px">
+            <input type="number" id="heightFtInput" placeholder="5" min="0" step="1">
+            <input type="number" id="heightInInput" placeholder="9" min="0" max="11" step="1">
+          </div>
+        </div>
+      </div>
+      <button type="button" class="btn-calc" onclick="calculateBMI()">Calculate BMI</button>
+      <div class="result-box" id="resultBox">
+        <div class="result-bmi" id="resultValue">--</div>
+        <div class="result-label">Your BMI ({{ standard.nome }})</div>
+        <div class="result-cat" id="resultCat">—</div>
+      </div>
+    </div>
+
+    <table class="who-table">
+      <thead><tr><th>Category</th><th>BMI Range</th></tr></thead>
+      <tbody>
+        {% for faixa in standard.faixas %}
+        <tr>
+          <td><span class="who-dot" style="background:{{ ['var(--cat-under)','var(--cat-normal)','var(--cat-over)','var(--cat-obese)'][loop.index0 % 4] }}"></span>{{ faixa.label }}</td>
+          <td>{% if faixa.min is not none and faixa.max is not none %}{{ faixa.min }} – {{ faixa.max }}{% elif faixa.max is not none %}Below {{ faixa.max }}{% else %}{{ faixa.min }} and above{% endif %}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </section>
+
+  {% if anuncio_meio %}
+  <div class="ad-slot" style="border-radius:var(--radius)">
+    <a href="{{ anuncio_meio.link_url or anuncio_meio.link or '#' }}" target="_blank" rel="noopener sponsored">
+      <img src="{{ anuncio_meio.imagem_url or anuncio_meio.foto_url }}" alt="{{ anuncio_meio.titulo or 'Advertisement' }}">
+    </a>
+  </div>
+  {% endif %}
+
+  {% if cidades_disponiveis %}
+  <section class="section">
+    <h2 class="section-title">Cities in {{ pais_nome }}</h2>
+    <p class="section-sub">Select a city to see its local BMI page and gym directory.</p>
+    <div class="cities-grid">
+      {% for cidade in cidades_disponiveis %}
+      <a href="/country/{{ pais_slug }}/{{ cidade | slugify }}/" class="city-card">
+        <span>{{ cidade }}</span>
+        <i class="fas fa-chevron-right" style="color:var(--muted);font-size:.78rem"></i>
+      </a>
+      {% endfor %}
+    </div>
+  </section>
+  {% endif %}
+
+  <section class="section">
+    <h2 class="section-title">Gyms in {{ pais_nome }}</h2>
+    <p class="section-sub">A preview of gyms and studios listed across the country.</p>
+    {% if negocios %}
+    <div class="gym-grid">
+      {% for n in negocios %}
+      <a href="/{{ n.categoria_slug }}/{{ n.slug }}/" class="gym-card">
+        {% if n.foto_url %}
+        <img src="{{ n.foto_url }}" alt="{{ n.nome }}" class="gym-photo" loading="lazy">
+        {% else %}
+        <div class="gym-photo-fallback"><i class="fas fa-dumbbell"></i></div>
+        {% endif %}
+        <div class="gym-body">
+          <span class="gym-cat">{{ n.categoria_nome }}</span>
+          <span class="gym-name">{{ n.nome }}</span>
+          {% if n.bairro %}<span class="gym-loc"><i class="fas fa-location-dot"></i> {{ n.bairro }}</span>{% endif %}
+        </div>
+      </a>
+      {% endfor %}
+    </div>
+    {% else %}
+    <div class="empty-state">No gyms listed in {{ pais_nome }} yet.</div>
+    {% endif %}
+  </section>
+</div>
+
+<footer>&copy; {{ hub.nome or 'Adult BMI Calculator' }} — all rights reserved.</footer>
+
+<script>
+const STANDARD_RANGES = {{ standard.faixas | tojson }};
+
+let currentUnits = 'metric';
+function setUnits(units){
+  currentUnits = units;
+  document.getElementById('unitMetric').classList.toggle('active', units === 'metric');
+  document.getElementById('unitImperial').classList.toggle('active', units === 'imperial');
+  document.getElementById('heightMetricField').style.display = units === 'metric' ? 'block' : 'none';
+  document.getElementById('heightImperialField').style.display = units === 'imperial' ? 'block' : 'none';
+}
+
+const CAT_COLORS = ['var(--cat-under)','var(--cat-normal)','var(--cat-over)','var(--cat-obese)'];
+
+function categoryForStandard(bmi){
+  for (let i = 0; i < STANDARD_RANGES.length; i++) {
+    const r = STANDARD_RANGES[i];
+    const min = (r.min === null || r.min === undefined) ? -Infinity : r.min;
+    const max = (r.max === null || r.max === undefined) ? Infinity : r.max;
+    if (bmi >= min && bmi < max) return { label: r.label, color: CAT_COLORS[i % CAT_COLORS.length] };
+  }
+  const last = STANDARD_RANGES[STANDARD_RANGES.length - 1];
+  return { label: last ? last.label : '—', color: CAT_COLORS[(STANDARD_RANGES.length - 1) % CAT_COLORS.length] };
+}
+
+function calculateBMI(){
+  const weightInput = parseFloat(document.getElementById('weightInput').value);
+  if (!weightInput || weightInput <= 0) { alert('Please enter a valid weight.'); return; }
+
+  let weightKg, heightM;
+  if (currentUnits === 'metric') {
+    const heightCm = parseFloat(document.getElementById('heightInput').value);
+    if (!heightCm || heightCm <= 0) { alert('Please enter a valid height.'); return; }
+    weightKg = weightInput;
+    heightM = heightCm / 100;
+  } else {
+    const ft = parseFloat(document.getElementById('heightFtInput').value) || 0;
+    const inch = parseFloat(document.getElementById('heightInInput').value) || 0;
+    if (ft <= 0 && inch <= 0) { alert('Please enter a valid height.'); return; }
+    weightKg = weightInput * 0.45359237;
+    heightM = ((ft * 12) + inch) * 0.0254;
+  }
+
+  const bmi = weightKg / (heightM * heightM);
+  const cat = categoryForStandard(bmi);
+
+  document.getElementById('resultValue').textContent = bmi.toFixed(1);
+  const catEl = document.getElementById('resultCat');
+  catEl.textContent = cat.label;
+  catEl.style.background = cat.color;
+  document.getElementById('resultBox').classList.add('show');
+}
+</script>
+
+{% if hub.ga4_id %}
+<script async src="https://www.googletagmanager.com/gtag/js?id={{ hub.ga4_id }}"></script>
+<script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag('js',new Date());gtag('config','{{ hub.ga4_id }}');</script>
+{% endif %}
+
+</body>
+</html>
