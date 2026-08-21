@@ -172,6 +172,9 @@ nav.desktop-nav ul li a:hover { border-bottom-color: #fff; background: rgba(0,0,
 .card-foto { width: 100%; height: 160px; overflow: hidden; position: relative; background: #f5f5f5; }
 .card-foto img { width: 100%; height: 100%; object-fit: cover; transition: transform 0.4s; }
 .negocio-card:hover .card-foto img { transform: scale(1.06); }
+.card-foto-fallback { width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; background: var(--light); }
+.card-foto-fallback img { width: auto; height: auto; max-width: 62%; max-height: 62%; object-fit: contain; transition: transform 0.4s; }
+.card-foto-fallback i { font-size: 2.4em; color: var(--primary); opacity: 0.35; }
 .badge-cat { position: absolute; top: 10px; left: 10px; background: var(--primary); color: #fff; font-size: 0.72em; font-weight: 700; padding: 3px 10px; border-radius: 20px; }
 .card-body { padding: 16px; flex: 1; display: flex; flex-direction: column; gap: 4px; }
 .card-body h3 { font-size: 1.05em; font-weight: 700; color: var(--dark-gray); }
@@ -383,7 +386,13 @@ footer a:hover { text-decoration: underline; }
       <a href="/{{ n.categoria_slug }}/{{ n.slug }}/" class="negocio-card"
          {% if n.lat and n.lng %}data-lat="{{ n.lat }}" data-lng="{{ n.lng }}"{% endif %}>
         <div class="card-foto">
-          <img src="{{ n.foto_url or 'https://via.placeholder.com/260x160?text=' ~ n.nome }}" alt="{{ n.nome }}">
+          {% if n.foto_url %}
+          <img src="{{ n.foto_url }}" alt="{{ n.nome }}">
+          {% elif hub.logo_url %}
+          <div class="card-foto-fallback"><img src="{{ hub.logo_url }}" alt="{{ hub.nome or 'Hub' }}"></div>
+          {% else %}
+          <div class="card-foto-fallback"><i class="fas fa-store"></i></div>
+          {% endif %}
           <div class="badge-cat">{{ n.categoria_nome }}</div>
         </div>
         <div class="card-body">
@@ -634,6 +643,7 @@ document.addEventListener('click', function(e) {
 
 <!-- ══ BUSCA DE NEGÓCIO (qualquer negócio do hub) ══ -->
 <script>
+const HUB_LOGO_URL = {{ (hub.logo_url or '') | tojson }};
 let buscaNegocioTimeout = null;
 
 function fecharBuscaNegocio() {
@@ -651,7 +661,7 @@ function renderBuscaNegocio(lista, termo) {
   }
   box.innerHTML = lista.slice(0, 8).map(n => `
     <a class="busca-negocio-item" href="/${n.categoria_slug}/${n.slug}/">
-      <img src="${n.foto_url || 'https://via.placeholder.com/72x72?text=' + encodeURIComponent(n.nome)}" alt="">
+      <img src="${n.foto_url || HUB_LOGO_URL}" alt="" style="${n.foto_url ? '' : 'object-fit:contain;padding:4px;background:var(--light);'}">
       <div>
         <strong>${n.nome}</strong>
         <span>${[n.bairro, n.cidade].filter(Boolean).join(' — ') || (n.categoria_nome || '')}</span>
