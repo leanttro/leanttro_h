@@ -58,6 +58,113 @@
     <meta name="twitter:description" content="{{ seo_desc }}">
     <meta name="twitter:image"       content="{{ hub.banner_fundo_url or 'https://res.cloudinary.com/desvazant/image/upload/v1782959580/Cesta_de_Presentes_7_xaav6t.png' }}">
 
+    {# ══ FAQPage: perguntas geradas a partir das variáveis já existentes no
+         template (cidade, bairro, categoria.nome, total_negocios,
+         bairros_disponiveis, categorias_disponiveis). Montado como lista
+         Python + |tojson pra garantir JSON válido sem escaping manual. ══ #}
+    {% set faq_items = [] %}
+    {% if categoria and bairro %}
+      {% set _ = faq_items.append({
+        "@type": "Question",
+        "name": "Quantos estabelecimentos de " ~ categoria.nome ~ " tem no bairro " ~ bairro ~ " em " ~ cidade ~ "?",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": total_negocios ~ " estabelecimento(s) de " ~ categoria.nome ~ " estão cadastrados no bairro " ~ bairro ~ " em " ~ cidade ~ "."
+        }
+      }) %}
+      {% set _ = faq_items.append({
+        "@type": "Question",
+        "name": "Como encontrar " ~ categoria.nome ~ " perto de mim no bairro " ~ bairro ~ "?",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": "Use o botão \"Ver o que tem perto de mim\" ou o filtro \"Mais próximo\" para ordenar os estabelecimentos de " ~ categoria.nome ~ " pela distância até você."
+        }
+      }) %}
+      {% set _ = faq_items.append({
+        "@type": "Question",
+        "name": "É gratuito buscar " ~ categoria.nome ~ " no bairro " ~ bairro ~ "?",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": "Sim, a busca por " ~ categoria.nome ~ " no bairro " ~ bairro ~ " é totalmente gratuita."
+        }
+      }) %}
+    {% elif categoria %}
+      {% set _ = faq_items.append({
+        "@type": "Question",
+        "name": "Quantos " ~ categoria.nome ~ " tem em " ~ cidade ~ "?",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": total_negocios ~ " opções de " ~ categoria.nome ~ " estão cadastradas em " ~ cidade ~ "."
+        }
+      }) %}
+      {% set _ = faq_items.append({
+        "@type": "Question",
+        "name": "Em quais bairros de " ~ cidade ~ " tem " ~ categoria.nome ~ "?",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": (categoria.nome ~ " está disponível em " ~ (bairros_disponiveis | length) ~ " bairro(s) de " ~ cidade ~ ". Use o filtro de bairro para ver a disponibilidade em cada região.") if bairros_disponiveis else ("Use o filtro de bairro na página para ver onde " ~ categoria.nome ~ " está disponível em " ~ cidade ~ ".")
+        }
+      }) %}
+      {% set _ = faq_items.append({
+        "@type": "Question",
+        "name": "É gratuito buscar " ~ categoria.nome ~ " em " ~ cidade ~ "?",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": "Sim, a busca por " ~ categoria.nome ~ " em " ~ cidade ~ " é totalmente gratuita."
+        }
+      }) %}
+    {% elif bairro %}
+      {% set _ = faq_items.append({
+        "@type": "Question",
+        "name": "Quantos estabelecimentos tem no bairro " ~ bairro ~ " em " ~ cidade ~ "?",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": total_negocios ~ " estabelecimento(s) estão cadastrados no bairro " ~ bairro ~ " em " ~ cidade ~ "."
+        }
+      }) %}
+      {% set _ = faq_items.append({
+        "@type": "Question",
+        "name": "Quais categorias de negócio tem no bairro " ~ bairro ~ "?",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": (categorias_disponiveis | length | string) ~ " categoria(s) de estabelecimento estão cadastradas no bairro " ~ bairro ~ ". Use os filtros da página para ver cada uma."
+        }
+      }) %}
+      {% set _ = faq_items.append({
+        "@type": "Question",
+        "name": "É gratuito buscar estabelecimentos no bairro " ~ bairro ~ "?",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": "Sim, a busca no bairro " ~ bairro ~ " em " ~ cidade ~ " é totalmente gratuita."
+        }
+      }) %}
+    {% else %}
+      {% set _ = faq_items.append({
+        "@type": "Question",
+        "name": "O que tem em " ~ cidade ~ " perto de mim?",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": total_negocios ~ " estabelecimento(s) estão cadastrados em " ~ cidade ~ ". Use o botão \"Ver o que tem perto de mim\" para ordenar pela sua localização."
+        }
+      }) %}
+      {% set _ = faq_items.append({
+        "@type": "Question",
+        "name": "Quantos bairros de " ~ cidade ~ " estão no diretório?",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": (bairros_disponiveis | length | string) ~ " bairro(s) de " ~ cidade ~ " têm estabelecimentos cadastrados."
+        }
+      }) %}
+      {% set _ = faq_items.append({
+        "@type": "Question",
+        "name": "É gratuito buscar estabelecimentos em " ~ cidade ~ "?",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": "Sim, a busca por estabelecimentos em " ~ cidade ~ " é totalmente gratuita."
+        }
+      }) %}
+    {% endif %}
+
     <script type="application/ld+json">
     {
       "@context": "https://schema.org",
@@ -79,6 +186,10 @@
           "description": "{{ seo_desc }}",
           "inLanguage": "pt-BR",
           "isPartOf": {"@id": "https://{{ request.host }}/#website"}
+        },
+        {
+          "@type": "FAQPage",
+          "mainEntity": {{ faq_items | tojson }}
         }
       ]
     }
@@ -401,9 +512,9 @@
             {% else %}O que tem em <em>{{ cidade }}</em>?{% endif %}
         </h1>
         {% if bairro or categoria %}
-        <p class="hero-sub-filtro">Mostrando {% if categoria %}{{ categoria.nome | lower }}{% else %}todos os estabelecimentos{% endif %}{% if bairro %} no bairro {{ bairro }}{% endif %} em {{ cidade }}.</p>
+        <p class="hero-sub-filtro">{{ total_negocios }} estabelecimento(s) — {% if categoria %}{{ categoria.nome | lower }}{% else %}todos os estabelecimentos{% endif %}{% if bairro %} no bairro {{ bairro }}{% endif %} em {{ cidade }}.</p>
         {% else %}
-        <p class="hero-sub-filtro">Explore estabelecimentos, lojas e serviços em {{ cidade }}.</p>
+        <p class="hero-sub-filtro">{{ total_negocios }} estabelecimento(s) cadastrados — explore lojas e serviços em {{ cidade }}.</p>
         {% endif %}
         <div class="hero-btns">
             <button class="btn-hero" onclick="toggleLocalizacao()"><i class="fas fa-location-arrow"></i> Ver o que tem perto de mim</button>
