@@ -11,21 +11,83 @@
 <meta name="description" content="Encontre os melhores negócios no bairro {{ filtro_valor }} no {{ hub.nome }}.">
 {% endif %}
 <meta name="robots" content="index, follow">
-<meta name="theme-color" content="#ffffff">
+<meta name="theme-color" content="{{ hub.cor_primaria or '#0071e3' }}">
 <link rel="canonical" href="https://{{ request.host }}/{{ segmento }}/">
 {% if hub.logo_url %}<link rel="icon" type="image/png" href="{{ hub.logo_url }}">{% endif %}
 <meta property="og:type" content="website">
 <meta property="og:site_name" content="{{ hub.nome }}">
 <meta property="og:url" content="https://{{ request.host }}/{{ segmento }}/">
 <meta property="og:title" content="{{ filtro_valor | capitalize }} — {{ hub.nome }}">
-<meta property="og:description" content="{{ negocios | length }} negócio(s) encontrado(s).">
+<meta property="og:description" content="{{ total_negocios }} negócio(s) encontrado(s).">
+{# ══ FAQPage: JSON-LD com perguntas dinâmicas conforme filtro_tipo ══ #}
+{% set faq_items = [] %}
+{% if filtro_tipo == 'categoria' %}
+  {% set _ = faq_items.append({
+    "@type": "Question",
+    "name": "Quantos negócios de {{ filtro_valor }} existem no {{ hub.nome }}?",
+    "acceptedAnswer": {
+      "@type": "Answer",
+      "text": (total_negocios) ~ " negócio(s) de {{ filtro_valor }} estão cadastrados."
+    }
+  }) %}
+  {% set _ = faq_items.append({
+    "@type": "Question",
+    "name": "Em quantos bairros tem {{ filtro_valor }}?",
+    "acceptedAnswer": {
+      "@type": "Answer",
+      "text": (bairros_disponiveis | length) ~ " bairro(s) têm {{ filtro_valor | lower }} cadastrados."
+    }
+  }) %}
+  {% set _ = faq_items.append({
+    "@type": "Question",
+    "name": "Como encontrar {{ filtro_valor | lower }} perto de mim?",
+    "acceptedAnswer": {
+      "@type": "Answer",
+      "text": "Use o filtro de bairro para encontrar {{ filtro_valor | lower }} mais próximo de você."
+    }
+  }) %}
+{% else %}
+  {% set _ = faq_items.append({
+    "@type": "Question",
+    "name": "Quantos negócios têm no bairro {{ filtro_valor | capitalize }}?",
+    "acceptedAnswer": {
+      "@type": "Answer",
+      "text": (total_negocios) ~ " negócio(s) estão cadastrados no bairro {{ filtro_valor | capitalize }}."
+    }
+  }) %}
+  {% set _ = faq_items.append({
+    "@type": "Question",
+    "name": "Quais tipos de negócios estão disponíveis no bairro {{ filtro_valor | capitalize }}?",
+    "acceptedAnswer": {
+      "@type": "Answer",
+      "text": "Veja a lista completa de negócios disponíveis no bairro {{ filtro_valor | capitalize }}."
+    }
+  }) %}
+  {% set _ = faq_items.append({
+    "@type": "Question",
+    "name": "Como encontrar um negócio perto de mim no bairro {{ filtro_valor | capitalize }}?",
+    "acceptedAnswer": {
+      "@type": "Answer",
+      "text": "Explore os " ~ (total_negocios) ~ " negócio(s) cadastrados no bairro {{ filtro_valor | capitalize }} e escolha o que mais se adequa às suas necessidades."
+    }
+  }) %}
+{% endif %}
+
 <script type="application/ld+json">
 {
   "@context": "https://schema.org",
   "@type": "CollectionPage",
   "name": "{{ filtro_valor | capitalize }} — {{ hub.nome }}",
   "url": "https://{{ request.host }}/{{ segmento }}/",
-  "description": "{{ negocios | length }} negócio(s) de {{ filtro_valor }} no {{ hub.nome }}."
+  "description": "{{ total_negocios }} negócio(s) de {{ filtro_valor }} no {{ hub.nome }}."
+}
+</script>
+
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "FAQPage",
+  "mainEntity": {{ faq_items | tojson }}
 }
 </script>
 {% if hub.ga4_id %}
@@ -214,6 +276,35 @@ nav.desktop-nav{display:flex;align-items:center;flex-shrink:0;margin-left:12px}
 .cat-chip{padding:8px 18px;border-radius:20px;border:1px solid var(--border);background:white;font-size:.82rem;font-weight:500;color:var(--text-soft);transition:all .15s;display:inline-flex;align-items:center;gap:6px;text-decoration:none;box-shadow:var(--shadow)}
 .cat-chip:hover{border-color:var(--primary);color:var(--primary);background:#fff}
 
+/* ── BANNERS DE ANÚNCIO (topo/meio) ── */
+.banner-ad{padding:14px 24px;text-align:center;background:var(--bg2);border-bottom:1px solid var(--border-light)}
+.banner-ad.banner-ad-meio{border-bottom:none;border-top:1px solid var(--border-light);background:var(--bg)}
+.banner-ad img{display:inline-block;max-height:90px;width:auto;max-width:100%;border-radius:10px;margin:0 auto}
+.banner-ad-meio img{max-height:120px}
+.banner-placeholder{display:inline-flex;align-items:center;gap:8px;background:#fff;border:1.5px dashed var(--border);border-radius:10px;padding:12px 26px;color:var(--muted);font-size:.82rem;font-weight:600;transition:all .2s}
+.banner-placeholder:hover{border-color:var(--primary);color:var(--primary)}
+
+/* ── BOTÃO DE GEOLOCALIZAÇÃO ── */
+.btn-loc{display:inline-flex;align-items:center;gap:7px;padding:9px 16px;border-radius:10px;border:1px solid var(--border-light);background:white;font-size:.85rem;font-weight:600;color:var(--text);cursor:pointer;transition:all .18s;white-space:nowrap;font-family:var(--sans);box-shadow:var(--shadow);flex-shrink:0}
+.btn-loc:hover{border-color:var(--primary);color:var(--primary)}
+.btn-loc.ativo{border-color:var(--primary);background:var(--primary);color:#fff}
+.btn-loc svg{width:14px;height:14px;stroke:currentColor;fill:none;stroke-width:2;flex-shrink:0}
+.btn-loc.loading svg{animation:girar 1s linear infinite}
+@keyframes girar{to{transform:rotate(360deg)}}
+
+/* ── DISTÂNCIA NO CARD ── */
+.negocio-dist{display:none;align-items:center;gap:4px;font-size:.78rem;color:var(--primary);font-weight:600}
+.negocio-dist svg{width:11px;height:11px;stroke:currentColor;fill:none;stroke-width:2;flex-shrink:0}
+.negocio-dist.show{display:flex}
+
+/* ── ANUNCIE AQUI ── */
+.anuncie-section{background:var(--text);color:#fff;padding:56px 24px;text-align:center}
+.anuncie-section h2{font-size:1.6rem;font-weight:700;letter-spacing:-.03em;margin-bottom:10px}
+.anuncie-section p{color:rgba(255,255,255,.7);font-size:.92rem;max-width:480px;margin:0 auto 26px;line-height:1.6}
+.btn-anuncie{display:inline-flex;align-items:center;gap:8px;background:var(--primary);color:#fff;padding:13px 28px;border-radius:24px;font-size:.9rem;font-weight:600;transition:all .2s}
+.btn-anuncie:hover{opacity:.9;transform:translateY(-1px)}
+.btn-anuncie svg{width:16px;height:16px;flex-shrink:0}
+
 /* ── FOOTER (idêntico ao index) ── */
 footer{background:var(--bg2);border-top:1px solid var(--border-light);padding:40px 0 24px}
 .footer-inner{max-width:1200px;margin:0 auto;padding:0 24px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:24px}
@@ -336,6 +427,21 @@ footer{background:var(--bg2);border-top:1px solid var(--border-light);padding:40
   </ul>
 </div>
 
+<!-- BANNER TOPO -->
+<div class="banner-ad">
+  {% if anuncio_topo %}
+  <a href="{{ anuncio_topo.link }}" target="_blank" rel="noopener sponsored">
+    <img src="{{ anuncio_topo.foto_url }}" alt="{{ anuncio_topo.titulo or 'Publicidade' }}">
+  </a>
+  {% elif hub.banner1_foto_url %}
+  <a href="{{ hub.banner1_link or '#' }}" target="_blank" rel="noopener sponsored">
+    <img src="{{ hub.banner1_foto_url }}" alt="Publicidade">
+  </a>
+  {% else %}
+  <a class="banner-placeholder" href="https://wa.me/55{{ hub.whatsapp | replace(' ','') | replace('-','') | replace('(','') | replace(')','') if hub.whatsapp else '' }}?text=Quero+anunciar+no+{{ hub.nome | urlencode }}" target="_blank" rel="noopener">📣 Anuncie aqui — espaço disponível</a>
+  {% endif %}
+</div>
+
 <!-- HERO -->
 <section class="filtro-hero">
   <div class="container">
@@ -354,20 +460,19 @@ footer{background:var(--bg2);border-top:1px solid var(--border-light);padding:40
     <h1>{{ filtro_valor | capitalize }}</h1>
     <p>
       {% if filtro_tipo == 'categoria' %}
-      Encontre os melhores negócios de {{ filtro_valor }} no {{ hub.nome }}.
+      {{ total_negocios }} negócio(s) de {{ filtro_valor }} encontrado(s).
       {% else %}
-      Todos os negócios do bairro {{ filtro_valor | capitalize }} no {{ hub.nome }}.
+      {{ total_negocios }} negócio(s) no bairro {{ filtro_valor | capitalize }}.
       {% endif %}
     </p>
     <div class="hero-stats-bar">
       <div class="hero-stat">
-        <strong>{{ negocios | length }}</strong>
+        <strong>{{ total_negocios }}</strong>
         <span>negócio(s)</span>
       </div>
-      {% if filtro_tipo == 'categoria' %}
-      {% set bairros_unicos = negocios | map(attribute='bairro') | select | unique | list %}
+      {% if filtro_tipo == 'categoria' and bairros_disponiveis %}
       <div class="hero-stat">
-        <strong>{{ bairros_unicos | length }}</strong>
+        <strong>{{ bairros_disponiveis | length }}</strong>
         <span>bairro(s)</span>
       </div>
       {% endif %}
@@ -399,8 +504,7 @@ footer{background:var(--bg2);border-top:1px solid var(--border-light);padding:40
           <input class="slicer-search" type="text" placeholder="Buscar bairro..." oninput="filtrarSlicer(this.value)" autocomplete="off">
           <div class="slicer-list" id="slicerList">
             <button class="slicer-item slicer-item-all active" onclick="selecionarBairro(this, '')">Todos os bairros</button>
-            {% set bairros = negocios | map(attribute='bairro') | select | unique | sort %}
-            {% for b in bairros %}
+            {% for b in bairros_disponiveis %}
             <button class="slicer-item" data-bairro="{{ b | lower }}" onclick="selecionarBairro(this, '{{ b | lower }}')">{{ b }}</button>
             {% endfor %}
           </div>
@@ -427,6 +531,10 @@ footer{background:var(--bg2);border-top:1px solid var(--border-light);padding:40
         <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
         <input type="text" id="searchInput" placeholder="Buscar negócio..." oninput="buscar(this.value)">
       </div>
+      <button class="btn-loc" id="btnLoc" onclick="toggleLocalizacao()" type="button" title="Ordenar por mais próximo">
+        <svg viewBox="0 0 24 24"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
+        <span id="btnLocLabel">Mais próximo</span>
+      </button>
     </div>
   </div>
 </div>
@@ -439,14 +547,16 @@ footer{background:var(--bg2);border-top:1px solid var(--border-light);padding:40
         {% if filtro_tipo == 'categoria' %}categoria{% else %}bairro{% endif %}
       </span>
       <h2 class="section-title">{{ filtro_valor | capitalize }}</h2>
-      <p class="section-subtitle" id="gridSubtitulo">{{ negocios | length }} negócio(s) encontrado(s)</p>
+      <p class="section-subtitle" id="gridSubtitulo">{{ total_negocios }} negócio(s) encontrado(s)</p>
     </div>
     <div class="negocios-grid" id="negociosGrid">
       {% for n in negocios %}
       <a href="/{{ n.categoria_slug }}/{{ n.slug }}/" class="negocio-card"
          data-bairro="{{ (n.bairro or '') | lower }}"
          data-cat="{{ n.categoria_slug }}"
-         data-nome="{{ n.nome | lower }}">
+         data-nome="{{ n.nome | lower }}"
+         data-lat="{{ n.lat if (n.lat and n.exibir_geo) else '' }}"
+         data-lng="{{ n.lng if (n.lng and n.exibir_geo) else '' }}">
         {% if n.foto_url and n.mostrar_foto %}
           <img src="{{ n.foto_url }}" alt="{{ n.nome }}" class="negocio-card-foto" loading="lazy">
         {% else %}
@@ -461,6 +571,10 @@ footer{background:var(--bg2);border-top:1px solid var(--border-light);padding:40
             {{ n.bairro }}{% if n.cidade %}, {{ n.cidade }}{% endif %}
           </p>
           {% endif %}
+          <p class="negocio-dist">
+            <svg viewBox="0 0 24 24"><polygon points="3 11 22 2 13 21 11 13 3 11"/></svg>
+            <span class="negocio-dist-txt"></span>
+          </p>
           <div class="negocio-card-footer">
             <span></span>
             <span class="btn-ver-negocio">Ver mais →</span>
@@ -481,6 +595,21 @@ footer{background:var(--bg2);border-top:1px solid var(--border-light);padding:40
   </div>
 </section>
 
+<!-- BANNER MEIO -->
+<div class="banner-ad banner-ad-meio">
+  {% if anuncio_meio %}
+  <a href="{{ anuncio_meio.link }}" target="_blank" rel="noopener sponsored">
+    <img src="{{ anuncio_meio.foto_url }}" alt="{{ anuncio_meio.titulo or 'Publicidade' }}">
+  </a>
+  {% elif hub.banner2_foto_url %}
+  <a href="{{ hub.banner2_link or '#' }}" target="_blank" rel="noopener sponsored">
+    <img src="{{ hub.banner2_foto_url }}" alt="Publicidade">
+  </a>
+  {% else %}
+  <a class="banner-placeholder" href="https://wa.me/55{{ hub.whatsapp | replace(' ','') | replace('-','') | replace('(','') | replace(')','') if hub.whatsapp else '' }}?text=Quero+anunciar+no+{{ hub.nome | urlencode }}" target="_blank" rel="noopener">📣 Anuncie aqui — espaço disponível</a>
+  {% endif %}
+</div>
+
 <!-- OUTRAS CATEGORIAS -->
 {% if filtro_tipo == 'categoria' and categorias | length > 1 %}
 <section class="section section-alt">
@@ -500,6 +629,18 @@ footer{background:var(--bg2);border-top:1px solid var(--border-light);padding:40
   </div>
 </section>
 {% endif %}
+
+<!-- ANUNCIE -->
+<section class="anuncie-section">
+  <div class="container">
+    <h2>Seu negócio ainda não está aqui?</h2>
+    <p>Cadastre-se gratuitamente e apareça para milhares de pessoas buscando {{ filtro_valor | lower }} perto delas.</p>
+    <a href="https://wa.me/55{{ hub.whatsapp | replace(' ','') | replace('-','') | replace('(','') | replace(')','') if hub.whatsapp else '' }}?text=Quero+cadastrar+meu+negocio" target="_blank" rel="noopener" class="btn-anuncie">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07A19.5 19.5 0 013.07 9.81 19.79 19.79 0 01.01 1.18 2 2 0 012 0h3a2 2 0 012 1.72c.127.96.361 1.903.7 2.81a2 2 0 01-.45 2.11L6.09 7.91a16 16 0 006 6l1.27-1.27a2 2 0 012.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0122 16.92z"/></svg>
+      Quero aparecer aqui
+    </a>
+  </div>
+</section>
 
 <!-- FOOTER -->
 <footer>
@@ -639,6 +780,92 @@ function aplicarFiltros(){
   document.getElementById('emptyMsg').style.display = visivel === 0 ? 'block' : 'none';
   document.getElementById('gridSubtitulo').textContent = visivel + ' negócio(s) encontrado(s)';
 }
+
+// ── Geolocalização: ordenar por mais próximo ────────────────
+let locAtiva = false;
+let userLat = null, userLng = null;
+let ordemOriginalCards = [];
+
+function initOrdemOriginal(){
+  ordemOriginalCards = Array.from(document.querySelectorAll('#negociosGrid .negocio-card'));
+}
+
+function haversineKm(lat1, lng1, lat2, lng2){
+  const R = 6371;
+  const dLat = (lat2 - lat1) * Math.PI / 180;
+  const dLng = (lng2 - lng1) * Math.PI / 180;
+  const a = Math.sin(dLat/2)**2 + Math.cos(lat1*Math.PI/180) * Math.cos(lat2*Math.PI/180) * Math.sin(dLng/2)**2;
+  return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+}
+
+function aplicarDistancias(){
+  const grid = document.getElementById('negociosGrid');
+  const cards = Array.from(grid.querySelectorAll('.negocio-card'));
+  cards.forEach(card => {
+    const lat = parseFloat(card.dataset.lat);
+    const lng = parseFloat(card.dataset.lng);
+    const distEl = card.querySelector('.negocio-dist');
+    const distTxt = card.querySelector('.negocio-dist-txt');
+    if (userLat !== null && !isNaN(lat) && !isNaN(lng) && lat !== 0 && lng !== 0) {
+      const d = haversineKm(userLat, userLng, lat, lng);
+      card.dataset.dist = d;
+      if (distEl && distTxt) { distTxt.textContent = d.toFixed(1) + ' km de você'; distEl.classList.add('show'); }
+    } else {
+      card.dataset.dist = '99999';
+      if (distEl) distEl.classList.remove('show');
+    }
+  });
+  cards.sort((a, b) => parseFloat(a.dataset.dist || '99999') - parseFloat(b.dataset.dist || '99999'));
+  cards.forEach(card => grid.appendChild(card));
+}
+
+function restaurarOrdem(){
+  const grid = document.getElementById('negociosGrid');
+  ordemOriginalCards.forEach(card => grid.appendChild(card));
+  document.querySelectorAll('.negocio-dist').forEach(el => el.classList.remove('show'));
+}
+
+function toggleLocalizacao(){
+  const btn = document.getElementById('btnLoc');
+  const label = document.getElementById('btnLocLabel');
+  if (locAtiva) {
+    locAtiva = false;
+    userLat = null;
+    userLng = null;
+    btn.classList.remove('ativo');
+    label.textContent = 'Mais próximo';
+    restaurarOrdem();
+    return;
+  }
+  if (!navigator.geolocation) {
+    alert('Seu navegador não suporta geolocalização.');
+    return;
+  }
+  btn.classList.add('loading');
+  btn.disabled = true;
+  label.textContent = 'Localizando...';
+  navigator.geolocation.getCurrentPosition(
+    function(pos){
+      userLat = pos.coords.latitude;
+      userLng = pos.coords.longitude;
+      locAtiva = true;
+      btn.classList.remove('loading');
+      btn.classList.add('ativo');
+      btn.disabled = false;
+      label.textContent = 'Mais próximo';
+      aplicarDistancias();
+    },
+    function(){
+      btn.classList.remove('loading');
+      btn.disabled = false;
+      label.textContent = 'Mais próximo';
+      alert('Não foi possível obter sua localização. Verifique as permissões do navegador.');
+    },
+    { timeout: 10000, maximumAge: 60000 }
+  );
+}
+
+document.addEventListener('DOMContentLoaded', initOrdemOriginal);
 </script>
 </body>
 </html>
