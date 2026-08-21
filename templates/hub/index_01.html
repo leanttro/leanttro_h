@@ -82,63 +82,56 @@ body > header {
 }
 nav.desktop-nav { width: 100%; }
 nav.desktop-nav ul { list-style: none; display: flex; align-items: center; justify-content: center; flex-wrap: wrap; }
+nav.desktop-nav ul li { position: relative; }
 nav.desktop-nav ul li a {
     color: #fff; font-weight: 600; font-size: 0.95em;
     padding: 12px 20px; display: block;
     border-bottom: 3px solid transparent; transition: border-color 0.2s, background 0.2s;
 }
 nav.desktop-nav ul li a:hover { border-bottom-color: #fff; background: rgba(0,0,0,0.08); }
+nav.desktop-nav ul li a:focus, nav.desktop-nav ul li a:focus-visible { outline: none; }
 
-.slicer-toggle-nav {
-    background: transparent;
-    border: none;
-    color: #fff;
-    padding: 12px 20px;
-    font-weight: 600;
-    font-size: 0.95em;
-    font-family: inherit;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 8px;
-    cursor: pointer;
-    transition: background 0.2s;
-}
-.slicer-toggle-nav:hover { background: rgba(0,0,0,0.08); }
-
-.slicer-panel-nav {
+/* Dropdown de "Categoria" e "Cidades" no menu: abre por hover (CSS puro),
+   sem depender de JS/estado — evita o bug de abrir o painel errado e a
+   caixa de foco preta que o <button> nativo deixava. */
+.nav-dropdown {
     display: none;
     position: absolute;
-    top: calc(100% + 8px);
+    top: 100%;
     left: 50%;
     transform: translateX(-50%);
     min-width: 220px;
     background: var(--white);
-    border: 1px solid var(--medium-gray);
     border-radius: 12px;
     box-shadow: 0 14px 38px var(--shadow-medium);
     max-height: 400px;
     overflow-y: auto;
     z-index: 100;
-    flex-direction: column;
+    padding: 8px 0;
 }
-.slicer-panel-nav.open {
-    display: flex;
-}
-.slicer-panel-nav a {
-    padding: 12px 20px;
-    color: var(--text-color);
-    font-weight: 500;
-    transition: background 0.2s, color 0.2s;
-    border-bottom: 1px solid var(--light-gray);
+nav.desktop-nav ul li:hover .nav-dropdown,
+nav.desktop-nav ul li.dropdown-aberto .nav-dropdown {
     display: block;
 }
-.slicer-panel-nav a:last-child {
-    border-bottom: none;
+.nav-dropdown a {
+    padding: 10px 20px;
+    color: var(--text-color) !important;
+    font-weight: 500;
+    font-size: 0.92em;
+    transition: background 0.15s, color 0.15s;
+    border-bottom: none !important;
+    background: none !important;
+    display: block;
+    white-space: nowrap;
 }
-.slicer-panel-nav a:hover {
-    background: var(--light);
-    color: var(--primary);
+.nav-dropdown a:hover {
+    background: var(--light) !important;
+    color: var(--primary) !important;
+}
+.nav-dropdown-vazio {
+    padding: 10px 20px;
+    color: var(--medium-gray);
+    font-size: 0.88em;
 }
 
 /* ══ BANNER TOPO ══ */
@@ -310,6 +303,15 @@ footer a:hover { text-decoration: underline; }
     nav.desktop-nav.mobile-aberto ul { flex-direction: column; align-items: stretch; }
     nav.desktop-nav.mobile-aberto ul li a { text-align: center; border-bottom: 1px solid rgba(255,255,255,0.15); }
     .hamburger-btn { display: block; top: 50%; transform: translateY(-50%); }
+    /* No mobile o dropdown empilha (accordion) em vez de flutuar por cima */
+    nav.desktop-nav.mobile-aberto .nav-dropdown {
+        position: static; transform: none; width: 100%; box-shadow: none;
+        border-radius: 0; background: rgba(0,0,0,0.12);
+    }
+    nav.desktop-nav.mobile-aberto .nav-dropdown a { color: #fff !important; text-align: center; }
+    nav.desktop-nav.mobile-aberto .nav-dropdown a:hover { background: rgba(0,0,0,0.15) !important; color: #fff !important; }
+    nav.desktop-nav.mobile-aberto li:hover .nav-dropdown,
+    nav.desktop-nav.mobile-aberto li.dropdown-aberto .nav-dropdown { display: block; }
     .hero-section { min-height: 440px; }
     .hero-section h1 { font-size: 2.1em; }
     .hero-section .hero-sub { font-size: 1em; }
@@ -334,30 +336,20 @@ footer a:hover { text-decoration: underline; }
   <nav class="desktop-nav">
     <ul>
       <li><a href="/">Início</a></li>
-      <li style="position: relative;">
-        <button class="slicer-toggle-nav" onclick="toggleCategoriaNav(event)">
-          Categoria <span class="slicer-chevron">▼</span>
-        </button>
-        <div class="slicer-panel-nav" id="panel-categorias-nav">
+      <li>
+        <a href="#categorias">Categoria ▾</a>
+        <div class="nav-dropdown">
           {% for cat in categorias %}
           <a href="/{{ cat.slug }}/">{{ cat.nome }}</a>
+          {% else %}
+          <span class="nav-dropdown-vazio">Nenhuma categoria</span>
           {% endfor %}
         </div>
       </li>
-      <li style="position: relative;">
-        <button class="slicer-toggle-nav" onclick="toggleCidadesNav(event)">
-          Cidades <span class="slicer-chevron">▼</span>
-        </button>
-        <div class="slicer-panel-nav" id="panel-cidades-nav">
-          {% set cidades_unicas = [] %}
-          {% for neg in negocios %}
-            {% if neg.cidade and neg.cidade not in cidades_unicas %}
-              {% set _ = cidades_unicas.append(neg.cidade) %}
-            {% endif %}
-          {% endfor %}
-          {% for cidade in cidades_unicas | sort %}
-          <a href="/?cidade={{ cidade }}">{{ cidade }}</a>
-          {% endfor %}
+      <li>
+        <a href="#cidades">Cidades ▾</a>
+        <div class="nav-dropdown" id="nav-dropdown-cidades">
+          <span class="nav-dropdown-vazio">Carregando...</span>
         </div>
       </li>
       <li><a href="/blog/">Blog</a></li>
@@ -1222,39 +1214,68 @@ async function enviarCadastroNegocio(e) {
   }
 }
 
-function toggleCategoriaNav(e) {
-  e.preventDefault();
-  const panel = document.getElementById('panel-categorias-nav');
-  if (panel) {
-    panel.classList.toggle('open');
-    // Fechar o outro slicer
-    const panelCidades = document.getElementById('panel-cidades-nav');
-    if (panelCidades && panelCidades.classList.contains('open')) {
-      panelCidades.classList.remove('open');
-    }
+// ══ Dropdown "Categoria" / "Cidades" do menu ══
+// Abre por hover em telas com mouse (CSS puro, ver .nav-dropdown). Em telas
+// de toque não existe :hover, então aqui só cuidamos do clique/toque pra
+// abrir/fechar nesse caso — sem duplicar lógica nem brigar com o CSS.
+(function () {
+  function _slugCidade(nome) {
+    return (nome || '')
+      .toLowerCase()
+      .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+      .replace(/\s+/g, '-')
+      .replace(/[^a-z0-9-]/g, '');
   }
-}
 
-function toggleCidadesNav(e) {
-  e.preventDefault();
-  const panel = document.getElementById('panel-cidades-nav');
-  if (panel) {
-    panel.classList.toggle('open');
-    // Fechar o outro slicer
-    const panelCategorias = document.getElementById('panel-categorias-nav');
-    if (panelCategorias && panelCategorias.classList.contains('open')) {
-      panelCategorias.classList.remove('open');
-    }
+  // Popula o dropdown "Cidades" do menu com a lista COMPLETA de cidades do
+  // hub (via API), em vez de depender dos negócios já carregados na página.
+  var ddCidades = document.getElementById('nav-dropdown-cidades');
+  if (ddCidades) {
+    fetch('/api/hub/cidades')
+      .then(function (r) { return r.json(); })
+      .then(function (lista) {
+        if (!Array.isArray(lista) || lista.length === 0) {
+          ddCidades.innerHTML = '<span class="nav-dropdown-vazio">Nenhuma cidade</span>';
+          return;
+        }
+        ddCidades.innerHTML = lista.map(function (c) {
+          var nome = c.cidade || c.nome || '';
+          var slug = _slugCidade(nome);
+          return '<a href="/cidade/' + slug + '/">' + nome + '</a>';
+        }).join('');
+      })
+      .catch(function () {
+        ddCidades.innerHTML = '<span class="nav-dropdown-vazio">Erro ao carregar</span>';
+      });
   }
-}
 
-// Fechar slicers ao clicar fora
-document.addEventListener('click', function(e) {
-  if (!e.target.closest('li[style*="position: relative"]')) {
-    document.getElementById('panel-categorias-nav').classList.remove('open');
-    document.getElementById('panel-cidades-nav').classList.remove('open');
+  // Toque/clique nos itens de nível 1 do menu (Categoria/Cidades): em touch
+  // não existe :hover, então o 1º toque abre o painel e o 2º (fora) fecha.
+  if (window.matchMedia('(hover: none)').matches) {
+    document.querySelectorAll('nav.desktop-nav ul > li').forEach(function (li) {
+      var dd = li.querySelector('.nav-dropdown');
+      if (!dd) return;
+      var toggle = li.querySelector(':scope > a');
+      toggle.addEventListener('click', function (e) {
+        var jaAberto = li.classList.contains('dropdown-aberto');
+        document.querySelectorAll('nav.desktop-nav ul > li.dropdown-aberto').forEach(function (aberto) {
+          aberto.classList.remove('dropdown-aberto');
+        });
+        if (!jaAberto) {
+          e.preventDefault();
+          li.classList.add('dropdown-aberto');
+        }
+      });
+    });
+    document.addEventListener('click', function (e) {
+      if (!e.target.closest('nav.desktop-nav ul > li')) {
+        document.querySelectorAll('nav.desktop-nav ul > li.dropdown-aberto').forEach(function (aberto) {
+          aberto.classList.remove('dropdown-aberto');
+        });
+      }
+    });
   }
-});
+})();
 </script>
 
 </body>
