@@ -54,6 +54,60 @@
 <meta property="og:url" content="https://{{ request.host }}/{{ segmento }}/">
 <meta property="og:locale" content="pt_BR">
 
+{# ══ FAQPage: JSON-LD com perguntas dinâmicas conforme filtro_tipo ══ #}
+{% set faq_items = [] %}
+{% if filtro_tipo == 'categoria' %}
+  {% set _ = faq_items.append({
+    "@type": "Question",
+    "name": "Quantos " ~ categoria_label ~ " estão cadastrados?",
+    "acceptedAnswer": {
+      "@type": "Answer",
+      "text": total_negocios ~ " opção(ões) de " ~ categoria_label ~ " estão disponíveis perto de você."
+    }
+  }) %}
+  {% set _ = faq_items.append({
+    "@type": "Question",
+    "name": "Em quantos bairros tem " ~ categoria_label ~ "?",
+    "acceptedAnswer": {
+      "@type": "Answer",
+      "text": (bairros_disponiveis | length | string) ~ " bairro(s) têm " ~ categoria_label ~ " cadastrados. Use o filtro de bairro para explorar cada localidade." if bairros_disponiveis else ("Use o filtro de bairro para ver onde " ~ categoria_label ~ " está disponível.")
+    }
+  }) %}
+  {% set _ = faq_items.append({
+    "@type": "Question",
+    "name": "Como encontrar " ~ categoria_label ~ " perto de mim?",
+    "acceptedAnswer": {
+      "@type": "Answer",
+      "text": "Use o botão de geolocalização ou os filtros de bairro para localizar " ~ categoria_label ~ " perto de sua posição atual."
+    }
+  }) %}
+{% else %}
+  {% set _ = faq_items.append({
+    "@type": "Question",
+    "name": "Quantos cinemas têm no bairro " ~ (filtro_valor | capitalize) ~ "?",
+    "acceptedAnswer": {
+      "@type": "Answer",
+      "text": total_negocios ~ " opção(ões) estão cadastradas no bairro " ~ (filtro_valor | capitalize) ~ "."
+    }
+  }) %}
+  {% set _ = faq_items.append({
+    "@type": "Question",
+    "name": "Quais tipos de cinema estão disponíveis no bairro " ~ (filtro_valor | capitalize) ~ "?",
+    "acceptedAnswer": {
+      "@type": "Answer",
+      "text": (categorias_disponiveis | length | string) ~ " tipo(s) de espaço estão cadastrados no bairro " ~ (filtro_valor | capitalize) ~ ". Use o filtro de tipo para ver cada categoria." if categorias_disponiveis else ("Use o filtro de tipo para explorar os espaços culturais disponíveis no bairro " ~ (filtro_valor | capitalize) ~ ".")
+    }
+  }) %}
+  {% set _ = faq_items.append({
+    "@type": "Question",
+    "name": "Existem cinemas em outros bairros?",
+    "acceptedAnswer": {
+      "@type": "Answer",
+      "text": (bairros_disponiveis | length | string) ~ " bairro(s) têm cinemas ou espaços culturais. Use o filtro de bairro para explorar." if bairros_disponiveis else ("Use o filtro de bairro para ver a disponibilidade em outras regiões.")
+    }
+  }) %}
+{% endif %}
+
 <script type="application/ld+json">
 {
   "@context": "https://schema.org",
@@ -62,6 +116,14 @@
     {"@type":"ListItem","position":1,"name":"Início","item":"https://{{ request.host }}/"},
     {"@type":"ListItem","position":2,"name":"{{ categoria_label if filtro_tipo == 'categoria' else (filtro_valor | capitalize) }}","item":"https://{{ request.host }}/{{ segmento }}/"}
   ]
+}
+</script>
+
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "FAQPage",
+  "mainEntity": {{ faq_items | tojson }}
 }
 </script>
 
@@ -147,7 +209,7 @@ nav.desktop-nav ul li a:hover { background: var(--primary); color: var(--on-prim
 .pagina-header .breadcrumb { font-size: .82em; color: var(--text-dim); margin-bottom: 8px; }
 .pagina-header .breadcrumb a:hover { color: var(--gold); }
 .pagina-header h1 { font-size: 1.9em; font-weight: 800; }
-.pagina-header .total { color: var(--text-dim); font-size: .92em; margin-top: 6px; }
+.pagina-header .intro { color: var(--text-dim); font-size: .92em; margin-top: 6px; }
 
 /* ══ CHIPS (bairros / categorias) ══ */
 .chips-row { display: flex; gap: 8px; flex-wrap: wrap; padding: 18px 20px 0; max-width: 1200px; margin: 0 auto; }
@@ -361,7 +423,7 @@ window.addEventListener('scroll', function(){ closeNavCinemas(); }, { passive: t
     {% if filtro_tipo == 'categoria' %}{{ categoria_label }} perto de mim
     {% else %}Cinemas no bairro {{ filtro_valor | capitalize }}{% endif %}
   </h1>
-  <div class="total">{{ total_negocios }} resultado{{ 's' if total_negocios != 1 else '' }}</div>
+  <p class="intro">{{ total_negocios }} opção{{ 's' if total_negocios != 1 else '' }} de {% if filtro_tipo == 'categoria' %}{{ categoria_label }}{% else %}cinema(s){% endif %} {% if filtro_tipo == 'bairro' %}no bairro {{ filtro_valor | capitalize }}{% else %}disponível(is){% endif %}.</p>
 </div>
 
 {% if filtro_tipo == 'categoria' and bairros_disponiveis %}
