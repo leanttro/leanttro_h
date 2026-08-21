@@ -1471,12 +1471,14 @@ def admin_hub_deletar(hub_id):
 @login_required
 def admin_negocios():
     """Listagem paginada e filtrada no servidor (essencial com 150k+ linhas).
-    Aceita: q (busca por nome), categoria_id, bairro, status (ativo/inativo),
-    limit, offset. Retorna {negocios: [...], total: N}.
+    Aceita: q (busca por nome), categoria_id, bairro (um ou mais, repetido na
+    query string: bairro=A&bairro=B), cidade (idem, cidade=A&cidade=B),
+    status (ativo/inativo), limit, offset. Retorna {negocios: [...], total: N}.
     """
     q          = request.args.get("q", "").strip()
     categoria_id = request.args.get("categoria_id", "").strip()
-    bairro     = request.args.get("bairro", "").strip()
+    bairros    = [b.strip() for b in request.args.getlist("bairro") if b.strip()]
+    cidades    = [c.strip() for c in request.args.getlist("cidade") if c.strip()]
     status     = request.args.get("status", "").strip()
     try:
         limit  = min(int(request.args.get("limit", 50)), 5000)
@@ -1492,9 +1494,12 @@ def admin_negocios():
     if categoria_id:
         condicoes.append("n.categoria_id = %s")
         params.append(categoria_id)
-    if bairro:
-        condicoes.append("LOWER(n.bairro) = LOWER(%s)")
-        params.append(bairro)
+    if bairros:
+        condicoes.append("LOWER(n.bairro) = ANY(%s)")
+        params.append([b.lower() for b in bairros])
+    if cidades:
+        condicoes.append("LOWER(n.cidade) = ANY(%s)")
+        params.append([c.lower() for c in cidades])
     if status == "ativo":
         condicoes.append("n.ativo = true")
     elif status == "inativo":
@@ -1510,7 +1515,7 @@ def admin_negocios():
     # Seleciona só as colunas que a tabela do admin realmente usa —
     # evita trafegar descricao/foto_url/endereco/lat/lng/etc. em 150k linhas.
     negocios = query(f"""
-        SELECT n.id, n.nome, n.slug, n.bairro, n.visualizacoes, n.ativo, n.criado_em,
+        SELECT n.id, n.nome, n.slug, n.bairro, n.cidade, n.visualizacoes, n.ativo, n.criado_em,
                c.nome as categoria_nome
         FROM hub_negocios n
         LEFT JOIN hub_categorias c ON c.id = n.categoria_id
@@ -1789,7 +1794,13 @@ def admin_negocios_bulk():
 @app.route("/admin/categorias")
 @login_required
 def admin_categorias():
-    categorias = query("SELECT * FROM hub_categorias ORDER BY nome")
+    categorias = query("""
+        SELECT c.*, COUNT(n.id) AS total_negocios
+        FROM hub_categorias c
+        LEFT JOIN hub_negocios n ON n.categoria_id = c.id
+        GROUP BY c.id
+        ORDER BY c.nome
+    """)
     return jsonify([dict(c) for c in categorias])
 
 
