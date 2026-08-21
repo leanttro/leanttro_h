@@ -160,6 +160,8 @@ nav.mobile-nav ul li a:hover, nav.mobile-nav ul li a:active { background: rgba(0
 }
 .filtro-hero h1 { font-size: 2.8em; font-weight: 900; line-height: 1.2; text-shadow: 2px 2px 8px rgba(0,0,0,0.6); margin-bottom: 16px; }
 .filtro-hero p { font-size: 1.1em; color: rgba(255,255,255,.85); text-shadow: 1px 1px 4px rgba(0,0,0,0.5); }
+.hero-eyebrow { display: inline-flex; align-items: center; gap: 8px; font-size: 0.85em; font-weight: 800; letter-spacing: 1.5px; text-transform: uppercase; color: var(--primary); margin-bottom: 14px; }
+.hero-destaque { color: var(--primary); }
 
 /* ══ FILTROS STICKY ══ */
 .filtros-sticky {
@@ -341,21 +343,34 @@ footer a:hover { text-decoration: underline; }
 {% endif %}
 
 <!-- ══ BREADCRUMB ══ -->
+{% set cat_obj = None %}
+{% if filtro_tipo == 'categoria' %}
+  {% set cat_obj = categorias | selectattr('slug', 'equalto', filtro_valor) | first %}
+{% endif %}
+{% set nome_exibicao = cat_obj.nome if cat_obj else (filtro_valor | replace('-', ' ') | capitalize) %}
 <div class="breadcrumb">
   <div class="container">
     <nav aria-label="Breadcrumb">
       <a href="/">Início</a>
       <span>›</span>
-      <span>{{ filtro_valor | capitalize }}</span>
+      <span>{{ nome_exibicao }}</span>
     </nav>
   </div>
 </div>
 
 <!-- ══ HERO FILTRO ══ -->
 <section class="filtro-hero">
-  <div>
-    <h1>{{ filtro_valor | capitalize }}</h1>
-    <p>{{ total_negocios }} negócio(s) encontrado(s)</p>
+  <div class="container">
+    <span class="hero-eyebrow">
+      {% if filtro_tipo == 'categoria' %}<i class="fas fa-tag"></i> Categoria{% else %}<i class="fas fa-map-marker-alt"></i> Bairro{% endif %}
+    </span>
+    {% if filtro_tipo == 'categoria' %}
+    <h1>As melhores opções de <span class="hero-destaque">{{ nome_exibicao }}</span> perto de você</h1>
+    <p>{{ total_negocios }} negócio(s) de {{ nome_exibicao | lower }} — encontre o mais perto de você agora.</p>
+    {% else %}
+    <h1>O que tem em <span class="hero-destaque">{{ nome_exibicao }}</span>?</h1>
+    <p>{{ total_negocios }} estabelecimento(s) por perto — descubra o que tem no seu bairro.</p>
+    {% endif %}
   </div>
 </section>
 
