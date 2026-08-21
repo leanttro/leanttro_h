@@ -33,131 +33,6 @@
 <meta property="og:title" content="{{ seo_title }}">
 <meta property="og:description" content="{{ seo_desc }}">
 
-{# ══ FAQPage: JSON-LD com perguntas dinâmicas ══ #}
-{% set faq_items = [] %}
-{% if categoria and bairro %}
-  {% set _ = faq_items.append({
-    "@type": "Question",
-    "name": "Quantos " ~ categoria.nome | lower ~ " têm no bairro " ~ bairro ~ " em " ~ cidade ~ "?",
-    "acceptedAnswer": {
-      "@type": "Answer",
-      "text": total_negocios ~ " opção(ões) estão cadastradas."
-    }
-  }) %}
-  {% set _ = faq_items.append({
-    "@type": "Question",
-    "name": "Como encontrar " ~ categoria.nome | lower ~ " perto de mim no " ~ bairro ~ "?",
-    "acceptedAnswer": {
-      "@type": "Answer",
-      "text": "Use os filtros de bairro e tipo na página para ver as opções mais próximas."
-    }
-  }) %}
-  {% set _ = faq_items.append({
-    "@type": "Question",
-    "name": "Existem outros bairros com " ~ categoria.nome | lower ~ " em " ~ cidade ~ "?",
-    "acceptedAnswer": {
-      "@type": "Answer",
-      "text": "Use o filtro de bairro para explorar outras regiões de " ~ cidade ~ "."
-    }
-  }) %}
-{% elif categoria %}
-  {% set _ = faq_items.append({
-    "@type": "Question",
-    "name": "Quantos " ~ categoria.nome | lower ~ " têm em " ~ cidade ~ "?",
-    "acceptedAnswer": {
-      "@type": "Answer",
-      "text": total_negocios ~ " opção(ões) estão cadastradas."
-    }
-  }) %}
-  {% set _ = faq_items.append({
-    "@type": "Question",
-    "name": "Em quais bairros de " ~ cidade ~ " tem " ~ categoria.nome | lower ~ "?",
-    "acceptedAnswer": {
-      "@type": "Answer",
-      "text": (bairros_disponiveis | length | string) ~ " bairro(s) têm " ~ categoria.nome | lower ~ " cadastrados." if bairros_disponiveis else "Use o filtro de bairro para explorar."
-    }
-  }) %}
-  {% set _ = faq_items.append({
-    "@type": "Question",
-    "name": "Como encontrar " ~ categoria.nome | lower ~ " perto de mim em " ~ cidade ~ "?",
-    "acceptedAnswer": {
-      "@type": "Answer",
-      "text": "Use o filtro de bairro para localizar a opção mais próxima de você."
-    }
-  }) %}
-{% elif bairro %}
-  {% set _ = faq_items.append({
-    "@type": "Question",
-    "name": "Quantos negócios têm no bairro " ~ bairro ~ " em " ~ cidade ~ "?",
-    "acceptedAnswer": {
-      "@type": "Answer",
-      "text": total_negocios ~ " negócio(s) estão cadastrado(s)."
-    }
-  }) %}
-  {% set _ = faq_items.append({
-    "@type": "Question",
-    "name": "Quais tipos de negócios estão disponíveis no bairro " ~ bairro ~ "?",
-    "acceptedAnswer": {
-      "@type": "Answer",
-      "text": (categorias_disponiveis | length | string) ~ " tipo(s) estão cadastrados." if categorias_disponiveis else "Use o filtro de tipo para explorar."
-    }
-  }) %}
-  {% set _ = faq_items.append({
-    "@type": "Question",
-    "name": "Existem negócios em outros bairros de " ~ cidade ~ "?",
-    "acceptedAnswer": {
-      "@type": "Answer",
-      "text": (bairros_disponiveis | length | string) ~ " bairro(s) têm negócios cadastrados." if bairros_disponiveis else "Use o filtro de bairro para explorar."
-    }
-  }) %}
-{% else %}
-  {% set _ = faq_items.append({
-    "@type": "Question",
-    "name": "Quantos negócios têm em " ~ cidade ~ "?",
-    "acceptedAnswer": {
-      "@type": "Answer",
-      "text": total_negocios ~ " negócio(s) estão cadastrado(s)."
-    }
-  }) %}
-  {% set _ = faq_items.append({
-    "@type": "Question",
-    "name": "Em quantos bairros de " ~ cidade ~ " têm negócios?",
-    "acceptedAnswer": {
-      "@type": "Answer",
-      "text": (bairros_disponiveis | length | string) ~ " bairro(s) têm negócios cadastrados." if bairros_disponiveis else "Use o filtro de bairro para explorar."
-    }
-  }) %}
-  {% set _ = faq_items.append({
-    "@type": "Question",
-    "name": "Quantos tipos de negócios estão disponíveis em " ~ cidade ~ "?",
-    "acceptedAnswer": {
-      "@type": "Answer",
-      "text": (categorias_disponiveis | length | string) ~ " tipo(s) estão cadastrados." if categorias_disponiveis else "Use o filtro de tipo para explorar."
-    }
-  }) %}
-{% endif %}
-
-<script type="application/ld+json">
-{
-  "@context": "https://schema.org",
-  "@type": "BreadcrumbList",
-  "itemListElement": [
-    {"@type":"ListItem","position":1,"item":{"@id":"https://{{ request.host }}/","name":"Início"}},
-    {"@type":"ListItem","position":2,"item":{"@id":"https://{{ request.host }}/cidade/{{ cidade | slugify }}/","name":"{{ cidade }}"}}
-    {% if bairro %},{"@type":"ListItem","position":3,"item":{"@id":"https://{{ request.host }}/cidade/{{ cidade | slugify }}/{{ bairro | slugify }}/","name":"{{ bairro }}"}}{% endif %}
-    {% if categoria %},{"@type":"ListItem","position":{{ 4 if bairro else 3 }},"item":{"@id":"https://{{ request.host }}/cidade/{{ cidade | slugify }}/{{ categoria.slug }}/","name":"{{ categoria.nome }}"}}{% endif %}
-  ]
-}
-</script>
-
-<script type="application/ld+json">
-{
-  "@context": "https://schema.org",
-  "@type": "FAQPage",
-  "mainEntity": {{ faq_items | tojson }}
-}
-</script>
-
 <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700;900&display=swap" rel="stylesheet">
 <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
 
@@ -200,14 +75,26 @@ body > header {
 }
 nav.desktop-nav { width: 100%; }
 nav.desktop-nav ul { list-style: none; display: flex; align-items: center; justify-content: center; flex-wrap: wrap; }
+nav.desktop-nav ul li { position: relative; }
 nav.desktop-nav ul li a {
     color: #fff; font-weight: 600; font-size: 0.95em;
     padding: 12px 20px; display: block;
     border-bottom: 3px solid transparent; transition: border-color 0.2s, background 0.2s;
 }
 nav.desktop-nav ul li a:hover { border-bottom-color: #fff; background: rgba(0,0,0,0.08); }
+.nav-dropdown { 
+    display: none; position: absolute; top: 100%; left: 50%; transform: translateX(-50%); 
+    background: #fff; border-radius: 12px; box-shadow: 0 8px 32px rgba(0,0,0,0.15); 
+    min-width: 220px; max-height: 360px; overflow-y: auto; z-index: 999; padding: 8px 0; 
+}
+nav.desktop-nav ul li:hover .nav-dropdown { display: block; }
+.nav-dropdown a { 
+    display: block; padding: 10px 20px; color: var(--dark-gray) !important; 
+    font-size: 0.9em; font-weight: 500; border-bottom: none !important; 
+    background: none !important; transition: background 0.15s; white-space: nowrap; 
+}
+.nav-dropdown a:hover { background: var(--light) !important; color: var(--primary) !important; }
 
-/* ══ MENU MOBILE ══ */
 nav.mobile-nav { display: none; width: 100%; }
 nav.mobile-nav.open { display: block; }
 nav.mobile-nav ul { list-style: none; display: flex; flex-direction: column; width: 100%; padding: 4px 0 14px; }
@@ -226,8 +113,7 @@ nav.mobile-nav ul li a:hover, nav.mobile-nav ul li a:active { background: rgba(0
 .breadcrumb nav { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; font-size: 0.85em; color: #6c757d; }
 .breadcrumb nav a { color: var(--primary); font-weight: 500; }
 .breadcrumb nav a:hover { text-decoration: underline; }
-.breadcrumb nav span.sep { color: #adb5bd; }
-.breadcrumb nav span.atual { color: var(--text-color); font-weight: 600; }
+.breadcrumb nav span { color: #adb5bd; }
 
 /* ══ HERO CIDADE ══ */
 .cidade-hero {
@@ -291,6 +177,20 @@ nav.mobile-nav ul li a:hover, nav.mobile-nav ul li a:active { background: rgba(0
 .slicer-backdrop { display: none; position: fixed; inset: 0; background: transparent; z-index: 15; }
 .slicer-backdrop.open { display: block; }
 
+/* ══ BAIRROS LINKS ══ */
+.bairros-section { padding: 48px 0; background: var(--light-gray); }
+.bairros-titulo { font-size: 1.8em; font-weight: 800; color: var(--dark-gray); margin-bottom: 28px; text-align: center; }
+.bairros-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 16px; }
+.bairro-link { 
+    display: flex; align-items: center; justify-content: space-between;
+    background: var(--white); padding: 16px 20px; border-radius: 10px; 
+    border: 1px solid var(--medium-gray); transition: all 0.2s;
+    box-shadow: 0 2px 8px var(--shadow-light);
+}
+.bairro-link:hover { border-color: var(--primary); box-shadow: 0 4px 16px var(--shadow-medium); background: #fafafa; }
+.bairro-link-name { font-weight: 600; color: var(--dark-gray); }
+.bairro-link-count { font-size: 0.85em; color: var(--primary); font-weight: 700; }
+
 /* ══ GRID DE NEGÓCIOS ══ */
 .section { padding: 56px 0; }
 .section-title { text-align: center; font-size: 1.8em; font-weight: 800; color: var(--dark-gray); margin-bottom: 32px; }
@@ -316,16 +216,6 @@ nav.mobile-nav ul li a:hover, nav.mobile-nav ul li a:active { background: rgba(0
 .info-vazio { text-align: center; color: #6c757d; padding: 60px 20px; font-size: 1.05em; }
 .info-vazio i { display: block; margin-bottom: 16px; opacity: 0.3; }
 
-.negocios-grid.modo-carrossel { display: flex; grid-template-columns: none; overflow-x: auto; scroll-snap-type: x mandatory; gap: 18px; padding-bottom: 10px; -webkit-overflow-scrolling: touch; scrollbar-width: thin; }
-.negocios-grid.modo-carrossel .negocio-card { flex: 0 0 260px; scroll-snap-align: start; }
-.negocios-grid.modo-carrossel::-webkit-scrollbar { height: 6px; }
-.negocios-grid.modo-carrossel::-webkit-scrollbar-thumb { background: var(--primary); border-radius: 10px; }
-
-.negocios-header-row { display: flex; align-items: center; justify-content: flex-end; gap: 16px; flex-wrap: wrap; margin-bottom: 24px; }
-.cats-view-toggle { display: flex; gap: 6px; background: #f0f0f0; padding: 4px; border-radius: 10px; flex-shrink: 0; }
-.cats-view-toggle button { border: none; background: transparent; width: 38px; height: 34px; border-radius: 7px; display: flex; align-items: center; justify-content: center; cursor: pointer; color: var(--dark-gray); font-size: 15px; transition: background 0.2s, color 0.2s; }
-.cats-view-toggle button.ativo { background: var(--primary); color: #fff; }
-
 /* ══ BANNER MEIO ══ */
 .banner-meio { background: var(--light); padding: 28px 20px; text-align: center; border-top: 1px solid #ffe0b2; border-bottom: 1px solid #ffe0b2; min-height: 150px; display: flex; align-items: center; justify-content: center; }
 .banner-meio .banner-rotativo img { max-height: 120px; }
@@ -348,11 +238,8 @@ footer a:hover { text-decoration: underline; }
     .cidade-hero h1 { font-size: 1.7em; }
     .cidade-hero p { font-size: 1em; }
     .hero-stats { gap: 0; }
-    .hero-stat { padding: 0 16px; }
-    .section { padding: 40px 0; }
-    .section-title { font-size: 1.5em; }
+    .section { padding: 44px 0; }
     .banner-rotativo img { max-height: 120px !important; }
-    .banner-meio .banner-rotativo img { max-height: 120px !important; }
 }
 </style>
 </head>
@@ -369,18 +256,34 @@ footer a:hover { text-decoration: underline; }
   <nav class="desktop-nav">
     <ul>
       <li><a href="/">Início</a></li>
-      {% for cat in categorias_disponiveis[:5] %}
-      <li><a href="/{{ cat.slug }}/">{{ cat.nome }}</a></li>
-      {% endfor %}
+      <li>
+        <a href="#categorias">Categorias ▾</a>
+        <div class="nav-dropdown">
+          {% for cat in categorias_disponiveis %}
+          <a href="/{{ cat.slug }}/">{{ cat.nome }}</a>
+          {% endfor %}
+        </div>
+      </li>
+      <li>
+        <a href="#cidades">Cidades ▾</a>
+        <div class="nav-dropdown">
+          {% set todas_cidades = negocios | map(attribute='cidade') | unique | list | sort %}
+          {% for c in todas_cidades[:10] %}
+          <a href="/cidade/{{ c | slugify }}/">{{ c }}</a>
+          {% endfor %}
+          {% if todas_cidades | length > 10 %}
+          <a href="/cidades/">Ver todas</a>
+          {% endif %}
+        </div>
+      </li>
       <li><a href="/blog/">Blog</a></li>
     </ul>
   </nav>
   <nav class="mobile-nav" id="mobileNav">
     <ul>
       <li><a href="/" onclick="closeMobileNav()">Início</a></li>
-      {% for cat in categorias_disponiveis[:8] %}
-      <li><a href="/{{ cat.slug }}/" onclick="closeMobileNav()">{{ cat.nome }}</a></li>
-      {% endfor %}
+      <li><a href="#categorias" onclick="closeMobileNav()">Categorias</a></li>
+      <li><a href="#cidades" onclick="closeMobileNav()">Cidades</a></li>
       <li><a href="/blog/" onclick="closeMobileNav()">Blog</a></li>
     </ul>
   </nav>
@@ -428,77 +331,41 @@ footer a:hover { text-decoration: underline; }
 
 <!-- ══ HERO CIDADE ══ -->
 <section class="cidade-hero">
-  <div>
-    <h1>
-      {% if categoria and bairro %}{{ categoria.nome }} em {{ bairro }}
-      {% elif categoria %}{{ categoria.nome }} em {{ cidade }}
-      {% elif bairro %}Negócios em {{ bairro }}
-      {% else %}Negócios em {{ cidade }}{% endif %}
-    </h1>
-    <p>
-      {{ total_negocios }}
-      {% if categoria and bairro %}
-        {{ categoria.nome | lower }}{{ 's' if total_negocios != 1 else '' }} encontrado{{ 's' if total_negocios != 1 else '' }} no bairro {{ bairro }}, em {{ cidade }}.
-      {% elif categoria %}
-        {{ categoria.nome | lower }}{{ 's' if total_negocios != 1 else '' }} encontrado{{ 's' if total_negocios != 1 else '' }} em {{ cidade }}{% if bairros_disponiveis %}, distribuído{{ 's' if total_negocios != 1 else '' }} em {{ bairros_disponiveis | length }} bairro{{ 's' if bairros_disponiveis | length != 1 else '' }}{% endif %}.
-      {% elif bairro %}
-        negócio{{ 's' if total_negocios != 1 else '' }} encontrado{{ 's' if total_negocios != 1 else '' }} no bairro {{ bairro }}, em {{ cidade }}.
-      {% else %}
-        negócio{{ 's' if total_negocios != 1 else '' }} encontrado{{ 's' if total_negocios != 1 else '' }} em {{ cidade }}{% if bairros_disponiveis %}, em {{ bairros_disponiveis | length }} bairro{{ 's' if bairros_disponiveis | length != 1 else '' }}{% endif %}.
-      {% endif %}
-    </p>
+  <div class="container">
+    <h1>{% if bairro %}{{ bairro }} — {{ cidade }}{% else %}{{ cidade }}{% endif %}</h1>
+    <p>{{ total_negocios }} negócio(s) encontrado(s)</p>
+    {% if not bairro and not categoria %}
     <div class="hero-stats">
       <div class="hero-stat">
-        <div class="hero-stat-num">{{ total_negocios }}</div>
-        <div class="hero-stat-label">Negócio(s)</div>
+        <span class="hero-stat-num">{{ total_negocios }}</span>
+        <span class="hero-stat-label">negócios</span>
       </div>
-      {% if bairros_disponiveis %}
       <div class="hero-stat-divider"></div>
       <div class="hero-stat">
-        <div class="hero-stat-num">{{ bairros_disponiveis | length }}</div>
-        <div class="hero-stat-label">Bairro(s)</div>
+        <span class="hero-stat-num">{{ bairros_disponiveis | length }}</span>
+        <span class="hero-stat-label">bairros</span>
       </div>
-      {% endif %}
-      {% if categorias_disponiveis %}
       <div class="hero-stat-divider"></div>
       <div class="hero-stat">
-        <div class="hero-stat-num">{{ categorias_disponiveis | length }}</div>
-        <div class="hero-stat-label">Tipo(s)</div>
+        <span class="hero-stat-num">{{ categorias_disponiveis | length }}</span>
+        <span class="hero-stat-label">categorias</span>
       </div>
-      {% endif %}
     </div>
+    {% endif %}
   </div>
 </section>
 
 <!-- ══ FILTROS STICKY ══ -->
-{% if bairros_disponiveis or categorias_disponiveis %}
+{% if not bairro %}
 <div class="filtros-sticky">
   <div class="container">
-    {% if bairros_disponiveis %}
-    <div class="filtros-grupo">
-      <div class="filtros-grupo-label">Bairros</div>
-      <div class="categoria-slicer">
-        <button class="slicer-toggle" onclick="toggleSlicer()">
-          <span class="slicer-label"><i class="fas fa-filter"></i> <strong>{{ bairro if bairro else 'Selecione um bairro' }}</strong></span>
-          <i class="fas fa-chevron-down slicer-chevron"></i>
-        </button>
-        <div class="slicer-backdrop" onclick="closeSlicer()"></div>
-        <div class="slicer-panel" id="slicerPanel">
-          <a class="chip-cat {% if not bairro %}ativo{% endif %}" href="/cidade/{{ cidade | slugify }}/{% if categoria %}{{ categoria.slug }}/{% endif %}">Todos os bairros</a>
-          {% for b in bairros_disponiveis %}
-          <a class="chip-cat {% if bairro == b %}ativo{% endif %}" href="/cidade/{{ cidade | slugify }}/{{ b | slugify }}/{% if categoria %}{{ categoria.slug }}/{% endif %}">{{ b }}</a>
-          {% endfor %}
-        </div>
-      </div>
-    </div>
-    {% endif %}
     {% if categorias_disponiveis %}
     <div class="filtros-grupo">
-      <div class="filtros-grupo-label">Categorias</div>
+      <div class="filtros-grupo-label">Por categoria</div>
       <div class="filtros-inner">
-        <a class="chip-filtro {% if not categoria %}ativo{% endif %}" href="/cidade/{{ cidade | slugify }}/{% if bairro %}{{ bairro | slugify }}/{% endif %}">Todas</a>
-        {% for cat in categorias_disponiveis %}
-        <a class="chip-filtro {% if categoria and categoria.slug == cat.slug %}ativo{% endif %}" href="/cidade/{{ cidade | slugify }}/{% if bairro %}{{ bairro | slugify }}/{% endif %}{{ cat.slug }}/">{{ cat.nome }}</a>
+        <a href="/cidade/{{ cidade | slugify }}/" class="chip-filtro {% if not categoria %}ativo{% endif %}">Todos</a>
+        {% for cat in categorias_disponiveis[:6] %}
+        <a href="/cidade/{{ cidade | slugify }}/{{ cat.slug }}/" class="chip-filtro {% if categoria and categoria.slug == cat.slug %}ativo{% endif %}">{{ cat.nome }}</a>
         {% endfor %}
       </div>
     </div>
@@ -506,99 +373,6 @@ footer a:hover { text-decoration: underline; }
   </div>
 </div>
 {% endif %}
-
-<!-- ══ NEGÓCIOS ══ -->
-<section class="section container">
-  {% if negocios %}
-  <div class="negocios-header-row">
-    <div class="cats-view-toggle">
-      <button type="button" id="btnCarrosselNeg" class="ativo" onclick="setNegsView('carrossel')" aria-label="Ver em carrossel">
-        <i class="fas fa-arrows-left-right"></i>
-      </button>
-      <button type="button" id="btnGradeNeg" onclick="setNegsView('grade')" aria-label="Ver em grade">
-        <i class="fas fa-table-cells"></i>
-      </button>
-    </div>
-  </div>
-  <div class="negocios-grid modo-carrossel" id="negsContainer">
-    {% for n in negocios %}
-    <a href="/{{ n.categoria_slug }}/{{ n.slug }}/" class="negocio-card">
-      <div class="card-foto">
-        {% if n.foto_url %}
-        <img src="{{ n.foto_url }}" alt="{{ n.nome }}" loading="lazy" decoding="async">
-        {% elif hub.logo_url %}
-        <div class="card-foto-fallback tem-logo"></div>
-        {% else %}
-        <div class="card-foto-fallback"><i class="fas fa-store"></i></div>
-        {% endif %}
-        <div class="badge-cat">{{ n.categoria_nome }}</div>
-      </div>
-      <div class="card-body">
-        <h3>{{ n.nome }}</h3>
-        {% if n.bairro %}<div class="card-bairro"><i class="fas fa-map-marker-alt"></i> {{ n.bairro }}</div>{% endif %}
-        <span class="btn-ver">Ver detalhes</span>
-      </div>
-    </a>
-    {% endfor %}
-  </div>
-  {% else %}
-  <div class="info-vazio">
-    <i class="fas fa-inbox" style="font-size: 3em;"></i>
-    <p>Nenhum resultado encontrado.</p>
-  </div>
-  {% endif %}
-</section>
-
-<script>
-function setNegsView(modo) {
-  const container = document.getElementById('negsContainer');
-  const btnCarrossel = document.getElementById('btnCarrosselNeg');
-  const btnGrade = document.getElementById('btnGradeNeg');
-  if (!container) return;
-  if (modo === 'grade') {
-    container.classList.remove('modo-carrossel');
-    btnGrade.classList.add('ativo');
-    btnCarrossel.classList.remove('ativo');
-  } else {
-    container.classList.add('modo-carrossel');
-    btnCarrossel.classList.add('ativo');
-    btnGrade.classList.remove('ativo');
-  }
-  localStorage.setItem('negsView', modo);
-}
-(function() {
-  const saved = localStorage.getItem('negsView');
-  if (saved === 'grade') setNegsView('grade');
-})();
-</script>
-
-<script>
-function toggleSlicer() {
-  const toggle = document.querySelector('.slicer-toggle');
-  const panel = document.querySelector('.slicer-panel');
-  const backdrop = document.querySelector('.slicer-backdrop');
-  if (!toggle || !panel || !backdrop) return;
-  toggle.classList.toggle('open');
-  panel.classList.toggle('open');
-  backdrop.classList.toggle('open');
-}
-
-function closeSlicer() {
-  const toggle = document.querySelector('.slicer-toggle');
-  const panel = document.querySelector('.slicer-panel');
-  const backdrop = document.querySelector('.slicer-backdrop');
-  if (!toggle || !panel || !backdrop) return;
-  toggle.classList.remove('open');
-  panel.classList.remove('open');
-  backdrop.classList.remove('open');
-}
-
-document.addEventListener('click', function(e) {
-  if (!e.target.closest('.categoria-slicer')) {
-    closeSlicer();
-  }
-});
-</script>
 
 <!-- ══ BANNER MEIO ══ -->
 {% if anuncio_meio %}
@@ -611,490 +385,76 @@ document.addEventListener('click', function(e) {
 </div>
 {% endif %}
 
+<!-- ══ BAIRROS (links para páginas de bairros PRÓPRIAS) ══ -->
+{% if not bairro and not categoria and bairros_disponiveis %}
+<section class="bairros-section">
+  <div class="container">
+    <h2 class="bairros-titulo">Explore por bairro</h2>
+    <div class="bairros-grid">
+      {% for b in bairros_disponiveis %}
+      <a href="/bairro/{{ b | slugify }}/" class="bairro-link">
+        <span class="bairro-link-name">{{ b }}</span>
+        <span class="bairro-link-count">
+          {% set count = negocios | selectattr('bairro', 'equalto', b) | list | length %}
+          {{ count }}
+        </span>
+      </a>
+      {% endfor %}
+    </div>
+  </div>
+</section>
+{% endif %}
+
+<!-- ══ NEGÓCIOS ══ -->
+<section class="section">
+  <div class="container">
+    {% if negocios | length > 0 %}
+    <div class="negocios-grid">
+      {% for neg in negocios %}
+      <a href="/negocio/{{ neg.slug }}/" class="negocio-card">
+        <div class="card-foto">
+          {% if neg.foto_url %}
+            <img src="{{ neg.foto_url }}" alt="{{ neg.nome }}" loading="lazy">
+          {% else %}
+            <div class="card-foto-fallback {% if hub.logo_url %}tem-logo{% endif %}">
+              <i class="fas fa-image"></i>
+            </div>
+          {% endif %}
+          <span class="badge-cat">{{ neg.categoria_nome or 'Sem categoria' }}</span>
+        </div>
+        <div class="card-body">
+          <h3>{{ neg.nome }}</h3>
+          <p class="card-bairro"><i class="fas fa-map-marker-alt"></i> {{ neg.bairro }}</p>
+          <button class="btn-ver">Ver detalhes</button>
+        </div>
+      </a>
+      {% endfor %}
+    </div>
+    {% else %}
+    <div class="info-vazio">
+      <i class="fas fa-search fa-3x"></i>
+      <p>Nenhum negócio encontrado</p>
+    </div>
+    {% endif %}
+  </div>
+</section>
+
 <!-- ══ FOOTER ══ -->
 <footer>
   <div class="footer-logo">
     {% if hub.logo_url %}<img src="{{ hub.logo_url }}" alt="{{ hub.nome or 'Hub' }}">{% endif %}
   </div>
-  <p>&copy; {{ hub.nome or 'Hub' }} — todos os direitos reservados.</p>
+  <p>&copy; {{ now.year }} {{ hub.nome or 'Hub' }}. Todos os direitos reservados.</p>
 </footer>
-
-<!-- ══ WIDGET TRADUÇÃO ══ -->
-<button id="translate-btn" title="Traduzir página" style="position:fixed;bottom:24px;right:24px;background:var(--primary);color:#fff;border:none;border-radius:50%;width:52px;height:52px;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:20px;box-shadow:0 4px 20px rgba(0,0,0,0.2);z-index:999;transition:transform 0.2s">
-  <i class="fas fa-language"></i>
-</button>
-
-<div id="translate-drawer" style="position:fixed;bottom:70px;right:20px;z-index:1000;background:#fff;border-radius:16px;box-shadow:0 8px 40px rgba(0,0,0,0.2);width:280px;max-height:420px;display:none;flex-direction:column;overflow:hidden">
-  <div style="padding:12px 14px;border-bottom:1px solid #e0e0e0;display:flex;align-items:center;gap:8px">
-    <input id="td-search" type="text" placeholder="Buscar idioma..." style="flex:1;border:1.5px solid #e0e0e0;border-radius:8px;padding:8px 12px;font-size:13px;outline:none" onkeyup="filterLangs(this.value)">
-    <button id="td-close" style="background:none;border:none;color:#aaa;font-size:18px;cursor:pointer;padding:2px 4px" onclick="toggleTranslateDrawer()">✕</button>
-  </div>
-  <div id="td-list" style="overflow-y:auto;flex:1;padding:6px 0"></div>
-</div>
-
-<div id="google_translate_element" style="display:none"></div>
-<script src="//translate.google.com/translate_a/element.js?cb=googleTranslateElementInit"></script>
-
-<style>
-  #translate-btn:hover { transform: scale(1.1); }
-  #translate-drawer { display: none !important; }
-  #translate-drawer.open { display: flex !important; }
-  .td-item { padding: 9px 18px; font-size: 14px; cursor: pointer; color: #495057; transition: background 0.1s; display: flex; align-items: center; gap: 10px; }
-  .td-item:hover { background: #fff3e0; color: var(--primary); }
-  .td-item.active { color: var(--primary); font-weight: 600; background: #fff3e0; }
-  .td-item .flag { font-size: 18px; flex-shrink: 0; }
-  .td-empty { padding: 24px; text-align: center; color: #bbb; font-size: 13px; }
-</style>
-
-<script>
-const LANGS = [
-  {code:'pt',name:'Português',flag:'🇧🇷'},{code:'en',name:'English',flag:'🇺🇸'},{code:'es',name:'Español',flag:'🇪🇸'},
-  {code:'fr',name:'Français',flag:'🇫🇷'},{code:'de',name:'Deutsch',flag:'🇩🇪'},{code:'it',name:'Italiano',flag:'🇮🇹'},
-  {code:'ja',name:'日本語',flag:'🇯🇵'},{code:'zh-CN',name:'中文',flag:'🇨🇳'},{code:'ru',name:'Русский',flag:'🇷🇺'},
-  {code:'ko',name:'한국어',flag:'🇰🇷'},{code:'ar',name:'العربية',flag:'🇸🇦'},{code:'hi',name:'हिन्दी',flag:'🇮🇳'}
-];
-
-let currentLang = 'pt';
-let drawerOpen = false;
-
-function googleTranslateElementInit() {
-  new google.translate.TranslateElement({pageLanguage: 'pt', includedLanguages: 'pt,en,es,fr,de,it,ja,zh-CN,ru,ko,ar,hi'}, 'google_translate_element');
-}
-
-function renderLangs(list) {
-  const el = document.getElementById('td-list');
-  if (!list.length) {
-    el.innerHTML = '<div class="td-empty">Nenhum idioma encontrado</div>';
-    return;
-  }
-  el.innerHTML = list.map(l => `<div class="td-item ${l.code === currentLang ? 'active' : ''}" onclick="selectLang('${l.code}','${l.name}')"><span class="flag">${l.flag}</span> ${l.name}</div>`).join('');
-}
-
-function filterLangs(q) {
-  const filtered = LANGS.filter(l => l.name.toLowerCase().includes(q.toLowerCase()));
-  renderLangs(filtered);
-}
-
-function selectLang(code, name) {
-  currentLang = code;
-  drawerOpen = false;
-  document.getElementById('translate-drawer').classList.remove('open');
-  const btn = document.getElementById('translate-btn');
-
-  if (code === 'pt') {
-    btn.innerHTML = '<i class="fas fa-language"></i>';
-    btn.title = 'Traduzir página';
-    const sel = document.querySelector('.goog-te-combo');
-    if (sel) { sel.value = ''; sel.dispatchEvent(new Event('change')); }
-    return;
-  }
-
-  btn.innerHTML = `<span style="font-size:22px;line-height:1">${LANGS.find(l => l.code === code)?.flag || ''}</span>`;
-  btn.title = 'Traduzido para ' + name;
-
-  const tryTranslate = (attempts) => {
-    const sel = document.querySelector('.goog-te-combo');
-    if (sel) { sel.value = code; sel.dispatchEvent(new Event('change')); }
-    else if (attempts > 0) setTimeout(() => tryTranslate(attempts - 1), 300);
-  };
-  tryTranslate(10);
-}
-
-function toggleTranslateDrawer() {
-  drawerOpen = !drawerOpen;
-  const drawer = document.getElementById('translate-drawer');
-  if (drawerOpen) {
-    drawer.classList.add('open');
-    renderLangs(LANGS);
-    document.getElementById('td-search').value = '';
-    setTimeout(() => document.getElementById('td-search').focus(), 50);
-  } else {
-    drawer.classList.remove('open');
-  }
-}
-
-document.getElementById('translate-btn').addEventListener('click', toggleTranslateDrawer);
-document.addEventListener('click', (e) => {
-  if (drawerOpen && !document.getElementById('translate-drawer').contains(e.target) && !document.getElementById('translate-btn').contains(e.target)) {
-    drawerOpen = false;
-    document.getElementById('translate-drawer').classList.remove('open');
-  }
-});
-</script>
 
 <script>
 function toggleMobileNav() {
-  document.getElementById('mobileNav').classList.toggle('open');
+  const nav = document.getElementById('mobileNav');
+  nav.classList.toggle('open');
 }
+
 function closeMobileNav() {
   document.getElementById('mobileNav').classList.remove('open');
-}
-document.addEventListener('click', function(e) {
-  const nav = document.getElementById('mobileNav');
-  const btn = document.querySelector('.hamburger-btn');
-  if (nav && nav.classList.contains('open') && !nav.contains(e.target) && e.target !== btn) {
-    closeMobileNav();
-  }
-});
-</script>
-
-
-<!-- ════════════════════════════════════════════
-     MODAL CADASTRO DE NEGÓCIO — botão flutuante
-     ════════════════════════════════════════════ -->
-
-<!-- Botão flutuante -->
-<button
-  id="btn-cadastrar"
-  onclick="document.getElementById('modal-cadastro').classList.remove('modal-oculto')"
-  style="
-    position: fixed; bottom: 84px; right: 24px; z-index: 8900;
-    background: var(--primary); color: #fff; border: none;
-    border-radius: 50px; padding: 13px 20px;
-    font-size: 14px; font-weight: 700; cursor: pointer;
-    box-shadow: 0 4px 16px rgba(0,0,0,.25);
-    display: flex; align-items: center; gap: 8px;
-    transition: transform .15s, box-shadow .15s;
-  "
-  onmouseover="this.style.transform='scale(1.05)'"
-  onmouseout="this.style.transform='scale(1)'"
->
-  <svg width="17" height="17" fill="none" stroke="currentColor" stroke-width="2.5"
-       viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg>
-  Cadastre seu negócio
-</button>
-
-<!-- Overlay + Modal -->
-<div id="modal-cadastro" class="modal-oculto" style="
-  position: fixed; inset: 0; z-index: 9999;
-  background: rgba(0,0,0,.55); backdrop-filter: blur(3px);
-  display: flex; align-items: center; justify-content: center; padding: 16px;
-">
-  <div style="
-    background: #fff; border-radius: 16px;
-    width: 100%; max-width: 560px; max-height: 92vh;
-    overflow-y: auto; padding: 32px 28px; position: relative;
-    box-shadow: 0 20px 60px rgba(0,0,0,.3);
-  ">
-    <!-- Fechar -->
-    <button onclick="fecharModalCadastro()" style="
-      position: absolute; top: 16px; right: 16px;
-      background: #f0f0f0; border: none; border-radius: 50%;
-      width: 32px; height: 32px; cursor: pointer; font-size: 20px;
-      line-height: 32px; text-align: center; color: #555;
-    ">×</button>
-
-    <h2 style="margin: 0 0 4px; font-size: 22px; font-weight: 800; color: #1a1a1a;">Cadastre seu negócio</h2>
-    <p style="margin: 0 0 24px; color: #666; font-size: 14px;">
-      Preencha os dados abaixo. Após análise, seu negócio aparecerá no diretório gratuitamente.
-    </p>
-
-    <!-- Tela de sucesso -->
-    <div id="cadastro-sucesso" style="display:none; text-align:center; padding: 32px 0;">
-      <div style="font-size: 52px;">🎉</div>
-      <h3 style="color: #1a1a1a; margin: 12px 0 8px; font-size: 20px;">Cadastro enviado!</h3>
-      <p style="color: #555; margin: 0 0 24px;">Vamos analisar e publicar em breve. Obrigado!</p>
-      <button onclick="fecharModalCadastro()" style="
-        background: var(--primary); color: #fff; border: none; border-radius: 8px;
-        padding: 12px 28px; font-size: 15px; cursor: pointer; font-weight: 700;
-      ">Fechar</button>
-    </div>
-
-    <!-- Formulário -->
-    <form id="form-cadastro" onsubmit="enviarCadastroNegocio(event)" style="display:flex; flex-direction:column; gap:14px;">
-
-      <!-- Nome -->
-      <div>
-        <label style="font-size:13px; font-weight:600; color:#333; display:block; margin-bottom:5px;">
-          Nome do negócio <span style="color:#e53935">*</span>
-        </label>
-        <input name="nome" required maxlength="255" placeholder="Ex: Barbearia do João"
-               class="cad-input">
-      </div>
-
-      <!-- Categoria: SÓ mostra categorias que já têm negócio cadastrado -->
-      <div>
-        <label style="font-size:13px; font-weight:600; color:#333; display:block; margin-bottom:5px;">Categoria</label>
-        <select name="categoria_slug" class="cad-input">
-          <option value="">Selecione uma categoria</option>
-          {% for cat in categorias_disponiveis %}
-          <option value="{{ cat.slug }}">{{ cat.nome }}</option>
-          {% endfor %}
-        </select>
-      </div>
-
-      <!-- Cidade + Bairro -->
-      <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px;">
-        <div>
-          <label style="font-size:13px; font-weight:600; color:#333; display:block; margin-bottom:5px;">Cidade</label>
-          <input name="cidade" maxlength="255" placeholder="São Paulo" class="cad-input">
-        </div>
-        <div>
-          <label style="font-size:13px; font-weight:600; color:#333; display:block; margin-bottom:5px;">Bairro</label>
-          <input name="bairro" maxlength="255" placeholder="Centro" class="cad-input">
-        </div>
-      </div>
-
-      <!-- Endereço -->
-      <div>
-        <label style="font-size:13px; font-weight:600; color:#333; display:block; margin-bottom:5px;">Endereço</label>
-        <input name="endereco" maxlength="255" placeholder="Rua das Flores, 123" class="cad-input">
-      </div>
-
-      <!-- WhatsApp + Telefone -->
-      <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px;">
-        <div>
-          <label style="font-size:13px; font-weight:600; color:#333; display:block; margin-bottom:5px;">WhatsApp</label>
-          <input name="whatsapp" maxlength="50" placeholder="(11) 99999-9999" class="cad-input">
-        </div>
-        <div>
-          <label style="font-size:13px; font-weight:600; color:#333; display:block; margin-bottom:5px;">Telefone</label>
-          <input name="telefone" maxlength="50" placeholder="(11) 3333-3333" class="cad-input">
-        </div>
-      </div>
-
-      <!-- Instagram + Site -->
-      <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px;">
-        <div>
-          <label style="font-size:13px; font-weight:600; color:#333; display:block; margin-bottom:5px;">Instagram</label>
-          <input name="instagram" maxlength="255" placeholder="@seunegocio" class="cad-input">
-        </div>
-        <div>
-          <label style="font-size:13px; font-weight:600; color:#333; display:block; margin-bottom:5px;">Site</label>
-          <input name="site_url" maxlength="255" placeholder="https://seusite.com" class="cad-input">
-        </div>
-      </div>
-
-      <!-- Descrição -->
-      <div>
-        <label style="font-size:13px; font-weight:600; color:#333; display:block; margin-bottom:5px;">Descrição</label>
-        <textarea name="descricao" rows="3" maxlength="1000" class="cad-input"
-                  placeholder="Fale um pouco sobre seu negócio..." style="resize:vertical;"></textarea>
-      </div>
-
-      <!-- Foto — upload Imgur ou URL manual -->
-      <div>
-        <label style="font-size:13px; font-weight:600; color:#333; display:block; margin-bottom:8px;">Logo / foto do negócio</label>
-
-        <div id="imgur-area" style="
-          border: 2px dashed #ddd; border-radius: 10px; padding: 18px;
-          text-align: center; cursor: pointer; transition: border-color .2s, background .2s;
-          background: #fafafa; position: relative;
-        "
-          onclick="document.getElementById('imgur-file-input').click()"
-          ondragover="imgurDragOver(event)"
-          ondragleave="imgurDragLeave(event)"
-          ondrop="imgurDrop(event)"
-        >
-          <input type="file" id="imgur-file-input" accept="image/*"
-                 style="display:none" onchange="imgurUpload(this.files[0])">
-
-          <div id="imgur-idle">
-            <svg width="32" height="32" fill="none" stroke="#bbb" stroke-width="1.5" viewBox="0 0 24 24" style="margin-bottom:8px;">
-              <rect x="3" y="3" width="18" height="18" rx="3"/><circle cx="8.5" cy="8.5" r="1.5"/>
-              <polyline points="21 15 16 10 5 21"/>
-            </svg>
-            <p style="margin:0; font-size:13px; color:#888;">
-              Clique ou arraste uma imagem aqui<br>
-              <span style="font-size:12px; color:#bbb;">JPG, PNG, GIF, WebP — máx. 10 MB</span>
-            </p>
-          </div>
-
-          <div id="imgur-loading" style="display:none;">
-            <div style="
-              width:28px; height:28px; border:3px solid #eee;
-              border-top-color: var(--primary); border-radius:50%;
-              animation: spin-imgur .7s linear infinite; margin: 0 auto 8px;
-            "></div>
-            <p style="margin:0; font-size:13px; color:#888;">Enviando para o Imgur...</p>
-          </div>
-
-          <div id="imgur-preview" style="display:none;">
-            <img id="imgur-preview-img" src="" alt="Preview"
-                 style="max-height:120px; max-width:100%; border-radius:8px; object-fit:contain;">
-            <p id="imgur-preview-nome" style="margin:8px 0 0; font-size:12px; color:#888;"></p>
-            <button type="button" onclick="imgurLimpar(event)" style="
-              margin-top:6px; background:none; border:none; color:#e53935;
-              font-size:12px; cursor:pointer;
-            ">✕ Remover foto</button>
-          </div>
-        </div>
-
-        <div id="imgur-erro" style="display:none; color:#c0392b; font-size:12px; margin-top:6px;"></div>
-
-        <input type="hidden" name="foto_url" id="foto_url_hidden">
-
-        <details style="margin-top:10px;">
-          <summary style="font-size:12px; color:#888; cursor:pointer; user-select:none;">
-            Prefere colar um link de imagem?
-          </summary>
-          <input id="foto_url_manual" maxlength="512" placeholder="https://link-da-sua-imagem.com"
-                 class="cad-input" style="margin-top:6px;"
-                 oninput="imgurManualUrl(this.value)">
-        </details>
-      </div>
-
-      <div id="cadastro-erro" style="display:none; color:#c0392b; font-size:13px;
-           background:#fdf0ef; border:1px solid #f5c6c6; border-radius:8px; padding:10px 12px;"></div>
-
-      <button type="submit" id="btn-submit-cadastro" style="
-        background: var(--primary); color: #fff; border: none; border-radius: 10px;
-        padding: 14px; font-size: 16px; font-weight: 700; cursor: pointer;
-        transition: background .2s; margin-top: 4px;
-      "
-      onmouseover="this.style.background='var(--dark)'"
-      onmouseout="this.style.background='var(--primary)'"
-      >
-        Enviar cadastro
-      </button>
-    </form>
-  </div>
-</div>
-
-<style>
-  .modal-oculto { display: none !important; }
-  .cad-input {
-    width: 100%; padding: 10px 12px;
-    border: 1.5px solid #ddd; border-radius: 8px;
-    font-size: 14px; box-sizing: border-box;
-    outline: none; transition: border .15s;
-    background: #fff; color: #333;
-  }
-  .cad-input:focus { border-color: var(--primary); }
-  @keyframes spin-imgur { to { transform: rotate(360deg); } }
-</style>
-
-<script>
-// ── Imgur upload ──────────────────────────────────────────
-// Troque pelo seu Client ID gratuito em: https://api.imgur.com/oauth2/addclient
-const IMGUR_CLIENT_ID = '546c25a59c58ad7';
-
-function imgurDragOver(e) {
-  e.preventDefault();
-  document.getElementById('imgur-area').style.borderColor = 'var(--primary)';
-  document.getElementById('imgur-area').style.background  = '#fff8f0';
-}
-function imgurDragLeave(e) {
-  document.getElementById('imgur-area').style.borderColor = '#ddd';
-  document.getElementById('imgur-area').style.background  = '#fafafa';
-}
-function imgurDrop(e) {
-  e.preventDefault();
-  imgurDragLeave(e);
-  const file = e.dataTransfer.files[0];
-  if (file) imgurUpload(file);
-}
-
-async function imgurUpload(file) {
-  if (!file) return;
-  if (file.size > 10 * 1024 * 1024) {
-    document.getElementById('imgur-erro').textContent = 'Imagem muito grande (máx. 10 MB).';
-    document.getElementById('imgur-erro').style.display = 'block';
-    return;
-  }
-
-  document.getElementById('imgur-erro').style.display   = 'none';
-  document.getElementById('imgur-idle').style.display   = 'none';
-  document.getElementById('imgur-preview').style.display = 'none';
-  document.getElementById('imgur-loading').style.display = 'block';
-  document.getElementById('imgur-area').style.cursor    = 'default';
-
-  try {
-    const body = new FormData();
-    body.append('image', file);
-
-    const res = await fetch('https://api.imgur.com/3/image', {
-      method: 'POST',
-      headers: { Authorization: 'Client-ID ' + IMGUR_CLIENT_ID },
-      body,
-    });
-    const data = await res.json();
-
-    if (!res.ok || !data.success) {
-      throw new Error(data.data?.error || 'Erro no Imgur');
-    }
-
-    const url = data.data.link;
-    document.getElementById('foto_url_hidden').value = url;
-    document.getElementById('imgur-preview-img').src  = url;
-    document.getElementById('imgur-preview-nome').textContent = file.name;
-    document.getElementById('imgur-loading').style.display  = 'none';
-    document.getElementById('imgur-preview').style.display  = 'block';
-    document.getElementById('imgur-area').style.borderColor = 'var(--primary)';
-    document.getElementById('imgur-area').style.background  = '#fff8f0';
-    document.getElementById('imgur-area').style.cursor      = 'default';
-
-  } catch (err) {
-    document.getElementById('imgur-loading').style.display = 'none';
-    document.getElementById('imgur-idle').style.display    = 'block';
-    document.getElementById('imgur-area').style.cursor     = 'pointer';
-    document.getElementById('imgur-erro').textContent = 'Falha no upload: ' + (err.message || 'tente novamente.');
-    document.getElementById('imgur-erro').style.display = 'block';
-  }
-}
-
-function imgurLimpar(e) {
-  e.stopPropagation();
-  document.getElementById('foto_url_hidden').value        = '';
-  document.getElementById('imgur-file-input').value       = '';
-  document.getElementById('imgur-preview').style.display  = 'none';
-  document.getElementById('imgur-idle').style.display     = 'block';
-  document.getElementById('imgur-area').style.borderColor = '#ddd';
-  document.getElementById('imgur-area').style.background  = '#fafafa';
-  document.getElementById('imgur-area').style.cursor      = 'pointer';
-  document.getElementById('imgur-erro').style.display     = 'none';
-}
-
-function imgurManualUrl(val) {
-  document.getElementById('foto_url_hidden').value = val.trim();
-}
-</script>
-
-<script>
-function fecharModalCadastro() {
-  document.getElementById('modal-cadastro').classList.add('modal-oculto');
-  document.getElementById('form-cadastro').reset();
-  document.getElementById('form-cadastro').style.display = 'flex';
-  document.getElementById('cadastro-sucesso').style.display = 'none';
-  document.getElementById('cadastro-erro').style.display = 'none';
-}
-
-document.getElementById('modal-cadastro').addEventListener('click', function(e) {
-  if (e.target === this) fecharModalCadastro();
-});
-
-document.addEventListener('keydown', function(e) {
-  if (e.key === 'Escape' &&
-      !document.getElementById('modal-cadastro').classList.contains('modal-oculto')) {
-    fecharModalCadastro();
-  }
-});
-
-async function enviarCadastroNegocio(e) {
-  e.preventDefault();
-  const btn  = document.getElementById('btn-submit-cadastro');
-  const erro = document.getElementById('cadastro-erro');
-  erro.style.display = 'none';
-  btn.disabled = true;
-  btn.textContent = 'Enviando...';
-  try {
-    const formData = new FormData(e.target);
-    const res = await fetch('/cadastrar-negocio', { method: 'POST', body: formData });
-    const data = await res.json();
-    if (res.ok && data.ok) {
-      document.getElementById('form-cadastro').style.display = 'none';
-      document.getElementById('cadastro-sucesso').style.display = 'block';
-    } else {
-      erro.textContent = data.erro || 'Erro ao enviar. Tente novamente.';
-      erro.style.display = 'block';
-    }
-  } catch (err) {
-    erro.textContent = 'Erro de conexão. Verifique sua internet e tente novamente.';
-    erro.style.display = 'block';
-  } finally {
-    btn.disabled = false;
-    btn.textContent = 'Enviar cadastro';
-  }
 }
 </script>
 
