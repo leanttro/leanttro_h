@@ -1,6 +1,9 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
+{# Se o negócio não tiver WhatsApp cadastrado na tabela, tenta achar um número dentro da descrição #}
+{% set wpp_num = (negocio.whatsapp | replace(' ','') | replace('-','') | replace('(','') | replace(')','')) if negocio.whatsapp else (negocio.descricao | extrair_telefone if negocio.descricao else None) %}
+{% set wpp_da_descricao = (not negocio.whatsapp) and wpp_num %}
 <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-7617881885143728"
      crossorigin="anonymous"></script>
 <meta charset="UTF-8">
@@ -28,7 +31,8 @@
   {% if negocio.foto_url and negocio.mostrar_foto %}"image": "{{ negocio.foto_url }}",{% endif %}
   {% if negocio.endereco and negocio.mostrar_endereco %}"address": {"@type": "PostalAddress","streetAddress": "{{ negocio.endereco }}","addressLocality": "{{ negocio.cidade or 'São Paulo' }}","addressCountry": "BR"},{% endif %}
   {% if negocio.telefone and negocio.mostrar_telefone %}"telephone": "{{ negocio.telefone }}",{% endif %}
-  {% if negocio.site_url and negocio.mostrar_site %}"sameAs": ["{{ negocio.site_url }}"]{% endif %}
+  {% if negocio.site_url and negocio.mostrar_site %}"sameAs": ["{{ negocio.site_url }}"],{% endif %}
+  "areaServed": "{{ negocio.cidade or hub.nome }}"
 }
 </script>
 {% if hub.ga4_id %}
@@ -123,6 +127,15 @@ nav.desktop-nav{display:flex;align-items:center;flex-shrink:0;margin-left:12px}
 .banner-ad-meio img{max-height:120px}
 .banner-placeholder{display:inline-flex;align-items:center;gap:8px;background:#fff;border:1.5px dashed var(--border);border-radius:10px;padding:12px 26px;color:var(--muted);font-size:.82rem;font-weight:600;transition:all .2s}
 .banner-placeholder:hover{border-color:var(--primary);color:var(--primary)}
+
+/* ── AVISO CADASTRO AUTOMÁTICO ── */
+.aviso-automatico{background:var(--primary);border-top:1px solid var(--primary-d);border-bottom:1px solid var(--primary-d);padding:10px 0}
+.aviso-automatico-inner{display:flex;align-items:center;justify-content:center;gap:14px;flex-wrap:wrap;text-align:center}
+.aviso-automatico-texto{font-size:.85em;color:#fff;font-weight:600;margin:0}
+.aviso-automatico-texto strong{color:#fff;font-weight:800}
+.aviso-automatico-btn{display:inline-flex;align-items:center;gap:6px;background:#1a1a1a;border:1.5px solid #1a1a1a;color:#fff;font-size:.82em;font-weight:700;padding:6px 14px;border-radius:30px;white-space:nowrap;transition:background .2s,color .2s}
+.aviso-automatico-btn:hover{background:#000}
+@media(max-width:600px){.aviso-automatico-texto{font-size:.8em}}
 
 /* ── BOTÃO "COMO CHEGAR" ── */
 .btn-maps{display:flex;align-items:center;justify-content:center;gap:8px;width:100%;margin-top:14px;padding:12px 16px;border-radius:10px;border:none;background:var(--primary);color:#fff;font-family:var(--sans);font-size:.85rem;font-weight:600;cursor:pointer;transition:all .2s}
@@ -371,6 +384,20 @@ footer{background:var(--bg2);border-top:1px solid var(--border-light);padding:40
   {% endif %}
 </div>
 
+<!-- AVISO: CADASTRO AUTOMÁTICO -->
+<div class="aviso-automatico">
+  <div class="container aviso-automatico-inner">
+    <p class="aviso-automatico-texto">
+      📋 Cadastro <strong>automático</strong>, gerado a partir de dados públicos do Google — não somos afiliados a este negócio.
+    </p>
+    <a href="https://wa.me/55{{ hub.whatsapp | replace(' ','') | replace('-','') | replace('(','') | replace(')','') if hub.whatsapp else '' }}?text=Olá,+quero+solicitar+a+remoção+do+negócio+{{ negocio.nome }}+({{ negocio.categoria_nome }})+cadastrado+no+{{ hub.nome | urlencode }},+ou+adicionar%2Fatualizar+meu+negócio.+Página:+https%3A%2F%2F{{ request.host }}%2F{{ segmento }}%2F{{ negocio.slug }}%2F"
+       target="_blank" rel="noopener nofollow" class="aviso-automatico-btn">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="14" height="14"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"/></svg>
+      Solicitar remoção
+    </a>
+  </div>
+</div>
+
 <!-- HERO -->
 <section class="negocio-hero" aria-label="{{ negocio.nome }}">
   <div class="container">
@@ -400,7 +427,7 @@ footer{background:var(--bg2);border-top:1px solid var(--border-light);padding:40
             {{ negocio.bairro }}{% if negocio.cidade %}, {{ negocio.cidade }}{% endif %}
           </span>
           {% endif %}
-          {% if negocio.whatsapp and negocio.mostrar_whatsapp %}
+          {% if wpp_num and negocio.mostrar_whatsapp %}
           <span class="hero-meta-item">
             <svg viewBox="0 0 24 24"><path d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07A19.5 19.5 0 013.07 9.81 19.79 19.79 0 01.01 1.18 2 2 0 012 0h3a2 2 0 012 1.72c.127.96.361 1.903.7 2.81a2 2 0 01-.45 2.11L6.09 7.91a16 16 0 006 6l1.27-1.27a2 2 0 012.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0122 16.92z"/></svg>
             Atende pelo WhatsApp
@@ -497,8 +524,8 @@ footer{background:var(--bg2);border-top:1px solid var(--border-light);padding:40
           </div>
           <div class="sidebar-card-body">
 
-            {% if negocio.whatsapp and negocio.mostrar_whatsapp %}
-            <a href="https://wa.me/55{{ negocio.whatsapp | replace(' ','') | replace('-','') | replace('(','') | replace(')','') }}" target="_blank" rel="noopener" class="contato-btn btn-wpp">
+            {% if wpp_num and negocio.mostrar_whatsapp %}
+            <a href="https://wa.me/55{{ wpp_num }}" target="_blank" rel="noopener" class="contato-btn btn-wpp">
               <svg viewBox="0 0 24 24" fill="currentColor" width="18" height="18"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
               <div class="btn-text">
                 <span class="btn-label">Chamar no</span>
@@ -667,8 +694,8 @@ footer{background:var(--bg2);border-top:1px solid var(--border-light);padding:40
   </div>
 </footer>
 
-{% if negocio.whatsapp and negocio.mostrar_whatsapp %}
-<a href="https://wa.me/55{{ negocio.whatsapp | replace(' ','') | replace('-','') | replace('(','') | replace(')','') }}" target="_blank" rel="noopener" class="wpp-float" aria-label="WhatsApp">
+{% if wpp_num and negocio.mostrar_whatsapp %}
+<a href="https://wa.me/55{{ wpp_num }}" target="_blank" rel="noopener" class="wpp-float" aria-label="WhatsApp">
   <svg width="26" height="26" viewBox="0 0 24 24" fill="#fff"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
 </a>
 {% elif hub.whatsapp %}
