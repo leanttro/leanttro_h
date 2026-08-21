@@ -1,6 +1,8 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
+<script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-7617881885143728"
+     crossorigin="anonymous"></script>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
@@ -402,7 +404,7 @@ footer p{opacity:.8;margin:6px 0}
       <div class="nav-slicer">
         <a href="/" class="nav-slicer-item inicio">Início</a>
         {% if categorias %}
-        {% for cat in categorias | slice(0, 5) %}
+        {% for cat in categorias[:5] %}
         <a href="/{{ cat.slug }}/" class="nav-slicer-item">{{ cat.nome }}</a>
         {% endfor %}
         {% endif %}
@@ -423,7 +425,7 @@ footer p{opacity:.8;margin:6px 0}
     <ul>
       <li><a href="/">Início</a></li>
       {% if categorias %}
-      {% for cat in categorias | slice(0, 10) %}
+      {% for cat in categorias[:10] %}
       <li><a href="/{{ cat.slug }}/">{{ cat.nome }}</a></li>
       {% endfor %}
       {% endif %}
@@ -529,7 +531,7 @@ footer p{opacity:.8;margin:6px 0}
     </div>
     <div class="negocios-carousel-outer">
       <div class="negocios-track">
-        {% for n in negocios | slice(0, 12) %}
+        {% for n in negocios[:12] %}
         <a href="/{{ n.categoria_slug }}/{{ n.slug }}/" class="negocio-card">
           {% if n.foto_url %}
           <img src="{{ n.foto_url }}" alt="{{ n.nome }}" class="negocio-card-foto">
@@ -559,7 +561,7 @@ footer p{opacity:.8;margin:6px 0}
       <p class="section-subtitle">Dicas e informações úteis</p>
     </div>
     <div class="posts-grid">
-      {% for post in posts | slice(0, 6) %}
+      {% for post in posts[:6] %}
       <a href="{{ post.url or '#' }}" class="post-card">
         {% if post.imagem_url %}
         <img src="{{ post.imagem_url }}" alt="{{ post.titulo }}" class="post-card-img">
