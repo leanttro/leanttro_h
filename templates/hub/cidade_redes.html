@@ -59,6 +59,110 @@
     <meta name="twitter:description" content="{{ seo_desc }}">
     <meta name="twitter:image"       content="{{ hub.banner_fundo_url or 'https://res.cloudinary.com/dfzbvq3nf/image/upload/v1778883998/Rod%C3%ADzio_2000_x_1200_px_e6vpxu.png' }}">
 
+    {# ══ FAQPage: JSON-LD com perguntas dinâmicas conforme contexto ══ #}
+    {% set faq_items = [] %}
+    {% if categoria and bairro %}
+      {% set _ = faq_items.append({
+        "@type": "Question",
+        "name": "Quantas unidades da rede " ~ categoria.nome ~ " têm no bairro " ~ bairro ~ " em " ~ cidade ~ "?",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": total_negocios ~ " unidade(s) da rede " ~ categoria.nome ~ " estão cadastradas no bairro " ~ bairro ~ " em " ~ cidade ~ "."
+        }
+      }) %}
+      {% set _ = faq_items.append({
+        "@type": "Question",
+        "name": "Como encontrar a unidade da rede " ~ categoria.nome ~ " perto do bairro " ~ bairro ~ "?",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": "Use os filtros de bairro e rede na página para ver as opções mais próximas do bairro " ~ bairro ~ "."
+        }
+      }) %}
+      {% set _ = faq_items.append({
+        "@type": "Question",
+        "name": "Existem outras unidades da rede " ~ categoria.nome ~ " em " ~ cidade ~ "?",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": "Use o filtro de bairro na página para explorar outras unidades da rede " ~ categoria.nome ~ " em " ~ cidade ~ "."
+        }
+      }) %}
+    {% elif categoria %}
+      {% set _ = faq_items.append({
+        "@type": "Question",
+        "name": "Quantas unidades da rede " ~ categoria.nome ~ " têm em " ~ cidade ~ "?",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": total_negocios ~ " unidade(s) da rede " ~ categoria.nome ~ " estão cadastradas em " ~ cidade ~ "."
+        }
+      }) %}
+      {% set _ = faq_items.append({
+        "@type": "Question",
+        "name": "Em quais bairros de " ~ cidade ~ " a rede " ~ categoria.nome ~ " está presente?",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": (bairros_disponiveis | length | string) ~ " bairro(s) de " ~ cidade ~ " têm unidades da rede " ~ categoria.nome ~ ". Use o filtro de bairro para ver cada um." if bairros_disponiveis else ("Use o filtro de bairro na página para ver onde a rede " ~ categoria.nome ~ " está presente em " ~ cidade ~ ".")
+        }
+      }) %}
+      {% set _ = faq_items.append({
+        "@type": "Question",
+        "name": "Como encontrar a unidade da rede " ~ categoria.nome ~ " perto de mim em " ~ cidade ~ "?",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": "Use o filtro de bairro para localizar a unidade da rede " ~ categoria.nome ~ " mais próxima de você em " ~ cidade ~ "."
+        }
+      }) %}
+    {% elif bairro %}
+      {% set _ = faq_items.append({
+        "@type": "Question",
+        "name": "Quantas redes de rodízio têm no bairro " ~ bairro ~ " em " ~ cidade ~ "?",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": total_negocios ~ " rede(s) de rodízio estão cadastrada(s) no bairro " ~ bairro ~ " em " ~ cidade ~ "."
+        }
+      }) %}
+      {% set _ = faq_items.append({
+        "@type": "Question",
+        "name": "Quais tipos de redes de rodízio estão disponíveis no bairro " ~ bairro ~ "?",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": (categorias_disponiveis | length | string) ~ " tipo(s) de rede estão cadastrados no bairro " ~ bairro ~ ". Use o filtro de rede para explorar cada uma." if categorias_disponiveis else ("Use o filtro de rede na página para ver as opções disponíveis no bairro " ~ bairro ~ ".")
+        }
+      }) %}
+      {% set _ = faq_items.append({
+        "@type": "Question",
+        "name": "Existem redes de rodízio em outros bairros de " ~ cidade ~ "?",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": (bairros_disponiveis | length | string) ~ " bairro(s) de " ~ cidade ~ " têm redes de rodízio cadastradas. Use o filtro de bairro para explorar." if bairros_disponiveis else ("Use o filtro de bairro na página para ver outras regiões de " ~ cidade ~ ".")
+        }
+      }) %}
+    {% else %}
+      {% set _ = faq_items.append({
+        "@type": "Question",
+        "name": "Quantas redes de rodízio têm em " ~ cidade ~ "?",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": total_negocios ~ " rede(s) de rodízio estão cadastrada(s) em " ~ cidade ~ "."
+        }
+      }) %}
+      {% set _ = faq_items.append({
+        "@type": "Question",
+        "name": "Em quantos bairros de " ~ cidade ~ " têm redes de rodízio?",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": (bairros_disponiveis | length | string) ~ " bairro(s) de " ~ cidade ~ " têm redes de rodízio cadastradas." if bairros_disponiveis else ("Use o filtro de bairro na página para ver a distribuição por região em " ~ cidade ~ ".")
+        }
+      }) %}
+      {% set _ = faq_items.append({
+        "@type": "Question",
+        "name": "Quantos tipos de redes de rodízio estão disponíveis em " ~ cidade ~ "?",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": (categorias_disponiveis | length | string) ~ " tipo(s) de rede estão cadastrados em " ~ cidade ~ "." if categorias_disponiveis else ("Explore os tipos de rede disponíveis nos filtros da página de " ~ cidade ~ ".")
+        }
+      }) %}
+    {% endif %}
+
     <script type="application/ld+json">
     {
       "@context": "https://schema.org",
@@ -80,6 +184,10 @@
           "description": "{{ seo_desc }}",
           "inLanguage": "pt-BR",
           "isPartOf": {"@id": "https://{{ request.host }}/#website"}
+        },
+        {
+          "@type": "FAQPage",
+          "mainEntity": {{ faq_items | tojson }}
         }
       ]
     }
@@ -405,9 +513,9 @@
             {% else %}O que tem em <em>{{ cidade }}</em>?{% endif %}
         </h1>
         {% if bairro or categoria %}
-        <p class="hero-sub-filtro">Mostrando {% if categoria %}unidades {{ categoria.nome }}{% else %}todas as redes de rodízio{% endif %}{% if bairro %} no bairro {{ bairro }}{% endif %} em {{ cidade }}.</p>
+        <p class="hero-sub-filtro">{{ total_negocios }} resultado{{ 's' if total_negocios != 1 else '' }} — {% if categoria %}unidades {{ categoria.nome }}{% else %}redes de rodízio{% endif %}{% if bairro %} no bairro {{ bairro }}{% endif %} em {{ cidade }}.</p>
         {% else %}
-        <p class="hero-sub-filtro">Explore as principais redes de rodízio em {{ cidade }}.</p>
+        <p class="hero-sub-filtro">{{ total_negocios }} rede(s) de rodízio em {{ cidade }}. Explore por bairro e encontre a mais perto de você.</p>
         {% endif %}
         <div class="hero-btns">
             <button class="btn-hero" onclick="toggleLocalizacao()"><i class="fas fa-location-arrow"></i> Ver o que tem perto de mim</button>
