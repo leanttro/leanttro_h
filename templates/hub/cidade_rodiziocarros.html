@@ -54,7 +54,60 @@
     <meta name="twitter:description" content="{{ seo_desc }}">
     <meta name="twitter:image"       content="{{ hub.banner_fundo_url or 'https://i.imgur.com/1TWSnRj.png' }}">
 
-    <!-- JSON-LD: Breadcrumb + WebPage -->
+    <!-- JSON-LD: Breadcrumb + WebPage + FAQPage -->
+    {# ══ FAQPage: JSON-LD com perguntas dinâmicas conforme contexto (com ou sem bairro) ══ #}
+    {% set faq_items = [] %}
+    {% if bairro %}
+      {% set _ = faq_items.append({
+        "@type": "Question",
+        "name": "Quantos postos de gasolina têm no bairro " ~ bairro ~ " em São Paulo?",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": total_negocios ~ " posto(s) de gasolina estão cadastrado(s) no bairro " ~ bairro ~ " em São Paulo."
+        }
+      }) %}
+      {% set _ = faq_items.append({
+        "@type": "Question",
+        "name": "Como encontrar um posto de gasolina perto de mim no " ~ bairro ~ "?",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": "Use o botão 'Usar minha localização' para encontrar os postos de gasolina mais próximos de você no bairro " ~ bairro ~ "."
+        }
+      }) %}
+      {% set _ = faq_items.append({
+        "@type": "Question",
+        "name": "Quais são os endereços dos postos de gasolina no " ~ bairro ~ "?",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": "Veja todos os " ~ total_negocios ~ " posto(s) de gasolina do bairro " ~ bairro ~ " com endereço, telefone e localização nesta página."
+        }
+      }) %}
+    {% else %}
+      {% set _ = faq_items.append({
+        "@type": "Question",
+        "name": "Quantos postos de gasolina têm em São Paulo?",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": total_negocios ~ " posto(s) de gasolina estão cadastrado(s) em São Paulo."
+        }
+      }) %}
+      {% set _ = faq_items.append({
+        "@type": "Question",
+        "name": "Como encontrar um posto de gasolina perto de mim em São Paulo?",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": "Use o botão 'Usar minha localização' para encontrar os postos de gasolina mais próximos de você, ou navegue por bairro."
+        }
+      }) %}
+      {% set _ = faq_items.append({
+        "@type": "Question",
+        "name": "Em quantos bairros de São Paulo têm postos de gasolina?",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": (bairros_disponiveis | length | string) ~ " bairro(s) de São Paulo têm postos de gasolina cadastrados." if bairros_disponiveis else ("Explore os bairros disponíveis para ver a distribuição de postos em São Paulo.")
+        }
+      }) %}
+    {% endif %}
     <script type="application/ld+json">
     {
       "@context": "https://schema.org",
@@ -74,6 +127,10 @@
           "description": "{{ seo_desc }}",
           "inLanguage": "pt-BR",
           "isPartOf": {"@id": "https://{{ request.host }}/#website"}
+        },
+        {
+          "@type": "FAQPage",
+          "mainEntity": {{ faq_items | tojson }}
         }
       ]
     }
@@ -304,9 +361,9 @@
         <p class="hero-label"><i class="fas fa-map-marker-alt"></i> São Paulo</p>
         <h1>{{ h1_texto }}</h1>
         {% if bairro %}
-        <p class="subtitle">{{ total_negocios }} posto{{ 's' if total_negocios != 1 else '' }} de gasolina encontrado{{ 's' if total_negocios != 1 else '' }} no bairro {{ bairro }} — ideal pra quem busca um posto de gasolina perto de mim nessa região. Veja endereço, telefone e localização de cada um.</p>
+        <p class="subtitle">{{ total_negocios }} posto{{ 's' if total_negocios != 1 else '' }} de gasolina no bairro {{ bairro }} em São Paulo. Veja endereço, telefone e localização de cada um.</p>
         {% else %}
-        <p class="subtitle">Buscando um posto de gasolina perto de mim? Explore os postos de gasolina de São Paulo organizados por bairro e encontre o mais perto de você.</p>
+        <p class="subtitle">{{ total_negocios }} posto{{ 's' if total_negocios != 1 else '' }} de gasolina em São Paulo. Explore por bairro e encontre o mais perto de você.</p>
         {% endif %}
         <div class="hero-btns">
             <button class="btn-hero" onclick="toggleLocalizacao()"><i class="fa-solid fa-location-dot"></i> Usar minha localização</button>
