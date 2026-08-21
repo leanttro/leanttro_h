@@ -1,784 +1,387 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-{# Se o negócio não tiver WhatsApp cadastrado na tabela, tenta achar um número dentro da descrição #}
-{% set wpp_num = (negocio.whatsapp | replace(' ','') | replace('-','') | replace('(','') | replace(')','')) if negocio.whatsapp else (negocio.descricao | extrair_telefone if negocio.descricao else None) %}
-{% set wpp_da_descricao = (not negocio.whatsapp) and wpp_num %}
 <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-7617881885143728"
      crossorigin="anonymous"></script>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>{{ negocio.nome }} — {{ hub.nome }}</title>
-<meta name="description" content="{{ negocio.descricao or negocio.nome + ' — ' + hub.nome + '. Endereço, contato e informações.' }}">
-<meta name="robots" content="index, follow">
-<meta name="theme-color" content="{{ hub.cor_primaria or '#0071e3' }}">
-<link rel="canonical" href="https://{{ request.host }}/{{ segmento }}/{{ negocio.slug }}/">
+
+{# ══ SEO dinâmico por hub ══ #}
+{% set total_negs = negocios | length if negocios else 0 %}
+{% set total_cats = categorias | length if categorias else 0 %}
+{% set total_bairros = (negocios | map(attribute='bairro') | unique | list) | length if negocios else 0 %}
+{% set seo_title = hub.titulo or (hub.nome ~ " — Encontre " ~ total_negs ~ " negócio(s)") %}
+{% set seo_desc = hub.descricao or ("Descubra os melhores negócios em " ~ total_cats ~ " categoria(s) diferentes. Endereços, telefones e localização perto de você.") %}
+
+<title>{{ seo_title }}</title>
+<meta name="description" content="{{ seo_desc }}">
+<meta name="robots" content="index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1">
+<meta name="theme-color" content="{{ hub.cor_primaria or '#f6972b' }}">
+<link rel="canonical" href="https://{{ request.host }}/">
 {% if hub.logo_url %}<link rel="icon" type="image/png" href="{{ hub.logo_url }}">{% endif %}
-<meta property="og:type" content="business.business">
-<meta property="og:site_name" content="{{ hub.nome }}">
-<meta property="og:url" content="https://{{ request.host }}/{{ segmento }}/{{ negocio.slug }}/">
-<meta property="og:title" content="{{ negocio.nome }} — {{ hub.nome }}">
-<meta property="og:description" content="{{ negocio.descricao or negocio.nome }}">
-{% if negocio.foto_url and negocio.mostrar_foto %}<meta property="og:image" content="{{ negocio.foto_url }}">{% endif %}
+<link rel="apple-touch-icon" href="{{ hub.logo_url or 'https://via.placeholder.com/180x180' }}">
+
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="{{ hub.nome or 'Hub' }}">
+<meta property="og:url" content="https://{{ request.host }}/">
+<meta property="og:title" content="{{ seo_title }}">
+<meta property="og:description" content="{{ seo_desc }}">
+{% if hub.logo_url %}<meta property="og:image" content="{{ hub.logo_url }}">{% endif %}
 <meta name="twitter:card" content="summary_large_image">
+
 <script type="application/ld+json">
 {
   "@context": "https://schema.org",
-  "@type": "LocalBusiness",
-  "name": "{{ negocio.nome }}",
-  "url": "https://{{ request.host }}/{{ segmento }}/{{ negocio.slug }}/",
-  {% if negocio.descricao %}"description": "{{ negocio.descricao }}",{% endif %}
-  {% if negocio.foto_url and negocio.mostrar_foto %}"image": "{{ negocio.foto_url }}",{% endif %}
-  {% if negocio.endereco and negocio.mostrar_endereco %}"address": {"@type": "PostalAddress","streetAddress": "{{ negocio.endereco }}","addressLocality": "{{ negocio.cidade or 'São Paulo' }}","addressCountry": "BR"},{% endif %}
-  {% if negocio.telefone and negocio.mostrar_telefone %}"telephone": "{{ negocio.telefone }}",{% endif %}
-  {% if negocio.site_url and negocio.mostrar_site %}"sameAs": ["{{ negocio.site_url }}"],{% endif %}
-  "areaServed": "{{ negocio.cidade or hub.nome }}"
+  "@type": "WebSite",
+  "name": "{{ hub.nome or 'Hub' }}",
+  "url": "https://{{ request.host }}/",
+  "description": "{{ seo_desc }}",
+  "inLanguage": "pt-BR"
 }
 </script>
-{% if hub.ga4_id %}
-<script async src="https://www.googletagmanager.com/gtag/js?id={{ hub.ga4_id }}"></script>
-<script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag('js',new Date());gtag('config','{{ hub.ga4_id }}');</script>
-{% endif %}
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+
+<link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700;900&display=swap" rel="stylesheet">
+<link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+
 <style>
-:root{
-  --primary:{{ hub.cor_primaria or '#0071e3' }};
-  --primary-d:{{ hub.cor_secundaria or '#0051a2' }};
-  --bg:#ffffff;
-  --bg2:#f5f5f7;
-  --bg3:#fafafa;
-  --surface:#ffffff;
-  --border:#d2d2d7;
-  --border-light:#e8e8ed;
-  --text:#1d1d1f;
-  --text-soft:#6e6e73;
-  --muted:#86868b;
-  --radius:12px;
-  --radius-lg:18px;
-  --sans:'Inter',sans-serif;
-  --shadow:0 2px 12px rgba(0,0,0,.06);
-  --shadow-md:0 4px 24px rgba(0,0,0,.1);
-  --shadow-lg:0 8px 40px rgba(0,0,0,.12);
+:root {
+    --primary:       {{ hub.cor_primaria or '#f6972b' }};
+    --dark:          {{ hub.cor_secundaria or '#d47a1a' }};
+    --light:         #fff3e0;
+    --light-gray:    #f8f9fa;
+    --medium-gray:   #e0e0e0;
+    --dark-gray:     #343a40;
+    --text-color:    #495057;
+    --white:         #ffffff;
+    --shadow-light:  rgba(0,0,0,0.08);
+    --shadow-medium: rgba(0,0,0,0.16);
+    {% if hub.logo_url %}--hub-logo: url('{{ hub.logo_url }}');{% endif %}
 }
-*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
-html{scroll-behavior:smooth}
-body{font-family:var(--sans);background:var(--bg);color:var(--text);line-height:1.6;overflow-x:hidden;-webkit-font-smoothing:antialiased}
-.container{max-width:1200px;margin:0 auto;padding:0 24px}
-a{text-decoration:none;color:inherit}
-img{max-width:100%;display:block}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html { scroll-behavior: smooth; }
+body { font-family: 'Roboto', sans-serif; background: var(--light-gray); color: var(--text-color); line-height: 1.6; }
+.container { max-width: 1200px; margin: 0 auto; padding: 0 20px; }
+a { text-decoration: none; color: inherit; }
 
-/* ── HEADER ── */
-.header-logo-nav{display:flex;align-items:center;gap:12px;flex-shrink:0}
-header{
-  background:rgba(255,255,255,.85);
-  backdrop-filter:saturate(180%) blur(20px);
-  -webkit-backdrop-filter:saturate(180%) blur(20px);
-  border-bottom:1px solid rgba(0,0,0,.08);
-  position:sticky;top:0;z-index:200;
+/* ══ HEADER ══ */
+body > header {
+    background: var(--primary);
+    padding: 6px 24px 0;
+    display: flex; flex-direction: column;
+    align-items: center; justify-content: center;
+    position: relative;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.15);
 }
-.header-inner{max-width:1200px;margin:0 auto;padding:0 24px;display:flex;align-items:center;justify-content:space-between;height:68px;gap:16px}
-.logo-hub{display:flex;align-items:center;gap:9px;font-family:var(--sans);font-weight:700;font-size:1rem;color:var(--text);letter-spacing:-.2px}
-.logo-hub img{height:58px;width:auto}
-.logo-hub-mark{width:30px;height:30px;background:var(--primary);border-radius:8px;display:flex;align-items:center;justify-content:center;color:#fff;font-size:.85rem;font-weight:700;flex-shrink:0}
-nav.desktop-nav{display:flex;align-items:center;flex-shrink:0;margin-left:12px}
-.nav-slicer{display:flex;gap:2px;overflow-x:auto;scrollbar-width:none;-webkit-overflow-scrolling:touch;padding:2px 0;align-items:center}
-.nav-slicer::-webkit-scrollbar{display:none}
-.nav-slicer-item{display:inline-flex;align-items:center;padding:5px 12px;border-radius:6px;font-size:.8rem;font-weight:500;color:var(--text-soft);transition:all .15s;white-space:nowrap;flex-shrink:0;background:transparent}
-.nav-slicer-item:hover{background:rgba(0,0,0,.04);color:var(--text)}
-.nav-slicer-item.inicio{font-weight:600;color:var(--text)}
-.header-cta{display:flex;align-items:center;gap:8px;flex-shrink:0}
-.btn-site-header{display:inline-flex;align-items:center;gap:6px;background:var(--primary);color:#fff;padding:7px 14px;border-radius:20px;font-size:.78rem;font-weight:600;transition:all .2s;white-space:nowrap;border:1px solid var(--primary)}
-.btn-site-header:hover{opacity:.88;transform:scale(1.02)}
-.btn-site-header svg{width:13px;height:13px;flex-shrink:0}
-@media(max-width:600px){.btn-site-label{display:inline}.btn-site-header{padding:8px 16px;border-radius:20px;width:auto;height:auto;font-size:.85rem}.btn-site-header svg{display:none}}
-.btn-wpp-header{display:inline-flex;align-items:center;gap:6px;background:#25D366;color:#fff;padding:7px 14px;border-radius:20px;font-size:.78rem;font-weight:600;transition:all .2s;white-space:nowrap}
-.btn-wpp-header:hover{background:#1da850;transform:scale(1.02)}
-.btn-wpp-header svg{width:14px;height:14px;flex-shrink:0}
-.btn-wpp-text{display:inline}
-@media(max-width:768px){.btn-wpp-text{display:none}.btn-wpp-header{padding:7px 10px;border-radius:50%;width:34px;height:34px;justify-content:center}.btn-wpp-header svg{width:18px;height:18px}}
-.hamburger{display:none;background:none;border:none;cursor:pointer;padding:6px;color:var(--text)}
-.hamburger svg{width:22px;height:22px;stroke:currentColor;fill:none;stroke-width:2}
-.mobile-nav-overlay{display:none;position:fixed;inset:0;background:rgba(255,255,255,.98);backdrop-filter:blur(20px);z-index:300;justify-content:center;align-items:center;opacity:0;transition:opacity .2s}
-.mobile-nav-overlay.active{display:flex;opacity:1}
-.mobile-nav-overlay ul{list-style:none;text-align:center}
-.mobile-nav-overlay ul li{margin:14px 0}
-.mobile-nav-overlay ul li a{color:var(--text);font-size:1.6rem;font-weight:600;letter-spacing:-.5px}
-.mobile-nav-close{position:absolute;top:18px;right:18px;background:var(--bg2);border:none;color:var(--text);width:32px;height:32px;border-radius:50%;font-size:1.1rem;cursor:pointer;display:flex;align-items:center;justify-content:center}
-/* slicer categorias desktop */
-.cat-slicer-btn{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:9px 16px;min-width:160px;background:white;border:1px solid var(--border);border-radius:10px;cursor:pointer;font-family:var(--sans);font-size:.85rem;font-weight:600;color:var(--text);transition:all .2s;box-shadow:var(--shadow)}
-.cat-slicer-btn:hover{border-color:var(--primary)}
-.cat-slicer-btn svg{width:14px;height:14px;stroke:currentColor;fill:none;stroke-width:2.5;flex-shrink:0;transition:transform .2s}
-.cat-slicer-btn.open svg:last-child{transform:rotate(180deg)}
-.cat-slicer-label{display:flex;align-items:center;gap:8px}
-.cat-slicer-label svg{width:14px;height:14px;stroke:currentColor;fill:none;stroke-width:2;flex-shrink:0}
-.cat-slicer-panel{display:none;position:absolute;top:calc(100% + 6px);left:0;z-index:50;background:white;border:1px solid var(--border-light);border-radius:var(--radius);box-shadow:var(--shadow-lg);min-width:220px;max-height:280px;overflow-y:auto;padding:10px}
-.cat-slicer-panel.open{display:block}
-.cat-slicer-inner{display:flex;flex-wrap:wrap;gap:6px;padding-top:2px}
-.cat-chip{padding:7px 16px;border-radius:20px;border:1px solid var(--border);background:white;font-family:var(--sans);font-size:.82rem;font-weight:500;color:var(--text-soft);cursor:pointer;transition:all .15s;display:inline-flex;align-items:center;gap:6px;white-space:nowrap;flex-shrink:0}
-.cat-chip:hover{border-color:var(--primary);color:var(--primary)}
-.cat-chip.active{background:var(--primary);border-color:var(--primary);color:#fff}
-/* banners */
-/* ── BANNERS DE ANÚNCIO (topo/meio) ── */
-.banner-ad{padding:14px 24px;text-align:center;background:var(--bg2);border-bottom:1px solid var(--border-light)}
-.banner-ad.banner-ad-meio{border-bottom:none;border-top:1px solid var(--border-light);background:var(--bg);margin-top:8px}
-.banner-ad img{display:inline-block;max-height:90px;width:auto;max-width:100%;border-radius:10px;margin:0 auto}
-.banner-ad-meio img{max-height:120px}
-.banner-placeholder{display:inline-flex;align-items:center;gap:8px;background:#fff;border:1.5px dashed var(--border);border-radius:10px;padding:12px 26px;color:var(--muted);font-size:.82rem;font-weight:600;transition:all .2s}
-.banner-placeholder:hover{border-color:var(--primary);color:var(--primary)}
-
-/* ── AVISO CADASTRO AUTOMÁTICO ── */
-.aviso-automatico{background:var(--primary);border-top:1px solid var(--primary-d);border-bottom:1px solid var(--primary-d);padding:10px 0}
-.aviso-automatico-inner{display:flex;align-items:center;justify-content:center;gap:14px;flex-wrap:wrap;text-align:center}
-.aviso-automatico-texto{font-size:.85em;color:#fff;font-weight:600;margin:0}
-.aviso-automatico-texto strong{color:#fff;font-weight:800}
-.aviso-automatico-btn{display:inline-flex;align-items:center;gap:6px;background:#25D366;border:1.5px solid #25D366;color:#fff;font-size:.82em;font-weight:700;padding:6px 14px;border-radius:30px;white-space:nowrap;transition:background .2s,color .2s}
-.aviso-automatico-btn:hover{background:#1da850;border-color:#1da850}
-@media(max-width:600px){.aviso-automatico-texto{font-size:.8em}}
-
-/* ── BOTÃO "COMO CHEGAR" ── */
-.btn-maps{display:flex;align-items:center;justify-content:center;gap:8px;width:100%;margin-top:14px;padding:12px 16px;border-radius:10px;border:none;background:var(--primary);color:#fff;font-family:var(--sans);font-size:.85rem;font-weight:600;cursor:pointer;transition:all .2s}
-.btn-maps:hover{opacity:.9;transform:translateY(-1px)}
-.btn-maps svg{width:15px;height:15px;stroke:currentColor;fill:none;stroke-width:2;flex-shrink:0}
-
-/* ── HERO NEGÓCIO ── */
-.negocio-hero{
-  background:var(--bg2);
-  padding:40px 24px 0;
-  position:relative;overflow:hidden;
-  border-bottom:1px solid var(--border-light);
+.header-logo { margin-bottom: 0; }
+.header-logo a { display: block; text-align: center; }
+.header-logo img { height: 160px; width: auto; display: block; margin: 0 auto; }
+.hamburger-btn {
+    display: none; background: none; border: none; color: #fff;
+    font-size: 1.8em; cursor: pointer; padding: 6px;
+    position: absolute; right: 20px; top: 20px;
 }
-.negocio-hero .container{position:relative;z-index:1}
-
-/* BREADCRUMB */
-.breadcrumb{display:flex;align-items:center;gap:6px;margin-bottom:24px;font-size:.75rem;color:var(--muted);flex-wrap:wrap;letter-spacing:.01em}
-.breadcrumb a{color:var(--muted);transition:color .15s}
-.breadcrumb a:hover{color:var(--primary)}
-.breadcrumb span{color:var(--border)}
-
-/* HERO BODY */
-.negocio-hero-body{display:flex;align-items:flex-end;gap:28px;padding-bottom:0}
-.negocio-hero-foto{width:140px;height:140px;border-radius:var(--radius-lg);object-fit:cover;flex-shrink:0;border:1px solid var(--border-light);box-shadow:var(--shadow-md)}
-.negocio-hero-sem-foto{width:140px;height:140px;border-radius:var(--radius-lg);flex-shrink:0;border:1px solid var(--border-light);background:white;display:flex;align-items:center;justify-content:center;font-size:3.5rem;box-shadow:var(--shadow)}
-.negocio-hero-info{flex:1;padding-bottom:32px}
-.negocio-badge{
-  display:inline-block;padding:3px 10px;border-radius:20px;
-  background:rgba(0,113,227,.08);color:var(--primary);
-  font-size:.7rem;font-weight:600;width:fit-content;letter-spacing:.01em;
-  margin-bottom:10px;
+nav.desktop-nav { width: 100%; }
+nav.desktop-nav ul { list-style: none; display: flex; align-items: center; justify-content: center; flex-wrap: wrap; }
+nav.desktop-nav ul li { position: relative; }
+nav.desktop-nav ul li a {
+    color: #fff; font-weight: 600; font-size: 0.95em;
+    padding: 12px 20px; display: block;
+    border-bottom: 3px solid transparent; transition: border-color 0.2s, background 0.2s;
 }
-.negocio-hero-info h1{
-  font-size:clamp(1.8rem,4vw,2.8rem);
-  font-weight:700;color:var(--text);
-  line-height:1.1;letter-spacing:-.04em;margin-bottom:8px;
+nav.desktop-nav ul li a:hover { border-bottom-color: #fff; background: rgba(0,0,0,0.08); }
+.nav-dropdown { 
+    display: none; position: absolute; top: 100%; left: 50%; transform: translateX(-50%); 
+    background: #fff; border-radius: 12px; box-shadow: 0 8px 32px rgba(0,0,0,0.15); 
+    min-width: 220px; max-height: 360px; overflow-y: auto; z-index: 999; padding: 8px 0; 
 }
-.negocio-hero-info p.hero-desc{font-size:.95rem;color:var(--text-soft);max-width:500px;margin-bottom:16px;line-height:1.6;font-weight:400}
-.hero-meta{display:flex;gap:16px;flex-wrap:wrap}
-.hero-meta-item{display:flex;align-items:center;gap:5px;font-size:.78rem;color:var(--muted);font-weight:500}
-.hero-meta-item svg{width:13px;height:13px;stroke:currentColor;fill:none;stroke-width:2;flex-shrink:0}
-.hero-wave{display:block;width:100%;line-height:0;margin-top:32px}
-.hero-wave svg{display:block;width:100%}
-
-/* ── LAYOUT PRINCIPAL ── */
-.negocio-layout{padding:40px 0 64px;background:var(--bg)}
-.negocio-grid{display:grid;grid-template-columns:1fr 320px;gap:28px;align-items:start}
-@media(max-width:900px){.negocio-grid{grid-template-columns:1fr}}
-
-/* ── BLOCOS DE CONTEÚDO ── */
-.content-block{
-  background:white;
-  border:1px solid var(--border-light);
-  border-radius:var(--radius-lg);
-  overflow:hidden;margin-bottom:20px;
-  box-shadow:var(--shadow);
+nav.desktop-nav ul li:hover .nav-dropdown { display: block; }
+.nav-dropdown a { 
+    display: block; padding: 10px 20px; color: var(--dark-gray) !important; 
+    font-size: 0.9em; font-weight: 500; border-bottom: none !important; 
+    background: none !important; transition: background 0.15s; white-space: nowrap; 
 }
-.content-block-header{padding:14px 20px;border-bottom:1px solid var(--border-light);display:flex;align-items:center;gap:10px}
-.content-block-icon{width:30px;height:30px;border-radius:8px;display:flex;align-items:center;justify-content:center;background:rgba(0,113,227,.08);color:var(--primary);flex-shrink:0}
-.content-block-icon svg{width:15px;height:15px;stroke:currentColor;fill:none;stroke-width:2}
-.content-block-title{font-size:.85rem;font-weight:600;color:var(--text);letter-spacing:-.01em}
-.content-block-body{padding:20px}
+.nav-dropdown a:hover { background: var(--light) !important; color: var(--primary) !important; }
 
-/* DESCRIÇÃO */
-.negocio-descricao{font-size:.93rem;color:var(--text-soft);line-height:1.75;white-space:pre-wrap}
+nav.mobile-nav { display: none; width: 100%; }
+nav.mobile-nav.open { display: block; }
+nav.mobile-nav ul { list-style: none; display: flex; flex-direction: column; width: 100%; padding: 4px 0 14px; }
+nav.mobile-nav ul li a { color: #fff; font-weight: 600; font-size: 0.98em; padding: 12px 20px; display: block; border-radius: 8px; }
+nav.mobile-nav ul li a:hover, nav.mobile-nav ul li a:active { background: rgba(0,0,0,0.12); }
 
-/* MAPA */
-.mapa-wrap{width:100%;height:280px;border-radius:10px;overflow:hidden;background:var(--bg2);display:flex;align-items:center;justify-content:center}
-.mapa-wrap iframe{width:100%;height:100%;border:none}
-.endereco-row{display:flex;align-items:flex-start;gap:10px;padding:12px 0;border-bottom:1px solid var(--border-light)}
-.endereco-row:last-child{border-bottom:none;padding-bottom:0}
-.endereco-row svg{width:15px;height:15px;stroke:var(--primary);fill:none;stroke-width:2;flex-shrink:0;margin-top:2px}
-.endereco-row span{font-size:.88rem;color:var(--text)}
-.endereco-row span small{display:block;font-size:.76rem;color:var(--muted);margin-top:1px}
+/* ══ BANNER TOPO ══ */
+.banner-topo { background: var(--white); border-bottom: 1px solid var(--medium-gray); padding: 10px 20px; text-align: center; min-height: 110px; display: flex; align-items: center; justify-content: center; }
+.banner-rotativo { display: none; }
+.banner-rotativo.ativo { display: block; }
+.banner-rotativo img { max-height: 90px; width: auto; max-width: 100%; border-radius: 8px; }
+.banner-placeholder { display: inline-block; background: var(--light-gray); border: 2px dashed var(--medium-gray); border-radius: 8px; padding: 12px 36px; color: #aaa; font-size: 0.9em; }
 
-/* ── SIDEBAR ── */
-.sidebar-card{
-  background:white;
-  border:1px solid var(--border-light);
-  border-radius:var(--radius-lg);
-  overflow:hidden;margin-bottom:16px;
-  box-shadow:var(--shadow);
-  position:sticky;top:72px;
+/* ══ HERO ══ */
+.hero-section {
+    color: #fff; text-align: center; min-height: 540px;
+    display: flex; align-items: center; justify-content: center;
+    background:
+        linear-gradient(rgba(0,0,0,0.55), rgba(0,0,0,0.55)),
+        url('{{ hub.banner_fundo_url or "https://via.placeholder.com/1920x540" }}') center/cover no-repeat;
 }
-.sidebar-card-header{padding:16px 20px;border-bottom:1px solid var(--border-light);background:var(--bg2)}
-.sidebar-card-header h3{font-size:.9rem;font-weight:600;color:var(--text);letter-spacing:-.01em}
-.sidebar-card-header p{font-size:.76rem;color:var(--muted);margin-top:2px}
-.sidebar-card-body{padding:14px}
+.hero-inner { padding: 48px 20px; }
+.hero-section h1 { font-size: 3em; font-weight: 900; line-height: 1.2; text-shadow: 2px 2px 8px rgba(0,0,0,0.6); margin-bottom: 16px; }
+.hero-section h1 em { color: var(--primary); font-style: normal; }
+.hero-section .hero-sub { font-size: 1.25em; max-width: 660px; margin: 0 auto 32px; text-shadow: 1px 1px 4px rgba(0,0,0,0.5); opacity: 0.92; }
+.hero-btns { display: flex; gap: 14px; justify-content: center; flex-wrap: wrap; }
+.btn-hero { display: inline-flex; align-items: center; gap: 8px; background: var(--primary); color: #fff; padding: 15px 34px; border-radius: 8px; font-size: 1.1em; font-weight: 700; border: none; cursor: pointer; transition: background 0.3s, transform 0.2s; }
+.btn-hero:hover { background: var(--dark); transform: translateY(-2px); }
 
-/* BOTÕES DE CONTATO */
-.contato-btn{
-  display:flex;align-items:center;gap:12px;width:100%;
-  padding:11px 14px;border-radius:12px;margin-bottom:8px;
-  font-size:.88rem;font-weight:600;
-  transition:all .2s;border:none;cursor:pointer;text-decoration:none;
+/* ══ HERO STATS ══ */
+.hero-stats {
+    display: flex; align-items: center; justify-content: center;
+    gap: 0; margin-top: 36px; flex-wrap: wrap;
 }
-.contato-btn:last-child{margin-bottom:0}
-.contato-btn svg{width:18px;height:18px;flex-shrink:0}
-.contato-btn .btn-text{display:flex;flex-direction:column;text-align:left}
-.contato-btn .btn-label{font-size:.7rem;font-weight:500;opacity:.8;line-height:1}
-.contato-btn .btn-value{font-size:.88rem;font-weight:700;line-height:1.3;margin-top:1px}
-.btn-wpp{background:#25D366;color:#fff}
-.btn-wpp:hover{background:#1da850;transform:translateY(-1px);box-shadow:0 4px 16px rgba(37,211,102,.3)}
-.btn-tel{background:var(--bg2);color:var(--text);border:1px solid var(--border-light)}
-.btn-tel:hover{border-color:var(--primary);color:var(--primary);background:#fff}
-.btn-ig{background:linear-gradient(135deg,#f09433,#e6683c,#dc2743,#cc2366,#bc1888);color:#fff}
-.btn-ig:hover{opacity:.9;transform:translateY(-1px)}
-.btn-site{background:var(--text);color:#fff}
-.btn-site:hover{background:#333;transform:translateY(-1px)}
-
-/* INFORMAÇÕES RÁPIDAS */
-.info-list{padding:4px 0}
-.info-item{display:flex;align-items:center;gap:10px;padding:9px 0;border-bottom:1px solid var(--border-light);font-size:.83rem;color:var(--text)}
-.info-item:last-child{border-bottom:none}
-.info-item svg{width:14px;height:14px;stroke:var(--primary);fill:none;stroke-width:2;flex-shrink:0}
-.info-item span{color:var(--muted);font-size:.76rem;margin-left:auto}
-
-/* EMPTY STATE */
-.empty-state{text-align:center;padding:40px 20px;color:var(--muted)}
-.empty-state svg{width:36px;height:36px;stroke:var(--border);fill:none;stroke-width:1.5;margin:0 auto 12px;display:block}
-
-/* ── FOOTER ── */
-footer{background:var(--bg2);border-top:1px solid var(--border-light);padding:40px 0 24px}
-.footer-inner{max-width:1200px;margin:0 auto;padding:0 24px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:24px}
-.footer-logo img{height:36px;width:auto;display:block}
-.footer-logo-mark{display:flex;align-items:center;gap:9px}
-.footer-logo-mark .mark{width:30px;height:30px;background:var(--primary);border-radius:8px;display:flex;align-items:center;justify-content:center;color:#fff;font-size:.8rem;font-weight:700;flex-shrink:0}
-.footer-logo-mark .mark-text strong{display:block;color:var(--text);font-size:.85rem;font-weight:700}
-.footer-logo-mark .mark-text span{color:var(--muted);font-size:.7rem}
-.footer-divider{width:1px;height:36px;background:var(--border-light);flex-shrink:0}
-.footer-text{flex:1;min-width:180px}
-.footer-text strong{display:block;color:var(--text);font-size:13px;font-weight:600;margin-bottom:2px}
-.footer-text span{color:var(--muted);font-size:11.5px;line-height:1.5}
-.footer-actions{display:flex;align-items:center;gap:8px;flex-shrink:0;flex-wrap:wrap}
-.f-btn{display:inline-flex;align-items:center;gap:6px;font-size:12px;font-weight:600;text-decoration:none;padding:8px 16px;border-radius:20px;white-space:nowrap;transition:all .2s;border:none;cursor:pointer}
-.f-btn:hover{transform:scale(1.03)}
-.f-btn svg{width:13px;height:13px;flex-shrink:0}
-.f-btn-wpp{background:#25D366;color:#fff}
-.f-btn-ig{background:linear-gradient(135deg,#f09433,#e6683c,#dc2743,#cc2366,#bc1888);color:#fff}
-.footer-bottom{max-width:1200px;margin:24px auto 0;padding:18px 24px 0;border-top:1px solid var(--border-light);text-align:center;color:var(--muted);font-size:11px}
-.footer-bottom a{color:var(--muted);text-decoration:none}
-.footer-bottom a:hover{color:var(--text);text-decoration:underline}
-
-/* WHATSAPP FLUTUANTE */
-.wpp-float{position:fixed;bottom:24px;right:24px;background:#25D366;color:#fff;width:52px;height:52px;border-radius:50%;display:flex;align-items:center;justify-content:center;box-shadow:0 4px 20px rgba(37,211,102,.4);z-index:999;transition:transform .2s}
-.wpp-float:hover{transform:scale(1.08)}
-
-/* ── RESPONSIVO ── */
-@media(max-width:768px){
-  nav.desktop-nav{display:none}
-  .header-logo-nav{display:flex;align-items:center;gap:8px;flex-shrink:0}
-  .logo-hub img{height:40px}
-  .btn-wpp-header{padding:7px 10px;border-radius:50%;width:34px;height:34px;justify-content:center}
-  .btn-wpp-header svg{width:16px;height:16px}
-  .hamburger{display:block}
-  .negocio-hero-body{flex-direction:column;align-items:flex-start;gap:14px}
-  .negocio-hero-foto,.negocio-hero-sem-foto{width:110px;height:110px;font-size:2.8rem}
-  .negocio-hero-info h1{font-size:1.7rem}
-  .negocio-hero-info{padding-bottom:20px}
-  .negocio-layout{padding:28px 0 48px}
-  .sidebar-card{position:static}
+.hero-stat {
+    display: flex; flex-direction: column; align-items: center;
+    padding: 0 28px;
 }
-@media(max-width:640px){
-  .footer-inner{flex-direction:column;align-items:center;text-align:center;gap:14px}
-  .footer-divider{display:none}
-  .footer-text{min-width:unset}
-  .footer-actions{width:100%;justify-content:center}
-  .f-btn{flex:1;justify-content:center;font-size:11px;padding:8px 10px}
+.hero-stat-num {
+    font-size: 1.8em; font-weight: 900; color: var(--primary);
+    line-height: 1; letter-spacing: -0.5px;
+    text-shadow: 0 2px 8px rgba(0,0,0,0.4);
+}
+.hero-stat-label {
+    font-size: 0.82em; font-weight: 500; color: rgba(255,255,255,0.85);
+    margin-top: 4px; text-transform: uppercase; letter-spacing: 0.5px;
+}
+.hero-stat-divider {
+    width: 1px; height: 36px; background: rgba(255,255,255,0.3);
+}
+
+/* ══ BUSCA ══ */
+.busca-section { background: var(--white); padding: 52px 0; }
+.busca-topo { text-align: center; margin-bottom: 32px; }
+.busca-topo h2 { font-size: 2em; font-weight: 800; color: var(--dark-gray); margin-bottom: 8px; }
+.busca-topo p { color: #6c757d; margin-bottom: 20px; font-size: 1.05em; }
+.chip-cat { padding: 7px 20px; border-radius: 20px; border: 2px solid var(--medium-gray); background: var(--white); color: var(--text-color); font-family: inherit; font-size: 0.9em; font-weight: 600; cursor: pointer; transition: all 0.2s; }
+.chip-cat:hover { border-color: var(--primary); color: var(--primary); }
+.chip-cat.active { background: var(--primary); border-color: var(--primary); color: #fff; }
+
+.categoria-slicer { position: relative; max-width: 480px; margin: 0 auto 28px; z-index: 20; }
+.slicer-toggle {
+    width: 100%; display: flex; align-items: center; justify-content: space-between; gap: 12px;
+    background: var(--white); border: 2px solid var(--medium-gray); border-radius: 10px;
+    padding: 13px 18px; font-family: inherit; font-size: 0.98em; font-weight: 600;
+    color: var(--text-color); cursor: pointer; transition: all 0.2s;
+}
+.slicer-toggle:hover { border-color: var(--primary); }
+.slicer-toggle.open { border-color: var(--primary); }
+.slicer-chevron { transition: transform 0.25s; color: #adb5bd; flex-shrink: 0; }
+.slicer-toggle.open .slicer-chevron { transform: rotate(180deg); color: var(--primary); }
+
+.slicer-panel {
+    display: none; flex-direction: column; gap: 3px;
+    position: absolute; top: calc(100% + 8px); left: 0; right: 0;
+    background: var(--white); border: 1px solid var(--medium-gray); border-radius: 12px;
+    box-shadow: 0 14px 38px var(--shadow-medium);
+    max-height: 340px; overflow-y: auto; z-index: 21; padding: 8px;
+}
+.slicer-panel.open { display: flex; }
+.slicer-backdrop { display: none; position: fixed; inset: 0; background: transparent; z-index: 15; }
+.slicer-backdrop.open { display: block; }
+
+/* ══ NEGÓCIOS ══ */
+.negocios-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 22px; }
+.negocio-card { background: var(--white); border-radius: 14px; overflow: hidden; box-shadow: 0 4px 14px var(--shadow-light); transition: transform 0.3s, box-shadow 0.3s; display: flex; flex-direction: column; cursor: pointer; text-decoration: none; color: inherit; }
+.negocio-card:hover { transform: translateY(-5px); box-shadow: 0 10px 28px var(--shadow-medium); }
+.card-foto { width: 100%; height: 160px; overflow: hidden; position: relative; background: #f5f5f5; }
+.card-foto img { width: 100%; height: 100%; object-fit: cover; transition: transform 0.4s; }
+.negocio-card:hover .card-foto img { transform: scale(1.06); }
+.card-foto-fallback { width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; background-color: var(--light); }
+.card-foto-fallback.tem-logo { background-image: var(--hub-logo); background-repeat: no-repeat; background-position: center; background-size: 55%; }
+.card-foto-fallback i { font-size: 2.4em; color: var(--primary); opacity: 0.35; }
+.badge-cat { position: absolute; top: 10px; left: 10px; background: var(--primary); color: #fff; font-size: 0.72em; font-weight: 700; padding: 3px 10px; border-radius: 20px; }
+.card-body { padding: 16px; flex: 1; display: flex; flex-direction: column; gap: 4px; }
+.card-body h3 { font-size: 1.05em; font-weight: 700; color: var(--dark-gray); }
+.card-bairro { font-size: 0.88em; color: #6c757d; display: flex; align-items: center; gap: 5px; }
+.btn-ver { margin-top: auto; padding-top: 12px; display: inline-block; background: var(--primary); color: #fff; padding: 9px 18px; border-radius: 6px; font-size: 0.88em; font-weight: 700; text-align: center; transition: background 0.2s; }
+.negocio-card:hover .btn-ver { background: var(--dark); }
+.info-vazio { text-align: center; color: #6c757d; padding: 60px 20px; font-size: 1.05em; }
+
+/* ══ FOOTER ══ */
+footer { background: #111; color: #999; text-align: center; padding: 32px 20px; font-size: 0.88em; }
+footer a { color: var(--primary); }
+footer a:hover { text-decoration: underline; }
+.footer-logo { margin-bottom: 14px; }
+.footer-logo img { height: 36px; width: auto; opacity: 0.85; }
+
+/* ══ RESPONSIVE ══ */
+@media (max-width: 768px) {
+    body > header { padding: 16px 60px 16px 20px; flex-direction: row; justify-content: center; }
+    .header-logo img { height: 96px; }
+    nav.desktop-nav { display: none; }
+    .hamburger-btn { display: block; top: 50%; transform: translateY(-50%); }
+    .hero-section { min-height: 440px; }
+    .hero-section h1 { font-size: 2.1em; }
+    .hero-section .hero-sub { font-size: 1em; }
+    .busca-section { padding: 36px 0; }
+    .banner-rotativo img { max-height: 120px !important; }
 }
 </style>
 </head>
 <body>
 
-<!-- HEADER -->
+<!-- ══ HEADER ══ -->
 <header>
-  <div class="header-inner">
-    <div class="header-logo-nav">
-    <a href="/" class="logo-hub">
-      {% if hub.logo_url %}
-        <img src="{{ hub.logo_url }}" alt="{{ hub.nome }}">
-      {% else %}
-        <div class="logo-hub-mark">{{ hub.nome[0] | upper }}</div>
-        <span>{{ hub.nome }}</span>
-      {% endif %}
+  <div class="header-logo">
+    <a href="/">
+      {% if hub.logo_url %}<img src="{{ hub.logo_url }}" alt="{{ hub.nome or 'Hub' }}">{% endif %}
     </a>
-    <nav class="desktop-nav" aria-label="Categorias">
-      <div id="headerSlicerWrap" style="position:relative;display:inline-block">
-        <button class="cat-slicer-btn" id="headerSlicerBtn" aria-haspopup="listbox" aria-expanded="false">
-          <span class="cat-slicer-label">
-            <svg viewBox="0 0 24 24"><path d="M4 6h16M4 12h16M4 18h7"/></svg>
-            <span id="headerSlicerLabelText">Categorias</span>
-          </span>
-          <svg viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"/></svg>
-        </button>
-        <div class="cat-slicer-panel" id="headerSlicerPanel" role="listbox">
-          <div class="cat-slicer-inner" id="headerSlicerInner">
-            <a href="/" class="cat-chip">🔍 Todas</a>
-            <!-- categorias inseridas via JS (fetch /api/hub/categorias) -->
-          </div>
-        </div>
-      </div>
-    </nav>
-    </div>
-    <div class="header-cta">
-      {% if hub.banner1_link %}
-      <a href="{{ hub.banner1_link }}" target="_blank" rel="noopener" class="btn-site-header">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
-        <span class="btn-site-label">Acessar o site</span>
-      </a>
-      {% endif %}
-      <button class="hamburger" id="hamburger" aria-label="Menu">
-        <svg viewBox="0 0 24 24"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
-      </button>
-    </div>
   </div>
+  <button class="hamburger-btn" onclick="toggleMobileNav()">☰</button>
+  <nav class="desktop-nav">
+    <ul>
+      <li><a href="/">Início</a></li>
+      <li>
+        <a href="#categorias">Categorias ▾</a>
+        <div class="nav-dropdown">
+          {% set cats_ativas_nav = [] %}
+          {% for cat in categorias %}
+            {% if (negocios | selectattr('categoria_slug', 'equalto', cat.slug) | list | length) > 0 %}
+              {% set _ = cats_ativas_nav.append(cat) %}
+            {% endif %}
+          {% endfor %}
+          {% for cat in cats_ativas_nav %}
+          <a href="/{{ cat.slug }}/">{{ cat.nome }}</a>
+          {% endfor %}
+        </div>
+      </li>
+      <li>
+        <a href="#cidades">Cidades ▾</a>
+        <div class="nav-dropdown">
+          {% set cidades_unicas = negocios | map(attribute='cidade') | unique | list | sort %}
+          {% for c in cidades_unicas[:10] %}
+          <a href="/cidade/{{ c | slugify }}/">{{ c }}</a>
+          {% endfor %}
+          {% if cidades_unicas | length > 10 %}
+          <a href="/cidades/">Ver todas as cidades</a>
+          {% endif %}
+        </div>
+      </li>
+    </ul>
+  </nav>
+  <nav class="mobile-nav" id="mobileNav">
+    <ul>
+      <li><a href="/" onclick="closeMobileNav()">Início</a></li>
+      <li><a href="#categorias" onclick="closeMobileNav()">Categorias</a></li>
+      <li><a href="#cidades" onclick="closeMobileNav()">Cidades</a></li>
+    </ul>
+  </nav>
 </header>
 
-<!-- MOBILE NAV -->
-<div class="mobile-nav-overlay" id="mobileNav">
-  <button class="mobile-nav-close" id="navClose">✕</button>
-  <ul id="mobileNavList">
-    <li><a href="/" onclick="closeNav()">Início</a></li>
-    <!-- categorias inseridas via JS (fetch /api/hub/categorias) -->
-  </ul>
-</div>
-
-<!-- BANNER TOPO -->
-<div class="banner-ad">
-  {% if anuncio_topo %}
-  <a href="{{ anuncio_topo.link }}" target="_blank" rel="noopener sponsored">
-    <img src="{{ anuncio_topo.foto_url }}" alt="{{ anuncio_topo.titulo or 'Publicidade' }}">
-  </a>
-  {% elif hub.banner1_foto_url %}
-  <a href="{{ hub.banner1_link or '#' }}" target="_blank" rel="noopener sponsored">
-    <img src="{{ hub.banner1_foto_url }}" alt="Publicidade">
-  </a>
-  {% else %}
-  <a class="banner-placeholder" href="https://wa.me/55{{ hub.whatsapp | replace(' ','') | replace('-','') | replace('(','') | replace(')','') if hub.whatsapp else '' }}?text=Quero+anunciar+no+{{ hub.nome | urlencode }}" target="_blank" rel="noopener">📣 Anuncie aqui — espaço disponível</a>
-  {% endif %}
-</div>
-
-<!-- AVISO: CADASTRO AUTOMÁTICO -->
-<div class="aviso-automatico">
-  <div class="container aviso-automatico-inner">
-    <p class="aviso-automatico-texto">
-      📋 Cadastro <strong>automático</strong>, gerado a partir de dados públicos do Google — não somos afiliados a este negócio.
-    </p>
-    <a href="https://wa.me/55{{ hub.whatsapp | replace(' ','') | replace('-','') | replace('(','') | replace(')','') if hub.whatsapp else '' }}?text=Olá,+quero+solicitar+a+remoção+do+negócio+{{ negocio.nome }}+({{ negocio.categoria_nome }})+cadastrado+no+{{ hub.nome | urlencode }},+ou+adicionar%2Fatualizar+meu+negócio.+Página:+https%3A%2F%2F{{ request.host }}%2F{{ segmento }}%2F{{ negocio.slug }}%2F"
-       target="_blank" rel="noopener nofollow" class="aviso-automatico-btn">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="14" height="14"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"/></svg>
-      Solicitar remoção
+<!-- ══ BANNER TOPO ══ -->
+{% if anuncio_topo %}
+<div class="banner-topo">
+  {% if anuncio_topo.url %}
+    <a href="{{ anuncio_topo.url }}" target="_blank">
+      <img class="banner-rotativo ativo" src="{{ anuncio_topo.imagem_url }}" alt="Anúncio">
     </a>
-  </div>
-</div>
-
-<!-- HERO -->
-<section class="negocio-hero" aria-label="{{ negocio.nome }}">
-  <div class="container">
-    <nav class="breadcrumb" aria-label="Breadcrumb">
-      <a href="/">{{ hub.nome }}</a>
-      <span>›</span>
-      <a href="/{{ segmento }}/">{{ negocio.categoria_nome }}</a>
-      <span>›</span>
-      <span style="color:var(--text)">{{ negocio.nome }}</span>
-    </nav>
-    <div class="negocio-hero-body">
-      {% if negocio.foto_url and negocio.mostrar_foto %}
-        <img src="{{ negocio.foto_url }}" alt="{{ negocio.nome }}" class="negocio-hero-foto">
-      {% else %}
-        <div class="negocio-hero-sem-foto">🏪</div>
-      {% endif %}
-      <div class="negocio-hero-info">
-        <span class="negocio-badge">{{ negocio.categoria_nome }}</span>
-        <h1>{{ negocio.nome }}</h1>
-        {% if negocio.descricao and negocio.mostrar_descricao %}
-        <p class="hero-desc">{{ negocio.descricao | truncate(140) }}</p>
-        {% endif %}
-        <div class="hero-meta">
-          {% if negocio.bairro %}
-          <span class="hero-meta-item">
-            <svg viewBox="0 0 24 24"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
-            {{ negocio.bairro }}{% if negocio.cidade %}, {{ negocio.cidade }}{% endif %}
-          </span>
-          {% endif %}
-          {% if wpp_num and negocio.mostrar_whatsapp %}
-          <span class="hero-meta-item">
-            <svg viewBox="0 0 24 24"><path d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07A19.5 19.5 0 013.07 9.81 19.79 19.79 0 01.01 1.18 2 2 0 012 0h3a2 2 0 012 1.72c.127.96.361 1.903.7 2.81a2 2 0 01-.45 2.11L6.09 7.91a16 16 0 006 6l1.27-1.27a2 2 0 012.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0122 16.92z"/></svg>
-            Atende pelo WhatsApp
-          </span>
-          {% endif %}
-        </div>
-      </div>
-    </div>
-  </div>
-  <div class="hero-wave">
-    <svg viewBox="0 0 1440 40" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="none">
-      <path d="M0,20 C240,40 480,0 720,20 C960,40 1200,0 1440,20 L1440,40 L0,40 Z" fill="#ffffff"/>
-    </svg>
-  </div>
-</section>
-
-<!-- CONTEÚDO PRINCIPAL -->
-<section class="negocio-layout">
-  <div class="container">
-    <div class="negocio-grid">
-
-      <!-- COLUNA ESQUERDA -->
-      <div class="negocio-content">
-
-        {% if negocio.descricao and negocio.mostrar_descricao %}
-        <div class="content-block">
-          <div class="content-block-header">
-            <div class="content-block-icon">
-              <svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
-            </div>
-            <span class="content-block-title">Sobre o negócio</span>
-          </div>
-          <div class="content-block-body">
-            <p class="negocio-descricao">{{ negocio.descricao }}</p>
-          </div>
-        </div>
-        {% endif %}
-
-        {% if (negocio.endereco and negocio.mostrar_endereco) or (negocio.bairro) %}
-        <div class="content-block">
-          <div class="content-block-header">
-            <div class="content-block-icon">
-              <svg viewBox="0 0 24 24"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
-            </div>
-            <span class="content-block-title">Localização</span>
-          </div>
-          <div class="content-block-body">
-            {% if negocio.endereco and negocio.mostrar_endereco %}
-            <div class="endereco-row">
-              <svg viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
-              <span>
-                {{ negocio.endereco }}
-                <small>{% if negocio.bairro %}{{ negocio.bairro }}{% endif %}{% if negocio.cidade %}, {{ negocio.cidade }}{% endif %}</small>
-              </span>
-            </div>
-            {% endif %}
-            {% if negocio.mostrar_mapa and negocio.lat and negocio.lng %}
-            <div class="mapa-wrap" style="margin-top:{% if negocio.mostrar_endereco %}16px{% else %}0{% endif %}">
-              <iframe
-                loading="lazy"
-                referrerpolicy="no-referrer-when-downgrade"
-                src="https://www.google.com/maps?q={{ negocio.lat }},{{ negocio.lng }}&z=16&output=embed"
-                allowfullscreen>
-              </iframe>
-            </div>
-            {% elif negocio.mostrar_mapa and negocio.endereco %}
-            <div class="mapa-wrap" style="margin-top:16px">
-              <iframe
-                loading="lazy"
-                referrerpolicy="no-referrer-when-downgrade"
-                src="https://www.google.com/maps?q={{ negocio.endereco | urlencode }}{% if negocio.cidade %},{{ negocio.cidade | urlencode }}{% endif %}&output=embed"
-                allowfullscreen>
-              </iframe>
-            </div>
-            {% endif %}
-            {% if negocio.mostrar_mapa and ((negocio.lat and negocio.lng) or negocio.endereco) %}
-            <button class="btn-maps" onclick="abrirMaps()" type="button">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
-              Como chegar — Abrir no Google Maps
-            </button>
-            {% endif %}
-          </div>
-        </div>
-        {% endif %}
-
-      </div><!-- /negocio-content -->
-
-      <!-- COLUNA DIREITA — SIDEBAR -->
-      <div class="negocio-sidebar">
-        <div class="sidebar-card">
-          <div class="sidebar-card-header">
-            <h3>Entre em contato</h3>
-            <p>Fale diretamente com {{ negocio.nome }}</p>
-          </div>
-          <div class="sidebar-card-body">
-
-            {% if wpp_num and negocio.mostrar_whatsapp %}
-            <a href="https://wa.me/55{{ wpp_num }}" target="_blank" rel="noopener" class="contato-btn btn-wpp">
-              <svg viewBox="0 0 24 24" fill="currentColor" width="18" height="18"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
-              <div class="btn-text">
-                <span class="btn-label">Chamar no</span>
-                <span class="btn-value">WhatsApp</span>
-              </div>
-            </a>
-            {% endif %}
-
-            {% if negocio.telefone and negocio.mostrar_telefone %}
-            <a href="tel:{{ negocio.telefone | replace(' ','') | replace('-','') | replace('(','') | replace(')','') }}" class="contato-btn btn-tel">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="18" height="18"><path d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07A19.5 19.5 0 013.07 9.81 19.79 19.79 0 01.01 1.18 2 2 0 012 0h3a2 2 0 012 1.72c.127.96.361 1.903.7 2.81a2 2 0 01-.45 2.11L6.09 7.91a16 16 0 006 6l1.27-1.27a2 2 0 012.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0122 16.92z"/></svg>
-              <div class="btn-text">
-                <span class="btn-label">Ligar para</span>
-                <span class="btn-value">{{ negocio.telefone }}</span>
-              </div>
-            </a>
-            {% endif %}
-
-            {% if negocio.instagram and negocio.mostrar_instagram %}
-            <a href="{{ negocio.instagram if negocio.instagram.startswith('http') else 'https://instagram.com/' + negocio.instagram.lstrip('@') }}" target="_blank" rel="noopener" class="contato-btn btn-ig">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="18" height="18"><rect x="2" y="2" width="20" height="20" rx="5" ry="5"/><circle cx="12" cy="12" r="4"/><circle cx="17.5" cy="6.5" r="0.5" fill="currentColor"/></svg>
-              <div class="btn-text">
-                <span class="btn-label">Ver no</span>
-                <span class="btn-value">Instagram</span>
-              </div>
-            </a>
-            {% endif %}
-
-            {% if negocio.site_url and negocio.mostrar_site %}
-            <a href="{{ negocio.site_url }}" target="_blank" rel="noopener" class="contato-btn btn-site">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="18" height="18"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 014 10 15.3 15.3 0 01-4 10 15.3 15.3 0 01-4-10 15.3 15.3 0 014-10z"/></svg>
-              <div class="btn-text">
-                <span class="btn-label">Acessar o</span>
-                <span class="btn-value">Site oficial</span>
-              </div>
-            </a>
-            {% endif %}
-
-            {% if not negocio.mostrar_whatsapp and not negocio.mostrar_telefone and not negocio.mostrar_instagram and not negocio.mostrar_site %}
-            <div class="empty-state">
-              <svg viewBox="0 0 24 24"><path d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07A19.5 19.5 0 013.07 9.81"/></svg>
-              <p style="font-size:.83rem">Sem contato disponível.</p>
-            </div>
-            {% endif %}
-
-          </div>
-        </div>
-
-        <!-- INFORMAÇÕES RÁPIDAS -->
-        <div class="sidebar-card">
-          <div class="sidebar-card-header">
-            <h3>Informações</h3>
-          </div>
-          <div class="sidebar-card-body" style="padding:4px 14px">
-            <div class="info-list">
-              <div class="info-item">
-                <svg viewBox="0 0 24 24"><path d="M4 6h16M4 10h16M4 14h16M4 18h16"/></svg>
-                <span style="color:var(--text);font-size:.83rem">Categoria</span>
-                <span>{{ negocio.categoria_nome }}</span>
-              </div>
-              {% if negocio.cidade %}
-              <div class="info-item">
-                <svg viewBox="0 0 24 24"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
-                <span style="color:var(--text);font-size:.83rem">Cidade</span>
-                <span>{{ negocio.cidade }}</span>
-              </div>
-              {% endif %}
-              {% if negocio.bairro %}
-              <div class="info-item">
-                <svg viewBox="0 0 24 24"><polygon points="3 11 22 2 13 21 11 13 3 11"/></svg>
-                <span style="color:var(--text);font-size:.83rem">Bairro</span>
-                <span>{{ negocio.bairro }}</span>
-              </div>
-              {% endif %}
-              {% if negocio.cep %}
-              <div class="info-item">
-                <svg viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
-                <span style="color:var(--text);font-size:.83rem">CEP</span>
-                <span>{{ negocio.cep }}</span>
-              </div>
-              {% endif %}
-              {% if negocio.horario_funcionamento %}
-              <div class="info-item">
-                <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
-                <span style="color:var(--text);font-size:.83rem">Horário</span>
-                <span>{{ negocio.horario_funcionamento }}</span>
-              </div>
-              {% endif %}
-            </div>
-          </div>
-        </div>
-
-        <!-- BOTÃO VOLTAR -->
-        <a href="/{{ segmento }}/" style="display:flex;align-items:center;gap:7px;font-size:.8rem;font-weight:600;color:var(--muted);padding:6px 0;transition:color .15s" onmouseover="this.style.color='var(--primary)'" onmouseout="this.style.color='var(--muted)'">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><polyline points="15 18 9 12 15 6"/></svg>
-          Voltar para {{ negocio.categoria_nome }}
-        </a>
-
-      </div><!-- /negocio-sidebar -->
-    </div><!-- /negocio-grid -->
-  </div>
-</section>
-
-<!-- BANNER MEIO -->
-<div class="banner-ad banner-ad-meio">
-  {% if anuncio_meio %}
-  <a href="{{ anuncio_meio.link }}" target="_blank" rel="noopener sponsored">
-    <img src="{{ anuncio_meio.foto_url }}" alt="{{ anuncio_meio.titulo or 'Publicidade' }}">
-  </a>
-  {% elif hub.banner2_foto_url %}
-  <a href="{{ hub.banner2_link or '#' }}" target="_blank" rel="noopener sponsored">
-    <img src="{{ hub.banner2_foto_url }}" alt="Publicidade">
-  </a>
   {% else %}
-  <a class="banner-placeholder" href="https://wa.me/55{{ hub.whatsapp | replace(' ','') | replace('-','') | replace('(','') | replace(')','') if hub.whatsapp else '' }}?text=Quero+anunciar+no+{{ hub.nome | urlencode }}" target="_blank" rel="noopener">📣 Anuncie aqui — espaço disponível</a>
+    <div class="banner-placeholder">🎯 Espaço para seu anúncio</div>
   {% endif %}
 </div>
-
-<!-- FOOTER -->
-<footer itemscope itemtype="https://schema.org/WPFooter">
-  <div class="footer-inner">
-    {% if hub.logo_url %}
-    <a href="/" class="footer-logo"><img src="{{ hub.logo_url }}" alt="{{ hub.nome }}"></a>
-    {% else %}
-    <div class="footer-logo-mark">
-      <div class="mark">{{ hub.nome[0] | upper }}</div>
-      <div class="mark-text"><strong>{{ hub.nome }}</strong><span>Guia local</span></div>
-    </div>
-    {% endif %}
-    <div class="footer-divider"></div>
-    <div class="footer-text">
-      <strong>{{ hub.titulo or hub.nome }}</strong>
-      <span>{{ hub.descricao or 'Guia local de negócios' }}</span>
-    </div>
-    <nav class="footer-actions">
-      {% if hub.instagram_url %}
-      <a href="{{ hub.instagram_url }}" target="_blank" rel="noopener" class="f-btn f-btn-ig">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="2" width="20" height="20" rx="5" ry="5"/><circle cx="12" cy="12" r="4"/><circle cx="17.5" cy="6.5" r="0.5" fill="currentColor"/></svg>
-        Instagram
-      </a>
-      {% endif %}
-    </nav>
-  </div>
-  <div class="footer-bottom">
-    <div style="display:flex;flex-direction:column;align-items:center;gap:12px;padding-bottom:8px">
-      <a href="https://www.leanttro.com" target="_blank" rel="noopener" style="display:inline-block">
-        <img src="https://res.cloudinary.com/dzcaxmbjn/image/upload/v1779203844/logo_claro_rtbddh.png" alt="Leanttro" style="height:28px;width:auto;display:block;opacity:.5">
-      </a>
-      <div style="display:flex;gap:20px;flex-wrap:wrap;justify-content:center;font-size:11px;color:var(--muted)">
-        <span>🌐 Sites profissionais a partir de R$499</span>
-        <span>📈 Hubs de tráfego orgânico</span>
-        <span>⚡ Automações com n8n</span>
-        <span>📊 Painel de métricas gratuito</span>
-      </div>
-      <p style="font-size:11px;color:var(--muted);margin:0">
-        © {{ hub.nome }} · Desenvolvido por <a href="https://www.leanttro.com" target="_blank" rel="noopener">Leanttro</a>
-        — tecnologia e presença digital para pequenas empresas em São Paulo
-      </p>
-    </div>
-  </div>
-</footer>
-
-{% if wpp_num and negocio.mostrar_whatsapp %}
-<a href="https://wa.me/55{{ wpp_num }}" target="_blank" rel="noopener" class="wpp-float" aria-label="WhatsApp">
-  <svg width="26" height="26" viewBox="0 0 24 24" fill="#fff"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
-</a>
 {% endif %}
 
-<script>
-// ── Header category slicer ───────────────────────────────────
-(function initHeaderSlicer() {
-  const btn = document.getElementById('headerSlicerBtn');
-  const panel = document.getElementById('headerSlicerPanel');
-  if (!btn || !panel) return;
-  btn.addEventListener('click', function(e) {
-    e.stopPropagation();
-    const isOpen = panel.classList.contains('open');
-    panel.classList.toggle('open', !isOpen);
-    btn.classList.toggle('open', !isOpen);
-    btn.setAttribute('aria-expanded', String(!isOpen));
-  });
-  document.addEventListener('click', function(e) {
-    const wrap = document.getElementById('headerSlicerWrap');
-    if (wrap && !wrap.contains(e.target)) {
-      panel.classList.remove('open');
-      btn.classList.remove('open');
-      btn.setAttribute('aria-expanded','false');
-    }
-  });
-})();
+<!-- ══ HERO ══ -->
+<section class="hero-section">
+  <div class="hero-inner container">
+    <h1>{{ hub.nome or 'Hub' }}</h1>
+    <p class="hero-sub">Encontre os melhores negócios perto de você</p>
+    <div class="hero-stats">
+      <div class="hero-stat">
+        <span class="hero-stat-num">{{ total_negs }}</span>
+        <span class="hero-stat-label">negócios</span>
+      </div>
+      <div class="hero-stat-divider"></div>
+      <div class="hero-stat">
+        <span class="hero-stat-num">{{ (negocios | map(attribute='cidade') | unique | list) | length }}</span>
+        <span class="hero-stat-label">cidades</span>
+      </div>
+      <div class="hero-stat-divider"></div>
+      <div class="hero-stat">
+        <span class="hero-stat-num">{{ total_cats }}</span>
+        <span class="hero-stat-label">categorias</span>
+      </div>
+    </div>
+  </div>
+</section>
 
-document.getElementById('hamburger').addEventListener('click',()=>document.getElementById('mobileNav').classList.add('active'));
-document.getElementById('navClose').addEventListener('click',()=>closeNav());
-function closeNav(){document.getElementById('mobileNav').classList.remove('active')}
+<!-- ══ BUSCA ══ -->
+<section class="busca-section">
+  <div class="container">
+    <div class="busca-topo">
+      <h2>Encontre por categoria</h2>
+      <p>Escolha uma categoria para explorar</p>
+    </div>
+    <div class="categoria-slicer" id="categoria-slicer">
+      <button type="button" class="slicer-toggle" id="slicer-toggle" onclick="toggleCategoriaSlicer()" aria-haspopup="listbox" aria-expanded="false" aria-controls="filtros-categoria">
+        <span class="slicer-label"><i class="fas fa-filter"></i> <strong id="slicer-label-text">Selecione uma categoria</strong></span>
+        <i class="fas fa-chevron-down slicer-chevron" aria-hidden="true"></i>
+      </button>
+      <div class="slicer-panel" id="filtros-categoria" role="listbox"></div>
+      <div class="slicer-backdrop" id="slicer-backdrop" onclick="fecharCategoriaSlicer()"></div>
+    </div>
+  </div>
+</section>
 
-// ── Popula o menu de categorias (desktop + mobile) via API genérica do hub ──
-(function popularCategorias(){
-  var categoriaAtual = {{ (negocio.categoria_slug or '') | tojson }};
-  fetch('/api/hub/categorias')
-    .then(function(r){ return r.ok ? r.json() : []; })
-    .then(function(cats){
-      if (!Array.isArray(cats) || !cats.length) return;
-      cats.sort(function(a,b){ return (a.nome||'').localeCompare(b.nome||'', 'pt-BR'); });
-
-      var inner = document.getElementById('headerSlicerInner');
-      var mobileList = document.getElementById('mobileNavList');
-      var mobileInicio = mobileList ? mobileList.querySelector('li') : null;
-
-      cats.forEach(function(cat){
-        if (!cat.slug) return;
-        var ativo = cat.slug === categoriaAtual;
-
-        if (inner) {
-          var a = document.createElement('a');
-          a.href = '/' + cat.slug + '/';
-          a.className = 'cat-chip' + (ativo ? ' active' : '');
-          a.textContent = cat.nome;
-          inner.appendChild(a);
-        }
-        if (mobileList) {
-          var li = document.createElement('li');
-          var a2 = document.createElement('a');
-          a2.href = '/' + cat.slug + '/';
-          a2.textContent = cat.nome;
-          a2.setAttribute('onclick', 'closeNav()');
-          li.appendChild(a2);
-          if (mobileInicio && mobileInicio.nextSibling) {
-            mobileList.insertBefore(li, mobileInicio.nextSibling);
-          } else {
-            mobileList.appendChild(li);
-          }
-        }
-      });
-    })
-    .catch(function(){ /* API fora do ar: menu de categorias fica só com "Início" */ });
-})();
-</script>
+<!-- ══ FOOTER ══ -->
+<footer>
+  <div class="footer-logo">
+    {% if hub.logo_url %}<img src="{{ hub.logo_url }}" alt="{{ hub.nome or 'Hub' }}">{% endif %}
+  </div>
+  <p>&copy; {{ now.year }} {{ hub.nome or 'Hub' }}. Todos os direitos reservados.</p>
+</footer>
 
 <script>
-// ── "Como chegar": abre o Google Maps com rota da localização do usuário até o negócio ──
-var DEST_LAT = {{ negocio.lat | tojson if negocio.lat else 'null' }};
-var DEST_LNG = {{ negocio.lng | tojson if negocio.lng else 'null' }};
-var DEST_END = encodeURIComponent({{ ((negocio.endereco or '') ~ (', ' ~ negocio.cidade if negocio.cidade else '')) | tojson }});
-
-function abrirMaps(){
-  var destino = DEST_END ? DEST_END : (DEST_LAT && DEST_LNG ? DEST_LAT + ',' + DEST_LNG : '');
-  if (!destino) return;
-  if (navigator.geolocation) {
-    navigator.geolocation.getCurrentPosition(
-      function(pos){
-        var origem = pos.coords.latitude + ',' + pos.coords.longitude;
-        window.open('https://www.google.com/maps/dir/?api=1&origin=' + origem + '&destination=' + destino + '&travelmode=driving', '_blank');
-      },
-      function(){ window.open('https://www.google.com/maps/search/?api=1&query=' + destino, '_blank'); },
-      { timeout: 5000 }
-    );
-  } else {
-    window.open('https://www.google.com/maps/search/?api=1&query=' + destino, '_blank');
-  }
+function toggleMobileNav() {
+  const nav = document.getElementById('mobileNav');
+  nav.classList.toggle('open');
 }
+
+function closeMobileNav() {
+  document.getElementById('mobileNav').classList.remove('open');
+}
+
+function toggleCategoriaSlicer() {
+  const toggle = document.getElementById('slicer-toggle');
+  const panel = document.getElementById('filtros-categoria');
+  const backdrop = document.getElementById('slicer-backdrop');
+  
+  toggle.classList.toggle('open');
+  panel.classList.toggle('open');
+  backdrop.classList.toggle('open');
+}
+
+function fecharCategoriaSlicer() {
+  document.getElementById('slicer-toggle').classList.remove('open');
+  document.getElementById('filtros-categoria').classList.remove('open');
+  document.getElementById('slicer-backdrop').classList.remove('open');
+}
+
+// Carregar categorias no slicer
+document.addEventListener('DOMContentLoaded', function() {
+  const categorias = {{ categorias | tojson }};
+  const negocios = {{ negocios | tojson }};
+  const panel = document.getElementById('filtros-categoria');
+  
+  const cats_com_negocios = categorias.filter(cat => 
+    negocios.some(neg => neg.categoria_slug === cat.slug)
+  );
+  
+  cats_com_negocios.forEach(cat => {
+    const a = document.createElement('a');
+    a.href = '/' + cat.slug + '/';
+    a.className = 'chip-cat';
+    a.textContent = cat.nome;
+    panel.appendChild(a);
+  });
+});
 </script>
+
 </body>
 </html>
