@@ -209,24 +209,27 @@ nav.mobile-nav ul li a:hover, nav.mobile-nav ul li a:active { background: rgba(0
 .slicer-backdrop { display: none; position: fixed; inset: 0; background: transparent; z-index: 15; }
 .slicer-backdrop.open { display: block; }
 
-/* ══ BAIRROS LINKS ══ */
+/* ══ BAIRROS — botão com dropdown (mesmo padrão do slicer de categoria) ══ */
 .bairros-section { padding: 48px 0; background: var(--light-gray); }
-.bairros-titulo { font-size: 1.8em; font-weight: 800; color: var(--dark-gray); margin-bottom: 28px; text-align: center; }
-.bairros-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 16px; }
-.bairro-link { 
-    display: flex; align-items: center; justify-content: space-between;
-    background: var(--white); padding: 16px 20px; border-radius: 10px; 
-    border: 1px solid var(--medium-gray); transition: all 0.2s;
-    box-shadow: 0 2px 8px var(--shadow-light);
-}
-.bairro-link:hover { border-color: var(--primary); box-shadow: 0 4px 16px var(--shadow-medium); background: #fafafa; }
-.bairro-link-name { font-weight: 600; color: var(--dark-gray); }
-.bairro-link-count { font-size: 0.85em; color: var(--primary); font-weight: 700; }
+.bairros-titulo { font-size: 1.8em; font-weight: 800; color: var(--dark-gray); margin-bottom: 20px; text-align: center; }
+.bairro-link-count { font-size: 0.82em; color: var(--primary); font-weight: 700; margin-left: 6px; }
 
 /* ══ GRID DE NEGÓCIOS ══ */
 .section { padding: 56px 0; }
 .section-title { text-align: center; font-size: 1.8em; font-weight: 800; color: var(--dark-gray); margin-bottom: 32px; }
+.negocios-header-row { display: flex; align-items: center; justify-content: flex-end; gap: 12px; flex-wrap: wrap; margin-bottom: 22px; }
+.btn-geoloc { display: inline-flex; align-items: center; gap: 8px; background: var(--white); border: 2px solid var(--medium-gray); color: var(--text-color); padding: 11px 18px; border-radius: 10px; font-family: inherit; font-size: 0.9em; font-weight: 600; cursor: pointer; transition: all 0.2s; white-space: nowrap; }
+.btn-geoloc:hover { border-color: var(--primary); color: var(--primary); }
+.btn-geoloc.ativo { background: var(--primary); border-color: var(--primary); color: #fff; }
+.btn-geoloc.carregando { opacity: 0.7; cursor: wait; }
+.cats-view-toggle { display: flex; gap: 6px; background: #f0f0f0; padding: 4px; border-radius: 10px; flex-shrink: 0; }
+.cats-view-toggle button { border: none; background: transparent; width: 38px; height: 34px; border-radius: 7px; display: flex; align-items: center; justify-content: center; cursor: pointer; color: var(--dark-gray); font-size: 15px; transition: background 0.2s, color 0.2s; }
+.cats-view-toggle button.ativo { background: var(--primary); color: #fff; }
 .negocios-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 22px; }
+.negocios-grid.modo-carrossel { display: flex; grid-template-columns: none; overflow-x: auto; scroll-snap-type: x mandatory; gap: 18px; padding-bottom: 10px; -webkit-overflow-scrolling: touch; scrollbar-width: thin; }
+.negocios-grid.modo-carrossel .negocio-card { flex: 0 0 260px; scroll-snap-align: start; }
+.negocios-grid.modo-carrossel::-webkit-scrollbar { height: 6px; }
+.negocios-grid.modo-carrossel::-webkit-scrollbar-thumb { background: var(--primary); border-radius: 10px; }
 .negocio-card {
     background: var(--white); border-radius: 14px; overflow: hidden;
     box-shadow: 0 4px 14px var(--shadow-light); transition: transform 0.3s, box-shadow 0.3s;
@@ -243,10 +246,20 @@ nav.mobile-nav ul li a:hover, nav.mobile-nav ul li a:active { background: rgba(0
 .card-body { padding: 16px; flex: 1; display: flex; flex-direction: column; gap: 4px; }
 .card-body h3 { font-size: 1.05em; font-weight: 700; color: var(--dark-gray); }
 .card-bairro { font-size: 0.88em; color: #6c757d; display: flex; align-items: center; gap: 5px; }
+.card-distancia { font-size: 0.82em; color: var(--primary); font-weight: 700; display: flex; align-items: center; gap: 5px; }
 .btn-ver { margin-top: auto; padding-top: 12px; display: inline-block; background: var(--primary); color: #fff; padding: 9px 18px; border-radius: 6px; font-size: 0.88em; font-weight: 700; text-align: center; transition: background 0.2s; }
 .negocio-card:hover .btn-ver { background: var(--dark); }
 .info-vazio { text-align: center; color: #6c757d; padding: 60px 20px; font-size: 1.05em; }
 .info-vazio i { display: block; margin-bottom: 16px; opacity: 0.3; }
+
+/* ══ PAGINAÇÃO ══ */
+.pagination-container { display: flex; justify-content: center; align-items: center; gap: 8px; margin-top: 40px; flex-wrap: wrap; }
+.pagination-btn { padding: 10px 14px; border: 1px solid var(--medium-gray); background: var(--white); color: var(--text-color); border-radius: 8px; cursor: pointer; font-weight: 600; font-size: 0.9em; transition: all 0.2s; }
+.pagination-btn:hover { border-color: var(--primary); color: var(--primary); }
+.pagination-btn.ativo { background: var(--primary); border-color: var(--primary); color: #fff; }
+.pagination-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+.pagination-info { font-size: 0.9em; color: #6c757d; padding: 0 12px; }
+
 
 /* ══ BANNER MEIO ══ */
 .banner-meio { background: var(--light); padding: 28px 20px; text-align: center; border-top: 1px solid #ffe0b2; border-bottom: 1px solid #ffe0b2; min-height: 150px; display: flex; align-items: center; justify-content: center; }
@@ -413,21 +426,28 @@ footer a:hover { text-decoration: underline; }
 </div>
 {% endif %}
 
-<!-- ══ BAIRROS (links para páginas de bairros PRÓPRIAS) ══ -->
+<!-- ══ BAIRROS (botão com dropdown, igual ao slicer de categoria) ══ -->
 {% if not bairro and not categoria and bairros_disponiveis %}
 <section class="bairros-section">
   <div class="container">
     <h2 class="bairros-titulo">Explore por bairro</h2>
-    <div class="bairros-grid">
-      {% for b in bairros_disponiveis %}
-      <a href="/bairro/{{ b | slugify }}/" class="bairro-link">
-        <span class="bairro-link-name">{{ b }}</span>
-        <span class="bairro-link-count">
-          {% set count = negocios | selectattr('bairro', 'equalto', b) | list | length %}
-          {{ count }}
-        </span>
-      </a>
-      {% endfor %}
+    <div class="categoria-slicer">
+      <button class="slicer-toggle" onclick="toggleSlicerBairros()">
+        <span class="slicer-label"><i class="fas fa-map-marker-alt"></i> <strong>Selecione um bairro</strong></span>
+        <i class="fas fa-chevron-down slicer-chevron"></i>
+      </button>
+      <div class="slicer-backdrop" onclick="closeSlicerBairros()"></div>
+      <div class="slicer-panel" id="slicerPanelBairros">
+        {% for b in bairros_disponiveis %}
+        <a href="/cidade/{{ cidade | slugify }}/{{ b | slugify }}/" class="chip-cat">
+          {{ b }}
+          <span class="bairro-link-count">
+            {% set count = negocios | selectattr('bairro', 'equalto', b) | list | length %}
+            {{ count }}
+          </span>
+        </a>
+        {% endfor %}
+      </div>
     </div>
   </div>
 </section>
@@ -437,9 +457,23 @@ footer a:hover { text-decoration: underline; }
 <section class="section">
   <div class="container">
     {% if negocios | length > 0 %}
-    <div class="negocios-grid">
+    <div class="negocios-header-row">
+      <button type="button" id="btn-geoloc" class="btn-geoloc" onclick="ativarGeolocalizacao()">
+        <i class="fas fa-location-crosshairs"></i> <span>Perto de mim</span>
+      </button>
+      <div class="cats-view-toggle">
+        <button type="button" id="btnCarrosselNeg" class="ativo" onclick="setNegsView('carrossel')" aria-label="Ver em carrossel">
+          <i class="fas fa-arrows-left-right"></i>
+        </button>
+        <button type="button" id="btnGradeNeg" onclick="setNegsView('grade')" aria-label="Ver em grade">
+          <i class="fas fa-table-cells"></i>
+        </button>
+      </div>
+    </div>
+    <div class="negocios-grid modo-carrossel" id="negsContainer">
       {% for neg in negocios %}
-      <a href="/negocio/{{ neg.slug }}/" class="negocio-card">
+      <a href="/{{ neg.categoria_slug }}/{{ neg.slug }}/" class="negocio-card"
+         {% if neg.lat and neg.lng %}data-lat="{{ neg.lat }}" data-lng="{{ neg.lng }}"{% endif %}>
         <div class="card-foto">
           {% if neg.foto_url %}
             <img src="{{ neg.foto_url }}" alt="{{ neg.nome }}" loading="lazy">
@@ -453,11 +487,24 @@ footer a:hover { text-decoration: underline; }
         <div class="card-body">
           <h3>{{ neg.nome }}</h3>
           <p class="card-bairro"><i class="fas fa-map-marker-alt"></i> {{ neg.bairro }}</p>
+          <div class="card-distancia" style="display:none;"><i class="fas fa-location-arrow"></i> <span class="dist-valor"></span></div>
           <button class="btn-ver">Ver detalhes</button>
         </div>
       </a>
       {% endfor %}
     </div>
+
+    <!-- PAGINAÇÃO -->
+    {% set total_neg_pagina = negocios | length %}
+    {% if total_neg_pagina > 8 %}
+    <div class="pagination-container" id="paginationContainer">
+      <button class="pagination-btn" id="btnPrevPage" onclick="irParaPagina(paginaAtual - 1)" disabled>← Anterior</button>
+      <div class="pagination-info">
+        Página <span id="paginaAtualDisplay">1</span> de <span id="totalPaginasDisplay">{{ ((total_neg_pagina + 7) / 8) | int }}</span>
+      </div>
+      <button class="pagination-btn" id="btnNextPage" onclick="irParaPagina(paginaAtual + 1)">Próxima →</button>
+    </div>
+    {% endif %}
     {% else %}
     <div class="info-vazio">
       <i class="fas fa-search fa-3x"></i>
@@ -517,6 +564,156 @@ function closeMobileNav() {
       ddCidades.innerHTML = '<span class="nav-dropdown-vazio">Erro ao carregar</span>';
     });
 })();
+</script>
+
+<!-- ══ SLICER DE BAIRROS (botão "Selecione um bairro") ══ -->
+<script>
+function toggleSlicerBairros() {
+  document.querySelector('.bairros-section .slicer-toggle').classList.toggle('open');
+  document.getElementById('slicerPanelBairros').classList.toggle('open');
+  document.querySelector('.bairros-section .slicer-backdrop').classList.toggle('open');
+}
+function closeSlicerBairros() {
+  document.querySelector('.bairros-section .slicer-toggle').classList.remove('open');
+  document.getElementById('slicerPanelBairros').classList.remove('open');
+  document.querySelector('.bairros-section .slicer-backdrop').classList.remove('open');
+}
+document.addEventListener('click', function (e) {
+  if (!e.target.closest('.bairros-section .categoria-slicer')) closeSlicerBairros();
+});
+document.addEventListener('keydown', function (e) {
+  if (e.key === 'Escape') closeSlicerBairros();
+});
+</script>
+
+<!-- ══ NEGÓCIOS: carrossel/grade + paginação numerada ══ -->
+<script>
+let paginaAtual = 1;
+const ITENS_POR_PAGINA = 8;
+
+function setNegsView(modo) {
+  const container = document.getElementById('negsContainer');
+  const btnCarrossel = document.getElementById('btnCarrosselNeg');
+  const btnGrade = document.getElementById('btnGradeNeg');
+  if (!container) return;
+  if (modo === 'grade') {
+    container.classList.remove('modo-carrossel');
+    btnGrade.classList.add('ativo');
+    btnCarrossel.classList.remove('ativo');
+  } else {
+    container.classList.add('modo-carrossel');
+    btnCarrossel.classList.add('ativo');
+    btnGrade.classList.remove('ativo');
+  }
+  localStorage.setItem('negsView', modo);
+}
+
+function renderPagina(pagina) {
+  const container = document.getElementById('negsContainer');
+  if (!container) return;
+
+  const cards = Array.from(container.querySelectorAll('.negocio-card'));
+  const totalCards = cards.length;
+  const totalPaginas = Math.ceil(totalCards / ITENS_POR_PAGINA);
+  if (pagina < 1 || pagina > totalPaginas) return;
+
+  paginaAtual = pagina;
+  const inicio = (pagina - 1) * ITENS_POR_PAGINA;
+  const fim = inicio + ITENS_POR_PAGINA;
+
+  cards.forEach((card, index) => {
+    card.style.display = (index >= inicio && index < fim) ? '' : 'none';
+  });
+
+  const btnPrev = document.getElementById('btnPrevPage');
+  const btnNext = document.getElementById('btnNextPage');
+  if (btnPrev) btnPrev.disabled = pagina === 1;
+  if (btnNext) btnNext.disabled = pagina === totalPaginas;
+
+  const displayPagina = document.getElementById('paginaAtualDisplay');
+  if (displayPagina) displayPagina.textContent = pagina;
+
+  const section = document.getElementById('negsContainer');
+  if (section) section.scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
+function irParaPagina(pagina) {
+  renderPagina(pagina);
+}
+
+(function () {
+  const savedView = localStorage.getItem('negsView');
+  if (savedView === 'grade') setNegsView('grade');
+  renderPagina(1);
+})();
+</script>
+
+<!-- ══ GEOLOCALIZAÇÃO + DISTÂNCIA NOS CARDS ══ -->
+<script>
+let posicaoUsuario = null;
+
+function distanciaKm(lat1, lng1, lat2, lng2) {
+  const R = 6371;
+  const dLat = (lat2 - lat1) * Math.PI / 180;
+  const dLng = (lng2 - lng1) * Math.PI / 180;
+  const a = Math.sin(dLat / 2) ** 2 +
+            Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+            Math.sin(dLng / 2) ** 2;
+  return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+}
+
+function formatarDistancia(km) {
+  return km < 1 ? Math.round(km * 1000) + ' m' : km.toFixed(1).replace('.', ',') + ' km';
+}
+
+function atualizarDistanciasNosCards() {
+  if (!posicaoUsuario) return;
+  const cards = Array.from(document.querySelectorAll('#negsContainer .negocio-card[data-lat][data-lng]'));
+  cards.forEach(card => {
+    const lat = parseFloat(card.dataset.lat);
+    const lng = parseFloat(card.dataset.lng);
+    if (isNaN(lat) || isNaN(lng)) return;
+    const km = distanciaKm(posicaoUsuario.lat, posicaoUsuario.lng, lat, lng);
+    card.dataset.distKm = km;
+    const el = card.querySelector('.card-distancia');
+    if (el) {
+      el.querySelector('.dist-valor').textContent = formatarDistancia(km) + ' de você';
+      el.style.display = 'flex';
+    }
+  });
+  // Reordena pelos mais próximos primeiro e volta pra página 1
+  const container = document.getElementById('negsContainer');
+  if (container) {
+    cards
+      .filter(c => c.dataset.distKm !== undefined)
+      .sort((a, b) => parseFloat(a.dataset.distKm) - parseFloat(b.dataset.distKm))
+      .forEach(c => container.appendChild(c));
+  }
+  renderPagina(1);
+}
+
+function ativarGeolocalizacao() {
+  const btn = document.getElementById('btn-geoloc');
+  if (!navigator.geolocation) {
+    alert('Seu navegador não suporta geolocalização.');
+    return;
+  }
+  btn.classList.add('carregando');
+  navigator.geolocation.getCurrentPosition(
+    (pos) => {
+      posicaoUsuario = { lat: pos.coords.latitude, lng: pos.coords.longitude };
+      btn.classList.remove('carregando');
+      btn.classList.add('ativo');
+      btn.querySelector('span').textContent = 'Perto de você';
+      atualizarDistanciasNosCards();
+    },
+    (err) => {
+      btn.classList.remove('carregando');
+      alert('Não foi possível obter sua localização. Verifique as permissões do navegador.');
+    },
+    { enableHighAccuracy: true, timeout: 10000, maximumAge: 300000 }
+  );
+}
 </script>
 
 </body>
