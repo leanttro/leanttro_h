@@ -263,6 +263,33 @@ nav.mobile-nav ul li a:hover, nav.mobile-nav ul li a:active { background: rgba(0
 .chip-filtro:hover { border-color: var(--primary); color: var(--primary); }
 .chip-filtro.ativo { background: var(--primary); border-color: var(--primary); color: #fff; }
 
+.chip-cat { padding: 7px 20px; border-radius: 20px; border: 2px solid var(--medium-gray); background: var(--white); color: var(--text-color); font-family: inherit; font-size: 0.9em; font-weight: 600; cursor: pointer; transition: all 0.2s; }
+.chip-cat:hover { border-color: var(--primary); color: var(--primary); }
+.chip-cat.ativo { background: var(--primary); border-color: var(--primary); color: #fff; }
+
+.categoria-slicer { position: relative; max-width: 480px; margin: 0 auto; z-index: 20; }
+.slicer-toggle {
+    width: 100%; display: flex; align-items: center; justify-content: space-between; gap: 12px;
+    background: var(--white); border: 2px solid var(--medium-gray); border-radius: 10px;
+    padding: 13px 18px; font-family: inherit; font-size: 0.98em; font-weight: 600;
+    color: var(--text-color); cursor: pointer; transition: all 0.2s;
+}
+.slicer-toggle:hover { border-color: var(--primary); }
+.slicer-toggle.open { border-color: var(--primary); }
+.slicer-chevron { transition: transform 0.25s; color: #adb5bd; flex-shrink: 0; }
+.slicer-toggle.open .slicer-chevron { transform: rotate(180deg); color: var(--primary); }
+
+.slicer-panel {
+    display: none; flex-direction: column; gap: 3px;
+    position: absolute; top: calc(100% + 8px); left: 0; right: 0;
+    background: var(--white); border: 1px solid var(--medium-gray); border-radius: 12px;
+    box-shadow: 0 14px 38px var(--shadow-medium);
+    max-height: 340px; overflow-y: auto; z-index: 21; padding: 8px;
+}
+.slicer-panel.open { display: flex; }
+.slicer-backdrop { display: none; position: fixed; inset: 0; background: transparent; z-index: 15; }
+.slicer-backdrop.open { display: block; }
+
 /* ══ GRID DE NEGÓCIOS ══ */
 .section { padding: 56px 0; }
 .section-title { text-align: center; font-size: 1.8em; font-weight: 800; color: var(--dark-gray); margin-bottom: 32px; }
@@ -438,11 +465,18 @@ footer a:hover { text-decoration: underline; }
     {% if bairros_disponiveis %}
     <div class="filtros-grupo">
       <div class="filtros-grupo-label">Bairros</div>
-      <div class="filtros-inner">
-        <a class="chip-filtro {% if not bairro %}ativo{% endif %}" href="/cidade/{{ cidade | slugify }}/{% if categoria %}{{ categoria.slug }}/{% endif %}">Todos</a>
-        {% for b in bairros_disponiveis %}
-        <a class="chip-filtro {% if bairro == b %}ativo{% endif %}" href="/cidade/{{ cidade | slugify }}/{{ b | slugify }}/{% if categoria %}{{ categoria.slug }}/{% endif %}">{{ b }}</a>
-        {% endfor %}
+      <div class="categoria-slicer">
+        <button class="slicer-toggle" onclick="toggleSlicer()">
+          <span class="slicer-label"><i class="fas fa-filter"></i> <strong>{{ bairro if bairro else 'Selecione um bairro' }}</strong></span>
+          <i class="fas fa-chevron-down slicer-chevron"></i>
+        </button>
+        <div class="slicer-backdrop" onclick="closeSlicer()"></div>
+        <div class="slicer-panel" id="slicerPanel">
+          <a class="chip-cat {% if not bairro %}ativo{% endif %}" href="/cidade/{{ cidade | slugify }}/{% if categoria %}{{ categoria.slug }}/{% endif %}">Todos os bairros</a>
+          {% for b in bairros_disponiveis %}
+          <a class="chip-cat {% if bairro == b %}ativo{% endif %}" href="/cidade/{{ cidade | slugify }}/{{ b | slugify }}/{% if categoria %}{{ categoria.slug }}/{% endif %}">{{ b }}</a>
+          {% endfor %}
+        </div>
       </div>
     </div>
     {% endif %}
@@ -479,9 +513,9 @@ footer a:hover { text-decoration: underline; }
     <a href="/{{ n.categoria_slug }}/{{ n.slug }}/" class="negocio-card">
       <div class="card-foto">
         {% if n.foto_url %}
-        <img src="{{ n.foto_url }}" alt="{{ n.nome }}">
+        <img src="{{ n.foto_url }}" alt="{{ n.nome }}" loading="lazy" decoding="async">
         {% elif hub.logo_url %}
-        <div class="card-foto-fallback"><img src="{{ hub.logo_url }}" alt="{{ hub.nome or 'Hub' }}"></div>
+        <div class="card-foto-fallback"><img src="{{ hub.logo_url }}" alt="{{ hub.nome or 'Hub' }}" loading="lazy" decoding="async"></div>
         {% else %}
         <div class="card-foto-fallback"><i class="fas fa-store"></i></div>
         {% endif %}
@@ -490,7 +524,7 @@ footer a:hover { text-decoration: underline; }
       <div class="card-body">
         <h3>{{ n.nome }}</h3>
         {% if n.bairro %}<div class="card-bairro"><i class="fas fa-map-marker-alt"></i> {{ n.bairro }}</div>{% endif %}
-        <a href="/{{ n.categoria_slug }}/{{ n.slug }}/" class="btn-ver">Ver detalhes</a>
+        <span class="btn-ver">Ver detalhes</span>
       </div>
     </a>
     {% endfor %}
@@ -524,6 +558,34 @@ function setNegsView(modo) {
   const saved = localStorage.getItem('negsView');
   if (saved === 'grade') setNegsView('grade');
 })();
+</script>
+
+<script>
+function toggleSlicer() {
+  const toggle = document.querySelector('.slicer-toggle');
+  const panel = document.querySelector('.slicer-panel');
+  const backdrop = document.querySelector('.slicer-backdrop');
+  if (!toggle || !panel || !backdrop) return;
+  toggle.classList.toggle('open');
+  panel.classList.toggle('open');
+  backdrop.classList.toggle('open');
+}
+
+function closeSlicer() {
+  const toggle = document.querySelector('.slicer-toggle');
+  const panel = document.querySelector('.slicer-panel');
+  const backdrop = document.querySelector('.slicer-backdrop');
+  if (!toggle || !panel || !backdrop) return;
+  toggle.classList.remove('open');
+  panel.classList.remove('open');
+  backdrop.classList.remove('open');
+}
+
+document.addEventListener('click', function(e) {
+  if (!e.target.closest('.categoria-slicer')) {
+    closeSlicer();
+  }
+});
 </script>
 
 <!-- ══ BANNER MEIO ══ -->
