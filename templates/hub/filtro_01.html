@@ -221,6 +221,11 @@ nav.mobile-nav ul li a:hover, nav.mobile-nav ul li a:active { background: rgba(0
 .card-body { padding: 16px; flex: 1; display: flex; flex-direction: column; gap: 4px; }
 .card-body h3 { font-size: 1.05em; font-weight: 700; color: var(--dark-gray); }
 .card-bairro { font-size: 0.88em; color: #6c757d; display: flex; align-items: center; gap: 5px; }
+.card-distancia { font-size: 0.82em; color: var(--primary); font-weight: 700; display: flex; align-items: center; gap: 5px; }
+.btn-geoloc { display: inline-flex; align-items: center; gap: 8px; background: var(--white); border: 2px solid var(--medium-gray); color: var(--text-color); padding: 11px 18px; border-radius: 10px; font-family: inherit; font-size: 0.9em; font-weight: 600; cursor: pointer; transition: all 0.2s; white-space: nowrap; }
+.btn-geoloc:hover { border-color: var(--primary); color: var(--primary); }
+.btn-geoloc.ativo { background: var(--primary); border-color: var(--primary); color: #fff; }
+.btn-geoloc.carregando { opacity: 0.7; cursor: wait; }
 .btn-ver { margin-top: auto; padding-top: 12px; display: inline-block; background: var(--primary); color: #fff; padding: 9px 18px; border-radius: 6px; font-size: 0.88em; font-weight: 700; text-align: center; transition: background 0.2s; }
 .negocio-card:hover .btn-ver { background: var(--dark); }
 .info-vazio { text-align: center; color: #6c757d; padding: 60px 20px; font-size: 1.05em; }
@@ -379,6 +384,9 @@ footer a:hover { text-decoration: underline; }
 <section class="section container">
   {% if negocios %}
   <div class="negocios-header-row">
+    <button type="button" id="btn-geoloc" class="btn-geoloc" onclick="ativarGeolocalizacao()">
+      <i class="fas fa-location-crosshairs"></i> <span>Perto de mim</span>
+    </button>
     <div class="cats-view-toggle">
       <button type="button" id="btnCarrosselNeg" class="ativo" onclick="setNegsView('carrossel')" aria-label="Ver em carrossel">
         <i class="fas fa-arrows-left-right"></i>
@@ -390,7 +398,8 @@ footer a:hover { text-decoration: underline; }
   </div>
   <div class="negocios-grid modo-carrossel" id="negsContainer">
     {% for n in negocios %}
-    <a href="/{{ n.categoria_slug }}/{{ n.slug }}/" class="negocio-card" data-negocio='{"nome":"{{ n.nome }}","slug":"{{ n.slug }}","categoria_slug":"{{ n.categoria_slug }}","categoria_nome":"{{ n.categoria_nome }}","foto_url":"{{ n.foto_url or '' }}","bairro":"{{ n.bairro or '' }}"}'>
+    <a href="/{{ n.categoria_slug }}/{{ n.slug }}/" class="negocio-card" data-negocio='{"nome":"{{ n.nome }}","slug":"{{ n.slug }}","categoria_slug":"{{ n.categoria_slug }}","categoria_nome":"{{ n.categoria_nome }}","foto_url":"{{ n.foto_url or '' }}","bairro":"{{ n.bairro or '' }}"}'
+       {% if n.lat and n.lng %}data-lat="{{ n.lat }}" data-lng="{{ n.lng }}"{% endif %}>
       <div class="card-foto">
         {% if n.foto_url %}
         <img src="{{ n.foto_url }}" alt="{{ n.nome }}" loading="lazy" decoding="async">
@@ -404,6 +413,7 @@ footer a:hover { text-decoration: underline; }
       <div class="card-body">
         <h3>{{ n.nome }}</h3>
         {% if n.bairro %}<div class="card-bairro"><i class="fas fa-map-marker-alt"></i> {{ n.bairro }}</div>{% endif %}
+        <div class="card-distancia" style="display:none;"><i class="fas fa-location-arrow"></i> <span class="dist-valor"></span></div>
         <span class="btn-ver">Ver detalhes</span>
       </div>
     </a>
@@ -496,6 +506,74 @@ function irParaPagina(pagina) {
   // Renderizar primeira página
   renderPagina(1);
 })();
+</script>
+
+<!-- ══ GEOLOCALIZAÇÃO + DISTÂNCIA NOS CARDS ══ -->
+<script>
+let posicaoUsuario = null;
+
+function distanciaKm(lat1, lng1, lat2, lng2) {
+  const R = 6371;
+  const dLat = (lat2 - lat1) * Math.PI / 180;
+  const dLng = (lng2 - lng1) * Math.PI / 180;
+  const a = Math.sin(dLat / 2) ** 2 +
+            Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+            Math.sin(dLng / 2) ** 2;
+  return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+}
+
+function formatarDistancia(km) {
+  return km < 1 ? Math.round(km * 1000) + ' m' : km.toFixed(1).replace('.', ',') + ' km';
+}
+
+function atualizarDistanciasNosCards() {
+  if (!posicaoUsuario) return;
+  const cards = Array.from(document.querySelectorAll('#negsContainer .negocio-card[data-lat][data-lng]'));
+  cards.forEach(card => {
+    const lat = parseFloat(card.dataset.lat);
+    const lng = parseFloat(card.dataset.lng);
+    if (isNaN(lat) || isNaN(lng)) return;
+    const km = distanciaKm(posicaoUsuario.lat, posicaoUsuario.lng, lat, lng);
+    card.dataset.distKm = km;
+    const el = card.querySelector('.card-distancia');
+    if (el) {
+      el.querySelector('.dist-valor').textContent = formatarDistancia(km) + ' de você';
+      el.style.display = 'flex';
+    }
+  });
+  // Reordena pelos mais próximos primeiro e volta pra página 1
+  const container = document.getElementById('negsContainer');
+  if (container) {
+    cards
+      .filter(c => c.dataset.distKm !== undefined)
+      .sort((a, b) => parseFloat(a.dataset.distKm) - parseFloat(b.dataset.distKm))
+      .forEach(c => container.appendChild(c));
+  }
+  renderPagina(1);
+}
+
+function ativarGeolocalizacao() {
+  const btn = document.getElementById('btn-geoloc');
+  if (!navigator.geolocation) {
+    alert('Seu navegador não suporta geolocalização.');
+    return;
+  }
+  btn.classList.add('carregando');
+  navigator.geolocation.getCurrentPosition(
+    (pos) => {
+      posicaoUsuario = { lat: pos.coords.latitude, lng: pos.coords.longitude };
+      btn.classList.remove('carregando');
+      btn.classList.add('ativo');
+      btn.querySelector('span').textContent = 'Perto de você';
+      atualizarDistanciasNosCards();
+    },
+    (err) => {
+      btn.classList.remove('carregando');
+      alert('Não foi possível obter sua localização. Verifique as permissões do navegador.');
+    },
+    { enableHighAccuracy: true, timeout: 10000, maximumAge: 300000 }
+  );
+}
 </script>
 
 <!-- ══ BANNER MEIO ══ -->
