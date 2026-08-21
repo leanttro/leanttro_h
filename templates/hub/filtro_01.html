@@ -202,6 +202,14 @@ nav.mobile-nav ul li a:hover, nav.mobile-nav ul li a:active { background: rgba(0
 .cat-chip { padding: 8px 18px; border-radius: 20px; border: 1px solid var(--medium-gray); background: white; font-size: 0.82em; font-weight: 600; color: var(--text-color); transition: all 0.15s; display: inline-flex; align-items: center; gap: 6px; box-shadow: var(--shadow-light); }
 .cat-chip:hover { border-color: var(--primary); color: var(--primary); background: #fff; }
 
+/* ══ PAGINAÇÃO ══ */
+.pagination-container { display: flex; justify-content: center; align-items: center; gap: 8px; margin-top: 40px; flex-wrap: wrap; }
+.pagination-btn { padding: 10px 14px; border: 1px solid var(--medium-gray); background: var(--white); color: var(--text-color); border-radius: 8px; cursor: pointer; font-weight: 600; font-size: 0.9em; transition: all 0.2s; }
+.pagination-btn:hover { border-color: var(--primary); color: var(--primary); }
+.pagination-btn.ativo { background: var(--primary); border-color: var(--primary); color: #fff; }
+.pagination-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+.pagination-info { font-size: 0.9em; color: #6c757d; padding: 0 12px; }
+
 /* ══ FOOTER ══ */
 footer { background: #111; color: #999; text-align: center; padding: 32px 20px; font-size: 0.88em; }
 footer a { color: var(--primary); }
@@ -326,7 +334,7 @@ footer a:hover { text-decoration: underline; }
   </div>
   <div class="negocios-grid modo-carrossel" id="negsContainer">
     {% for n in negocios %}
-    <a href="/{{ n.categoria_slug }}/{{ n.slug }}/" class="negocio-card">
+    <a href="/{{ n.categoria_slug }}/{{ n.slug }}/" class="negocio-card" data-negocio='{"nome":"{{ n.nome }}","slug":"{{ n.slug }}","categoria_slug":"{{ n.categoria_slug }}","categoria_nome":"{{ n.categoria_nome }}","foto_url":"{{ n.foto_url or '' }}","bairro":"{{ n.bairro or '' }}"}'>
       <div class="card-foto">
         {% if n.foto_url %}
         <img src="{{ n.foto_url }}" alt="{{ n.nome }}" loading="lazy" decoding="async">
@@ -345,6 +353,18 @@ footer a:hover { text-decoration: underline; }
     </a>
     {% endfor %}
   </div>
+  
+  <!-- PAGINAÇÃO -->
+  {% set total = negocios | length %}
+  {% if total > 8 %}
+  <div class="pagination-container" id="paginationContainer">
+    <button class="pagination-btn" id="btnPrevPage" onclick="irParaPagina(paginaAtual - 1)" disabled>← Anterior</button>
+    <div class="pagination-info">
+      Página <span id="paginaAtualDisplay">1</span> de <span id="totalPaginasDisplay">{{ ((total + 7) / 8) | int }}</span>
+    </div>
+    <button class="pagination-btn" id="btnNextPage" onclick="irParaPagina(paginaAtual + 1)">Próxima →</button>
+  </div>
+  {% endif %}
   {% else %}
   <div class="info-vazio">
     <i class="fas fa-inbox" style="font-size: 3em; opacity: 0.3; margin-bottom: 16px; display: block;"></i>
@@ -354,6 +374,9 @@ footer a:hover { text-decoration: underline; }
 </section>
 
 <script>
+let paginaAtual = 1;
+const ITENS_POR_PAGINA = 8;
+
 function setNegsView(modo) {
   const container = document.getElementById('negsContainer');
   const btnCarrossel = document.getElementById('btnCarrosselNeg');
@@ -370,9 +393,52 @@ function setNegsView(modo) {
   }
   localStorage.setItem('negsView', modo);
 }
+
+function renderPagina(pagina) {
+  const container = document.getElementById('negsContainer');
+  if (!container) return;
+  
+  const cards = Array.from(container.querySelectorAll('.negocio-card'));
+  const totalCards = cards.length;
+  const totalPaginas = Math.ceil(totalCards / ITENS_POR_PAGINA);
+  
+  if (pagina < 1 || pagina > totalPaginas) return;
+  
+  paginaAtual = pagina;
+  const inicio = (pagina - 1) * ITENS_POR_PAGINA;
+  const fim = inicio + ITENS_POR_PAGINA;
+  
+  // Mostrar/esconder cards
+  cards.forEach((card, index) => {
+    card.style.display = (index >= inicio && index < fim) ? '' : 'none';
+  });
+  
+  // Atualizar botões
+  const btnPrev = document.getElementById('btnPrevPage');
+  const btnNext = document.getElementById('btnNextPage');
+  if (btnPrev) btnPrev.disabled = pagina === 1;
+  if (btnNext) btnNext.disabled = pagina === totalPaginas;
+  
+  // Atualizar display
+  const displayPagina = document.getElementById('paginaAtualDisplay');
+  if (displayPagina) displayPagina.textContent = pagina;
+  
+  // Scroll suave
+  const section = document.querySelector('.section');
+  if (section) section.scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
+function irParaPagina(pagina) {
+  renderPagina(pagina);
+}
+
+// Inicializar
 (function() {
-  const saved = localStorage.getItem('negsView');
-  if (saved === 'grade') setNegsView('grade');
+  const savedView = localStorage.getItem('negsView');
+  if (savedView === 'grade') setNegsView('grade');
+  
+  // Renderizar primeira página
+  renderPagina(1);
 })();
 </script>
 
