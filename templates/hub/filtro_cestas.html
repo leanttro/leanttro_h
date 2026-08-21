@@ -47,6 +47,63 @@
     <meta name="twitter:description" content="{{ seo_desc }}">
     <meta name="twitter:image"       content="{{ hub.banner_fundo_url or 'https://res.cloudinary.com/desvazant/image/upload/v1782959580/Cesta_de_Presentes_7_xaav6t.png' }}">
 
+    {# ══ FAQPage: perguntas geradas a partir das variáveis já existentes no
+         template (filtro_tipo, filtro_valor, total_negocios,
+         bairros_disponiveis, categorias, hub.nome). Montado como lista
+         Python + |tojson pra garantir JSON válido sem escaping manual. ══ #}
+    {% set faq_items = [] %}
+    {% if filtro_tipo == 'categoria' %}
+      {% set _ = faq_items.append({
+        "@type": "Question",
+        "name": "Quantos negócios de " ~ (filtro_valor | capitalize) ~ " tem no " ~ (hub.nome or 'Cesta de Presentes') ~ "?",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": total_negocios ~ " opções de " ~ filtro_valor ~ " estão cadastradas atualmente."
+        }
+      }) %}
+      {% set _ = faq_items.append({
+        "@type": "Question",
+        "name": "Como encontrar " ~ filtro_valor ~ " perto de mim?",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": "Use o filtro de bairro ou o botão \"Mais próximo\" para ver as opções de " ~ filtro_valor ~ " mais próximas da sua localização, entre os " ~ (bairros_disponiveis | length) ~ " bairro(s) disponíveis."
+        }
+      }) %}
+      {% set _ = faq_items.append({
+        "@type": "Question",
+        "name": "É gratuito buscar " ~ filtro_valor ~ " no " ~ (hub.nome or 'Cesta de Presentes') ~ "?",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": "Sim, a busca por " ~ filtro_valor ~ " no " ~ (hub.nome or 'Cesta de Presentes') ~ " é totalmente gratuita."
+        }
+      }) %}
+    {% else %}
+      {% set _ = faq_items.append({
+        "@type": "Question",
+        "name": "Quantos negócios tem no bairro " ~ (filtro_valor | capitalize) ~ "?",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": total_negocios ~ " negócio(s) estão cadastrados no bairro " ~ (filtro_valor | capitalize) ~ " no momento."
+        }
+      }) %}
+      {% set _ = faq_items.append({
+        "@type": "Question",
+        "name": "Quais categorias de negócio tem no bairro " ~ (filtro_valor | capitalize) ~ "?",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": (categorias | length | string) ~ " categoria(s) de negócio estão cadastradas no bairro " ~ (filtro_valor | capitalize) ~ ". Use o filtro de categoria para ver cada uma."
+        }
+      }) %}
+      {% set _ = faq_items.append({
+        "@type": "Question",
+        "name": "É gratuito buscar negócios no bairro " ~ (filtro_valor | capitalize) ~ "?",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": "Sim, a busca no bairro " ~ (filtro_valor | capitalize) ~ " é totalmente gratuita no " ~ (hub.nome or 'Cesta de Presentes') ~ "."
+        }
+      }) %}
+    {% endif %}
+
     <script type="application/ld+json">
     {
       "@context": "https://schema.org",
@@ -65,6 +122,10 @@
           "name": "{{ seo_title }}",
           "description": "{{ seo_desc }}",
           "inLanguage": "pt-BR"
+        },
+        {
+          "@type": "FAQPage",
+          "mainEntity": {{ faq_items | tojson }}
         }
       ]
     }
@@ -352,9 +413,9 @@
         <h1><em>{{ filtro_valor | capitalize }}</em></h1>
         <p class="hero-sub">
             {% if filtro_tipo == 'categoria' %}
-            Encontre os melhores negócios de {{ filtro_valor }} perto de você.
+            {{ total_negocios }} negócios de {{ filtro_valor }} — encontre os melhores perto de você.
             {% else %}
-            Todos os estabelecimentos do bairro {{ filtro_valor | capitalize }}.
+            {{ total_negocios }} estabelecimentos no bairro {{ filtro_valor | capitalize }}.
             {% endif %}
         </p>
         <div class="hero-stats">
