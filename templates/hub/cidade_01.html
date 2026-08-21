@@ -82,57 +82,49 @@ nav.desktop-nav ul li a {
     border-bottom: 3px solid transparent; transition: border-color 0.2s, background 0.2s;
 }
 nav.desktop-nav ul li a:hover { border-bottom-color: #fff; background: rgba(0,0,0,0.08); }
+nav.desktop-nav ul li a:focus, nav.desktop-nav ul li a:focus-visible { outline: none; }
 
-.slicer-toggle-nav {
-    background: transparent;
-    border: none;
-    color: #fff;
-    padding: 12px 20px;
-    font-weight: 600;
-    font-size: 0.95em;
-    font-family: inherit;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 8px;
-    cursor: pointer;
-    transition: background 0.2s;
-}
-.slicer-toggle-nav:hover { background: rgba(0,0,0,0.08); }
-
-.slicer-panel-nav {
+/* Dropdown de "Categoria" e "Cidades" no menu: abre por hover (CSS puro),
+   sem depender de JS/estado — evita o bug de abrir o painel errado e a
+   caixa de foco preta que o <button> nativo deixava. */
+.nav-dropdown {
     display: none;
     position: absolute;
-    top: calc(100% + 8px);
+    top: 100%;
     left: 50%;
     transform: translateX(-50%);
     min-width: 220px;
     background: var(--white);
-    border: 1px solid var(--medium-gray);
     border-radius: 12px;
     box-shadow: 0 14px 38px var(--shadow-medium);
     max-height: 400px;
     overflow-y: auto;
     z-index: 100;
-    flex-direction: column;
+    padding: 8px 0;
 }
-.slicer-panel-nav.open {
-    display: flex;
-}
-.slicer-panel-nav a {
-    padding: 12px 20px;
-    color: var(--text-color);
-    font-weight: 500;
-    transition: background 0.2s, color 0.2s;
-    border-bottom: 1px solid var(--light-gray);
+nav.desktop-nav ul li:hover .nav-dropdown,
+nav.desktop-nav ul li.dropdown-aberto .nav-dropdown {
     display: block;
 }
-.slicer-panel-nav a:last-child {
-    border-bottom: none;
+.nav-dropdown a {
+    padding: 10px 20px;
+    color: var(--text-color) !important;
+    font-weight: 500;
+    font-size: 0.92em;
+    transition: background 0.15s, color 0.15s;
+    border-bottom: none !important;
+    background: none !important;
+    display: block;
+    white-space: nowrap;
 }
-.slicer-panel-nav a:hover {
-    background: var(--light);
-    color: var(--primary);
+.nav-dropdown a:hover {
+    background: var(--light) !important;
+    color: var(--primary) !important;
+}
+.nav-dropdown-vazio {
+    padding: 10px 20px;
+    color: var(--medium-gray);
+    font-size: 0.88em;
 }
 
 nav.mobile-nav { display: none; width: 100%; }
@@ -296,25 +288,20 @@ footer a:hover { text-decoration: underline; }
   <nav class="desktop-nav">
     <ul>
       <li><a href="/">Início</a></li>
-      <li style="position: relative;">
-        <button class="slicer-toggle-nav" onclick="toggleCategoriaNav(event)">
-          Categoria <span class="slicer-chevron">▼</span>
-        </button>
-        <div class="slicer-panel-nav" id="panel-categorias-nav">
+      <li>
+        <a href="#categorias">Categoria ▾</a>
+        <div class="nav-dropdown">
           {% for cat in categorias_disponiveis %}
           <a href="/{{ cat.slug }}/">{{ cat.nome }}</a>
+          {% else %}
+          <span class="nav-dropdown-vazio">Nenhuma categoria</span>
           {% endfor %}
         </div>
       </li>
-      <li style="position: relative;">
-        <button class="slicer-toggle-nav" onclick="toggleCidadesNav(event)">
-          Cidades <span class="slicer-chevron">▼</span>
-        </button>
-        <div class="slicer-panel-nav" id="panel-cidades-nav">
-          {% set todas_cidades = negocios | map(attribute='cidade') | unique | list | sort %}
-          {% for c in todas_cidades %}
-          <a href="/cidade/{{ c | slugify }}/">{{ c }}</a>
-          {% endfor %}
+      <li>
+        <a href="#cidades">Cidades ▾</a>
+        <div class="nav-dropdown" id="nav-dropdown-cidades">
+          <span class="nav-dropdown-vazio">Carregando...</span>
         </div>
       </li>
       <li><a href="/blog/">Blog</a></li>
@@ -497,6 +484,39 @@ function toggleMobileNav() {
 function closeMobileNav() {
   document.getElementById('mobileNav').classList.remove('open');
 }
+
+// Popula o dropdown "Cidades" do menu com a lista COMPLETA de cidades do
+// hub (via API) — nesta página os negócios já vêm filtrados pra 1 cidade
+// só, então não dava pra montar essa lista a partir deles.
+(function () {
+  var ddCidades = document.getElementById('nav-dropdown-cidades');
+  if (!ddCidades) return;
+
+  function _slugCidade(nome) {
+    return (nome || '')
+      .toLowerCase()
+      .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+      .replace(/\s+/g, '-')
+      .replace(/[^a-z0-9-]/g, '');
+  }
+
+  fetch('/api/hub/cidades')
+    .then(function (r) { return r.json(); })
+    .then(function (lista) {
+      if (!Array.isArray(lista) || lista.length === 0) {
+        ddCidades.innerHTML = '<span class="nav-dropdown-vazio">Nenhuma cidade</span>';
+        return;
+      }
+      ddCidades.innerHTML = lista.map(function (c) {
+        var nome = c.cidade || c.nome || '';
+        var slug = _slugCidade(nome);
+        return '<a href="/cidade/' + slug + '/">' + nome + '</a>';
+      }).join('');
+    })
+    .catch(function () {
+      ddCidades.innerHTML = '<span class="nav-dropdown-vazio">Erro ao carregar</span>';
+    });
+})();
 </script>
 
 </body>
