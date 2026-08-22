@@ -7,7 +7,6 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
 {# ══ Dynamic SEO ══ #}
-{% set total_cats = categorias | length if categorias else 0 %}
 {% set seo_title = hub.titulo or ((hub.nome or 'Adult BMI Calculator') ~ " — Free BMI Calculator & Gym Directory") %}
 {% set seo_desc = hub.descricao or ("Calculate your Body Mass Index instantly with the WHO standard, browse BMI classification tables by country, and find " ~ (total_negocios if total_negocios is not none else (negocios|length if negocios else 0)) ~ " gyms near you.") %}
 
@@ -93,11 +92,11 @@ button{font-family:inherit}
 
 /* ══ HEADER ══ */
 header{background:rgba(255,255,255,.85);backdrop-filter:saturate(180%) blur(20px);border-bottom:1px solid rgba(0,0,0,.08);position:sticky;top:0;z-index:200}
-.header-inner{max-width:1200px;margin:0 auto;padding:0 24px;display:flex;align-items:center;justify-content:space-between;height:68px;gap:16px}
-.logo-hub{display:flex;align-items:center;gap:9px;font-weight:700;font-size:1rem;color:var(--text)}
-.logo-hub img{height:42px;width:auto}
-.logo-mark{width:32px;height:32px;background:var(--primary);border-radius:8px;display:flex;align-items:center;justify-content:center;color:#fff;font-size:.8rem;font-weight:800;flex-shrink:0}
-nav.desktop-nav ul{list-style:none;display:flex;align-items:center;gap:4px}
+.header-inner{max-width:1200px;margin:0 auto;padding:22px 24px 16px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px}
+.logo-hub{display:flex;flex-direction:column;align-items:center;gap:8px;font-weight:700;font-size:1.15rem;color:var(--text);text-align:center}
+.logo-hub img{height:76px;width:auto}
+.logo-mark{width:64px;height:64px;background:var(--primary);border-radius:14px;display:flex;align-items:center;justify-content:center;color:#fff;font-size:1.3rem;font-weight:800;flex-shrink:0}
+nav.desktop-nav ul{list-style:none;display:flex;align-items:center;justify-content:center;gap:4px;flex-wrap:wrap}
 nav.desktop-nav ul li a{color:var(--text-soft);font-weight:600;font-size:.88rem;padding:10px 14px;border-radius:8px;transition:all .15s;white-space:nowrap}
 nav.desktop-nav ul li a:hover{background:var(--bg2);color:var(--text)}
 nav.desktop-nav ul li.dropdown{position:relative}
@@ -105,7 +104,7 @@ nav.desktop-nav ul li.dropdown{position:relative}
 nav.desktop-nav ul li.dropdown:hover .nav-dropdown{display:block}
 .nav-dropdown a{display:block;padding:9px 14px;border-radius:6px;color:var(--text)!important;font-weight:500;font-size:.85rem;white-space:nowrap}
 .nav-dropdown a:hover{background:var(--bg2)}
-.hamburger{display:none;background:none;border:none;cursor:pointer;padding:6px;color:var(--text)}
+.hamburger{display:none;background:none;border:none;cursor:pointer;padding:6px;color:var(--text);position:absolute;top:22px;right:20px}
 .hamburger svg{width:22px;height:22px;stroke:currentColor;fill:none;stroke-width:2}
 .mobile-nav-overlay{display:none;position:fixed;inset:0;background:rgba(255,255,255,.98);backdrop-filter:blur(20px);z-index:300;flex-direction:column;align-items:center;justify-content:center;gap:6px}
 .mobile-nav-overlay.active{display:flex}
@@ -117,7 +116,7 @@ nav.desktop-nav ul li.dropdown:hover .nav-dropdown{display:block}
 .ad-slot img{max-height:90px;margin:0 auto;border-radius:8px}
 
 /* ══ HERO + CALCULATOR ══ */
-.hero{background:linear-gradient(180deg,var(--bg2),var(--bg));padding:56px 0 64px;text-align:center}
+.hero{background:linear-gradient(180deg,rgba(245,245,247,.92),rgba(255,255,255,.96)),var(--hero-bg,none) center/cover no-repeat,linear-gradient(180deg,var(--bg2),var(--bg));padding:56px 0 64px;text-align:center}
 .hero h1{font-size:clamp(1.9rem,4.5vw,3rem);font-weight:800;letter-spacing:-.03em;margin-bottom:12px;color:var(--text)}
 .hero h1 span{color:var(--primary)}
 .hero p.sub{color:var(--text-soft);font-size:1.08rem;max-width:600px;margin:0 auto 40px}
@@ -157,13 +156,6 @@ nav.desktop-nav ul li.dropdown:hover .nav-dropdown{display:block}
 .who-table tr:last-child td{border-bottom:none}
 .who-dot{display:inline-block;width:10px;height:10px;border-radius:50%;margin-right:8px}
 
-/* Category grid */
-.cats-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:16px}
-.cat-card{background:var(--surface);border:1px solid var(--border-light);border-radius:var(--radius);padding:22px 16px;text-align:center;transition:all .2s}
-.cat-card:hover{border-color:var(--primary);transform:translateY(-3px);box-shadow:var(--shadow-md)}
-.cat-card i{font-size:1.6rem;color:var(--primary);margin-bottom:10px}
-.cat-card h3{font-size:.95rem;font-weight:700}
-
 /* Gym grid */
 .gym-controls{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-bottom:24px}
 .gym-search{flex:1;min-width:220px;position:relative}
@@ -177,7 +169,6 @@ nav.desktop-nav ul li.dropdown:hover .nav-dropdown{display:block}
 .gym-photo-fallback{width:100%;height:150px;display:flex;align-items:center;justify-content:center;background:var(--bg2)}
 .gym-photo-fallback i{font-size:2rem;color:var(--primary);opacity:.4}
 .gym-body{padding:16px;flex:1;display:flex;flex-direction:column;gap:4px}
-.gym-cat{font-size:.7rem;font-weight:700;color:var(--primary);text-transform:uppercase;letter-spacing:.4px}
 .gym-name{font-size:1.02rem;font-weight:700}
 .gym-loc{font-size:.83rem;color:var(--text-soft);display:flex;align-items:center;gap:5px}
 .gym-btn{margin-top:auto;padding-top:10px;font-size:.85rem;font-weight:700;color:var(--primary)}
@@ -200,8 +191,12 @@ footer{background:#111;color:#999;text-align:center;padding:36px 20px;font-size:
 footer a{color:var(--primary)}
 
 @media(max-width:768px){
+  .header-inner{flex-direction:row;align-items:center;justify-content:flex-start;padding:14px 56px 14px 20px}
+  .logo-hub{flex-direction:row;align-items:center;text-align:left;gap:9px;font-size:1rem}
+  .logo-hub img{height:42px}
+  .logo-mark{width:34px;height:34px;font-size:.85rem;border-radius:8px}
   nav.desktop-nav{display:none}
-  .hamburger{display:block}
+  .hamburger{display:block;top:50%;transform:translateY(-50%)}
   .calc-fields{grid-template-columns:1fr}
   .calc-card{padding:22px}
   .stat{padding:0 18px}
@@ -224,16 +219,6 @@ footer a{color:var(--primary)}
       <ul>
         <li><a href="/">BMI Calculator</a></li>
         <li class="dropdown">
-          <a href="#categories">Gym Categories ▾</a>
-          <div class="nav-dropdown">
-            {% for cat in categorias %}
-            <a href="/{{ cat.slug }}/">{{ cat.nome }}</a>
-            {% else %}
-            <span style="padding:9px 14px;color:var(--muted);font-size:.85rem">No categories yet</span>
-            {% endfor %}
-          </div>
-        </li>
-        <li class="dropdown">
           <a href="#countries">Countries ▾</a>
           <div class="nav-dropdown">
             {% for country in countries_launched %}
@@ -252,7 +237,6 @@ footer a{color:var(--primary)}
 <div class="mobile-nav-overlay" id="mobileNav">
   <button class="mobile-nav-close" id="navClose">✕</button>
   <a href="/">BMI Calculator</a>
-  <a href="#categories">Gym Categories</a>
   <a href="#countries">Countries</a>
   <a href="/blog/">Recipes &amp; Blog</a>
 </div>
@@ -266,7 +250,7 @@ footer a{color:var(--primary)}
 {% endif %}
 
 <!-- ══ HERO + CALCULATOR ══ -->
-<section class="hero">
+<section class="hero"{% if hub.imagem_fundo %} style="--hero-bg:url('{{ hub.imagem_fundo }}')"{% endif %}>
   <div class="container">
     <h1>{{ hub.nome or 'Adult' }} <span>BMI Calculator</span></h1>
     <p class="sub">Calculate your Body Mass Index in seconds using the WHO standard, understand what your number means, and find a gym to help you reach your goals.</p>
@@ -323,11 +307,6 @@ footer a{color:var(--primary)}
         <div class="stat-num">{{ total_negocios if total_negocios is not none else (negocios|length if negocios else 0) }}</div>
         <div class="stat-label">Gyms Listed</div>
       </div>
-      <div class="stat-divider"></div>
-      <div class="stat">
-        <div class="stat-num">{{ total_cats }}</div>
-        <div class="stat-label">Categories</div>
-      </div>
       {% if total_cidades %}
       <div class="stat-divider"></div>
       <div class="stat">
@@ -362,27 +341,6 @@ footer a{color:var(--primary)}
 </div>
 {% endif %}
 
-<!-- ══ CATEGORIES ══ -->
-<section class="section container" id="categories">
-  <h2 class="section-title">Browse Gyms by Category</h2>
-  <p class="section-sub">Find the right type of training for your goals.</p>
-  {% if categorias %}
-  <div class="cats-grid">
-    {% for cat in categorias %}
-    {% set total = negocios | selectattr('categoria_slug', 'equalto', cat.slug) | list | length %}
-    {% if total > 0 %}
-    <a href="/{{ cat.slug }}/" class="cat-card">
-      <i class="fas fa-dumbbell"></i>
-      <h3>{{ cat.nome }}</h3>
-    </a>
-    {% endif %}
-    {% endfor %}
-  </div>
-  {% else %}
-  <div class="empty-state">No categories available yet.</div>
-  {% endif %}
-</section>
-
 <!-- ══ GYM DIRECTORY ══ -->
 <section class="section container">
   <h2 class="section-title">Gyms Near You</h2>
@@ -398,14 +356,13 @@ footer a{color:var(--primary)}
   {% if negocios %}
   <div class="gym-grid" id="gymGrid">
     {% for n in negocios %}
-    <a href="/{{ n.categoria_slug }}/{{ n.slug }}/" class="gym-card" data-name="{{ n.nome | lower }}">
+    <a href="/{{ n.slug }}/" class="gym-card" data-name="{{ n.nome | lower }}">
       {% if n.foto_url %}
       <img src="{{ n.foto_url }}" alt="{{ n.nome }}" class="gym-photo" loading="lazy">
       {% else %}
       <div class="gym-photo-fallback"><i class="fas fa-dumbbell"></i></div>
       {% endif %}
       <div class="gym-body">
-        <span class="gym-cat">{{ n.categoria_nome }}</span>
         <span class="gym-name">{{ n.nome }}</span>
         {% if n.bairro or n.cidade %}
         <span class="gym-loc"><i class="fas fa-location-dot"></i> {{ n.bairro }}{% if n.bairro and n.cidade %}, {% endif %}{{ n.cidade }}</span>
