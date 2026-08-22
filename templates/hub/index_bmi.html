@@ -240,7 +240,47 @@ footer{background:var(--bg2);border-top:1px solid var(--border-light);padding:32
   .progress-inputs{grid-template-columns:1fr}
   #timelineDisplay{grid-template-columns:repeat(auto-fill,minmax(150px,1fr))}
 }
-</style>
+</style><script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "FAQPage",
+  "mainEntity": [
+    {
+      "@type": "Question",
+      "name": "What is BMI and how is it calculated?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "BMI (Body Mass Index) is a measure of body fat based on height and weight. It is calculated by dividing your weight in kilograms by the square of your height in meters (kg/m²). The WHO standard categorizes BMI as: Underweight (under 18.5), Normal Weight (18.5-24.9), Overweight (25-29.9), and Obese (30+)."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "Is BMI an accurate health indicator?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "BMI is a useful screening tool, but not a medical diagnosis. It doesn't directly measure body fat and may be less accurate for muscular people, pregnant women, older adults, and some populations. Always consult a qualified healthcare professional for personalized health advice."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "How can I use the BMI calculator?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Simply enter your weight and height using either metric (kg/cm) or imperial (lb/ft-in) units. Click 'Calculate BMI' to instantly get your BMI value and category. You can also track your progress over time to monitor your fitness journey."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "What does each BMI category mean?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Underweight (BMI under 18.5) indicates weight below the healthy range. Normal Weight (18.5-24.9) is considered a healthy weight range. Overweight (25-29.9) suggests weight above the healthy range. Obese (30+) indicates significant excess weight. Your doctor can help determine what's healthy for you."
+      }
+    }
+  ]
+}
+</script>
+
 </head>
 <body>
 
@@ -846,7 +886,6 @@ function googleTranslateElementInit() {
   new google.translate.TranslateElement({pageLanguage: 'en'}, 'google_translate_element');
 }
 </script>
-
 <script type="text/javascript" src="https://translate.google.com/translate_a/element.js?cb=googleTranslateElementInit"></script>
 
 </body>
