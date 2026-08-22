@@ -239,6 +239,34 @@ footer{background:var(--bg2);border-top:1px solid var(--border);padding:24px;tex
     <div class="td-list" id="td-list"></div>
 </div>
 
+<!-- ── Preencher dropdown de países ── -->
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+  const countriesDropdown = document.getElementById('countriesDropdown');
+  
+  // Fallback com países padrão do BMI
+  const defaultCountries = [
+    { slug: 'australia', nome: 'Australia' },
+    { slug: 'united-states', nome: 'United States' },
+    { slug: 'united-kingdom', nome: 'United Kingdom' }
+  ];
+  
+  {% if countries_launched %}
+  const countries = [
+    {% for country in countries_launched %}
+    { slug: '{{ country.slug }}', nome: '{{ country.nome }}' }{{ "," if not loop.last else "" }}
+    {% endfor %}
+  ];
+  {% else %}
+  const countries = defaultCountries;
+  {% endif %}
+  
+  countriesDropdown.innerHTML = countries.map(c => 
+    `<a href="/country/${c.slug}/">${c.nome}</a>`
+  ).join('');
+});
+</script>
+
 <div id="google_translate_element"></div>
 
 <style>
