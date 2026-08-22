@@ -86,6 +86,19 @@ body{font-family:var(--sans);background:var(--bg);color:var(--text);line-height:
 a{text-decoration:none;color:inherit}
 img{max-width:100%;display:block}
 
+/* ══ AUTO LISTING WARNING BAR ══ */
+.auto-listing-bar{background:linear-gradient(135deg,#dc2626 0%,#b91c1c 100%);padding:18px 24px;display:flex;align-items:center;justify-content:space-between;gap:20px;flex-wrap:wrap;box-shadow:0 4px 12px rgba(220,38,38,.15);width:100%;position:relative;z-index:150}
+.auto-listing-bar-content{display:flex;align-items:center;gap:14px;flex:1;min-width:0}
+.auto-listing-bar-icon{color:#fff;font-size:1.4rem;flex-shrink:0}
+.auto-listing-bar-text{color:#fff;font-size:.95rem;font-weight:500;line-height:1.4;flex:1}
+.auto-listing-bar-text strong{font-weight:700;display:block;margin-bottom:2px}
+.auto-listing-bar-text a{color:#fff;text-decoration:underline;font-weight:700;transition:opacity .2s}
+.auto-listing-bar-text a:hover{opacity:.9}
+.auto-listing-bar-action{display:flex;gap:10px;flex-shrink:0}
+.btn-remove-listing{background:#22c55e;color:#fff;padding:10px 20px;border-radius:8px;font-weight:700;font-size:.9rem;border:none;cursor:pointer;white-space:nowrap;transition:all .2s;display:inline-flex;align-items:center;gap:8px;text-decoration:none}
+.btn-remove-listing:hover{background:#16a34a;transform:translateY(-2px);box-shadow:0 4px 12px rgba(34,197,94,.3)}
+@media(max-width:640px){.auto-listing-bar{flex-direction:column;padding:16px 18px;gap:14px}.auto-listing-bar-content{width:100%}.auto-listing-bar-action{width:100%}.btn-remove-listing{width:100%;justify-content:center}.auto-listing-bar-text{font-size:.9rem}}
+
 /* ══ HEADER ══ */
 header{background:rgba(255,255,255,.85);backdrop-filter:saturate(180%) blur(20px);border-bottom:1px solid rgba(0,0,0,.08);z-index:200}
 .header-inner{max-width:1200px;margin:0 auto;padding:22px 24px 16px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px}
@@ -160,6 +173,8 @@ footer a{color:var(--primary)}
 </style>
 </head>
 <body>
+
+<div class="auto-listing-bar"><div class="auto-listing-bar-content"><div class="auto-listing-bar-icon"><i class="fas fa-exclamation-triangle"></i></div><div class="auto-listing-bar-text"><strong>Automatic Business Listing</strong>This listing was automatically generated from Google data — we are not affiliated with this business. <a href="https://wa.me/5511913324827?text=Hi%20-%20I%20would%20like%20to%20remove%20this%20listing%20from%20the%20directory">Request removal via WhatsApp</a></div></div><a href="https://wa.me/5511913324827?text=Hi%20-%20I%20would%20like%20to%20remove%20this%20listing%20from%20the%20directory" class="btn-remove-listing"><i class="fab fa-whatsapp"></i> Request Removal</a></div>
 
 <header>
   <div class="header-inner">
