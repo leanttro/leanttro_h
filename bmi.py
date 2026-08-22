@@ -226,3 +226,45 @@ def pagina_country_cidade(pais_slug, cidade_slug):
         anuncio_topo=anuncio_topo,
         anuncio_meio=anuncio_meio,
     )
+
+
+@bmi_bp.route("/sitemap-bmi.xml")
+def sitemap_bmi():
+    from flask import Response
+    from datetime import datetime, timezone
+    
+    hub = get_hub_by_host()
+    if not hub:
+        return Response('<?xml version="1.0" encoding="UTF-8"?><urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"></urlset>', mimetype="application/xml")
+
+    base_url = f"https://{request.host}"
+    hoje = datetime.now(timezone.utc).strftime("%Y-%m-%d")
+
+    urls = []
+    
+    # Adiciona todos os países
+    for pais_slug, pais_info in COUNTRIES.items():
+        urls.append(f"  <url>\n    <loc>{base_url}/country/{pais_slug}/</loc>\n    <lastmod>{hoje}</lastmod>\n    <changefreq>weekly</changefreq>\n    <priority>0.8</priority>\n  </url>\n")
+        
+        # Adiciona todas as cidades de cada país
+        rows = query("""
+            SELECT DISTINCT n.bairro FROM hub_negocios n
+            JOIN hub_negocio_hubs nh ON nh.negocio_id = n.id
+            WHERE nh.hub_id = %s AND n.ativo = true AND n.cidade = (
+                SELECT n2.cidade FROM hub_negocios n2
+                JOIN hub_negocio_hubs nh2 ON nh2.negocio_id = n2.id
+                WHERE nh2.hub_id = %s AND n2.ativo = true
+                LIMIT 1
+            )
+        """, (hub["id"], hub["id"]))
+        
+        for row in rows:
+            if row["bairro"]:
+                cidade_slug = row["bairro"].lower().replace(" ", "-")
+                urls.append(f"  <url>\n    <loc>{base_url}/country/{pais_slug}/{cidade_slug}/</loc>\n    <lastmod>{hoje}</lastmod>\n    <changefreq>weekly</changefreq>\n    <priority>0.7</priority>\n  </url>\n")
+
+    xml = '<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n'
+    xml += "".join(urls)
+    xml += '</urlset>'
+
+    return Response(xml, mimetype="application/xml")
