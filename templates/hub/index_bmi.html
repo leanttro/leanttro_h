@@ -445,7 +445,7 @@ footer{background:var(--bg2);border-top:1px solid var(--border-light);padding:32
   {% if negocios %}
   <div class="gym-grid" id="gymGrid">
     {% for n in negocios %}
-    <a href="/{{ n.slug }}/" class="gym-card" data-name="{{ n.nome | lower }}">
+    <a href="/{{ n.categoria_slug or 'gym' }}/{{ n.slug }}/" class="gym-card" data-name="{{ n.nome | lower }}">
       {% if n.foto_url %}
       <img src="{{ n.foto_url }}" alt="{{ n.nome }}" class="gym-photo" loading="lazy">
       {% else %}
