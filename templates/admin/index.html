@@ -969,7 +969,7 @@ tbody td {
           <table>
             <thead><tr>
               <th style="width:36px;"><input type="checkbox" id="selectAllNegocios" onchange="toggleSelectAllNegocios(this.checked)" title="Selecionar todos visíveis"></th>
-              <th>Nome</th><th>Slug</th><th>Categoria</th><th>Bairro</th><th>Visualizações</th><th>Status</th><th>Ações</th>
+              <th>Nome</th><th>Slug</th><th>Categoria</th><th>Bairro</th><th id="thVisualizacoes" style="cursor:pointer; user-select:none;" onclick="toggleSortNegociosVisualizacoes()" title="Clique para ordenar por visualizações">Visualizações <span id="sortVisIcon">↕</span></th><th>Status</th><th>Ações</th>
             </tr></thead>
             <tbody id="negociosBody"><tr><td colspan="8"><div class="loading"><div class="spinner"></div>Carregando...</div></td></tr></tbody>
           </table>
@@ -1570,9 +1570,27 @@ function renderNegociosPaginacao() {
   if (nextBtn) nextBtn.disabled = offset + limit >= total;
 }
 
+function toggleSortNegociosVisualizacoes() {
+  // Alterna: sem ordenação -> maior p/ menor -> menor p/ maior -> sem ordenação
+  const atual = state.negocios.sortVis || null;
+  const proximo = atual === 'desc' ? 'asc' : (atual === 'asc' ? null : 'desc');
+  state.negocios.sortVis = proximo;
+  const icon = document.getElementById('sortVisIcon');
+  if (icon) icon.textContent = proximo === 'desc' ? '↓' : (proximo === 'asc' ? '↑' : '↕');
+  renderNegocios(state.data.negocios);
+}
+
 function renderNegocios(data) {
   const tbody = document.getElementById('negociosBody');
   if (!data || !data.length) { tbody.innerHTML = emptyRow(8); return; }
+  const sortVis = state.negocios.sortVis;
+  if (sortVis) {
+    data = data.slice().sort((a, b) => {
+      const va = Number(a.visualizacoes) || 0;
+      const vb = Number(b.visualizacoes) || 0;
+      return sortVis === 'desc' ? vb - va : va - vb;
+    });
+  }
   tbody.innerHTML = data.map(n => `
     <tr data-id="${n.id}">
       <td><input type="checkbox" class="negocio-cb" value="${n.id}" onchange="updateNegociosBulk()"></td>
