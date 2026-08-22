@@ -269,8 +269,11 @@ footer{background:var(--bg2);border-top:1px solid var(--border-light);padding:32
   nav.desktop-nav ul li.dropdown{position:static}
   .nav-dropdown{left:50%;right:auto;transform:translateX(-50%);width:calc(100vw - 32px);max-width:280px}
 
+  /* section headings: centered on mobile, matching the hero title */
+  .section-title,.section-sub{text-align:center}
+
   /* gym controls: more breathing room + keep the Countries panel fully on screen */
-  .gym-controls{gap:10px;row-gap:12px;position:relative}
+  .gym-controls{gap:10px;row-gap:18px;margin-bottom:28px;position:relative}
   .countries-toggle{position:static}
   .countries-panel{left:50%;right:auto;transform:translateX(-50%);width:calc(100vw - 48px);max-width:300px}
 }
