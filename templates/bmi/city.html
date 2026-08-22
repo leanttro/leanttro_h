@@ -283,7 +283,7 @@ footer a{color:var(--primary)}
     {% if negocios %}
     <div class="gym-grid">
       {% for n in negocios %}
-      <a href="/{{ n.slug }}/" class="gym-card">
+      <a href="/{{ n.categoria_slug or 'gym' }}/{{ n.slug }}/" class="gym-card">
         {% if n.foto_url %}
         <img src="{{ n.foto_url }}" alt="{{ n.nome }}" class="gym-photo" loading="lazy">
         {% else %}
