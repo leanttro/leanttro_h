@@ -410,6 +410,23 @@ function calculateBMI(){
     <div class="td-list" id="td-list"></div>
 </div>
 
+<!-- ── Preencher dropdown de países ── -->
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+  const countriesDropdown = document.getElementById('countriesDropdown');
+  {% if countries_launched %}
+  const countries = [
+    {% for country in countries_launched %}
+    { slug: '{{ country.slug }}', nome: '{{ country.nome }}' }{{ "," if not loop.last else "" }}
+    {% endfor %}
+  ];
+  countriesDropdown.innerHTML = countries.map(c => 
+    `<a href="/country/${c.slug}/">${c.nome}</a>`
+  ).join('');
+  {% endif %}
+});
+</script>
+
 <div id="google_translate_element"></div>
 
 <style>
