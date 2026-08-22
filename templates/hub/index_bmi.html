@@ -118,7 +118,7 @@ nav.desktop-nav ul li.dropdown:hover .nav-dropdown{display:block}
 .ad-slot img{max-height:90px;margin:0 auto;border-radius:8px}
 
 /* ══ HERO + CALCULATOR ══ */
-.hero{background:linear-gradient(180deg,rgba(245,245,247,.92),rgba(255,255,255,.96)),var(--hero-bg,none) center/cover no-repeat,linear-gradient(180deg,var(--bg2),var(--bg));padding:56px 0 64px;text-align:center}
+.hero{background:linear-gradient(180deg,rgba(245,245,247,.92),rgba(255,255,255,.96)),linear-gradient(180deg,var(--bg2),var(--bg));padding:56px 0 64px;text-align:center}
 .hero h1{font-size:clamp(1.9rem,4.5vw,3rem);font-weight:800;letter-spacing:-.03em;margin-bottom:12px;color:var(--text)}
 .hero h1 span{color:var(--primary)}
 .hero p.sub{color:var(--text-soft);font-size:1.08rem;max-width:600px;margin:0 auto 40px}
@@ -664,6 +664,25 @@ renderTimeline();
 <script async src="https://www.googletagmanager.com/gtag/js?id={{ hub.ga4_id }}"></script>
 <script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag('js',new Date());gtag('config','{{ hub.ga4_id }}');</script>
 {% endif %}
+
+<!-- ── Preencher dropdown de países ── -->
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+  const countriesDropdown = document.getElementById('countriesDropdown');
+  {% if countries_launched %}
+  const countries = [
+    {% for country in countries_launched %}
+    { slug: '{{ country.slug }}', nome: '{{ country.nome }}' }{{ "," if not loop.last else "" }}
+    {% endfor %}
+  ];
+  countriesDropdown.innerHTML = countries.map(c => 
+    `<a href="/country/${c.slug}/">${c.nome}</a>`
+  ).join('');
+  {% else %}
+  countriesDropdown.innerHTML = '<div style="padding:12px;text-align:center;color:#999;font-size:0.85rem">Coming soon</div>';
+  {% endif %}
+});
+</script>
 
 <!-- ── Botão flutuante de tradução ── -->
 <button id="translate-btn" onclick="toggleTranslateDrawer()">
