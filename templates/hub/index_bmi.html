@@ -306,6 +306,29 @@ footer{background:var(--bg2);border-top:1px solid var(--border-light);padding:32
         <div class="result-cat" id="resultCat">—</div>
       </div>
 
+      <!-- Disclaimer Box -->
+      <div style="background:linear-gradient(135deg, #f0f9ff, #e0f2fe);border:1px solid #bae6fd;border-radius:var(--radius-lg);padding:18px;margin-top:24px;margin-bottom:20px">
+        <div style="display:flex;gap:12px;align-items:flex-start">
+          <i class="fas fa-info-circle" style="color:#0284c7;font-size:1.4rem;margin-top:1px;flex-shrink:0"></i>
+          <div style="font-size:.9rem;color:#0c4a6e;line-height:1.7">
+            <strong style="display:block;margin-bottom:8px">ℹ️ About BMI</strong>
+            BMI is a screening tool, <strong>not a medical diagnosis</strong>. It doesn't directly measure body fat and may be less accurate for muscular people, pregnant people, older adults, and some populations. If you have concerns about your health or weight, <strong>talk to a qualified health professional</strong> for personalized guidance. This tool is here to help you track and understand — not to replace professional advice! 💬
+          </div>
+        </div>
+      </div>
+
+      <!-- Security & Data Notice -->
+      <div style="background:#e3f2fd;border-left:4px solid #0071e3;border-radius:var(--radius);padding:16px;margin-top:28px;margin-bottom:20px">
+        <div style="display:flex;gap:12px;align-items:flex-start">
+          <i class="fas fa-lock" style="color:#0071e3;font-size:1.2rem;margin-top:2px;flex-shrink:0"></i>
+          <div style="font-size:.9rem;color:#1565c0;line-height:1.6">
+            <strong>🔒 Your data is safe & private</strong><br>
+            All entries are saved <strong>only on your device</strong> (localStorage). We never store or have access to your data. Your privacy is guaranteed. ✓<br><br>
+            ⚠️ <strong>Important:</strong> If you clear your browser data or reinstall, your entries will be lost. <strong>Download your progress regularly</strong> to keep a backup!
+          </div>
+        </div>
+      </div>
+
       <!-- Progress Tracker -->
       <div class="progress-section">
         <div class="progress-title">📸 Track Your Progress</div>
@@ -337,6 +360,9 @@ footer{background:var(--bg2);border-top:1px solid var(--border-light);padding:32
             <button class="btn-timeline share" onclick="shareTimeline('instagram')">📱 Instagram</button>
             <button class="btn-timeline share" onclick="shareTimeline('facebook')">👥 Facebook</button>
           </div>
+        </div>
+        <div style="background:#fff3cd;border-left:4px solid #ffc107;border-radius:var(--radius);padding:12px 14px;margin-bottom:16px;font-size:.85rem;color:#856404">
+          <i class="fas fa-exclamation-triangle"></i> <strong>Backup reminder:</strong> Download your progress as PNG or PDF to keep a safe copy. These files are stored only on your device.
         </div>
         <div id="timelineDisplay">
           <div class="timeline-empty"><i class="fas fa-calendar-check"></i><p>No entries yet. Start tracking!</p></div>
@@ -638,6 +664,169 @@ renderTimeline();
 <script async src="https://www.googletagmanager.com/gtag/js?id={{ hub.ga4_id }}"></script>
 <script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag('js',new Date());gtag('config','{{ hub.ga4_id }}');</script>
 {% endif %}
+
+<!-- ── Botão flutuante de tradução ── -->
+<button id="translate-btn" onclick="toggleTranslateDrawer()">
+    <i class="fas fa-globe"></i> Translate
+</button>
+
+<!-- ── Drawer de idiomas ── -->
+<div id="translate-drawer">
+    <div class="td-header">
+        <input class="td-search" id="td-search" type="text" placeholder="Search language…" oninput="filterLangs(this.value)">
+        <button class="td-close" onclick="toggleTranslateDrawer()">✕</button>
+    </div>
+    <div class="td-list" id="td-list"></div>
+</div>
+
+<div id="google_translate_element"></div>
+
+<style>
+    #google_translate_element { position: absolute; visibility: hidden; pointer-events: none; }
+    .goog-te-banner-frame, .skiptranslate { display: none !important; }
+    body { top: 0 !important; }
+
+    #translate-btn {
+        position: fixed; bottom: 20px; right: 20px; z-index: 999;
+        background: var(--surface); border: 1px solid var(--border);
+        border-radius: 50px; padding: 12px 18px;
+        display: flex; align-items: center; gap: 8px;
+        font-family: var(--sans); font-size: 0.9rem; font-weight: 600;
+        color: var(--text); cursor: pointer;
+        box-shadow: var(--shadow-lg);
+        transition: all .2s;
+    }
+    #translate-btn:hover {
+        box-shadow: var(--shadow-lg);
+        transform: translateY(-2px);
+        border-color: var(--primary);
+        color: var(--primary);
+    }
+    #translate-btn i { width: 16px; height: 16px; }
+
+    #translate-drawer {
+        position: fixed; bottom: 75px; right: 20px; z-index: 1000;
+        background: var(--surface); border-radius: var(--radius-lg);
+        box-shadow: var(--shadow-lg);
+        width: 260px; max-height: 380px;
+        display: none; flex-direction: column;
+        border: 1px solid var(--border-light);
+        overflow: hidden;
+    }
+    #translate-drawer.open { display: flex; }
+    .td-header {
+        padding: 12px 14px; border-bottom: 1px solid var(--border-light);
+        display: flex; align-items: center; gap: 8px;
+    }
+    .td-search {
+        flex: 1; border: 1.5px solid var(--border);
+        border-radius: 8px; padding: 8px 10px;
+        font-family: var(--sans); font-size: 0.85rem;
+        outline: none; transition: border-color .2s;
+        color: var(--text);
+    }
+    .td-search:focus { border-color: var(--primary); }
+    .td-close {
+        background: none; border: none; color: var(--muted);
+        font-size: 18px; cursor: pointer; line-height: 1; padding: 2px 4px;
+    }
+    .td-close:hover { color: var(--text); }
+    .td-list { overflow-y: auto; flex: 1; padding: 6px 0; }
+    .td-item {
+        padding: 10px 14px; font-size: 0.9rem; cursor: pointer;
+        color: var(--text); transition: background .1s;
+        display: flex; align-items: center; gap: 10px;
+    }
+    .td-item:hover { background: var(--bg2); }
+    .td-item.active { color: var(--primary); font-weight: 700; background: var(--bg2); }
+    .td-item .flag { font-size: 16px; flex-shrink: 0; }
+    .td-empty { padding: 20px; text-align: center; color: var(--muted); font-size: 0.85rem; }
+
+    @media(max-width: 640px) {
+        #translate-drawer { width: calc(100vw - 40px); right: 20px; }
+        #translate-btn { bottom: 16px; right: 16px; }
+    }
+</style>
+
+<script>
+const LANGS = [
+    {code:'en',name:'English',flag:'🇬🇧'},{code:'pt',name:'Português',flag:'🇧🇷'},
+    {code:'es',name:'Spanish',flag:'🇪🇸'},{code:'fr',name:'French',flag:'🇫🇷'},
+    {code:'de',name:'German',flag:'🇩🇪'},{code:'it',name:'Italian',flag:'🇮🇹'},
+    {code:'ja',name:'Japanese',flag:'🇯🇵'},{code:'zh-CN',name:'Chinese',flag:'🇨🇳'},
+    {code:'ko',name:'Korean',flag:'🇰🇷'},{code:'ru',name:'Russian',flag:'🇷🇺'},
+    {code:'ar',name:'Arabic',flag:'🇸🇦'},{code:'hi',name:'Hindi',flag:'🇮🇳'},
+    {code:'vi',name:'Vietnamese',flag:'🇻🇳'},{code:'th',name:'Thai',flag:'🇹🇭'},
+    {code:'pl',name:'Polish',flag:'🇵🇱'},{code:'tr',name:'Turkish',flag:'🇹🇷'},
+    {code:'nl',name:'Dutch',flag:'🇳🇱'},{code:'sv',name:'Swedish',flag:'🇸🇪'},
+];
+
+let currentLang = 'en';
+let drawerOpen = false;
+
+function renderLangs(list) {
+    const el = document.getElementById('td-list');
+    if (!list.length) {
+        el.innerHTML = '<div class="td-empty">No languages found</div>';
+        return;
+    }
+    el.innerHTML = list.map(l =>
+        '<div class="td-item ' + (l.code === currentLang ? 'active' : '') + '" onclick="selectLang(\'' + l.code + '\',\'' + l.name + '\')"><span class="flag">' + l.flag + '</span> ' + l.name + '</div>'
+    ).join('');
+}
+
+function filterLangs(q) {
+    const filtered = LANGS.filter(function(l){ return l.name.toLowerCase().includes(q.toLowerCase()); });
+    renderLangs(filtered);
+}
+
+function toggleTranslateDrawer() {
+    drawerOpen = !drawerOpen;
+    document.getElementById('translate-drawer').classList.toggle('open');
+    if (drawerOpen) {
+        renderLangs(LANGS);
+        setTimeout(() => document.getElementById('td-search').focus(), 100);
+    }
+}
+
+function selectLang(code, name) {
+    currentLang = code;
+    drawerOpen = false;
+    document.getElementById('translate-drawer').classList.remove('open');
+
+    var lang = LANGS.find(function(l){ return l.code === code; });
+    document.getElementById('translate-btn').innerHTML =
+        '<i class="fas fa-globe"></i> ' + (lang ? lang.flag + ' ' + name : name);
+
+    if (code === 'en') {
+        document.getElementById('translate-btn').innerHTML = '<i class="fas fa-globe"></i> Translate';
+        var hostname = window.location.hostname;
+        document.cookie = 'googtrans=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;';
+        document.cookie = 'googtrans=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/; domain=' + hostname;
+        location.reload();
+        return;
+    }
+
+    var tryTranslate = function(attempts) {
+        var sel = document.querySelector('.goog-te-combo');
+        if (sel) {
+            sel.value = code;
+            sel.dispatchEvent(new Event('change'));
+        } else if (attempts > 0) {
+            setTimeout(() => tryTranslate(attempts - 1), 100);
+        }
+    };
+    tryTranslate(10);
+}
+
+renderLangs(LANGS);
+</script>
+
+<script type="text/javascript" src="//translate.google.com/translate_a/element.js?cb=googleTranslateElementInit"></script>
+<script type="text/javascript">
+function googleTranslateElementInit() {
+  new google.translate.TranslateElement({pageLanguage: 'en'}, 'google_translate_element');
+}
 
 </body>
 </html>
