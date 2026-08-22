@@ -433,6 +433,93 @@ function calculateBMI(){
   catEl.style.background = cat.color;
   document.getElementById('resultBox').classList.add('show');
 }
+
+/* ── Cities dropdown ── */
+function toggleCitiesPanel(event){
+  event.stopPropagation();
+  document.getElementById('citiesPanel').classList.toggle('open');
+}
+document.addEventListener('click', function(e){
+  const panel = document.getElementById('citiesPanel');
+  const toggle = document.querySelector('.cities-toggle-btn');
+  if (!panel) return;
+  if (panel.classList.contains('open') && !panel.contains(e.target) && e.target !== toggle && !toggle.contains(e.target)) {
+    panel.classList.remove('open');
+  }
+});
+
+/* ── Carousel / Grid toggle ── */
+function setGymsView(mode){
+  const grid = document.getElementById('gymGrid');
+  if (!grid) return;
+  grid.classList.toggle('carousel-mode', mode === 'carousel');
+  document.getElementById('btnCarouselView').classList.toggle('active', mode === 'carousel');
+  document.getElementById('btnGridView').classList.toggle('active', mode === 'grid');
+}
+
+/* ── Near me (geolocation) ── */
+function haversineKm(lat1, lng1, lat2, lng2){
+  const R = 6371;
+  const dLat = (lat2 - lat1) * Math.PI / 180;
+  const dLng = (lng2 - lng1) * Math.PI / 180;
+  const a = Math.sin(dLat/2)**2 +
+            Math.cos(lat1 * Math.PI/180) * Math.cos(lat2 * Math.PI/180) *
+            Math.sin(dLng/2)**2;
+  return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+}
+
+function ativarGeolocalizacao(){
+  const btn = document.getElementById('btnGeoloc');
+  if (!navigator.geolocation){
+    alert('Geolocation is not supported by your browser.');
+    return;
+  }
+
+  btn.classList.add('loading');
+
+  navigator.geolocation.getCurrentPosition(function(pos){
+    btn.classList.remove('loading');
+    btn.classList.add('active');
+
+    const userLat = pos.coords.latitude;
+    const userLng = pos.coords.longitude;
+
+    const cards = Array.from(document.querySelectorAll('#gymGrid .gym-card'));
+    const withDist = [];
+
+    cards.forEach(function(card){
+      const lat = parseFloat(card.dataset.lat);
+      const lng = parseFloat(card.dataset.lng);
+      const distEl = card.querySelector('.gym-distance');
+      const distValueEl = card.querySelector('.dist-value');
+
+      if (!isNaN(lat) && !isNaN(lng)){
+        const distKm = haversineKm(userLat, userLng, lat, lng);
+        card.dataset.distKm = distKm;
+        if (distEl && distValueEl){
+          distValueEl.textContent = distKm < 1
+            ? Math.round(distKm * 1000) + ' m'
+            : distKm.toFixed(1) + ' km';
+          distEl.style.display = 'flex';
+        }
+        withDist.push({ card, distKm });
+      } else {
+        withDist.push({ card, distKm: Infinity });
+      }
+    });
+
+    withDist.sort(function(a, b){ return a.distKm - b.distKm; });
+
+    const grid = document.getElementById('gymGrid');
+    withDist.forEach(function(item){ grid.appendChild(item.card); });
+
+  }, function(err){
+    btn.classList.remove('loading');
+    let msg = 'Could not get your location.';
+    if (err.code === err.PERMISSION_DENIED) msg = 'Location access was denied. Please allow location access and try again.';
+    alert(msg);
+  }, { enableHighAccuracy: true, timeout: 10000 });
+}
 </script>
 
 {% if hub.ga4_id %}
