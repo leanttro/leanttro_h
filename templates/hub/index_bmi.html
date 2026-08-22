@@ -215,7 +215,28 @@ nav.desktop-nav ul li.dropdown:hover .nav-dropdown{display:block}
 .gym-search i{position:absolute;left:14px;color:var(--muted);font-size:.9rem;z-index:1}
 .gym-search input{width:100%;padding:12px 14px 12px 38px;border:1px solid var(--border);border-radius:10px;font-size:.95rem;font-family:inherit;outline:none}
 .gym-search input:focus{border-color:var(--primary)}
+.gym-controls{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:20px}
+.gym-search{flex:1 1 240px}
+.gym-view-toggle{display:flex;gap:4px;background:var(--bg2);padding:4px;border-radius:10px;flex-shrink:0}
+.gym-view-toggle button{border:none;background:transparent;width:36px;height:32px;border-radius:7px;display:flex;align-items:center;justify-content:center;cursor:pointer;color:var(--text-soft);font-size:13px;transition:background .2s,color .2s}
+.gym-view-toggle button.active{background:var(--primary);color:#fff}
+.btn-geoloc{display:inline-flex;align-items:center;gap:8px;background:var(--surface);border:1px solid var(--border-light);color:var(--text);padding:9px 16px;border-radius:10px;font-family:inherit;font-size:.85rem;font-weight:600;cursor:pointer;transition:all .2s;white-space:nowrap;flex-shrink:0}
+.btn-geoloc:hover{border-color:var(--primary);color:var(--primary)}
+.btn-geoloc.active{background:var(--primary);border-color:var(--primary);color:#fff}
+.btn-geoloc.loading{opacity:.7;cursor:wait}
+.countries-toggle{position:relative;flex-shrink:0}
+.countries-toggle-btn{display:inline-flex;align-items:center;gap:8px;background:var(--surface);border:1px solid var(--border-light);color:var(--text);padding:9px 16px;border-radius:10px;font-family:inherit;font-size:.85rem;font-weight:600;cursor:pointer;white-space:nowrap}
+.countries-toggle-btn:hover{border-color:var(--primary);color:var(--primary)}
+.countries-panel{display:none;position:absolute;top:calc(100% + 8px);right:0;min-width:220px;background:#fff;border:1px solid var(--border-light);border-radius:var(--radius);box-shadow:var(--shadow-lg);max-height:320px;overflow-y:auto;z-index:50;padding:6px}
+.countries-panel.open{display:block}
+.countries-panel a{display:block;padding:9px 12px;border-radius:6px;color:var(--text);font-weight:500;font-size:.85rem}
+.countries-panel a:hover{background:var(--bg2)}
 .gym-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:18px}
+.gym-grid.carousel-mode{display:flex;grid-template-columns:none;overflow-x:auto;scroll-snap-type:x mandatory;gap:16px;padding-bottom:10px;-webkit-overflow-scrolling:touch;scrollbar-width:thin}
+.gym-grid.carousel-mode .gym-card{flex:0 0 240px;scroll-snap-align:start}
+.gym-grid.carousel-mode::-webkit-scrollbar{height:6px}
+.gym-grid.carousel-mode::-webkit-scrollbar-thumb{background:var(--primary);border-radius:10px}
+.gym-distance{font-size:.78rem;color:var(--primary);font-weight:700;display:flex;align-items:center;gap:5px}
 .gym-card{display:flex;flex-direction:column;background:var(--surface);border:1px solid var(--border-light);border-radius:var(--radius);overflow:hidden;transition:all .2s;text-decoration:none;color:inherit}
 .gym-card:hover{transform:translateY(-4px);box-shadow:var(--shadow-md);border-color:var(--primary)}
 .gym-photo{width:100%;height:160px;object-fit:cover;background:var(--bg2)}
@@ -440,12 +461,32 @@ footer{background:var(--bg2);border-top:1px solid var(--border-light);padding:32
       <i class="fas fa-search"></i>
       <input type="text" id="gymSearchInput" placeholder="Search gyms by name..." oninput="filterGyms()">
     </div>
+    <button type="button" id="btnGeoloc" class="btn-geoloc" onclick="ativarGeolocalizacao()">
+      <i class="fas fa-location-crosshairs"></i> <span>Near me</span>
+    </button>
+    {% if countries_launched %}
+    <div class="countries-toggle">
+      <button type="button" class="countries-toggle-btn" onclick="toggleCountriesPanel(event)">
+        <i class="fas fa-flag"></i> Countries <i class="fas fa-chevron-down" style="font-size:.7rem"></i>
+      </button>
+      <div class="countries-panel" id="countriesPanel">
+        {% for country in countries_launched %}
+        <a href="/country/{{ country.slug }}/">{{ country.nome }}</a>
+        {% endfor %}
+      </div>
+    </div>
+    {% endif %}
+    <div class="gym-view-toggle" id="gymViewToggle">
+      <button type="button" id="btnCarouselView" class="active" onclick="setGymsView('carousel')" aria-label="Carousel view"><i class="fas fa-arrows-left-right"></i></button>
+      <button type="button" id="btnGridView" onclick="setGymsView('grid')" aria-label="Grid view"><i class="fas fa-table-cells"></i></button>
+    </div>
   </div>
 
   {% if negocios %}
-  <div class="gym-grid" id="gymGrid">
+  <div class="gym-grid carousel-mode" id="gymGrid">
     {% for n in negocios %}
-    <a href="/{{ n.categoria_slug or 'gym' }}/{{ n.slug }}/" class="gym-card" data-name="{{ n.nome | lower }}">
+    <a href="/{{ n.categoria_slug or 'gym' }}/{{ n.slug }}/" class="gym-card" data-name="{{ n.nome | lower }}"
+       {% if n.lat and n.lng %}data-lat="{{ n.lat }}" data-lng="{{ n.lng }}"{% endif %}>
       {% if n.foto_url %}
       <img src="{{ n.foto_url }}" alt="{{ n.nome }}" class="gym-photo" loading="lazy">
       {% else %}
@@ -456,6 +497,7 @@ footer{background:var(--bg2);border-top:1px solid var(--border-light);padding:32
         {% if n.bairro or n.cidade %}
         <span class="gym-loc"><i class="fas fa-location-dot"></i> {{ n.bairro }}{% if n.bairro and n.cidade %}, {% endif %}{{ n.cidade }}</span>
         {% endif %}
+        <span class="gym-distance" style="display:none"><i class="fas fa-location-arrow"></i> <span class="dist-value"></span></span>
         <span class="gym-btn">View details →</span>
       </div>
     </a>
@@ -550,6 +592,104 @@ function filterGyms(){
   });
   const empty = document.getElementById('gymEmptyState');
   if (empty) empty.style.display = visible === 0 ? 'block' : 'none';
+}
+
+/* ══ CAROUSEL / GRID VIEW TOGGLE ══ */
+function setGymsView(mode){
+  const container = document.getElementById('gymGrid');
+  const btnCarousel = document.getElementById('btnCarouselView');
+  const btnGrid = document.getElementById('btnGridView');
+  if (!container) return;
+  if (mode === 'grid'){
+    container.classList.remove('carousel-mode');
+    btnGrid.classList.add('active');
+    btnCarousel.classList.remove('active');
+  } else {
+    container.classList.add('carousel-mode');
+    btnCarousel.classList.add('active');
+    btnGrid.classList.remove('active');
+  }
+  localStorage.setItem('gymsView', mode);
+}
+(function(){
+  const saved = localStorage.getItem('gymsView');
+  if (saved === 'grid') setGymsView('grid');
+})();
+
+/* ══ COUNTRIES PANEL ══ */
+function toggleCountriesPanel(e){
+  e.stopPropagation();
+  document.getElementById('countriesPanel').classList.toggle('open');
+}
+document.addEventListener('click', function(e){
+  const panel = document.getElementById('countriesPanel');
+  if (panel && panel.classList.contains('open') && !e.target.closest('.countries-toggle')){
+    panel.classList.remove('open');
+  }
+});
+
+/* ══ GEOLOCATION + DISTANCE ══ */
+let userPosition = null;
+
+function distanceKm(lat1, lng1, lat2, lng2){
+  const R = 6371;
+  const dLat = (lat2 - lat1) * Math.PI / 180;
+  const dLng = (lng2 - lng1) * Math.PI / 180;
+  const a = Math.sin(dLat / 2) ** 2 +
+            Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+            Math.sin(dLng / 2) ** 2;
+  return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+}
+
+function formatDistance(km){
+  return km < 1 ? Math.round(km * 1000) + ' m' : km.toFixed(1) + ' km';
+}
+
+function updateCardDistances(){
+  if (!userPosition) return;
+  const cards = Array.from(document.querySelectorAll('#gymGrid .gym-card[data-lat][data-lng]'));
+  cards.forEach(card => {
+    const lat = parseFloat(card.dataset.lat);
+    const lng = parseFloat(card.dataset.lng);
+    if (isNaN(lat) || isNaN(lng)) return;
+    const km = distanceKm(userPosition.lat, userPosition.lng, lat, lng);
+    card.dataset.distKm = km;
+    const el = card.querySelector('.gym-distance');
+    if (el){
+      el.querySelector('.dist-value').textContent = formatDistance(km) + ' away';
+      el.style.display = 'flex';
+    }
+  });
+  const container = document.getElementById('gymGrid');
+  if (container){
+    cards
+      .filter(c => c.dataset.distKm !== undefined)
+      .sort((a, b) => parseFloat(a.dataset.distKm) - parseFloat(b.dataset.distKm))
+      .forEach(c => container.appendChild(c));
+  }
+}
+
+function ativarGeolocalizacao(){
+  const btn = document.getElementById('btnGeoloc');
+  if (!navigator.geolocation){
+    alert('Your browser does not support geolocation.');
+    return;
+  }
+  btn.classList.add('loading');
+  navigator.geolocation.getCurrentPosition(
+    (pos) => {
+      userPosition = { lat: pos.coords.latitude, lng: pos.coords.longitude };
+      btn.classList.remove('loading');
+      btn.classList.add('active');
+      btn.querySelector('span').textContent = 'Near you';
+      updateCardDistances();
+    },
+    () => {
+      btn.classList.remove('loading');
+      alert('Could not get your location. Please check your browser permissions.');
+    },
+    { enableHighAccuracy: true, timeout: 10000, maximumAge: 300000 }
+  );
 }
 
 /* ══ PROGRESS TRACKING ══ */
