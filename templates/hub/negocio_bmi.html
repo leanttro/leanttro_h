@@ -12,11 +12,11 @@
 <meta name="keywords" content="{{ negocio.nome }}, gym{% if negocio.bairro %}, {{ negocio.bairro }}{% endif %}{% if negocio.cidade %}, {{ negocio.cidade }}{% endif %}, gym near me, BMI calculator">
 <meta name="robots" content="index, follow, max-image-preview:large, max-snippet:-1">
 <meta name="theme-color" content="{{ hub.cor_primaria or '#0071e3' }}">
-<link rel="canonical" href="https://{{ request.host }}/{{ negocio.slug }}/">
+<link rel="canonical" href="https://{{ request.host }}/{{ negocio.categoria_slug or 'gym' }}/{{ negocio.slug }}/">
 {% if hub.logo_url %}<link rel="icon" type="image/png" href="{{ hub.logo_url }}">{% endif %}
 
 <meta property="og:type" content="business.business">
-<meta property="og:url" content="https://{{ request.host }}/{{ negocio.slug }}/">
+<meta property="og:url" content="https://{{ request.host }}/{{ negocio.categoria_slug or 'gym' }}/{{ negocio.slug }}/">
 <meta property="og:title" content="{{ negocio.nome }} — {{ hub.nome or 'Adult BMI Calculator' }}">
 <meta property="og:description" content="{{ seo_desc }}">
 {% if negocio.foto_url and negocio.mostrar_foto %}<meta property="og:image" content="{{ negocio.foto_url }}">{% endif %}
@@ -26,9 +26,9 @@
 {
   "@context": "https://schema.org",
   "@type": "ExerciseGym",
-  "@id": "https://{{ request.host }}/{{ negocio.slug }}/",
+  "@id": "https://{{ request.host }}/{{ negocio.categoria_slug or 'gym' }}/{{ negocio.slug }}/",
   "name": {{ negocio.nome | tojson }},
-  "url": "https://{{ request.host }}/{{ negocio.slug }}/",
+  "url": "https://{{ request.host }}/{{ negocio.categoria_slug or 'gym' }}/{{ negocio.slug }}/",
   {% if negocio.descricao %}"description": {{ negocio.descricao | tojson }},{% endif %}
   {% if negocio.foto_url and negocio.mostrar_foto %}"image": [{{ negocio.foto_url | tojson }}],{% endif %}
   {% if negocio.endereco and negocio.mostrar_endereco %}
@@ -50,7 +50,7 @@
   "@type": "BreadcrumbList",
   "itemListElement": [
     {"@type":"ListItem","position":1,"name":"Home","item":"https://{{ request.host }}/"},
-    {"@type":"ListItem","position":2,"name":"{{ negocio.nome }}","item":"https://{{ request.host }}/{{ negocio.slug }}/"}
+    {"@type":"ListItem","position":2,"name":"{{ negocio.nome }}","item":"https://{{ request.host }}/{{ negocio.categoria_slug or 'gym' }}/{{ negocio.slug }}/"}
   ]
 }
 </script>
