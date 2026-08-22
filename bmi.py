@@ -24,7 +24,8 @@
 #  igual qualquer outro hub).
 # ════════════════════════════════════════════════════════════
 
-from flask import Blueprint, render_template
+from flask import Blueprint, render_template, Response, request
+from datetime import datetime, timezone
 
 # Import "tardio" de propósito: como este arquivo só é importado no
 # FIM do app.py (depois dessas funções já estarem definidas), isso
@@ -39,6 +40,33 @@ from app import (
 )
 
 bmi_bp = Blueprint("bmi", __name__)
+
+
+# ── Cidades principais (dados estáticos do Brasil) ─────────────────────────
+# Lista de capitais e principais cidades do Brasil com coordenadas.
+# Usado como fallback e para pré-popular a estrutura de navegação.
+BRASIL_CIDADES = [
+    {"nome": "São Paulo", "slug": "sao-paulo", "latitude": -23.5505, "longitude": -46.6333},
+    {"nome": "Rio de Janeiro", "slug": "rio-de-janeiro", "latitude": -22.9068, "longitude": -43.1729},
+    {"nome": "Belo Horizonte", "slug": "belo-horizonte", "latitude": -19.9191, "longitude": -43.9386},
+    {"nome": "Brasília", "slug": "brasilia", "latitude": -15.8267, "longitude": -47.8711},
+    {"nome": "Salvador", "slug": "salvador", "latitude": -12.9714, "longitude": -38.5014},
+    {"nome": "Fortaleza", "slug": "fortaleza", "latitude": -3.7319, "longitude": -38.5267},
+    {"nome": "Manaus", "slug": "manaus", "latitude": -3.1190, "longitude": -60.0217},
+    {"nome": "Curitiba", "slug": "curitiba", "latitude": -25.4284, "longitude": -49.2733},
+    {"nome": "Recife", "slug": "recife", "latitude": -8.0476, "longitude": -34.8770},
+    {"nome": "Porto Alegre", "slug": "porto-alegre", "latitude": -30.0346, "longitude": -51.2177},
+    {"nome": "Goiânia", "slug": "goiania", "latitude": -15.7939, "longitude": -48.0852},
+    {"nome": "Belém", "slug": "belem", "latitude": -1.4554, "longitude": -48.4694},
+    {"nome": "Maceió", "slug": "maceio", "latitude": -9.6498, "longitude": -35.7348},
+    {"nome": "Natal", "slug": "natal", "latitude": -5.7945, "longitude": -35.2110},
+    {"nome": "Aracaju", "slug": "aracaju", "latitude": -10.9111, "longitude": -37.0744},
+    {"nome": "Teresina", "slug": "teresina", "latitude": -5.0892, "longitude": -42.8021},
+    {"nome": "São Luís", "slug": "sao-luis", "latitude": -2.5244, "longitude": -44.3015},
+    {"nome": "João Pessoa", "slug": "joao-pessoa", "latitude": -7.1219, "longitude": -34.8450},
+    {"nome": "Palmas", "slug": "palmas", "latitude": -10.2105, "longitude": -48.3281},
+    {"nome": "Boa Vista", "slug": "boa-vista", "latitude": 2.8235, "longitude": -60.6758},
+]
 
 
 # ── Tabelas de classificação por padrão ─────────────────────────
@@ -88,6 +116,7 @@ STANDARDS = {
 # de propósito: evita página de país "fantasma" sem copy/SEO revisado).
 COUNTRIES = {
     "australia": {"nome": "Australia", "standard": "who"},
+    "brazil": {"nome": "Brazil", "standard": "who"},
     "united-states": {"nome": "United States", "standard": "us_cdc"},
     "united-kingdom": {"nome": "United Kingdom", "standard": "uk_nhs"},
 }
@@ -112,7 +141,8 @@ def _injetar_countries_lancados():
         "countries_launched": [
             {"slug": slug, "nome": info["nome"]}
             for slug, info in COUNTRIES.items()
-        ]
+        ],
+        "brasil_cidades": BRASIL_CIDADES,  # Disponibiliza cidades do Brasil nos templates
     }
 
 
@@ -230,39 +260,58 @@ def pagina_country_cidade(pais_slug, cidade_slug):
 
 @bmi_bp.route("/sitemap-bmi.xml")
 def sitemap_bmi():
-    from flask import Response
-    from datetime import datetime, timezone
-    
+    """Gera sitemap dinâmico para todas as páginas de país e cidade do BMI.
+    Convenção: hub_negocios.cidade = país, hub_negocios.bairro = cidade real.
+    """
     hub = get_hub_by_host()
     if not hub:
-        return Response('<?xml version="1.0" encoding="UTF-8"?><urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"></urlset>', mimetype="application/xml")
+        return Response(
+            '<?xml version="1.0" encoding="UTF-8"?><urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"></urlset>',
+            mimetype="application/xml"
+        )
 
     base_url = f"https://{request.host}"
     hoje = datetime.now(timezone.utc).strftime("%Y-%m-%d")
 
     urls = []
     
-    # Adiciona todos os países
+    # Itera sobre cada país definido em COUNTRIES
     for pais_slug, pais_info in COUNTRIES.items():
-        urls.append(f"  <url>\n    <loc>{base_url}/country/{pais_slug}/</loc>\n    <lastmod>{hoje}</lastmod>\n    <changefreq>weekly</changefreq>\n    <priority>0.8</priority>\n  </url>\n")
+        # Adiciona página do país
+        urls.append(
+            f'  <url>\n'
+            f'    <loc>{base_url}/country/{pais_slug}/</loc>\n'
+            f'    <lastmod>{hoje}</lastmod>\n'
+            f'    <changefreq>weekly</changefreq>\n'
+            f'    <priority>0.8</priority>\n'
+            f'  </url>\n'
+        )
         
-        # Adiciona todas as cidades de cada país
+        # Busca todas as cidades (bairros no banco) deste país
         rows = query("""
-            SELECT DISTINCT n.bairro FROM hub_negocios n
+            SELECT DISTINCT n.bairro
+            FROM hub_negocios n
             JOIN hub_negocio_hubs nh ON nh.negocio_id = n.id
-            WHERE nh.hub_id = %s AND n.ativo = true AND n.cidade = (
-                SELECT n2.cidade FROM hub_negocios n2
-                JOIN hub_negocio_hubs nh2 ON nh2.negocio_id = n2.id
-                WHERE nh2.hub_id = %s AND n2.ativo = true
-                LIMIT 1
-            )
-        """, (hub["id"], hub["id"]))
+            WHERE nh.hub_id = %s AND n.ativo = true AND n.cidade = %s
+              AND n.bairro IS NOT NULL AND n.bairro <> ''
+            ORDER BY n.bairro
+        """, (hub["id"], pais_info["nome"]))
         
+        # Adiciona cada cidade como página de sitemap
         for row in rows:
             if row["bairro"]:
+                # Converte nome da cidade para slug (lowercase + hífen)
                 cidade_slug = row["bairro"].lower().replace(" ", "-")
-                urls.append(f"  <url>\n    <loc>{base_url}/country/{pais_slug}/{cidade_slug}/</loc>\n    <lastmod>{hoje}</lastmod>\n    <changefreq>weekly</changefreq>\n    <priority>0.7</priority>\n  </url>\n")
+                urls.append(
+                    f'  <url>\n'
+                    f'    <loc>{base_url}/country/{pais_slug}/{cidade_slug}/</loc>\n'
+                    f'    <lastmod>{hoje}</lastmod>\n'
+                    f'    <changefreq>weekly</changefreq>\n'
+                    f'    <priority>0.7</priority>\n'
+                    f'  </url>\n'
+                )
 
+    # Monta XML final
     xml = '<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n'
     xml += "".join(urls)
     xml += '</urlset>'
