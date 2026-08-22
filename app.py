@@ -175,6 +175,18 @@ _PREFIXO_CATEGORIA_POR_DOMINIO = {
     "lotericapertodemim.com.br": "loterica_",
 }
 
+# Mesmo raciocínio de _PREFIXO_CATEGORIA_POR_HUB acima, mas só usado pra
+# saber se o hub atual é o do BMI (pra decidir se lincamos /sitemap-bmi.xml
+# no índice /sitemap.xml). O BMI não usa prefixo de categoria (não é multi-
+# nicho dentro do próprio hub como cinema/lotérica), então não entra no
+# dicionário de prefixo — precisa de um dicionário próprio só de detecção.
+_HUBS_BMI = {
+    # hub_leanttro (subdomínio .leanttro.com), se algum dia usar
+}
+_DOMINIOS_BMI = {
+    "adultbmicalculator.com",
+}
+
 # Hubs SEM prefixo curado que, mesmo assim, não podem cair no fallback de
 # "todas as categorias do sistema" (ex.: carros.guiadorodizio.com.br via
 # categoria não-curada de outro nicho, tipo academia/açougue/cinema
@@ -500,6 +512,21 @@ def sitemap():
     if _eh_hub_loterica:
         linhas.append("  <sitemap>")
         linhas.append(f"    <loc>{base_url}/sitemap-resultados.xml</loc>")
+        linhas.append(f"    <lastmod>{hoje}</lastmod>")
+        linhas.append("  </sitemap>")
+
+    # Páginas de país/cidade do BMI (/country/<pais>/ e /country/<pais>/<cidade>/)
+    # também não vêm de hub_negocios direto — quem monta esse sitemap é o
+    # próprio bmi.py (sitemap_bmi). Mesmo raciocínio do bloco de cinema/loterica
+    # acima: só entra se o hub atual for o do BMI. Sem isso o Google nunca
+    # descobre /sitemap-bmi.xml sozinho (precisa ser submetido manualmente).
+    _eh_hub_bmi = (
+        hub.get("hub_leanttro") in _HUBS_BMI
+        or hub.get("dominio_proprio") in _DOMINIOS_BMI
+    )
+    if _eh_hub_bmi:
+        linhas.append("  <sitemap>")
+        linhas.append(f"    <loc>{base_url}/sitemap-bmi.xml</loc>")
         linhas.append(f"    <lastmod>{hoje}</lastmod>")
         linhas.append("  </sitemap>")
 
