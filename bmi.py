@@ -26,6 +26,7 @@
 
 from flask import Blueprint, render_template, Response, request
 from datetime import datetime, timezone
+from xml.sax.saxutils import escape as _xml_escape
 
 # Import "tardio" de propósito: como este arquivo só é importado no
 # FIM do app.py (depois dessas funções já estarem definidas), isso
@@ -36,6 +37,7 @@ from app import (
     _resolve_cidade,
     _resolve_bairro,
     _get_anuncios,
+    _slugify,
     CATEGORIAS_SEM_GEOLOCALIZACAO,
 )
 
@@ -300,11 +302,18 @@ def sitemap_bmi():
         # Adiciona cada cidade como página de sitemap
         for row in rows:
             if row["bairro"]:
-                # Converte nome da cidade para slug (lowercase + hífen)
-                cidade_slug = row["bairro"].lower().replace(" ", "-")
+                # Usa a MESMA função de slugify que _resolve_bairro usa por trás
+                # dos panos (via _slugify no app.py) — gerar o slug de outro
+                # jeito aqui (ex: .lower().replace(" ", "-")) faz o sitemap listar
+                # uma URL que bate errado pra bairro com acento (ex: "São Paulo"
+                # virava "são-paulo" em vez de "sao-paulo", e a página real dava 404).
+                cidade_slug = _slugify(row["bairro"])
+                if not cidade_slug:
+                    continue
+                loc = f"{base_url}/country/{pais_slug}/{cidade_slug}/"
                 urls.append(
                     f'  <url>\n'
-                    f'    <loc>{base_url}/country/{pais_slug}/{cidade_slug}/</loc>\n'
+                    f'    <loc>{_xml_escape(loc)}</loc>\n'
                     f'    <lastmod>{hoje}</lastmod>\n'
                     f'    <changefreq>weekly</changefreq>\n'
                     f'    <priority>0.7</priority>\n'
