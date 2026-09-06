@@ -1,19 +1,23 @@
 # ════════════════════════════════════════════════════════════
 #  chatbot.py — Blueprint "Assistente de Chat"
-#  Responde perguntas sobre FILMES (via TMDB, reaproveitando as
-#  funções que já existem no cinema.py) e sobre CINEMAS cadastrados
-#  no hub atual (via hub_negocios, reaproveitando query()/get_hub_by_host
-#  do app.py). Não guarda nenhum dado novo — só CONSULTA o que já existe
-#  nos dois lugares.
+#  Responde perguntas sobre CINEMAS cadastrados no hub atual (via
+#  hub_negocios, reaproveitando query()/get_hub_by_host do app.py).
+#  Não guarda nenhum dado novo — só CONSULTA o que já existe no banco.
+#
+#  ATUALIZADO em 06/09/2026: removida a parte de filmes (TMDB), que
+#  dependia do cinema.py — esse arquivo foi apagado do projeto junto
+#  com o catálogo de filme/streaming (ver conversa com o Claude de
+#  06/09/2026, motivo: "scaled content abuse" no Google August 2026
+#  Spam Update). O assistente agora só responde sobre os cinemas
+#  cadastrados no site.
 #
 #  Modelo de IA: Groq (endpoint compatível com a API da OpenAI), usando
-#  tool-calling — o modelo decide sozinho quando precisa buscar filme ou
-#  cinema, a gente executa a função Python de verdade e devolve o
-#  resultado pra ele formular a resposta final. Isso evita alucinação:
-#  o modelo nunca inventa endereço/telefone/nome de filme, só reformula
-#  em português o que veio do banco/TMDB.
+#  tool-calling — o modelo decide sozinho quando precisa buscar cinema, a
+#  gente executa a função Python de verdade e devolve o resultado pra ele
+#  formular a resposta final. Isso evita alucinação: o modelo nunca
+#  inventa endereço/telefone, só reformula em português o que veio do banco.
 #
-#  Registro (no fim do app.py, igual o cinema_bp):
+#  Registro (no fim do app.py, igual antes):
 #
 #      from chatbot import chatbot_bp
 #      app.register_blueprint(chatbot_bp)
@@ -27,14 +31,6 @@ from flask import Blueprint, request, jsonify
 import os
 import json
 import requests
-
-from cinema import (
-    _tmdb_get,
-    _enriquecer_filme,
-    _tem_streaming_flatrate_br,
-    _params_em_cartaz,
-    _sem_streaming,
-)
 
 chatbot_bp = Blueprint("chatbot", __name__)
 
@@ -51,53 +47,20 @@ _MAX_RODADAS_TOOLS = 4
 _MAX_HISTORICO = 12
 
 _SYSTEM_PROMPT = """Você é o assistente virtual do site cinema perto de mim "{hub_nome}".
-Você ajuda visitantes com DUAS coisas, e nada além disso:
-1) Informação sobre filmes (sinopse, se está em cartaz no cinema ou em qual streaming).
-2) Informação sobre os cinemas cadastrados no site (nome, endereço, telefone, WhatsApp).
+Você ajuda visitantes com UMA coisa, e nada além disso:
+- Informação sobre os cinemas cadastrados no site (nome, endereço, telefone, WhatsApp).
 
 Regras importantes:
-- SEMPRE use as ferramentas disponíveis pra buscar dado real antes de responder
-  sobre um filme ou cinema específico. NUNCA invente título, sinopse, endereço,
-  telefone ou WhatsApp — se a ferramenta não retornar nada, diga que não encontrou.
-- Se a pergunta não tiver nada a ver com filme ou cinema, explique educadamente
+- SEMPRE use a ferramenta disponível pra buscar dado real antes de responder
+  sobre um cinema específico. NUNCA invente endereço, telefone ou WhatsApp —
+  se a ferramenta não retornar nada, diga que não encontrou.
+- Se a pergunta não tiver nada a ver com cinema, explique educadamente
   que você só ajuda com isso.
 - Respostas curtas, diretas, em português do Brasil, tom simpático e informal.
 - Se o visitante perguntar por cinemas mas não disser cidade/bairro, pergunte
   antes de buscar (senão a lista fica genérica demais)."""
 
 TOOLS = [
-    {
-        "type": "function",
-        "function": {
-            "name": "buscar_filmes",
-            "description": (
-                "Busca filmes pelo título ou tema no catálogo geral (TMDB). "
-                "Devolve título, ano, sinopse curta e se o filme está disponível "
-                "em streaming por assinatura no Brasil agora."
-            ),
-            "parameters": {
-                "type": "object",
-                "properties": {
-                    "termo": {
-                        "type": "string",
-                        "description": "título ou tema do filme buscado",
-                    }
-                },
-                "required": ["termo"],
-            },
-        },
-    },
-    {
-        "type": "function",
-        "function": {
-            "name": "filmes_em_cartaz",
-            "description": (
-                "Lista os filmes em cartaz agora nos cinemas do Brasil "
-                "(lançamentos dos últimos ~45 dias), do mais popular pro menos popular."
-            ),
-            "parameters": {"type": "object", "properties": {}},
-        },
-    },
     {
         "type": "function",
         "function": {
@@ -117,41 +80,6 @@ TOOLS = [
         },
     },
 ]
-
-
-def _tool_buscar_filmes(args):
-    termo = (args.get("termo") or "").strip()
-    if not termo:
-        return {"filmes": []}
-
-    dados, erro = _tmdb_get("/search/movie", {
-        "query": termo, "region": "BR", "include_adult": "false",
-    })
-    if erro or not dados:
-        return {"filmes": [], "erro": erro}
-
-    filmes = []
-    for f in dados.get("results", [])[:6]:
-        _enriquecer_filme(f)
-        filmes.append({
-            "titulo": f.get("title"),
-            "ano": (f.get("release_date") or "")[:4],
-            "sinopse": (f.get("overview") or "")[:300],
-            "em_streaming_no_brasil": _tem_streaming_flatrate_br(f["id"]),
-        })
-    return {"filmes": filmes}
-
-
-def _tool_filmes_em_cartaz(args):
-    dados, erro = _tmdb_get("/discover/movie", _params_em_cartaz(1))
-    if erro or not dados:
-        return {"filmes": [], "erro": erro}
-
-    filmes = _sem_streaming([_enriquecer_filme(f) for f in dados.get("results", [])])[:10]
-    return {"filmes": [
-        {"titulo": f.get("title"), "ano": (f.get("release_date") or "")[:4]}
-        for f in filmes
-    ]}
 
 
 def _tool_buscar_cinemas(args, hub_id):
@@ -178,10 +106,6 @@ def _tool_buscar_cinemas(args, hub_id):
 
 
 def _executar_tool(nome, args, hub_id):
-    if nome == "buscar_filmes":
-        return _tool_buscar_filmes(args)
-    if nome == "filmes_em_cartaz":
-        return _tool_filmes_em_cartaz(args)
     if nome == "buscar_cinemas":
         return _tool_buscar_cinemas(args, hub_id)
     return {"erro": f"ferramenta desconhecida: {nome}"}
