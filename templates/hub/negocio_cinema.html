@@ -152,8 +152,7 @@ footer { background: var(--bg-card-alt); border-top: 1px solid var(--border); pa
   </a>
   <nav class="desktop-nav">
     <ul>
-      <li><a href="/em-cartaz/">Em cartaz</a></li>
-      <li><a href="/nao-quer-sair-de-casa/">Streaming</a></li>
+      <li><a href="/blog/">Blog</a></li>
     </ul>
   </nav>
 </header>
@@ -236,10 +235,6 @@ footer { background: var(--bg-card-alt); border-top: 1px solid var(--border); pa
     </div>
     <p class="avaliacao-resumo">Carregando avaliações…</p>
   </div>
-
-  <a class="cross-link" href="/em-cartaz/">
-    <i class="fas fa-film"></i> Veja o que está em cartaz agora →
-  </a>
 </div>
 
 <footer>&copy; {{ hub.nome or 'Cinema Perto de Mim' }} — todos os direitos reservados.</footer>
@@ -526,7 +521,7 @@ document.addEventListener('click', function(e) {
         <button class="cb-close" onclick="toggleChatbot()">&#10005;</button>
     </div>
     <div class="cb-messages" id="cb-messages">
-        <div class="cb-msg cb-msg-bot">Oi! Posso te ajudar a achar um filme, ver o que está em cartaz, sugerir onde assistir em streaming, ou indicar um cinema perto de você. O que você procura?</div>
+        <div class="cb-msg cb-msg-bot">Oi! Posso te ajudar a achar um cinema perto de você, ver os tipos de sala ou indicar onde assistir. O que você procura?</div>
     </div>
     <div class="cb-typing" id="cb-typing" style="display:none;"><i class="fas fa-ellipsis"></i> digitando...</div>
     <form class="cb-input-row" id="cb-form" onsubmit="return enviarMensagemChatbot(event)">
