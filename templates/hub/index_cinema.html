@@ -17,7 +17,7 @@
 
 <!-- SEO -->
 <title>{{ hub.titulo or 'Cinema Perto de Mim — Cinemas, cineclubes e salas de arte perto de mim' }}</title>
-<meta name="description" content="{{ hub.descricao or 'Encontre cinemas, cine de rua, cineclubes, salas de arte e drive-ins perto de mim. Veja também o que está em cartaz no Brasil e onde assistir em streaming.' }}">
+<meta name="description" content="{{ hub.descricao or 'Encontre cinemas, cine de rua, cineclubes, salas de arte e drive-ins perto de mim.' }}">
 <meta name="keywords" content="cinema perto de mim, cine de rua, cineclube, sala de arte, cinemateca, drive-in, filmes em cartaz, onde assistir">
 <meta name="robots" content="index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1">
 <meta name="theme-color" content="#d4af37">
@@ -39,7 +39,7 @@
 <!-- Twitter -->
 <meta name="twitter:card" content="summary_large_image">
 <meta name="twitter:title" content="{{ hub.titulo or 'Cinema Perto de Mim' }}">
-<meta name="twitter:description" content="{{ hub.descricao or 'Cinemas perto de mim, em cartaz e streaming.' }}">
+<meta name="twitter:description" content="{{ hub.descricao or 'Cinemas perto de mim.' }}">
 
 <!-- JSON-LD WebSite -->
 <script type="application/ld+json">
@@ -616,8 +616,6 @@ footer ul li a:hover { color: var(--gold); }
   </a>
   <nav class="desktop-nav">
     <ul>
-      <li><a href="/em-cartaz/">Em cartaz</a></li>
-      <li><a href="/nao-quer-sair-de-casa/">Streaming</a></li>
       <li><a href="/blog/">Blog</a></li>
       {% if categorias %}
       <li class="nav-dropdown">
@@ -699,12 +697,8 @@ window.addEventListener('scroll', function(){ closeNavCinemas(); }, { passive: t
 
 <section class="hero">
   <h1>Cinema <em>perto de mim</em></h1>
-  <p>Do multiplex ao cine de rua, do cineclube à cinemateca — descubra as salas da sua cidade, veja o que está em cartaz e onde assistir sem sair de casa.</p>
-  <div class="hero-btns">
-    <a class="btn-hero primary" href="/em-cartaz/"><i class="fas fa-film"></i> Em cartaz agora</a>
-    <a class="btn-hero outline" href="/nao-quer-sair-de-casa/"><i class="fas fa-tv"></i> Ver no streaming</a>
-  </div>
-  <p style="font-size:.85em; margin-top:6px;">⭐ Assistiu? Entre na página do filme ou do cinema e dê sua nota de 1 a 5 estrelas.</p>
+  <p>Do multiplex ao cine de rua, do cineclube à cinemateca — descubra as salas da sua cidade.</p>
+  <p style="font-size:.85em; margin-top:6px;">⭐ Assistiu? Entre na página do cinema e dê sua nota de 1 a 5 estrelas.</p>
 </section>
 
 <section class="secao container" id="tipos-cinema">
@@ -804,120 +798,6 @@ window.addEventListener('scroll', function(){ closeNavCinemas(); }, { passive: t
   <p id="lazy-loading" style="display:none; text-align:center; color:var(--primary); padding:20px; font-size:.95em;"><i class="fas fa-spinner fa-spin"></i> Carregando mais cinemas...</p>
 </section>
 
-<section class="cine-hero" id="cine-hero" data-empty="1" data-modo-busca="0">
-  <div class="cine-hero-inner">
-
-    <div class="cine-hero-busca" id="cine-hero-busca">
-      <div class="cine-hero-busca-campo" id="cine-hero-busca-campo">
-        <i class="fas fa-search"></i>
-        <input type="text" id="busca-filme-input" placeholder="Ache seu filme — digite o título..." autocomplete="off">
-        <button type="button" class="cine-hero-busca-limpar" id="busca-filme-limpar" aria-label="Limpar busca"><i class="fas fa-times"></i></button>
-      </div>
-      <div class="cine-hero-busca-resultados" id="cine-hero-busca-resultados"></div>
-    </div>
-
-    <div class="cine-hero-stage">
-      <div class="cine-hero-curtain left"></div>
-      <div class="cine-hero-screen-wrap">
-        <div class="cine-hero-screen-3d">
-          <div class="cine-hero-screen">
-            <div class="cine-hero-screen-inner">
-              <img class="cine-hero-poster-bg" id="cine-hero-img" alt="">
-            </div>
-            <div class="cine-hero-glow"></div>
-          </div>
-        </div>
-        <div class="cine-hero-ui">
-          <div class="cine-hero-top">
-            <div class="cine-hero-brand"><i class="fas fa-film"></i><span>Em cartaz</span></div>
-            <button type="button" class="cine-hero-sair-busca" id="cine-hero-sair-busca">
-              <i class="fas fa-arrow-left"></i> Voltar pro em cartaz
-            </button>
-            <span class="cine-hero-counter" id="cine-hero-counter">01</span>
-          </div>
-          <div class="cine-hero-bottom">
-            <h3 class="cine-hero-title" id="cine-hero-title">Carregando...</h3>
-            <p class="cine-hero-desc" id="cine-hero-desc"></p>
-            <div class="cine-hero-onde" id="cine-hero-onde" style="display:none;"></div>
-            <div class="cine-hero-nav">
-              <button type="button" id="cine-hero-prev" aria-label="Filme anterior"><i class="fas fa-chevron-left"></i></button>
-              <button type="button" id="cine-hero-next" aria-label="Próximo filme"><i class="fas fa-chevron-right"></i></button>
-            </div>
-          </div>
-        </div>
-        <div class="cine-hero-seats"></div>
-      </div>
-      <div class="cine-hero-curtain right"></div>
-    </div>
-  </div>
-</section>
-
-<section class="secao container" id="filmes-em-cartaz">
-  <div class="secao-header-flex">
-    <div>
-      <h2>Em cartaz</h2>
-      <p class="secao-sub">O que está passando no cinema agora.</p>
-    </div>
-    <a class="btn-ver-todos" href="/em-cartaz/">Ver todos <i class="fas fa-arrow-right"></i></a>
-  </div>
-
-  <div class="view-controls" id="view-controls-emcartaz" style="display:none;">
-    <span>Ver como:</span>
-    <button class="view-btn active" id="btn-carousel-emcartaz" onclick="setViewFilme('emcartaz','carousel')"><i class="fas fa-grip-lines"></i></button>
-    <button class="view-btn" id="btn-grade-emcartaz" onclick="setViewFilme('emcartaz','grade')"><i class="fas fa-th"></i></button>
-  </div>
-
-  <div id="emcartaz-carousel-wrapper" class="carousel-wrapper">
-    <div class="carousel-track-outer">
-      <div class="carousel-track" id="emcartaz-track"></div>
-    </div>
-    <div class="carousel-nav" id="emcartaz-carousel-nav">
-      <button class="carousel-arrow" onclick="moveCarouselFilme('emcartaz',-1)"><i class="fas fa-chevron-left"></i></button>
-      <div class="carousel-progress-bar"><div class="carousel-progress-fill" id="emcartaz-progress-fill"></div></div>
-      <button class="carousel-arrow" onclick="moveCarouselFilme('emcartaz',1)"><i class="fas fa-chevron-right"></i></button>
-    </div>
-  </div>
-  <div class="filmes-grid" id="emcartaz-grade" style="display:none;"></div>
-  <p class="info-message" id="emcartaz-vazio" style="display:none;">Não encontramos filmes em cartaz agora.</p>
-</section>
-
-<section class="secao container" id="filmes-streaming">
-  <div class="secao-header-flex">
-    <div>
-      <h2>Streaming</h2>
-      <p class="secao-sub">Escolha um streaming pra ver o catálogo dele.</p>
-    </div>
-    <a class="btn-ver-todos" id="streaming-link-provedor" href="/nao-quer-sair-de-casa/">Ver catálogo completo <i class="fas fa-arrow-right"></i></a>
-  </div>
-
-  <div class="categoria-slicer" id="streaming-slicer">
-    <button type="button" class="slicer-toggle" id="streaming-slicer-toggle" onclick="toggleStreamingSlicer()" aria-haspopup="listbox" aria-expanded="false">
-      <span class="slicer-label"><i class="fas fa-filter"></i> Streaming: <strong id="streaming-slicer-label">Carregando…</strong></span>
-      <i class="fas fa-chevron-down slicer-chevron" aria-hidden="true"></i>
-    </button>
-    <div class="slicer-panel" id="streaming-filtros" role="listbox" aria-label="Filtrar por streaming"></div>
-    <div class="slicer-backdrop" id="streaming-backdrop" onclick="closeStreamingSlicer()"></div>
-  </div>
-
-  <div class="view-controls" id="view-controls-streaming" style="display:none;">
-    <span>Ver como:</span>
-    <button class="view-btn active" id="btn-carousel-streaming" onclick="setViewFilme('streaming','carousel')"><i class="fas fa-grip-lines"></i></button>
-    <button class="view-btn" id="btn-grade-streaming" onclick="setViewFilme('streaming','grade')"><i class="fas fa-th"></i></button>
-  </div>
-
-  <div id="streaming-carousel-wrapper" class="carousel-wrapper">
-    <div class="carousel-track-outer">
-      <div class="carousel-track" id="streaming-track"></div>
-    </div>
-    <div class="carousel-nav" id="streaming-carousel-nav">
-      <button class="carousel-arrow" onclick="moveCarouselFilme('streaming',-1)"><i class="fas fa-chevron-left"></i></button>
-      <div class="carousel-progress-bar"><div class="carousel-progress-fill" id="streaming-progress-fill"></div></div>
-      <button class="carousel-arrow" onclick="moveCarouselFilme('streaming',1)"><i class="fas fa-chevron-right"></i></button>
-    </div>
-  </div>
-  <div class="filmes-grid" id="streaming-grade" style="display:none;"></div>
-  <p class="info-message" id="streaming-vazio" style="display:none;">Não encontramos filmes desse streaming agora.</p>
-</section>
 
 <section class="secao container" id="blog">
   <div class="secao-header-flex">
@@ -957,8 +837,6 @@ window.addEventListener('scroll', function(){ closeNavCinemas(); }, { passive: t
     <div>
       <h4>Navegue</h4>
       <ul>
-        <li><a href="/em-cartaz/">Em cartaz</a></li>
-        <li><a href="/nao-quer-sair-de-casa/">Streaming</a></li>
         <li><a href="/blog/">Blog</a></li>
         {% if categorias %}<li><a href="/#tipos-cinema">Tipos de cinema</a></li>{% endif %}
         <li><a href="#" onclick="abrirModalCadastro();return false;">Cadastrar cinema</a></li>
@@ -1195,413 +1073,6 @@ function setViewTipos(mode){
 window.addEventListener('resize', function(){ clampAndUpdateTipos(); });
 </script>
 
-<script>
-// ══════════════════════════════════════════════════════════════════
-// CARROSSÉIS DE FILME — "Em cartaz" (sem filtro, espelha /em-cartaz/)
-// e "Streaming" (filtrado por provedor, espelha /nao-quer-sair-de-casa/<slug>/).
-// Mesmo padrão visual/UX do carrossel de cinemas (carrossel <-> grade),
-// mas em dados/estado próprios, buscados via /api/cinema/*.
-// ══════════════════════════════════════════════════════════════════
-
-var _filmeState = {
-  emcartaz: { filmes: [], pos: 0, view: 'carousel' },
-  streaming: { filmes: [], pos: 0, view: 'carousel' }
-};
-var _provedoresStreaming = [];
-var _provedorAtivo = null;
-
-function cardHTMLFilme(f){
-  var poster = f.poster_url || 'https://placehold.co/300x450/17171b/f5c518?text=%F0%9F%8E%9E';
-  return '<a href="/filme/' + f.id + '/" class="filme-card">' +
-    '<img class="filme-poster" src="' + poster + '" alt="Pôster de ' + (f.title || '') + '" loading="lazy">' +
-    '<div class="filme-titulo">' + (f.title || '') + '</div>' +
-  '</a>';
-}
-
-function getCardWidthFilme(key){
-  var track = document.getElementById(key + '-track');
-  var card = track.querySelector('.filme-card');
-  if(!card) return 200;
-  return card.offsetWidth + 18;
-}
-
-function isMobileFilme(){ return window.innerWidth <= 768; }
-
-function clampAndUpdateFilme(key){
-  if(isMobileFilme()) return;
-  var track = document.getElementById(key + '-track');
-  var cards = track.querySelectorAll('.filme-card');
-  if(!cards.length) return;
-  var state = _filmeState[key];
-  var maxPos = Math.max(0, cards.length * getCardWidthFilme(key) - track.parentElement.offsetWidth);
-  state.pos = Math.max(0, Math.min(state.pos, maxPos));
-  track.style.transform = 'translateX(-' + state.pos + 'px)';
-  var fill = document.getElementById(key + '-progress-fill');
-  if(fill) fill.style.width = maxPos > 0 ? Math.min(100, (state.pos / maxPos) * 100) + '%' : '0%';
-}
-
-function moveCarouselFilme(key, dir){
-  var outer = document.getElementById(key + '-track').parentElement;
-  var visivel = Math.max(1, Math.floor(outer.offsetWidth / getCardWidthFilme(key)));
-  _filmeState[key].pos += dir * visivel * getCardWidthFilme(key);
-  clampAndUpdateFilme(key);
-}
-
-function setViewFilme(key, mode){
-  _filmeState[key].view = mode;
-  var cw = document.getElementById(key + '-carousel-wrapper');
-  var gd = document.getElementById(key + '-grade');
-  var btnC = document.getElementById('btn-carousel-' + key);
-  var btnG = document.getElementById('btn-grade-' + key);
-  if(btnC) btnC.classList.toggle('active', mode === 'carousel');
-  if(btnG) btnG.classList.toggle('active', mode === 'grade');
-  if(cw) cw.style.display = mode === 'carousel' ? '' : 'none';
-  if(gd) gd.style.display = mode === 'grade' ? 'grid' : 'none';
-}
-
-function renderFilmes(key, filmes){
-  _filmeState[key].filmes = filmes;
-  _filmeState[key].pos = 0;
-  var vc = document.getElementById('view-controls-' + key);
-  var vazio = document.getElementById(key + '-vazio');
-  var cw = document.getElementById(key + '-carousel-wrapper');
-  var gd = document.getElementById(key + '-grade');
-
-  if(!filmes.length){
-    if(vc) vc.style.display = 'none';
-    if(cw) cw.style.display = 'none';
-    if(gd) gd.style.display = 'none';
-    if(vazio) vazio.style.display = '';
-    return;
-  }
-  if(vazio) vazio.style.display = 'none';
-  if(vc) vc.style.display = 'flex';
-
-  var cardsHTML = filmes.map(cardHTMLFilme).join('');
-  var track = document.getElementById(key + '-track');
-  track.innerHTML = cardsHTML;
-  track.style.transform = 'translateX(0)';
-  if(gd) gd.innerHTML = cardsHTML;
-
-  setViewFilme(key, _filmeState[key].view);
-
-  var isDragging = false, startX = 0, startPos = 0;
-  var newTrack = track.cloneNode(true);
-  track.parentNode.replaceChild(newTrack, track);
-  track = document.getElementById(key + '-track');
-  function onStart(x){ isDragging = true; startX = x; startPos = _filmeState[key].pos; track.classList.add('dragging'); }
-  function onMove(x){ if(!isDragging) return; _filmeState[key].pos = startPos - (x - startX); clampAndUpdateFilme(key); }
-  function onEnd(){
-    isDragging = false; track.classList.remove('dragging');
-    var w = getCardWidthFilme(key); if(!w) return;
-    _filmeState[key].pos = Math.round(_filmeState[key].pos / w) * w;
-    clampAndUpdateFilme(key);
-  }
-  if(!isMobileFilme()){
-    track.addEventListener('mousedown', function(e){ onStart(e.clientX); e.preventDefault(); });
-    window.addEventListener('mousemove', function(e){ if(isDragging) onMove(e.clientX); });
-    window.addEventListener('mouseup', function(){ if(isDragging) onEnd(); });
-  }
-  clampAndUpdateFilme(key);
-}
-
-// ── "Em cartaz" — sem filtro nenhum, mesmos filmes de /em-cartaz/ ──
-fetch('/api/cinema/em-cartaz')
-  .then(function(r){ return r.json(); })
-  .then(function(data){
-    renderFilmes('emcartaz', data.filmes || []);
-    cineHeroInit(data.filmes || []);
-  })
-  .catch(function(){ renderFilmes('emcartaz', []); cineHeroInit([]); });
-
-// ══════════════════════════════════════════════════════════════════
-// CINE HERO — "tela de cinema" 3D em CSS puro, com o 1º filme(s) em
-// cartaz em destaque. Sem canvas/WebGL, sem loop de render: só troca
-// de slide por índice + transform leve no hover/mousemove.
-// ══════════════════════════════════════════════════════════════════
-var _cineHero = { filmes: [], idx: 0, timer: null };
-
-function cineHeroRender(){
-  var f = _cineHero.filmes[_cineHero.idx];
-  if(!f) return;
-  var img = document.getElementById('cine-hero-img');
-  var poster = f.backdrop_url || f.poster_url || 'https://placehold.co/1280x720/17171b/f5c518?text=%F0%9F%8E%9E';
-  img.classList.remove('loaded');
-  img.onload = function(){ img.classList.add('loaded'); };
-  img.src = poster;
-  img.alt = 'Cartaz de ' + (f.title || '');
-  document.getElementById('cine-hero-title').textContent = f.title || '';
-  document.getElementById('cine-hero-desc').textContent = f.overview || f.sinopse || '';
-  document.getElementById('cine-hero-counter').textContent = String(_cineHero.idx + 1).padStart(2, '0');
-}
-
-function cineHeroMove(dir){
-  if(!_cineHero.filmes.length) return;
-  _cineHero.idx = (_cineHero.idx + dir + _cineHero.filmes.length) % _cineHero.filmes.length;
-  cineHeroRender();
-  cineHeroRestartAutoplay();
-}
-
-function cineHeroRestartAutoplay(){
-  clearInterval(_cineHero.timer);
-  _cineHero.timer = setInterval(function(){ cineHeroMove(1); }, 7000);
-}
-
-function cineHeroInit(filmes){
-  var section = document.getElementById('cine-hero');
-  // usa só os primeiros (destaque), o resto continua no carrossel/grade normal
-  _cineHero.filmes = (filmes || []).slice(0, 8);
-  _cineHero.idx = 0;
-  if(!_cineHero.filmes.length){
-    section.setAttribute('data-empty', '1');
-    return;
-  }
-  section.setAttribute('data-empty', '0');
-  cineHeroRender();
-  cineHeroRestartAutoplay();
-}
-
-var _cineHeroPrevBtn = document.getElementById('cine-hero-prev');
-var _cineHeroNextBtn = document.getElementById('cine-hero-next');
-if(_cineHeroPrevBtn) _cineHeroPrevBtn.addEventListener('click', function(){ cineHeroMove(-1); });
-if(_cineHeroNextBtn) _cineHeroNextBtn.addEventListener('click', function(){ cineHeroMove(1); });
-
-// Leve inclinação da TELA (só o pôster/moldura, não a UI) seguindo o mouse —
-// só desktop, só CSS transform (sem WebGL, sem requestAnimationFrame).
-(function(){
-  if(window.innerWidth <= 768) return;
-  var stage = document.querySelector('.cine-hero-screen-3d');
-  var inner = document.querySelector('.cine-hero-inner');
-  if(!stage || !inner) return;
-  inner.addEventListener('mousemove', function(e){
-    var rect = inner.getBoundingClientRect();
-    var px = (e.clientX - rect.left) / rect.width - 0.5;
-    var py = (e.clientY - rect.top) / rect.height - 0.5;
-    stage.style.transform = 'rotateX(' + (3 - py * 4) + 'deg) rotateY(' + (px * 4) + 'deg)';
-  });
-  inner.addEventListener('mouseleave', function(){
-    stage.style.transform = 'rotateX(3deg) rotateY(0deg)';
-  });
-})();
-
-// ══════════════════════════════════════════════════════════════════
-// "ACHE SEU FILME" — busca livre integrada à tela 3D (cine-hero).
-// Autocomplete em /api/cinema/buscar-filme enquanto digita; ao
-// escolher um resultado, busca o detalhe completo em
-// /api/cinema/filme/<slug> e substitui o conteúdo da tela 3D (sem
-// sair da página), incluindo onde assistir se estiver em streaming.
-// ══════════════════════════════════════════════════════════════════
-(function(){
-  var input = document.getElementById('busca-filme-input');
-  var campo = document.getElementById('cine-hero-busca-campo');
-  var limparBtn = document.getElementById('busca-filme-limpar');
-  var resultadosBox = document.getElementById('cine-hero-busca-resultados');
-  var sairBtn = document.getElementById('cine-hero-sair-busca');
-  var section = document.getElementById('cine-hero');
-  var ondeBox = document.getElementById('cine-hero-onde');
-  if(!input || !section) return;
-
-  var debounceTimer = null;
-  var buscaAtualId = 0; // descarta resposta de busca antiga que chegue depois de uma mais nova
-
-  function abrirResultados(){ resultadosBox.classList.add('aberto'); }
-  function fecharResultados(){ resultadosBox.classList.remove('aberto'); }
-
-  function renderCarregando(){
-    resultadosBox.innerHTML = '<div class="cine-hero-busca-carregando"><i class="fas fa-spinner fa-spin"></i> Buscando...</div>';
-    abrirResultados();
-  }
-
-  function renderVazio(){
-    resultadosBox.innerHTML = '<div class="cine-hero-busca-vazio">Nenhum filme encontrado.</div>';
-    abrirResultados();
-  }
-
-  function escaparHtml(s){
-    return (s || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
-  }
-
-  function renderResultados(filmes){
-    if(!filmes.length){ renderVazio(); return; }
-    resultadosBox.innerHTML = filmes.map(function(f){
-      var ano = (f.release_date || '').slice(0, 4);
-      var poster = f.poster_url || 'https://placehold.co/80x120/17171b/f5c518?text=%F0%9F%8E%9E';
-      return '<div class="cine-hero-busca-item" data-slug="' + escaparHtml(f.slug) + '">' +
-               '<img src="' + poster + '" alt="" loading="lazy">' +
-               '<div class="cine-hero-busca-item-info">' +
-                 '<div class="cine-hero-busca-item-titulo">' + escaparHtml(f.title) + '</div>' +
-                 (ano ? '<div class="cine-hero-busca-item-ano">' + ano + '</div>' : '') +
-               '</div>' +
-             '</div>';
-    }).join('');
-    abrirResultados();
-    resultadosBox.querySelectorAll('.cine-hero-busca-item').forEach(function(item){
-      item.addEventListener('click', function(){
-        var titulo = item.querySelector('.cine-hero-busca-item-titulo').textContent;
-        selecionarFilmeBusca(item.dataset.slug, titulo);
-      });
-    });
-  }
-
-  input.addEventListener('input', function(){
-    var termo = input.value.trim();
-    campo.classList.toggle('tem-texto', termo.length > 0);
-    clearTimeout(debounceTimer);
-    if(!termo){ fecharResultados(); return; }
-    renderCarregando();
-    var idBusca = ++buscaAtualId;
-    debounceTimer = setTimeout(function(){
-      fetch('/api/cinema/buscar-filme?q=' + encodeURIComponent(termo))
-        .then(function(r){ return r.json(); })
-        .then(function(data){
-          if(idBusca !== buscaAtualId) return;
-          renderResultados(data.filmes || []);
-        })
-        .catch(function(){
-          if(idBusca !== buscaAtualId) return;
-          renderVazio();
-        });
-    }, 300);
-  });
-
-  input.addEventListener('focus', function(){
-    if(input.value.trim() && resultadosBox.innerHTML.trim()) abrirResultados();
-  });
-
-  limparBtn.addEventListener('click', function(){
-    input.value = '';
-    campo.classList.remove('tem-texto');
-    fecharResultados();
-    input.focus();
-  });
-
-  document.addEventListener('click', function(e){
-    if(!campo.contains(e.target) && !resultadosBox.contains(e.target)) fecharResultados();
-  });
-
-  function selecionarFilmeBusca(slug, titulo){
-    fecharResultados();
-    input.value = titulo || '';
-    campo.classList.add('tem-texto');
-    input.blur();
-
-    clearInterval(_cineHero.timer); // pausa o autoplay do carrossel enquanto mostra o resultado da busca
-
-    document.getElementById('cine-hero-title').textContent = 'Carregando...';
-    document.getElementById('cine-hero-desc').textContent = '';
-    ondeBox.style.display = 'none';
-    section.setAttribute('data-modo-busca', '1');
-    section.setAttribute('data-empty', '0');
-
-    fetch('/api/cinema/filme/' + encodeURIComponent(slug))
-      .then(function(r){ return r.json(); })
-      .then(function(data){
-        if(data.erro || !data.filme){
-          document.getElementById('cine-hero-title').textContent = 'Filme não encontrado';
-          return;
-        }
-        var f = data.filme;
-        var img = document.getElementById('cine-hero-img');
-        var poster = f.backdrop_url || f.poster_url || 'https://placehold.co/1280x720/17171b/f5c518?text=%F0%9F%8E%9E';
-        img.classList.remove('loaded');
-        img.onload = function(){ img.classList.add('loaded'); };
-        img.src = poster;
-        img.alt = 'Cartaz de ' + (f.title || '');
-        document.getElementById('cine-hero-title').textContent = f.title || '';
-        document.getElementById('cine-hero-desc').textContent = f.overview || 'Sinopse não disponível.';
-
-        if(data.esta_em_streaming && (data.flatrate || []).length){
-          ondeBox.innerHTML =
-            '<div class="cine-hero-onde-logos">' +
-              data.flatrate.map(function(p){
-                return '<img src="' + p.logo_url + '" alt="' + escaparHtml(p.nome) + '" title="' + escaparHtml(p.nome) + '">';
-              }).join('') +
-            '</div>' +
-            '<span class="cine-hero-onde-texto">Disponível em streaming</span>' +
-            '<a class="cine-hero-onde-link" href="/filme/' + f.slug + '/">Ver detalhes <i class="fas fa-arrow-right"></i></a>';
-        } else {
-          ondeBox.innerHTML =
-            '<span class="cine-hero-onde-texto">Não encontramos esse título em streaming agora.</span>' +
-            '<a class="cine-hero-onde-link" href="/filme/' + f.slug + '/">Ver detalhes <i class="fas fa-arrow-right"></i></a>';
-        }
-        ondeBox.style.display = 'flex';
-      })
-      .catch(function(){
-        document.getElementById('cine-hero-title').textContent = 'Não foi possível carregar esse filme.';
-      });
-  }
-
-  sairBtn.addEventListener('click', function(){
-    section.setAttribute('data-modo-busca', '0');
-    input.value = '';
-    campo.classList.remove('tem-texto');
-    fecharResultados();
-    ondeBox.style.display = 'none';
-    ondeBox.innerHTML = '';
-    if(_cineHero.filmes.length){
-      section.setAttribute('data-empty', '0');
-      cineHeroRender();
-      cineHeroRestartAutoplay();
-    } else {
-      section.setAttribute('data-empty', '1');
-    }
-  });
-})();
-
-// ── "Streaming" — filtro por provedor ──
-function toggleStreamingSlicer(){
-  document.getElementById('streaming-slicer-toggle').classList.toggle('open');
-  document.getElementById('streaming-filtros').classList.toggle('open');
-  document.getElementById('streaming-backdrop').classList.toggle('open');
-}
-function closeStreamingSlicer(){
-  document.getElementById('streaming-slicer-toggle').classList.remove('open');
-  document.getElementById('streaming-filtros').classList.remove('open');
-  document.getElementById('streaming-backdrop').classList.remove('open');
-}
-function selecionarProvedor(slug, nome){
-  _provedorAtivo = slug;
-  document.getElementById('streaming-slicer-label').textContent = nome;
-  document.getElementById('streaming-link-provedor').href = '/nao-quer-sair-de-casa/' + slug + '/';
-  document.querySelectorAll('#streaming-filtros .chip-cat').forEach(function(el){
-    el.classList.toggle('active', el.dataset.slug === slug);
-  });
-  closeStreamingSlicer();
-  var vc = document.getElementById('view-controls-streaming');
-  if(vc) vc.style.display = 'none';
-  document.getElementById('streaming-vazio').style.display = 'none';
-  fetch('/api/cinema/streaming/' + slug)
-    .then(function(r){ return r.json(); })
-    .then(function(data){ renderFilmes('streaming', data.filmes || []); })
-    .catch(function(){ renderFilmes('streaming', []); });
-}
-
-fetch('/api/cinema/streaming/provedores')
-  .then(function(r){ return r.json(); })
-  .then(function(data){
-    _provedoresStreaming = data.provedores || [];
-    var painel = document.getElementById('streaming-filtros');
-    painel.innerHTML = _provedoresStreaming.map(function(p){
-      return '<button class="chip-cat" data-slug="' + p.slug + '" onclick="selecionarProvedor(\'' + p.slug + '\',\'' + p.nome.replace(/'/g,"\\'") + '\')">' + p.nome + '</button>';
-    }).join('');
-    if(_provedoresStreaming.length){
-      var primeiro = _provedoresStreaming[0];
-      selecionarProvedor(primeiro.slug, primeiro.nome);
-    } else {
-      document.getElementById('streaming-slicer-label').textContent = 'Indisponível';
-      document.getElementById('streaming-vazio').style.display = '';
-    }
-  })
-  .catch(function(){
-    document.getElementById('streaming-slicer-label').textContent = 'Indisponível';
-    document.getElementById('streaming-vazio').style.display = '';
-  });
-
-window.addEventListener('resize', function(){
-  clampAndUpdateFilme('emcartaz');
-  clampAndUpdateFilme('streaming');
-});
-</script>
 
 <script>
 function abrirModalCadastro(){ document.getElementById('modal-cadastro').classList.remove('modal-oculto'); }
@@ -2204,7 +1675,7 @@ document.addEventListener('click', function(e) {
         <button class="cb-close" onclick="toggleChatbot()">&#10005;</button>
     </div>
     <div class="cb-messages" id="cb-messages">
-        <div class="cb-msg cb-msg-bot">Oi! Posso te ajudar a achar um filme, ver o que está em cartaz, sugerir onde assistir em streaming, ou indicar um cinema perto de você. O que você procura?</div>
+        <div class="cb-msg cb-msg-bot">Oi! Posso te ajudar a achar um cinema perto de você, ver os tipos de sala ou indicar onde assistir. O que você procura?</div>
     </div>
     <div class="cb-typing" id="cb-typing" style="display:none;"><i class="fas fa-ellipsis"></i> digitando...</div>
     <form class="cb-input-row" id="cb-form" onsubmit="return enviarMensagemChatbot(event)">
