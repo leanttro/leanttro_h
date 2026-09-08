@@ -1165,6 +1165,23 @@ tbody td {
         </div>
       </div>
 
+      <!-- Colar link direto -->
+      <div class="card" style="margin-bottom:20px;">
+        <div class="card-header">
+          <span class="card-title">Colar link de uma notícia</span>
+        </div>
+        <div style="padding:16px 20px;">
+          <p style="color:var(--text2);font-size:12.5px;margin-bottom:10px;">
+            Cole o link direto de uma matéria (de qualquer site, não precisa estar cadastrado como fonte RSS acima)
+            que a IA lê a página, reescreve com as próprias palavras e cita a fonte no fim do post.
+          </p>
+          <div style="display:flex;gap:8px;">
+            <input type="text" id="linkNoticiaDireto" placeholder="https://exemplo.com/noticia-tal" style="flex:1;padding:8px 10px;border:1px solid var(--border2);border-radius:var(--radius-sm);font-size:13px;">
+            <button class="btn btn-primary" id="btnBuscarNoticiaPorLink" onclick="buscarNoticiaPorLink()">Buscar essa notícia</button>
+          </div>
+        </div>
+      </div>
+
       <!-- Buscar novas notícias -->
       <div class="card">
         <div class="card-header">
@@ -2967,6 +2984,43 @@ async function buscarNoticiasRss() {
     setRssStatus(msg, novas.length ? 'info' : 'warn');
   } catch (e) {
     setRssStatus('Erro de conexão ao buscar notícias.', 'error');
+  }
+  btn.disabled = false;
+  btn.innerHTML = textoOriginal;
+}
+
+async function buscarNoticiaPorLink() {
+  const input = document.getElementById('linkNoticiaDireto');
+  const link = (input.value || '').trim();
+  if (!link) { showToast('Cole o link da notícia', ''); return; }
+
+  const btn = document.getElementById('btnBuscarNoticiaPorLink');
+  btn.disabled = true;
+  const textoOriginal = btn.innerHTML;
+  btn.innerHTML = 'Buscando...';
+  setRssStatus('Lendo a página e reescrevendo com IA, isso pode levar um instante...', 'info');
+  try {
+    const r = await fetch('/admin/rss/buscar-por-link', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ link }),
+    });
+    const data = await r.json();
+    if (!r.ok) {
+      setRssStatus(esc(data.erro || 'Erro ao buscar essa notícia'), 'error');
+      return;
+    }
+    const jaNaFila = state.rss.pendentes.some(n => n.link === data.noticia.link);
+    if (jaNaFila) {
+      setRssStatus('Essa notícia já está na fila de revisão abaixo.', 'warn');
+      return;
+    }
+    state.rss.pendentes.push(data.noticia);
+    renderRssPendentes();
+    input.value = '';
+    setRssStatus('✅ Notícia encontrada — revise abaixo antes de publicar.', 'info');
+  } catch (e) {
+    setRssStatus('Erro de conexão ao buscar essa notícia.', 'error');
   }
   btn.disabled = false;
   btn.innerHTML = textoOriginal;
