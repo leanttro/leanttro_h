@@ -2138,32 +2138,73 @@ GROQ_API_URL_BLOG = "https://api.groq.com/openai/v1/chat/completions"
 GROQ_MODEL_BLOG = os.getenv("GROQ_MODEL_BLOG", "openai/gpt-oss-120b")
 
 
-def _chamar_groq(system_prompt, user_prompt, temperature=0.7, max_tokens=800):
-    """Chamada simples (sem tools) à Groq. Retorna (texto, erro) — só um dos dois vem preenchido."""
+def _tempo_espera_rate_limit(resp):
+    """
+    Extrai quanto tempo esperar antes de tentar de novo, a partir de um 429 da Groq.
+    Prioriza o header padrão 'retry-after'; se não vier, faz fallback pro texto da
+    mensagem de erro, que a Groq sempre inclui (ex.: "Please try again in 8.632s").
+    """
+    retry_after = resp.headers.get("retry-after")
+    if retry_after:
+        try:
+            return float(retry_after) + 0.5
+        except ValueError:
+            pass
+    try:
+        msg = resp.json().get("error", {}).get("message", "")
+        m = re.search(r"try again in ([\d.]+)s", msg)
+        if m:
+            return float(m.group(1)) + 0.5
+    except Exception:
+        pass
+    return 10.0  # fallback conservador se não conseguir ler o tempo sugerido
+
+
+def _chamar_groq(system_prompt, user_prompt, temperature=0.7, max_tokens=800, max_tentativas=5):
+    """
+    Chamada simples (sem tools) à Groq. Retorna (texto, erro) — só um dos dois vem preenchido.
+    Em caso de rate limit (429), espera o tempo que a própria Groq indica e tenta de novo
+    (até max_tentativas vezes) em vez de desistir na primeira falha.
+    """
     api_key = os.getenv("GROQ_API_KEY")
     if not api_key:
         return None, "GROQ_API_KEY não configurada no servidor (.env)."
-    try:
-        resp = requests.post(
-            GROQ_API_URL_BLOG,
-            headers={"Authorization": f"Bearer {api_key}", "Content-Type": "application/json"},
-            json={
-                "model": GROQ_MODEL_BLOG,
-                "messages": [
-                    {"role": "system", "content": system_prompt},
-                    {"role": "user", "content": user_prompt},
-                ],
-                "temperature": temperature,
-                "max_tokens": max_tokens,
-            },
-            timeout=60,
-        )
+
+    for tentativa in range(max_tentativas):
+        try:
+            resp = requests.post(
+                GROQ_API_URL_BLOG,
+                headers={"Authorization": f"Bearer {api_key}", "Content-Type": "application/json"},
+                json={
+                    "model": GROQ_MODEL_BLOG,
+                    "messages": [
+                        {"role": "system", "content": system_prompt},
+                        {"role": "user", "content": user_prompt},
+                    ],
+                    "temperature": temperature,
+                    "max_tokens": max_tokens,
+                },
+                timeout=60,
+            )
+        except requests.RequestException as e:
+            return None, f"Falha ao chamar a Groq: {e}"
+
+        if resp.status_code == 429:
+            if tentativa < max_tentativas - 1:
+                time.sleep(_tempo_espera_rate_limit(resp))
+                continue
+            # última tentativa: reporta o erro real da Groq
+            try:
+                return None, resp.json().get("error", {}).get("message", "Rate limit atingido na Groq")
+            except Exception:
+                return None, "Rate limit atingido na Groq"
+
         dados = resp.json()
         if "choices" not in dados:
             return None, dados.get("error", {}).get("message", "Erro desconhecido na Groq")
         return dados["choices"][0]["message"]["content"].strip(), None
-    except requests.RequestException as e:
-        return None, f"Falha ao chamar a Groq: {e}"
+
+    return None, "Falhou após múltiplas tentativas (rate limit persistente)."
 
 
 def gerar_conteudo_post_ia(titulo, subtitulo, observacoes, conteudo_atual=None):
@@ -2649,9 +2690,10 @@ def admin_rss_palavras_chave_salvar():
 def admin_rss_buscar():
     """
     Lê os feeds ativos, filtra por palavra-chave, pula notícias já publicadas
-    ou já pendentes NESTA sessão do navegador (o front manda esses links em
-    'links_pendentes'), e reescreve cada notícia nova com IA. A lista voltada
-    aqui é guardada só no front — nada é salvo no banco nesta etapa.
+    ou já vistas NESTA sessão do navegador (o front manda esses links em
+    'links_pendentes'). NÃO chama IA aqui — só devolve o material bruto (título/
+    resumo originais) pra revisão manual; a reescrita acontece só pras notícias
+    que forem selecionadas depois, em /admin/rss/reescrever.
     """
     body = request.get_json(silent=True) or {}
     links_pendentes_atuais = set(body.get("links_pendentes") or [])
@@ -2697,18 +2739,11 @@ def admin_rss_buscar():
 
             imagem = extrair_imagem_feed(entry) or buscar_og_image(link)
 
-            reescrito, erro = reescrever_noticia_ia(titulo_original, resumo_original, nome_site)
-            if erro:
-                avisos.append(f"Falha ao reescrever \"{titulo_original[:60]}\": {erro}")
-                continue
-
             novas.append({
                 "link": link,
                 "nome_site": nome_site,
                 "titulo_original": titulo_original,
                 "resumo_original": resumo_original,
-                "titulo_reescrito": reescrito["titulo"],
-                "resumo_reescrito": reescrito["resumo"],
                 "imagem": imagem,
             })
             links_pendentes_atuais.add(link)
@@ -2719,6 +2754,54 @@ def admin_rss_buscar():
         "total_verificados": total_verificados,
         "total_descartados_filtro": total_descartados_filtro,
     })
+
+
+@app.route("/admin/rss/reescrever", methods=["POST"])
+@login_required
+def admin_rss_reescrever():
+    """
+    Reescreve com IA só as notícias que o admin selecionou na lista de
+    candidatas (mandadas pelo front em 'itens', no mesmo formato devolvido
+    por /admin/rss/buscar). Retorna cada uma já com titulo_reescrito/
+    resumo_reescrito, pronta pra cair na fila de aprovação.
+    """
+    body = request.get_json(silent=True) or {}
+    itens = body.get("itens") or []
+    if not itens:
+        return jsonify({"erro": "Nenhuma notícia selecionada."}), 400
+
+    reescritas = []
+    avisos = []
+
+    for item in itens:
+        link = (item.get("link") or "").strip()
+        nome_site = item.get("nome_site") or ""
+        titulo_original = item.get("titulo_original") or ""
+        resumo_original = item.get("resumo_original") or ""
+        imagem = item.get("imagem")
+
+        if not link or not titulo_original:
+            continue
+        if link_ja_importado(link):
+            avisos.append(f"\"{titulo_original[:60]}\" já foi publicada antes — pulei.")
+            continue
+
+        reescrito, erro = reescrever_noticia_ia(titulo_original, resumo_original, nome_site)
+        if erro:
+            avisos.append(f"Falha ao reescrever \"{titulo_original[:60]}\": {erro}")
+            continue
+
+        reescritas.append({
+            "link": link,
+            "nome_site": nome_site,
+            "titulo_original": titulo_original,
+            "resumo_original": resumo_original,
+            "titulo_reescrito": reescrito["titulo"],
+            "resumo_reescrito": reescrito["resumo"],
+            "imagem": imagem,
+        })
+
+    return jsonify({"noticias": reescritas, "avisos": avisos})
 
 
 @app.route("/admin/rss/buscar-por-link", methods=["POST"])
