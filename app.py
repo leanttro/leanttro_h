@@ -5,11 +5,15 @@ from functools import wraps
 from datetime import datetime, timezone, date
 import psycopg2
 import psycopg2.extras
+import psycopg2.errors
 import os
 import glob
 import re
 import unicodedata as _uc
 import time
+import requests
+import feedparser
+from urllib.parse import urlparse
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -126,6 +130,52 @@ def query(sql, params=(), one=False, commit=False):
         return cur.rowcount
     result = cur.fetchone() if one else cur.fetchall()
     return result
+
+
+# ── Notícias (RSS) — estrutura de banco ─────────────────────────
+# Cria (uma vez, na subida do processo) as tabelas de fontes RSS e de
+# palavras-chave do filtro, além da coluna "link_origem" em blog_posts
+# (com índice único, pra nunca importar a mesma notícia duas vezes).
+# Não usa get_db()/g porque roda fora de um request; abre conexão direta
+# com os mesmos parâmetros de DB_* do .env. Se o usuário do banco não
+# tiver permissão de DDL, só avisa no log — o resto do app continua
+# funcionando normalmente (só a aba de Notícias fica indisponível).
+def _rss_migrar_estrutura():
+    try:
+        conn = psycopg2.connect(
+            host=os.getenv("DB_HOST"),
+            port=int(os.getenv("DB_PORT", 5452)),
+            dbname=os.getenv("DB_NAME"),
+            user=os.getenv("DB_USER"),
+            password=os.getenv("DB_PASS"),
+        )
+        cur = conn.cursor()
+        cur.execute("""
+            CREATE TABLE IF NOT EXISTS rss_fontes (
+                id SERIAL PRIMARY KEY,
+                url TEXT UNIQUE NOT NULL,
+                ativo BOOLEAN NOT NULL DEFAULT TRUE,
+                criado_em TIMESTAMPTZ NOT NULL DEFAULT now()
+            )
+        """)
+        cur.execute("""
+            CREATE TABLE IF NOT EXISTS rss_palavras_chave (
+                id SERIAL PRIMARY KEY,
+                termo TEXT NOT NULL
+            )
+        """)
+        cur.execute("ALTER TABLE blog_posts ADD COLUMN IF NOT EXISTS link_origem TEXT")
+        cur.execute("""
+            CREATE UNIQUE INDEX IF NOT EXISTS blog_posts_link_origem_unique
+            ON blog_posts (link_origem) WHERE link_origem IS NOT NULL
+        """)
+        conn.commit()
+        cur.close()
+        conn.close()
+    except Exception as e:
+        print(f"[RSS] Aviso: não foi possível preparar as tabelas de RSS automaticamente: {e}")
+
+_rss_migrar_estrutura()
 
 # ── Cache leve em memória (cidade/bairro/categoria/contagem) ───
 # Essas consultas são as mesmas pra QUALQUER visitante da mesma cidade e só mudam
@@ -2074,6 +2124,208 @@ def admin_assinatura_deletar(ass_id):
 #  ADMIN — BLOG (CRUD completo)
 # ════════════════════════════════════════════════════════════
 
+# ════════════════════════════════════════════════════════════
+#  Blog — IA (Groq) e Notícias (RSS)
+#  Mesmo padrão de chatbot.py: chave em GROQ_API_KEY (.env), nunca
+#  hardcoded e nunca exposta pro front. GROQ_MODEL_BLOG é uma variável
+#  separada de GROQ_MODEL (usada pelo chatbot.py) porque geração de
+#  conteúdo longo se beneficia de um modelo diferente do usado pra
+#  tool-calling curto do assistente de chat — mas cai pro mesmo default
+#  recomendado (openai/gpt-oss-120b) se não for configurada.
+# ════════════════════════════════════════════════════════════
+GROQ_API_URL_BLOG = "https://api.groq.com/openai/v1/chat/completions"
+GROQ_MODEL_BLOG = os.getenv("GROQ_MODEL_BLOG", "openai/gpt-oss-120b")
+
+
+def _chamar_groq(system_prompt, user_prompt, temperature=0.7, max_tokens=800):
+    """Chamada simples (sem tools) à Groq. Retorna (texto, erro) — só um dos dois vem preenchido."""
+    api_key = os.getenv("GROQ_API_KEY")
+    if not api_key:
+        return None, "GROQ_API_KEY não configurada no servidor (.env)."
+    try:
+        resp = requests.post(
+            GROQ_API_URL_BLOG,
+            headers={"Authorization": f"Bearer {api_key}", "Content-Type": "application/json"},
+            json={
+                "model": GROQ_MODEL_BLOG,
+                "messages": [
+                    {"role": "system", "content": system_prompt},
+                    {"role": "user", "content": user_prompt},
+                ],
+                "temperature": temperature,
+                "max_tokens": max_tokens,
+            },
+            timeout=60,
+        )
+        dados = resp.json()
+        if "choices" not in dados:
+            return None, dados.get("error", {}).get("message", "Erro desconhecido na Groq")
+        return dados["choices"][0]["message"]["content"].strip(), None
+    except requests.RequestException as e:
+        return None, f"Falha ao chamar a Groq: {e}"
+
+
+def gerar_conteudo_post_ia(titulo, subtitulo, observacoes, conteudo_atual=None):
+    """
+    Gera (ou ajusta) o conteúdo HTML de um post manual do blog.
+    Se conteudo_atual vier preenchido, é um pedido de AJUSTE em cima do
+    texto existente (observacoes descreve o que mudar); senão, escreve
+    do zero a partir de título/subtítulo/observações.
+    """
+    if conteudo_atual:
+        instrucao = (
+            f"Aqui está o conteúdo HTML atual de um post de blog:\n\n{conteudo_atual}\n\n"
+            f"Ajuste esse conteúdo seguindo este pedido do autor: \"{observacoes}\". "
+            f"Mantenha o mesmo assunto e o mesmo tamanho aproximado."
+        )
+    else:
+        instrucao = (
+            f"Escreva o conteúdo de um post de blog em HTML.\n"
+            f"Título: {titulo}\n"
+            f"Subtítulo: {subtitulo or '(sem subtítulo)'}\n"
+        )
+        if observacoes and observacoes.strip():
+            instrucao += f"Observações especiais do autor (siga à risca): {observacoes.strip()}\n"
+        else:
+            instrucao += "Não há observações especiais, escreva um texto natural e informativo sobre o tema do título.\n"
+
+    system_prompt = (
+        "Você é um redator de blog. Gere APENAS o HTML do corpo do post (sem <html>, <head> ou <body>), "
+        "usando tags como <p>, <h2>, <h3>, <ul>/<li>, <strong>. "
+        "Texto em português do Brasil, tom leve e acolhedor, MODERADO em tamanho (3 a 5 parágrafos curtos, "
+        "sem enrolação, para economizar tokens). Não invente dados factuais específicos (datas, preços, "
+        "endereços) que não foram fornecidos. Responda SOMENTE com o HTML, sem comentários nem markdown."
+    )
+    return _chamar_groq(system_prompt, instrucao, temperature=0.7, max_tokens=700)
+
+
+def reescrever_noticia_ia(titulo_original, resumo_original, nome_site):
+    """
+    Reescreve (nunca copia) o título e o resumo de uma notícia vinda de um
+    feed RSS, em tom de post de blog — como se o site tivesse encontrado a
+    matéria e estivesse contando pros leitores. Retorna (dict, erro), onde
+    dict é {"titulo": ..., "resumo": ...} quando dá certo.
+    """
+    instrucao = (
+        f"Matéria original (de \"{nome_site}\"):\n"
+        f"Título original: {titulo_original}\n"
+        f"Resumo/descrição original: {resumo_original or '(sem resumo disponível)'}\n\n"
+        f"Reescreva o título (curto, 1 linha) dessa matéria, e escreva um texto de blog "
+        f"(2 a 3 parágrafos curtos) comentando o assunto — como se o próprio blog tivesse "
+        f"encontrado essa matéria e estivesse apresentando pros leitores (pode começar com "
+        f"algo como 'Encontramos essa matéria sobre...' ou 'Vimos essa novidade e achamos que "
+        f"vale a pena compartilhar...'). Desenvolva o assunto com base no que já está no resumo "
+        f"original, em vez de só encurtar ele. NÃO copie frases literais do original — reescreva "
+        f"com suas próprias palavras. NÃO invente nomes, datas, números, endereços ou qualquer "
+        f"dado que não esteja no resumo original — se precisar de mais detalhes, deixe claro que "
+        f"eles estão na matéria completa (que será linkada no fim do post)."
+    )
+    system_prompt = (
+        "Você é redator(a) de um blog. Sua tarefa é escrever um mini-post, em português do Brasil, "
+        "com tom leve, acolhedor e conversacional, contando aos leitores sobre uma matéria de terceiros "
+        "que o blog encontrou — nunca copiando frases literalmente do original, e nunca inventando fatos "
+        "que não estejam nele. Fale na primeira pessoa do plural (ex: 'encontramos', 'vimos', 'achamos'), "
+        "como se o blog estivesse comentando a notícia com os leitores. Responda SOMENTE neste formato, "
+        "sem nenhum texto antes ou depois, sem markdown:\n"
+        "TITULO: <título reescrito em uma linha>\n"
+        "RESUMO: <texto de blog em 2 a 3 parágrafos>"
+    )
+    texto, erro = _chamar_groq(system_prompt, instrucao, temperature=0.6, max_tokens=900)
+    if erro:
+        return None, erro
+
+    titulo_novo = titulo_original
+    resumo_novo = resumo_original or ""
+    m_titulo = re.search(r"TITULO:\s*(.+)", texto, re.IGNORECASE)
+    m_resumo = re.search(r"RESUMO:\s*(.+)", texto, re.IGNORECASE | re.DOTALL)
+    if m_titulo:
+        titulo_novo = m_titulo.group(1).splitlines()[0].strip()
+    if m_resumo:
+        resumo_novo = m_resumo.group(1).strip()
+    return {"titulo": titulo_novo, "resumo": resumo_novo}, None
+
+
+def _normalizar_texto_busca(texto):
+    """Minúsculo e sem acento, só pra comparação interna do filtro de palavras-chave."""
+    if not texto:
+        return ""
+    sem_acento = "".join(c for c in _uc.normalize("NFKD", texto.lower()) if not _uc.combining(c))
+    return sem_acento
+
+
+def noticia_e_relevante(titulo_original, resumo_original, termos):
+    """
+    True se título OU resumo contiver alguma palavra-chave cadastrada
+    (sem diferenciar maiúscula/acento). Lista de termos vazia = tudo relevante.
+    """
+    if not termos:
+        return True
+    texto_busca = f"{_normalizar_texto_busca(titulo_original)} {_normalizar_texto_busca(resumo_original)}"
+    for termo in termos:
+        termo_normalizado = _normalizar_texto_busca(termo)
+        if termo_normalizado and termo_normalizado in texto_busca:
+            return True
+    return False
+
+
+def extrair_imagem_feed(entry):
+    """Tenta achar uma imagem direto nos campos comuns de um item de feed RSS."""
+    try:
+        if getattr(entry, "media_thumbnail", None):
+            return entry.media_thumbnail[0].get("url")
+        if getattr(entry, "media_content", None):
+            return entry.media_content[0].get("url")
+        if getattr(entry, "enclosures", None):
+            for enc in entry.enclosures:
+                if "image" in (enc.get("type") or ""):
+                    return enc.get("href") or enc.get("url")
+        if getattr(entry, "links", None):
+            for l in entry.links:
+                if "image" in (l.get("type") or ""):
+                    return l.get("href")
+    except Exception:
+        pass
+    return None
+
+
+def buscar_og_image(url):
+    """Fallback: baixa a página e tenta extrair a <meta property=og:image>. Falha silenciosa."""
+    try:
+        resp = requests.get(url, timeout=6, headers={"User-Agent": "Mozilla/5.0"})
+        html = resp.text
+        m = re.search(
+            r'<meta[^>]+(?:property|name)=["\']og:image["\'][^>]+content=["\']([^"\']+)["\']',
+            html, re.IGNORECASE
+        )
+        if not m:
+            m = re.search(
+                r'<meta[^>]+content=["\']([^"\']+)["\'][^>]+(?:property|name)=["\']og:image["\']',
+                html, re.IGNORECASE
+            )
+        if m:
+            return m.group(1)
+    except Exception:
+        pass
+    return None
+
+
+def link_ja_importado(link):
+    """True se esse link já virou post antes (coluna link_origem em blog_posts)."""
+    return query("SELECT 1 FROM blog_posts WHERE link_origem = %s LIMIT 1", (link,), one=True) is not None
+
+
+def _slugify_post(texto):
+    """Converte texto em slug amigável pra URL de POST DE BLOG (minúsculo, sem acento,
+    sem pontuação, hífens colapsados). Usada só no fluxo de notícias/RSS — NÃO mexe em
+    slugs de negócio/cidade/bairro, que continuam usando a _slugify original (linha ~341)
+    pra não alterar nenhuma URL já indexada pelo Google."""
+    if not texto:
+        return None
+    sem_acento = "".join(c for c in _uc.normalize("NFKD", texto.lower()) if not _uc.combining(c))
+    sem_acento = re.sub(r'[^a-z0-9\s-]', '', sem_acento)
+    return re.sub(r'[\s-]+', '-', sem_acento).strip('-')
+
+
 @app.route("/admin/blog")
 @login_required
 def admin_blog():
@@ -2254,6 +2506,215 @@ def admin_blog_tag_deletar(tag_id):
     query("DELETE FROM blog_post_tags WHERE tag_id = %s", (tag_id,), commit=True)
     query("DELETE FROM blog_tags WHERE id = %s", (tag_id,), commit=True)
     return jsonify({"ok": True})
+
+
+@app.route("/admin/blog/gerar-ia", methods=["POST"])
+@login_required
+def admin_blog_gerar_ia():
+    """Gera (ou ajusta) o conteúdo HTML de um post manual via Groq."""
+    d = request.get_json(silent=True) or {}
+    titulo = (d.get("titulo") or "").strip()
+    subtitulo = (d.get("subtitulo") or "").strip()
+    observacoes = (d.get("observacoes") or "").strip()
+    conteudo_atual = d.get("conteudo_atual") or None
+
+    if not conteudo_atual and not titulo:
+        return jsonify({"erro": "Informe ao menos o título do post antes de gerar com IA."}), 400
+    if conteudo_atual and not observacoes:
+        return jsonify({"erro": "Descreva o que você quer ajustar no texto."}), 400
+
+    conteudo, erro = gerar_conteudo_post_ia(titulo, subtitulo, observacoes, conteudo_atual)
+    if erro:
+        return jsonify({"erro": erro}), 502
+    return jsonify({"conteudo": conteudo})
+
+
+# ════════════════════════════════════════════════════════════
+#  Admin — Notícias (RSS): fontes, filtro por palavra-chave,
+#  busca + reescrita via IA e aprovação/publicação.
+#
+#  A fila de "pendentes de revisão" NÃO é salva no banco — ela vive só
+#  na sessão do navegador (JS, em memória), e some se a aba for fechada.
+#  Nada aqui é publicado direto: só vira post de verdade em blog_posts
+#  quando o admin clica em "Aprovar e salvar" (rota /admin/rss/aprovar).
+# ════════════════════════════════════════════════════════════
+
+@app.route("/admin/rss/fontes")
+@login_required
+def admin_rss_fontes():
+    fontes = query("SELECT * FROM rss_fontes ORDER BY id")
+    return jsonify([dict(f) for f in fontes])
+
+
+@app.route("/admin/rss/fontes/nova", methods=["POST"])
+@login_required
+def admin_rss_fonte_nova():
+    url = (request.form.get("url") or "").strip()
+    if not url:
+        return jsonify({"erro": "Informe a URL do feed"}), 400
+    query(
+        "INSERT INTO rss_fontes (url, ativo) VALUES (%s, TRUE) ON CONFLICT (url) DO NOTHING",
+        (url,), commit=True
+    )
+    return jsonify({"ok": True})
+
+
+@app.route("/admin/rss/fontes/<int:fonte_id>/alternar", methods=["POST"])
+@login_required
+def admin_rss_fonte_alternar(fonte_id):
+    ativo = (request.form.get("ativo") or "").strip().lower() in ("1", "true", "on")
+    query("UPDATE rss_fontes SET ativo = %s WHERE id = %s", (ativo, fonte_id), commit=True)
+    return jsonify({"ok": True})
+
+
+@app.route("/admin/rss/fontes/<int:fonte_id>/deletar", methods=["POST"])
+@login_required
+def admin_rss_fonte_deletar(fonte_id):
+    query("DELETE FROM rss_fontes WHERE id = %s", (fonte_id,), commit=True)
+    return jsonify({"ok": True})
+
+
+@app.route("/admin/rss/palavras-chave")
+@login_required
+def admin_rss_palavras_chave():
+    termos = query("SELECT * FROM rss_palavras_chave ORDER BY id")
+    return jsonify([dict(t) for t in termos])
+
+
+@app.route("/admin/rss/palavras-chave", methods=["POST"])
+@login_required
+def admin_rss_palavras_chave_salvar():
+    """Substitui TODAS as palavras-chave cadastradas pela lista enviada (uma por linha ou por vírgula)."""
+    bruto = request.form.get("termos") or ""
+    termos = [t.strip() for t in re.split(r'[,\n]', bruto) if t.strip()]
+    db = get_db()
+    cur = db.cursor()
+    cur.execute("DELETE FROM rss_palavras_chave")
+    for termo in termos:
+        cur.execute("INSERT INTO rss_palavras_chave (termo) VALUES (%s)", (termo,))
+    db.commit()
+    return jsonify({"ok": True, "total": len(termos)})
+
+
+@app.route("/admin/rss/buscar", methods=["POST"])
+@login_required
+def admin_rss_buscar():
+    """
+    Lê os feeds ativos, filtra por palavra-chave, pula notícias já publicadas
+    ou já pendentes NESTA sessão do navegador (o front manda esses links em
+    'links_pendentes'), e reescreve cada notícia nova com IA. A lista voltada
+    aqui é guardada só no front — nada é salvo no banco nesta etapa.
+    """
+    body = request.get_json(silent=True) or {}
+    links_pendentes_atuais = set(body.get("links_pendentes") or [])
+
+    fontes_ativas = query("SELECT * FROM rss_fontes WHERE ativo = TRUE ORDER BY id")
+    if not fontes_ativas:
+        return jsonify({"erro": "Nenhuma fonte RSS ativa cadastrada. Adicione uma fonte antes de buscar."}), 400
+
+    termos_filtro = [t["termo"] for t in query("SELECT termo FROM rss_palavras_chave")]
+
+    novas = []
+    avisos = []
+    total_verificados = 0
+    total_descartados_filtro = 0
+
+    for fonte in fontes_ativas:
+        try:
+            resp = requests.get(fonte["url"], timeout=10, headers={"User-Agent": "Mozilla/5.0"})
+            feed = feedparser.parse(resp.content)
+            if not feed.entries and feed.bozo:
+                raise Exception(str(feed.get("bozo_exception", "feed inválido ou vazio")))
+        except Exception as e:
+            avisos.append(f"Não foi possível ler o feed {fonte['url']}: {e}")
+            continue
+
+        nome_site = (feed.feed.get("title") if hasattr(feed, "feed") else None) \
+            or urlparse(fonte["url"]).netloc
+
+        for entry in feed.entries:
+            link = entry.get("link")
+            if not link:
+                continue
+            if link in links_pendentes_atuais or link_ja_importado(link):
+                continue
+
+            titulo_original = entry.get("title", "") or ""
+            resumo_original = entry.get("summary", entry.get("description", "")) or ""
+
+            total_verificados += 1
+            if not noticia_e_relevante(titulo_original, resumo_original, termos_filtro):
+                total_descartados_filtro += 1
+                continue
+
+            imagem = extrair_imagem_feed(entry) or buscar_og_image(link)
+
+            reescrito, erro = reescrever_noticia_ia(titulo_original, resumo_original, nome_site)
+            if erro:
+                avisos.append(f"Falha ao reescrever \"{titulo_original[:60]}\": {erro}")
+                continue
+
+            novas.append({
+                "link": link,
+                "nome_site": nome_site,
+                "titulo_original": titulo_original,
+                "resumo_original": resumo_original,
+                "titulo_reescrito": reescrito["titulo"],
+                "resumo_reescrito": reescrito["resumo"],
+                "imagem": imagem,
+            })
+            links_pendentes_atuais.add(link)
+
+    return jsonify({
+        "noticias": novas,
+        "avisos": avisos,
+        "total_verificados": total_verificados,
+        "total_descartados_filtro": total_descartados_filtro,
+    })
+
+
+@app.route("/admin/rss/aprovar", methods=["POST"])
+@login_required
+def admin_rss_aprovar():
+    """Publica de vez (em blog_posts) uma notícia da fila de revisão mandada pelo front."""
+    d = request.get_json(silent=True) or {}
+    link = (d.get("link") or "").strip()
+    titulo = (d.get("titulo_reescrito") or "").strip()
+    resumo = (d.get("resumo_reescrito") or "").strip()
+    nome_site = (d.get("nome_site") or "").strip()
+    imagem = d.get("imagem") or None
+
+    if not link or not titulo or not resumo:
+        return jsonify({"erro": "Dados incompletos para publicar essa notícia."}), 400
+
+    paragrafos = [p.strip() for p in resumo.split("\n") if p.strip()]
+    corpo_html = "\n".join(f"<p>{p}</p>" for p in paragrafos)
+    conteudo_final = (
+        f"{corpo_html}\n"
+        f"<p><em>Confira a matéria completa em: <strong>{nome_site}</strong> — "
+        f"<a href=\"{link}\" target=\"_blank\">{link}</a></em></p>"
+    )
+    slug = _slugify_post(titulo)
+    resumo_seo = (resumo.replace("\n", " ").strip())[:160]
+
+    db = get_db()
+    try:
+        cur = db.cursor()
+        cur.execute("""
+            INSERT INTO blog_posts (titulo, slug, resumo, conteudo, capa_url, publicado, publicado_em, link_origem)
+            VALUES (%s, %s, %s, %s, %s, TRUE, CURRENT_DATE, %s)
+            RETURNING id
+        """, (titulo, slug, resumo_seo, conteudo_final, imagem, link))
+        post_id = cur.fetchone()["id"]
+        db.commit()
+    except psycopg2.errors.UniqueViolation:
+        db.rollback()
+        return jsonify({"erro": "Essa notícia já foi publicada antes (link duplicado)."}), 409
+    except Exception as e:
+        db.rollback()
+        return jsonify({"erro": str(e)}), 500
+
+    return jsonify({"ok": True, "id": post_id, "slug": slug})
 
 
 # ════════════════════════════════════════════════════════════
