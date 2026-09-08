@@ -13,6 +13,7 @@ import unicodedata as _uc
 import time
 import requests
 import feedparser
+import html as _html_mod
 from urllib.parse import urlparse
 from dotenv import load_dotenv
 
@@ -2309,6 +2310,53 @@ def buscar_og_image(url):
     return None
 
 
+def extrair_metadados_pagina(url):
+    """
+    Baixa uma página de notícia avulsa (sem passar por feed RSS nenhum) e tenta
+    extrair título, resumo, nome do site e imagem via meta tags Open Graph, com
+    fallback pra <title> e meta name="description" quando a página não tem OG.
+    Usada só no fluxo de 'colar link direto'. Retorna (dict, erro).
+    """
+    try:
+        resp = requests.get(url, timeout=10, headers={"User-Agent": "Mozilla/5.0"})
+        resp.raise_for_status()
+    except requests.RequestException as e:
+        return None, f"Não foi possível abrir esse link: {e}"
+
+    pagina = resp.text
+
+    def _meta(prop):
+        m = re.search(
+            rf'<meta[^>]+(?:property|name)=["\']{re.escape(prop)}["\'][^>]+content=["\']([^"\']+)["\']',
+            pagina, re.IGNORECASE
+        )
+        if not m:
+            m = re.search(
+                rf'<meta[^>]+content=["\']([^"\']+)["\'][^>]+(?:property|name)=["\']{re.escape(prop)}["\']',
+                pagina, re.IGNORECASE
+            )
+        return _html_mod.unescape(m.group(1)).strip() if m else None
+
+    titulo = _meta("og:title")
+    if not titulo:
+        m = re.search(r'<title[^>]*>([^<]+)</title>', pagina, re.IGNORECASE)
+        titulo = _html_mod.unescape(m.group(1)).strip() if m else None
+
+    resumo = _meta("og:description") or _meta("description")
+    imagem = _meta("og:image")
+    nome_site = _meta("og:site_name") or urlparse(url).netloc
+
+    if not titulo:
+        return None, "Não conseguimos identificar o título dessa página. Verifique o link."
+
+    return {
+        "titulo": titulo,
+        "resumo": resumo or "",
+        "nome_site": nome_site,
+        "imagem": imagem,
+    }, None
+
+
 def link_ja_importado(link):
     """True se esse link já virou post antes (coluna link_origem em blog_posts)."""
     return query("SELECT 1 FROM blog_posts WHERE link_origem = %s LIMIT 1", (link,), one=True) is not None
@@ -2670,6 +2718,48 @@ def admin_rss_buscar():
         "avisos": avisos,
         "total_verificados": total_verificados,
         "total_descartados_filtro": total_descartados_filtro,
+    })
+
+
+@app.route("/admin/rss/buscar-por-link", methods=["POST"])
+@login_required
+def admin_rss_buscar_por_link():
+    """
+    Busca UMA notícia a partir de um link colado manualmente (não precisa o site
+    estar cadastrado como fonte RSS), reescreve com IA e devolve no mesmo formato
+    de item que /admin/rss/buscar — pra cair na mesma fila de revisão/aprovação
+    já existente, sem duplicar nada no front.
+    """
+    body = request.get_json(silent=True) or {}
+    link = (body.get("link") or "").strip()
+
+    if not link:
+        return jsonify({"erro": "Cole o link da notícia."}), 400
+    if not link.lower().startswith(("http://", "https://")):
+        return jsonify({"erro": "Link inválido — precisa começar com http:// ou https://"}), 400
+    if link_ja_importado(link):
+        return jsonify({"erro": "Essa notícia já foi publicada antes (esse link já virou post)."}), 400
+
+    meta, erro = extrair_metadados_pagina(link)
+    if erro:
+        return jsonify({"erro": erro}), 400
+
+    reescrito, erro = reescrever_noticia_ia(meta["titulo"], meta["resumo"], meta["nome_site"])
+    if erro:
+        return jsonify({"erro": f"Falha ao reescrever com IA: {erro}"}), 400
+
+    imagem = meta["imagem"] or buscar_og_image(link)
+
+    return jsonify({
+        "noticia": {
+            "link": link,
+            "nome_site": meta["nome_site"],
+            "titulo_original": meta["titulo"],
+            "resumo_original": meta["resumo"],
+            "titulo_reescrito": reescrito["titulo"],
+            "resumo_reescrito": reescrito["resumo"],
+            "imagem": imagem,
+        }
     })
 
 
