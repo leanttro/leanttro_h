@@ -704,6 +704,45 @@ tbody td {
 }
 @keyframes spin { to { transform: rotate(360deg); } }
 
+/* ── Notícias (RSS) — cards de pendentes ── */
+.rss-noticia-card {
+  display: flex;
+  gap: 16px;
+  padding: 16px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  margin-bottom: 12px;
+  background: var(--surface);
+}
+.rss-noticia-img {
+  width: 120px; height: 90px;
+  flex-shrink: 0;
+  border-radius: var(--radius-sm);
+  object-fit: cover;
+  background: var(--surface2);
+}
+.rss-noticia-img-vazia {
+  width: 120px; height: 90px;
+  flex-shrink: 0;
+  border-radius: var(--radius-sm);
+  background: var(--surface2);
+  display: flex; align-items: center; justify-content: center;
+  color: var(--text3); font-size: 11px;
+}
+.rss-noticia-corpo { flex: 1; min-width: 0; }
+.rss-noticia-titulo { font-weight: 600; font-size: 14px; color: var(--text); margin-bottom: 4px; }
+.rss-noticia-resumo { font-size: 12.5px; color: var(--text2); white-space: pre-line; margin-bottom: 6px; }
+.rss-noticia-fonte { font-size: 11.5px; color: var(--text3); margin-bottom: 10px; }
+.rss-noticia-fonte a { color: var(--accent); text-decoration: none; }
+.rss-status-box {
+  padding: 10px 14px;
+  border-radius: var(--radius-sm);
+  font-size: 12.5px;
+}
+.rss-status-box.info { background: var(--accent-light); color: var(--accent-dark); }
+.rss-status-box.warn { background: var(--amber-light); color: var(--amber); }
+.rss-status-box.error { background: var(--red-light); color: var(--red); }
+
 /* ── Responsive ── */
 @media (max-width: 900px) {
   :root { --sidebar-w: 0px; }
@@ -772,6 +811,11 @@ tbody td {
     <button class="nav-item" data-section="blog-tags">
       <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M20.59 13.41l-7.17 7.17a2 2 0 01-2.83 0L2 12V2h10l8.59 8.59a2 2 0 010 2.82z"/><line x1="7" y1="7" x2="7.01" y2="7"/></svg>
       Tags
+    </button>
+
+    <button class="nav-item" data-section="rss">
+      <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 11a9 9 0 019 9"/><path d="M4 4a16 16 0 0116 16"/><circle cx="5" cy="19" r="1"/></svg>
+      Notícias (RSS)
     </button>
 
     <div class="nav-section">Cadastros</div>
@@ -1083,6 +1127,64 @@ tbody td {
       </div>
     </section>
 
+    <!-- ═══ BLOG — NOTÍCIAS (RSS) ═══ -->
+    <section class="section" id="sec-rss">
+
+      <!-- Fontes RSS -->
+      <div class="card" style="margin-bottom:20px;">
+        <div class="card-header">
+          <span class="card-title">Fontes RSS cadastradas</span>
+        </div>
+        <div style="padding:16px 20px;border-bottom:1px solid var(--border);display:flex;gap:8px;">
+          <input type="text" id="novaFonteRssUrl" placeholder="https://exemplo.com/rss" style="flex:1;padding:8px 10px;border:1px solid var(--border2);border-radius:var(--radius-sm);font-size:13px;">
+          <button class="btn btn-primary" onclick="adicionarFonteRss()">Adicionar fonte</button>
+        </div>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>URL do feed</th><th>Ativo</th><th>Ações</th></tr></thead>
+            <tbody id="rssFontesBody"><tr><td colspan="3"><div class="loading"><div class="spinner"></div>Carregando...</div></td></tr></tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Palavras-chave -->
+      <div class="card" style="margin-bottom:20px;">
+        <div class="card-header">
+          <span class="card-title">Filtro por palavra-chave</span>
+        </div>
+        <div style="padding:16px 20px;">
+          <p style="color:var(--text2);font-size:12.5px;margin-bottom:10px;">
+            Uma notícia só entra na revisão se o título ou o resumo contiver pelo menos uma dessas palavras
+            (sem diferenciar maiúscula/acento). Deixe em branco para não filtrar nada (aceita tudo).
+            Separe por vírgula ou uma por linha.
+          </p>
+          <textarea id="rssPalavrasChaveTexto" rows="3" placeholder="feira, bairro, comércio local" style="width:100%;padding:8px 10px;border:1px solid var(--border2);border-radius:var(--radius-sm);font-size:13px;font-family:inherit;"></textarea>
+          <div style="margin-top:10px;">
+            <button class="btn btn-primary" onclick="salvarPalavrasChaveRss()">Salvar palavras-chave</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Buscar novas notícias -->
+      <div class="card">
+        <div class="card-header">
+          <span class="card-title">Buscar e revisar notícias</span>
+          <button class="btn btn-primary" id="btnBuscarNoticiasRss" onclick="buscarNoticiasRss()">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+            Buscar novas notícias
+          </button>
+        </div>
+        <div style="padding:16px 20px;">
+          <div id="rssBuscaStatus" style="display:none;margin-bottom:14px;"></div>
+          <div id="rssPendentesLista"></div>
+          <div class="empty-state" id="rssPendentesVazio">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M4 11a9 9 0 019 9M4 4a16 16 0 0116 16"/><circle cx="5" cy="19" r="1"/></svg>
+            <p>Nenhuma notícia pendente de revisão. Clique em "Buscar novas notícias" para verificar as fontes cadastradas.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
     <!-- ═══ ANÚNCIOS ═══ -->
     <section class="section" id="sec-anuncios">
       <div class="card">
@@ -1226,6 +1328,9 @@ const state = {
   editType: null,
   negocios: { q: '', categoria_id: '', cidades: [], bairros: [], status: '', limit: 50, offset: 0, total: 0, filtrosCarregados: false, bairrosDisponiveis: [], localidades: {} },
   pendentes: { status: 'pendente', hub_id: '' },
+  // Fila de notícias RSS aguardando revisão — vive só na sessão do navegador
+  // (nunca é salva no banco); some se a aba for fechada ou a página recarregada.
+  rss: { pendentes: [] },
 };
 
 function debounce(fn, ms) {
@@ -1243,7 +1348,7 @@ function navigate(section) {
     dashboard: 'Dashboard', hubs: 'Hub clientes', negocios: 'Negócios',
     categorias: 'Categorias', usuarios: 'Usuários', assinaturas: 'Assinaturas',
     blog: 'Posts do blog', 'blog-tags': 'Tags do blog', anuncios: 'Anúncios',
-    pendentes: 'Cadastros pendentes',
+    pendentes: 'Cadastros pendentes', rss: 'Notícias (RSS)',
   }[section];
   state.section = section;
   if (!state.loaded.has(section)) loadSection(section);
@@ -1265,6 +1370,7 @@ async function loadSection(section) {
   if (section === 'dashboard') { await loadDashboard(); return; }
   if (section === 'negocios') { await initNegociosSection(); return; }
   if (section === 'pendentes') { await loadPendentes(); return; }
+  if (section === 'rss') { await initRssSection(); return; }
   await loadData(section);
 }
 
@@ -2130,8 +2236,15 @@ function formBlog() {
         <input name="tags" placeholder="dicas, alimentacao, bairro-verde">
       </div>
       <div class="field form-full">
+        <label>Observações para a IA <span style="font-weight:400;color:var(--text3)">(opcional — o que você quer que o texto aborde/ajuste)</span></label>
+        <div style="display:flex;gap:8px;">
+          <input name="ia_observacoes" id="iaObservacoes" placeholder="Ex: fale sobre horário de funcionamento e produtos típicos" style="flex:1;">
+          <button type="button" class="btn btn-secondary" id="btnGerarIa" onclick="gerarConteudoBlogIa()">✨ Gerar com IA</button>
+        </div>
+      </div>
+      <div class="field form-full">
         <label>Conteúdo (HTML) *</label>
-        <textarea name="conteudo" rows="14" style="font-family:monospace;font-size:12px;" placeholder="<p>Escreva o conteúdo do post em HTML...</p>"></textarea>
+        <textarea name="conteudo" id="conteudoBlogHtml" rows="14" style="font-family:monospace;font-size:12px;" placeholder="<p>Escreva o conteúdo do post em HTML, ou use o botão 'Gerar com IA' acima...</p>"></textarea>
       </div>
       <div class="field form-full">
         <label>Hubs onde este post aparece</label>
@@ -2711,6 +2824,206 @@ async function deletarPendente(id) {
       showToast('Erro ao excluir', 'error');
     }
   } catch(e) { showToast('Erro de conexão', 'error'); }
+}
+
+// ── Notícias (RSS) ───────────────────────────────────────────
+async function initRssSection() {
+  renderRssPendentes(); // reflete o que já estiver na sessão (ex: voltando de outra aba)
+  await Promise.all([carregarFontesRss(), carregarPalavrasChaveRss()]);
+}
+
+async function carregarFontesRss() {
+  const tbody = document.getElementById('rssFontesBody');
+  tbody.innerHTML = `<tr><td colspan="3"><div class="loading"><div class="spinner"></div>Carregando...</div></td></tr>`;
+  try {
+    const r = await fetch('/admin/rss/fontes');
+    const fontes = await r.json();
+    if (!Array.isArray(fontes) || !fontes.length) {
+      tbody.innerHTML = `<tr><td colspan="3"><div class="empty-state"><p>Nenhuma fonte RSS cadastrada ainda.</p></div></td></tr>`;
+      return;
+    }
+    tbody.innerHTML = fontes.map(f => `
+      <tr>
+        <td class="td-mono" style="max-width:420px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${esc(f.url)}</td>
+        <td>
+          <label class="checkbox-label">
+            <input type="checkbox" ${f.ativo ? 'checked' : ''} onchange="alternarFonteRss(${f.id}, this.checked)">
+          </label>
+        </td>
+        <td>
+          <button class="btn btn-danger btn-sm" onclick="removerFonteRss(${f.id})">🗑 Remover</button>
+        </td>
+      </tr>
+    `).join('');
+  } catch (e) {
+    tbody.innerHTML = `<tr><td colspan="3"><div class="empty-state"><p>Erro ao carregar fontes.</p></div></td></tr>`;
+  }
+}
+
+async function adicionarFonteRss() {
+  const input = document.getElementById('novaFonteRssUrl');
+  const url = input.value.trim();
+  if (!url) { showToast('Cole a URL do feed RSS', ''); return; }
+  try {
+    const fd = new FormData();
+    fd.append('url', url);
+    const r = await fetch('/admin/rss/fontes/nova', { method: 'POST', body: fd });
+    const data = await r.json();
+    if (r.ok) {
+      input.value = '';
+      showToast('Fonte adicionada!', 'success');
+      carregarFontesRss();
+    } else {
+      showToast(data.erro || 'Erro ao adicionar fonte', 'error');
+    }
+  } catch (e) { showToast('Erro de conexão', 'error'); }
+}
+
+async function alternarFonteRss(id, ativo) {
+  try {
+    const fd = new FormData();
+    fd.append('ativo', ativo ? 'true' : 'false');
+    await fetch(`/admin/rss/fontes/${id}/alternar`, { method: 'POST', body: fd });
+  } catch (e) { showToast('Erro ao atualizar fonte', 'error'); }
+}
+
+async function removerFonteRss(id) {
+  if (!confirm('Remover esta fonte RSS?')) return;
+  try {
+    await fetch(`/admin/rss/fontes/${id}/deletar`, { method: 'POST' });
+    showToast('Fonte removida.', '');
+    carregarFontesRss();
+  } catch (e) { showToast('Erro de conexão', 'error'); }
+}
+
+async function carregarPalavrasChaveRss() {
+  try {
+    const r = await fetch('/admin/rss/palavras-chave');
+    const termos = await r.json();
+    const texto = Array.isArray(termos) ? termos.map(t => t.termo).join(', ') : '';
+    document.getElementById('rssPalavrasChaveTexto').value = texto;
+  } catch (e) {}
+}
+
+async function salvarPalavrasChaveRss() {
+  const termos = document.getElementById('rssPalavrasChaveTexto').value;
+  try {
+    const fd = new FormData();
+    fd.append('termos', termos);
+    const r = await fetch('/admin/rss/palavras-chave', { method: 'POST', body: fd });
+    const data = await r.json();
+    if (r.ok) {
+      showToast(`Filtro salvo (${data.total} palavra${data.total === 1 ? '' : 's'}-chave).`, 'success');
+    } else {
+      showToast('Erro ao salvar filtro', 'error');
+    }
+  } catch (e) { showToast('Erro de conexão', 'error'); }
+}
+
+function setRssStatus(html, tipo) {
+  const box = document.getElementById('rssBuscaStatus');
+  if (!html) { box.style.display = 'none'; box.innerHTML = ''; return; }
+  box.style.display = 'block';
+  box.innerHTML = `<div class="rss-status-box ${tipo || 'info'}">${html}</div>`;
+}
+
+async function buscarNoticiasRss() {
+  const btn = document.getElementById('btnBuscarNoticiasRss');
+  btn.disabled = true;
+  const textoOriginal = btn.innerHTML;
+  btn.innerHTML = 'Buscando...';
+  setRssStatus('Buscando e reescrevendo notícias, isso pode levar um instante...', 'info');
+  try {
+    const linksPendentes = state.rss.pendentes.map(n => n.link);
+    const r = await fetch('/admin/rss/buscar', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ links_pendentes: linksPendentes }),
+    });
+    const data = await r.json();
+    if (!r.ok) {
+      setRssStatus(esc(data.erro || 'Erro ao buscar notícias'), 'error');
+      return;
+    }
+    const novas = data.noticias || [];
+    state.rss.pendentes = state.rss.pendentes.concat(novas);
+    renderRssPendentes();
+
+    const totalRelevantes = (data.total_verificados || 0) - (data.total_descartados_filtro || 0);
+    let msg;
+    if (novas.length) {
+      msg = `✅ ${novas.length} notícia(s) nova(s) — revise abaixo antes de publicar. ` +
+        `${data.total_verificados} item(ns) verificado(s), ${totalRelevantes} relevante(s) ` +
+        `(${data.total_descartados_filtro} descartado(s) pelo filtro).`;
+    } else if (data.total_verificados) {
+      msg = `Nenhuma notícia nova (tudo já importado/pendente, ou fora do filtro). ` +
+        `${data.total_verificados} item(ns) verificado(s), ${data.total_descartados_filtro} descartado(s) pelo filtro.`;
+    } else {
+      msg = 'Nenhuma notícia nova encontrada nos feeds cadastrados.';
+    }
+    if (data.avisos && data.avisos.length) {
+      msg += '<br><br>' + data.avisos.map(a => `⚠️ ${esc(a)}`).join('<br>');
+    }
+    setRssStatus(msg, novas.length ? 'info' : 'warn');
+  } catch (e) {
+    setRssStatus('Erro de conexão ao buscar notícias.', 'error');
+  }
+  btn.disabled = false;
+  btn.innerHTML = textoOriginal;
+}
+
+function renderRssPendentes() {
+  const lista = document.getElementById('rssPendentesLista');
+  const vazio = document.getElementById('rssPendentesVazio');
+  const pendentes = state.rss.pendentes;
+  if (!pendentes.length) {
+    lista.innerHTML = '';
+    vazio.style.display = 'block';
+    return;
+  }
+  vazio.style.display = 'none';
+  lista.innerHTML = pendentes.map((n, idx) => `
+    <div class="rss-noticia-card">
+      ${n.imagem
+        ? `<img class="rss-noticia-img" src="${esc(n.imagem)}" alt="">`
+        : `<div class="rss-noticia-img-vazia">Sem imagem</div>`}
+      <div class="rss-noticia-corpo">
+        <div class="rss-noticia-titulo">${esc(n.titulo_reescrito)}</div>
+        <div class="rss-noticia-resumo">${esc(n.resumo_reescrito)}</div>
+        <div class="rss-noticia-fonte">Fonte: ${esc(n.nome_site)} — <a href="${esc(n.link)}" target="_blank">ver matéria original</a></div>
+        <div style="display:flex;gap:8px;">
+          <button class="btn btn-primary btn-sm" onclick="aprovarNoticiaRss(${idx})">✅ Aprovar e salvar</button>
+          <button class="btn btn-secondary btn-sm" onclick="descartarNoticiaRss(${idx})">❌ Descartar</button>
+        </div>
+      </div>
+    </div>
+  `).join('');
+}
+
+async function aprovarNoticiaRss(idx) {
+  const item = state.rss.pendentes[idx];
+  if (!item) return;
+  try {
+    const r = await fetch('/admin/rss/aprovar', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(item),
+    });
+    const data = await r.json();
+    if (r.ok && data.ok) {
+      state.rss.pendentes.splice(idx, 1);
+      renderRssPendentes();
+      showToast('🎉 Notícia publicada com sucesso!', 'success');
+      state.loaded.delete('blog'); // força recarregar a lista de posts na próxima vez que abrir
+    } else {
+      showToast(data.erro || 'Erro ao publicar', 'error');
+    }
+  } catch (e) { showToast('Erro de conexão', 'error'); }
+}
+
+function descartarNoticiaRss(idx) {
+  state.rss.pendentes.splice(idx, 1);
+  renderRssPendentes();
 }
 
 // ── Toast ────────────────────────────────────────────────────
