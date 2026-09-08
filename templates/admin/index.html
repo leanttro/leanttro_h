@@ -742,6 +742,18 @@ tbody td {
 .rss-status-box.info { background: var(--accent-light); color: var(--accent-dark); }
 .rss-status-box.warn { background: var(--amber-light); color: var(--amber); }
 .rss-status-box.error { background: var(--red-light); color: var(--red); }
+.rss-candidato-card {
+  display: flex;
+  gap: 12px;
+  padding: 14px 16px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  margin-bottom: 10px;
+  background: var(--surface);
+  align-items: flex-start;
+}
+.rss-candidato-card.selecionada { border-color: var(--accent); background: var(--accent-light); }
+.rss-candidato-check { margin-top: 3px; flex-shrink: 0; width: 16px; height: 16px; cursor: pointer; }
 
 /* ── Responsive ── */
 @media (max-width: 900px) {
@@ -1183,24 +1195,44 @@ tbody td {
       </div>
 
       <!-- Buscar novas notícias -->
-      <div class="card">
+      <div class="card" style="margin-bottom:20px;">
         <div class="card-header">
-          <span class="card-title">Buscar e revisar notícias</span>
+          <span class="card-title">Buscar notícias</span>
           <button class="btn btn-primary" id="btnBuscarNoticiasRss" onclick="buscarNoticiasRss()">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
             Buscar novas notícias
           </button>
         </div>
         <div style="padding:16px 20px;">
+          <p style="color:var(--text2);font-size:12.5px;margin-bottom:10px;">
+            Isso só verifica os feeds e lista o que encontrou — nada é reescrito com IA ainda.
+            Marque abaixo só as que valem a pena e clique em "Reescrever selecionadas".
+          </p>
           <div id="rssBuscaStatus" style="display:none;margin-bottom:14px;"></div>
+          <div style="display:flex;align-items:center;gap:10px;margin-bottom:12px;" id="rssCandidatosAcoes"></div>
+          <div id="rssCandidatosLista"></div>
+          <div class="empty-state" id="rssCandidatosVazio">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M4 11a9 9 0 019 9M4 4a16 16 0 0116 16"/><circle cx="5" cy="19" r="1"/></svg>
+            <p>Nenhuma notícia encontrada ainda. Clique em "Buscar novas notícias" para verificar as fontes cadastradas.</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Revisar e publicar -->
+      <div class="card">
+        <div class="card-header">
+          <span class="card-title">Revisar e publicar</span>
+        </div>
+        <div style="padding:16px 20px;">
           <div id="rssPendentesLista"></div>
           <div class="empty-state" id="rssPendentesVazio">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M4 11a9 9 0 019 9M4 4a16 16 0 0116 16"/><circle cx="5" cy="19" r="1"/></svg>
-            <p>Nenhuma notícia pendente de revisão. Clique em "Buscar novas notícias" para verificar as fontes cadastradas.</p>
+            <p>Nenhuma notícia reescrita pendente de revisão ainda.</p>
           </div>
         </div>
       </div>
     </section>
+
 
     <!-- ═══ ANÚNCIOS ═══ -->
     <section class="section" id="sec-anuncios">
@@ -1347,7 +1379,7 @@ const state = {
   pendentes: { status: 'pendente', hub_id: '' },
   // Fila de notícias RSS aguardando revisão — vive só na sessão do navegador
   // (nunca é salva no banco); some se a aba for fechada ou a página recarregada.
-  rss: { pendentes: [] },
+  rss: { candidatos: [], pendentes: [] },
 };
 
 function debounce(fn, ms) {
@@ -2949,31 +2981,32 @@ async function buscarNoticiasRss() {
   btn.disabled = true;
   const textoOriginal = btn.innerHTML;
   btn.innerHTML = 'Buscando...';
-  setRssStatus('Buscando e reescrevendo notícias, isso pode levar um instante...', 'info');
+  setRssStatus('Verificando os feeds cadastrados...', 'info');
   try {
-    const linksPendentes = state.rss.pendentes.map(n => n.link);
+    const linksJaVistos = state.rss.candidatos.map(n => n.link)
+      .concat(state.rss.pendentes.map(n => n.link));
     const r = await fetch('/admin/rss/buscar', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ links_pendentes: linksPendentes }),
+      body: JSON.stringify({ links_pendentes: linksJaVistos }),
     });
     const data = await r.json();
     if (!r.ok) {
       setRssStatus(esc(data.erro || 'Erro ao buscar notícias'), 'error');
       return;
     }
-    const novas = data.noticias || [];
-    state.rss.pendentes = state.rss.pendentes.concat(novas);
-    renderRssPendentes();
+    const novas = (data.noticias || []).map(n => ({ ...n, selecionada: false }));
+    state.rss.candidatos = state.rss.candidatos.concat(novas);
+    renderRssCandidatos();
 
     const totalRelevantes = (data.total_verificados || 0) - (data.total_descartados_filtro || 0);
     let msg;
     if (novas.length) {
-      msg = `✅ ${novas.length} notícia(s) nova(s) — revise abaixo antes de publicar. ` +
+      msg = `✅ ${novas.length} notícia(s) nova(s) encontrada(s) — marque abaixo o que quer reescrever. ` +
         `${data.total_verificados} item(ns) verificado(s), ${totalRelevantes} relevante(s) ` +
         `(${data.total_descartados_filtro} descartado(s) pelo filtro).`;
     } else if (data.total_verificados) {
-      msg = `Nenhuma notícia nova (tudo já importado/pendente, ou fora do filtro). ` +
+      msg = `Nenhuma notícia nova (tudo já importado/visto, ou fora do filtro). ` +
         `${data.total_verificados} item(ns) verificado(s), ${data.total_descartados_filtro} descartado(s) pelo filtro.`;
     } else {
       msg = 'Nenhuma notícia nova encontrada nos feeds cadastrados.';
@@ -2987,6 +3020,104 @@ async function buscarNoticiasRss() {
   }
   btn.disabled = false;
   btn.innerHTML = textoOriginal;
+}
+
+function renderRssCandidatos() {
+  const lista = document.getElementById('rssCandidatosLista');
+  const vazio = document.getElementById('rssCandidatosVazio');
+  const acoes = document.getElementById('rssCandidatosAcoes');
+  const candidatos = state.rss.candidatos;
+
+  if (!candidatos.length) {
+    lista.innerHTML = '';
+    acoes.innerHTML = '';
+    vazio.style.display = 'block';
+    return;
+  }
+  vazio.style.display = 'none';
+
+  const selecionadas = candidatos.filter(n => n.selecionada).length;
+  acoes.innerHTML = `
+    <label style="display:flex;align-items:center;gap:6px;font-size:12.5px;color:var(--text2);cursor:pointer;">
+      <input type="checkbox" ${selecionadas === candidatos.length ? 'checked' : ''} onchange="toggleTodasCandidatasRss(this.checked)">
+      Selecionar todas
+    </label>
+    <button class="btn btn-primary btn-sm" ${selecionadas ? '' : 'disabled'} onclick="reescreverSelecionadasRss()">
+      ✨ Reescrever selecionadas (${selecionadas})
+    </button>
+    <button class="btn btn-secondary btn-sm" onclick="limparCandidatosRss()">Limpar lista</button>
+  `;
+
+  lista.innerHTML = candidatos.map((n, idx) => `
+    <div class="rss-candidato-card ${n.selecionada ? 'selecionada' : ''}">
+      <input type="checkbox" class="rss-candidato-check" ${n.selecionada ? 'checked' : ''} onchange="toggleCandidatoRss(${idx})">
+      ${n.imagem
+        ? `<img class="rss-noticia-img" src="${esc(n.imagem)}" alt="">`
+        : `<div class="rss-noticia-img-vazia">Sem imagem</div>`}
+      <div class="rss-noticia-corpo">
+        <div class="rss-noticia-titulo">${esc(n.titulo_original)}</div>
+        <div class="rss-noticia-resumo">${esc(n.resumo_original || '(sem resumo disponível)')}</div>
+        <div class="rss-noticia-fonte">Fonte: ${esc(n.nome_site)} — <a href="${esc(n.link)}" target="_blank">ver matéria original</a></div>
+      </div>
+    </div>
+  `).join('');
+}
+
+function toggleCandidatoRss(idx) {
+  const item = state.rss.candidatos[idx];
+  if (!item) return;
+  item.selecionada = !item.selecionada;
+  renderRssCandidatos();
+}
+
+function toggleTodasCandidatasRss(marcar) {
+  state.rss.candidatos.forEach(n => n.selecionada = marcar);
+  renderRssCandidatos();
+}
+
+function limparCandidatosRss() {
+  state.rss.candidatos = [];
+  renderRssCandidatos();
+}
+
+async function reescreverSelecionadasRss() {
+  const selecionadas = state.rss.candidatos.filter(n => n.selecionada);
+  if (!selecionadas.length) return;
+
+  const acoes = document.getElementById('rssCandidatosAcoes');
+  const btn = acoes.querySelector('button.btn-primary');
+  if (btn) { btn.disabled = true; btn.innerHTML = 'Reescrevendo...'; }
+  setRssStatus(`Reescrevendo ${selecionadas.length} notícia(s) com IA, isso pode levar um instante...`, 'info');
+
+  try {
+    const r = await fetch('/admin/rss/reescrever', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ itens: selecionadas.map(({ selecionada, ...resto }) => resto) }),
+    });
+    const data = await r.json();
+    if (!r.ok) {
+      setRssStatus(esc(data.erro || 'Erro ao reescrever notícias'), 'error');
+      return;
+    }
+    const reescritas = data.noticias || [];
+    const linksReescritos = new Set(reescritas.map(n => n.link));
+    // tira da lista de candidatas as que foram reescritas com sucesso; as que falharam continuam lá pra tentar de novo
+    state.rss.candidatos = state.rss.candidatos.filter(n => !linksReescritos.has(n.link));
+    state.rss.pendentes = state.rss.pendentes.concat(reescritas);
+    renderRssCandidatos();
+    renderRssPendentes();
+
+    let msg = reescritas.length
+      ? `✅ ${reescritas.length} notícia(s) reescrita(s) — revise mais abaixo antes de publicar.`
+      : 'Nenhuma notícia foi reescrita.';
+    if (data.avisos && data.avisos.length) {
+      msg += '<br><br>' + data.avisos.map(a => `⚠️ ${esc(a)}`).join('<br>');
+    }
+    setRssStatus(msg, reescritas.length ? 'info' : 'warn');
+  } catch (e) {
+    setRssStatus('Erro de conexão ao reescrever notícias.', 'error');
+  }
 }
 
 async function buscarNoticiaPorLink() {
